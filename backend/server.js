@@ -16,7 +16,7 @@ const { exportBlob, importBlob, defaultBlob } = require('./src/bridge');
 
 const PORT     = Number(process.env.PORT) || 8787;
 const HOST     = process.env.HOST || '0.0.0.0';
-const APP_PATH = process.env.APP_PATH !== undefined ? process.env.APP_PATH : '/EmdadX-ERP';
+const APP_PATH = process.env.APP_PATH !== undefined ? process.env.APP_PATH : '/Ozarex';
 const PUBLIC   = process.env.PUBLIC_DIR || path.join(__dirname, '..', 'frontend', 'public');
 const MAX_BACKUPS = 20;
 
@@ -73,7 +73,7 @@ function sendJSON(res, status, obj) {
     'Cache-Control':  'no-store',
     'Access-Control-Allow-Origin':  '*',
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Client-Id, X-Offline-Sync'
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization'
   });
   res.end(body);
 }
@@ -155,7 +155,7 @@ const server = http.createServer(async (req, res) => {
     res.writeHead(204, {
       'Access-Control-Allow-Origin':  '*',
       'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Client-Id, X-Offline-Sync',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
       'Access-Control-Max-Age': '86400'
     });
     return res.end();
@@ -184,20 +184,6 @@ const server = http.createServer(async (req, res) => {
       });
     }
 
-    /* ── Service Worker — served with root scope ── */
-    if (pathname === '/sw.js') {
-      const swPath = path.join(PUBLIC, 'sw.js');
-      if (fs.existsSync(swPath)) {
-        const data = fs.readFileSync(swPath);
-        res.writeHead(200, {
-          'Content-Type':  'application/javascript; charset=utf-8',
-          'Cache-Control': 'no-cache, no-store, must-revalidate',
-          'Service-Worker-Allowed': '/'
-        });
-        return res.end(data);
-      }
-    }
-
     /* ── Version check (lightweight — no data transfer) ── */
     if (pathname === '/api/version' && req.method === 'GET') {
       return sendJSON(res, 200, { version: _dataVersion });
@@ -222,11 +208,7 @@ const server = http.createServer(async (req, res) => {
       const at = takeBackup();
 
       // Notify all OTHER connected clients
-      notifyDataChanged({
-        source:  req.headers['x-client-id'] || 'unknown',
-        savedAt: at,
-        offline: req.headers['x-offline-sync'] === '1'
-      });
+      notifyDataChanged({ source: req.headers['x-client-id'] || 'unknown', savedAt: at });
 
       return sendJSON(res, 200, { ok: true, saved_at: at, version: _dataVersion });
     }
@@ -290,7 +272,7 @@ const server = http.createServer(async (req, res) => {
 
 server.listen(PORT, HOST, () => {
   console.log('====================================');
-  console.log('  EmdadX ERP — Real-time Sync');
+  console.log('  Ozarex ERP — Real-time Sync');
   console.log('====================================');
   console.log('  Listening : ' + HOST + ':' + PORT);
   console.log('  Database  : ' + DB_FILE);
