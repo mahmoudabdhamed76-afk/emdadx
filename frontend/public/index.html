@@ -9559,6 +9559,46 @@ const SyncEngine = (() => {
     _reconnectDelay=Math.min(_reconnectDelay*2,30000);
   }
 
+  function throttledPull(reason){
+    if(_syncThrottle)return;
+    _syncThrottle=setTimeout(()=>{_syncThrottle=null;pullLatest(reason);},80);
+  }
+
+  function connect(){
+    if(_es){try{_es.close();}catch{}_es=null;}
+    if(!_online){setStatus('offline');return;}
+    setStatus('connecting');
+    _es=new EventSource(API_BASE+'/api/events');
+    _es.onopen=()=>{
+      _connected=true;
+      _reconnectDelay=1000;
+      setStatus('connected');
+      console.log('[Sync] SSE connected');
+      pullLatest('reconnect');
+    };
+    _es.onmessage=(e)=>{
+      if(!e.data||e.data.startsWith(':'))return;
+      try{
+        const msg=JSON.parse(e.data);
+        if(msg.event==='connected'){DB._serverVersion=msg.version||0;return;}
+        if(msg.event==='data_changed'){
+          // Skip own changes — source match OR recent save within 2s
+          const isSelf   = msg.source===_CLIENT_ID;
+          const recentSave = (Date.now()-(_lastSaveAt||0))<2000;
+          if(isSelf||recentSave){DB._serverVersion=msg.version;return;}
+          throttledPull('data_changed');
+        }
+      }catch{}
+    };
+    _es.onerror=()=>{
+      _connected=false;
+      try{_es.close();}catch{}
+      _es=null;
+      setStatus(_online?'connecting':'offline');
+      scheduleReconnect();
+    };
+  }
+
   function onSelfSaved(v){if(v)DB._serverVersion=v;setStatus('connected');}
   function onSaveError(e){setStatus('error');if(typeof toast==='function')toast('فشل حفظ البيانات: '+e.message,'error');}
 
