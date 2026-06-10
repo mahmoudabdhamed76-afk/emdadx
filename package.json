@@ -1,7 +1,7 @@
 {
-  "name": "ozarex-erp",
+  "name": "emdadx-erp",
   "version": "2.0.0",
-  "description": "أوزاريكس - نظام إدارة التوريدات والمحاسبة",
+  "description": "إمداد إكس - نظام إدارة التوريدات والمحاسبة",
   "private": true,
   "main": "backend/server.js",
   "scripts": {

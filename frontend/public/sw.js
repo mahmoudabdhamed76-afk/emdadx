@@ -1,8 +1,8 @@
 'use strict';
 
-const CACHE      = 'ozarex-v1';
+const CACHE      = 'emdadx-v1';
 const APP_SHELL  = ['/', '/index.html', '/manifest.json'];
-const DB_NAME    = 'ozarex-offline';
+const DB_NAME    = 'emdadx-offline';
 const QUEUE_STORE = 'sync_queue';
 const SNAP_STORE  = 'data_snapshot';
 
@@ -45,7 +45,7 @@ self.addEventListener('fetch', e => {
 
 /* ── Background Sync: flush queue when online ── */
 self.addEventListener('sync', e => {
-  if (e.tag === 'ozarex-sync') {
+  if (e.tag === 'emdadx-sync') {
     e.waitUntil(flushQueue());
   }
 });

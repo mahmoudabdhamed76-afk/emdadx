@@ -16,7 +16,7 @@ const { exportBlob, importBlob, defaultBlob } = require('./src/bridge');
 
 const PORT     = Number(process.env.PORT) || 8787;
 const HOST     = process.env.HOST || '0.0.0.0';
-const APP_PATH = process.env.APP_PATH !== undefined ? process.env.APP_PATH : '/Ozarex';
+const APP_PATH = process.env.APP_PATH !== undefined ? process.env.APP_PATH : '/EmdadX-ERP';
 const PUBLIC   = process.env.PUBLIC_DIR || path.join(__dirname, '..', 'frontend', 'public');
 const MAX_BACKUPS = 20;
 
@@ -184,7 +184,7 @@ const server = http.createServer(async (req, res) => {
       });
     }
 
-    /* ── Service Worker — must be served without APP_PATH prefix ── */
+    /* ── Service Worker — served with root scope ── */
     if (pathname === '/sw.js') {
       const swPath = path.join(PUBLIC, 'sw.js');
       if (fs.existsSync(swPath)) {
@@ -222,11 +222,10 @@ const server = http.createServer(async (req, res) => {
       const at = takeBackup();
 
       // Notify all OTHER connected clients
-      const isOfflineSync = req.headers['x-offline-sync'] === '1';
       notifyDataChanged({
-        source:   req.headers['x-client-id'] || 'unknown',
-        savedAt:  at,
-        offline:  isOfflineSync   // clients show "مزامنة أوف لاين" toast
+        source:  req.headers['x-client-id'] || 'unknown',
+        savedAt: at,
+        offline: req.headers['x-offline-sync'] === '1'
       });
 
       return sendJSON(res, 200, { ok: true, saved_at: at, version: _dataVersion });
@@ -291,7 +290,7 @@ const server = http.createServer(async (req, res) => {
 
 server.listen(PORT, HOST, () => {
   console.log('====================================');
-  console.log('  Ozarex ERP — Real-time Sync');
+  console.log('  EmdadX ERP — Real-time Sync');
   console.log('====================================');
   console.log('  Listening : ' + HOST + ':' + PORT);
   console.log('  Database  : ' + DB_FILE);

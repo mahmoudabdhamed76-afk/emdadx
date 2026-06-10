@@ -2,14 +2,11 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Cairo+Play:wght@700;800;900&display=swap" rel="stylesheet">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>نظام إدارة أوزاريكس - ERP</title>
+<title>نظام إدارة إمداد إكس - ERP</title>
 
 <!-- PWA: install to home screen with company logo -->
 <link rel="manifest" href="manifest.json">
@@ -17,7 +14,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Ozarex">
+<meta name="apple-mobile-web-app-title" content="EmdadX">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="apple-touch-icon" sizes="180x180" href="icons/icon-180.png">
 <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
@@ -32,12 +29,12 @@
 /* ========================= VARIABLES ========================= */
 :root {
   /* Primary action color - Vibrant Emerald Green */
-  --primary: #db2033;
-  --primary-dark: #b01526;
-  --primary-light: #ef4458;
-  --primary-50: #fef2f3;
-  --primary-100: #fcdcdf;
-  --primary-rgb: 219, 32, 51;
+  --primary: #10b981;
+  --primary-dark: #059669;
+  --primary-light: #34d399;
+  --primary-50: #f0fdf9;
+  --primary-100: #d1fae5;
+  --primary-rgb: 16, 185, 129;
 
   /* Accent colors - BOLDER, VIVID */
   --accent: #7c3aed;          /* deep purple */
@@ -64,8 +61,8 @@
   --tint-cream:   #fdf9f0;
 
   /* Bold gradients */
-  --grad-primary: linear-gradient(135deg, #b01526 0%, #db2033 50%, #ef4458 100%);
-  --grad-teal:    linear-gradient(135deg, #7f0f1c 0%, #db2033 50%, #ef4458 100%);
+  --grad-primary: linear-gradient(135deg, #059669 0%, #10b981 50%, #34d399 100%);
+  --grad-teal:    linear-gradient(135deg, #047857 0%, #10b981 50%, #34d399 100%);
   --grad-success: linear-gradient(135deg, #047857 0%, #10b981 100%);
   --grad-warning: linear-gradient(135deg, #c2410c 0%, #ea580c 100%);
   --grad-danger:  linear-gradient(135deg, #991b1b 0%, #dc2626 100%);
@@ -73,7 +70,7 @@
   --grad-pink:    linear-gradient(135deg, #be185d 0%, #ec4899 100%);
   --grad-sky:     linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
   --grad-orange:  linear-gradient(135deg, #c2410c 0%, #ea580c 100%);
-  --grad-banner:  linear-gradient(90deg, #0a0e1a 0%, #0f1729 30%, #1e293b 70%, #b01526 100%);
+  --grad-banner:  linear-gradient(90deg, #0a0e1a 0%, #0f1729 30%, #1e293b 70%, #059669 100%);
 
   /* LIGHT mode - Warm gray, NOT stark white. Premium SaaS look. */
   --bg: #f3f5f7;             /* warm light gray base */
@@ -115,19 +112,19 @@
   --text-muted: #cdd8ec;
   --text-soft: #8ea0c0;
 
-  --primary: #ef4458;
-  --primary-dark: #db2033;
+  --primary: #34d399;
+  --primary-dark: #10b981;
   --primary-light: #f87171;
-  --primary-50: rgba(239,68,88,.12);
-  --primary-100: rgba(239,68,88,.22);
+  --primary-50: rgba(16,185,129,.12);
+  --primary-100: rgba(16,185,129,.22);
 
   --success: #10b981;
   --danger: #ef4444;
   --warning: #f59e0b;
   --info: #3b82f6;
 
-  --grad-banner: linear-gradient(90deg, #0a0f1c 0%, #111a2e 30%, #1e2b48 70%, #b01526 100%);
-  --grad-primary: linear-gradient(135deg, #b01526 0%, #db2033 50%, #ef4458 100%);
+  --grad-banner: linear-gradient(90deg, #0a0f1c 0%, #111a2e 30%, #1e2b48 70%, #059669 100%);
+  --grad-primary: linear-gradient(135deg, #059669 0%, #10b981 50%, #34d399 100%);
 
   --shadow-sm: 0 1px 3px rgba(0,0,0,.5);
   --shadow: 0 4px 14px rgba(0,0,0,.45), 0 2px 4px rgba(0,0,0,.3);
@@ -197,64 +194,32 @@ table { border-collapse: collapse; width: 100%; }
 }
 .login-card {
   width: 100%; max-width: 440px;
-  background: rgba(255,255,255,.92);
-  backdrop-filter: blur(24px) saturate(160%);
-  -webkit-backdrop-filter: blur(24px) saturate(160%);
-  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(20px) saturate(150%);
+  -webkit-backdrop-filter: blur(20px) saturate(150%);
+  border-radius: var(--radius-xl);
   padding: 36px 32px 30px;
-  position: relative; z-index: 2;
-  /* Animated glowing border */
-  border: 2px solid transparent;
-  background-clip: padding-box;
   box-shadow:
-    0 0 0 2px rgba(219,32,51,.6),
-    0 0 32px rgba(219,32,51,.25),
-    0 25px 60px rgba(0,0,0,.18),
-    inset 0 1px 0 rgba(255,255,255,.9);
-  animation: loginCardIn .6s cubic-bezier(.34,1.56,.64,1) both,
-             loginGlow 3s ease-in-out 0.6s infinite;
+    0 25px 60px rgba(5, 150, 105, .15),
+    0 8px 20px rgba(15, 23, 42, .08),
+    inset 0 1px 0 rgba(255,255,255,.8);
+  border: 1px solid rgba(16, 185, 129, .25);
+  animation: fadeUp .5s ease both;
+  position: relative;
+  z-index: 2;
 }
 [data-theme="dark"] .login-card {
-  background: rgba(10,6,8,.92);
+  background: rgba(13, 19, 31, 0.88);
+  backdrop-filter: blur(22px) saturate(160%);
+  -webkit-backdrop-filter: blur(22px) saturate(160%);
+  border-color: rgba(16,185,129,.20);
   box-shadow:
-    0 0 0 2px rgba(219,32,51,.7),
-    0 0 40px rgba(219,32,51,.35),
-    0 25px 70px rgba(0,0,0,.85),
-    inset 0 1px 0 rgba(219,32,51,.12);
-}
-/* Corner accent dots */
-.login-card::before,
-.login-card::after {
-  content: '';
-  position: absolute;
-  width: 10px; height: 10px;
-  background: #db2033;
-  border-radius: 50%;
-  box-shadow: 0 0 12px 4px rgba(219,32,51,.7);
-  animation: cornerPulse 2s ease-in-out infinite;
-}
-.login-card::before { top: -5px; right: -5px; }
-.login-card::after  { bottom: -5px; left: -5px; animation-delay: 1s; }
-
-@keyframes loginCardIn {
-  0%   { opacity:0; transform: scale(.8) translateY(30px) rotate(-2deg); }
-  60%  { transform: scale(1.03) translateY(-4px) rotate(.5deg); }
-  100% { opacity:1; transform: scale(1) translateY(0) rotate(0); }
-}
-@keyframes loginGlow {
-  0%,100% {
-    box-shadow: 0 0 0 2px rgba(219,32,51,.6), 0 0 28px rgba(219,32,51,.22), 0 25px 60px rgba(0,0,0,.18), inset 0 1px 0 rgba(255,255,255,.9);
-  }
-  50% {
-    box-shadow: 0 0 0 2px rgba(219,32,51,.9), 0 0 48px rgba(219,32,51,.45), 0 25px 60px rgba(0,0,0,.18), inset 0 1px 0 rgba(255,255,255,.9);
-  }
-}
-@keyframes cornerPulse {
-  0%,100% { transform: scale(1); opacity:.8; }
-  50%     { transform: scale(1.6); opacity:1; }
+    0 25px 60px rgba(0,0,0,.7),
+    0 12px 32px rgba(16,185,129,.10),
+    inset 0 1px 0 rgba(16,185,129,.15);
 }
 .login-logo {
-  width: 80px; height: 80px;
+  width: 130px; height: 130px;
   border-radius: 22px;
   display: grid; place-items: center;
   background: linear-gradient(135deg, #047857 0%, #059669 50%, #10b981 100%);
@@ -269,12 +234,14 @@ table { border-collapse: collapse; width: 100%; }
   animation: logoFloat 4s ease-in-out infinite;
 }
 .login-logo-svg {
-  background: transparent;
+  background: #ffffff;
+  border-radius: 22px;
   box-shadow:
     0 18px 40px rgba(5,150,105,.35),
-    0 6px 14px rgba(0,0,0,.10);
+    0 6px 14px rgba(0,0,0,.15);
   overflow: hidden;
 }
+.login-logo-svg img { width: 100%; height: 100%; object-fit: contain; display: block; padding: 8px; box-sizing: border-box; }
 .login-logo-svg svg { width: 100%; height: 100%; display: block; }
 @keyframes logoFloat {
   0%, 100% { transform: translateY(0); }
@@ -4412,12 +4379,12 @@ table.data-table tbody tr:last-child td { border-bottom: none; }
 
 /* ===== BASE / BODY ===== */
 [data-theme="dark"] body {
-  background: #0c0709;
+  background: #070d0b;
   background-image:
-    radial-gradient(circle at 15% 12%, rgba(219,32,51,.08) 0%, transparent 40%),
+    radial-gradient(circle at 15% 12%, rgba(16,185,129,.08) 0%, transparent 40%),
     radial-gradient(circle at 85% 18%, rgba(124,58,237,.05) 0%, transparent 42%),
-    radial-gradient(circle at 50% 95%, rgba(239,68,88,.05) 0%, transparent 45%),
-    linear-gradient(180deg, #0c0709 0%, #14090c 55%, #0c0709 100%);
+    radial-gradient(circle at 50% 95%, rgba(16,185,129,.05) 0%, transparent 45%),
+    linear-gradient(180deg, #070d0b 0%, #0a1410 55%, #070d0b 100%);
   background-attachment: fixed;
 }
 
@@ -7761,6 +7728,111 @@ body.mobile-drawer-open { overflow: hidden; }
   transition: all .18s; white-space: nowrap;
 }
 .dash-strip-btn:hover { background: var(--surface); border-color: var(--primary); color: var(--primary); }
+
+/* ═══ ANIMATED DASHBOARD CLOCK ═══ */
+.dash-clock {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  margin-inline-start: auto;
+  padding: 8px 18px;
+  background: rgba(255,255,255,.04);
+  backdrop-filter: blur(14px) saturate(150%);
+  -webkit-backdrop-filter: blur(14px) saturate(150%);
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 16px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.12), 0 4px 16px rgba(0,0,0,.15);
+  position: relative; overflow: hidden;
+}
+.dash-clock::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(120deg, transparent 30%, rgba(16,185,129,.06) 50%, transparent 70%);
+  animation: clockSheen 4s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes clockSheen {
+  0%, 100% { transform: translateX(-100%); }
+  50%      { transform: translateX(100%); }
+}
+.dc-time {
+  display: flex; align-items: baseline; gap: 2px;
+  font-variant-numeric: tabular-nums;
+  direction: ltr;
+}
+.dc-digit {
+  font-size: 24px; font-weight: 900; letter-spacing: 1px;
+  color: var(--text);
+  text-shadow: 0 0 14px rgba(16,185,129,.35);
+  display: inline-block;
+  min-width: 32px; text-align: center;
+}
+.dc-digit.flip { animation: digitFlip .45s cubic-bezier(.34,1.56,.64,1); }
+@keyframes digitFlip {
+  0%   { transform: translateY(-10px) scale(.85); opacity: 0; filter: blur(2px); }
+  100% { transform: translateY(0)     scale(1);   opacity: 1; filter: blur(0); }
+}
+.dc-digit-s {
+  font-size: 16px; min-width: 22px;
+  color: var(--primary);
+  text-shadow: 0 0 10px rgba(16,185,129,.5);
+}
+.dc-sep {
+  font-size: 22px; font-weight: 900; color: var(--primary);
+  animation: sepBlink 1s step-start infinite;
+}
+.dc-sep-s { font-size: 14px; }
+@keyframes sepBlink { 50% { opacity: .25; } }
+.dc-ampm {
+  font-size: 12px; font-weight: 800; color: var(--primary);
+  margin-inline-start: 6px;
+  background: rgba(16,185,129,.12);
+  padding: 2px 8px; border-radius: 8px;
+  border: 1px solid rgba(16,185,129,.25);
+}
+.dc-date {
+  font-size: 11.5px; font-weight: 700; color: var(--text-muted);
+  margin-top: 3px; letter-spacing: .2px;
+}
+@media (max-width: 640px) {
+  .dc-digit { font-size: 20px; min-width: 26px; }
+  .dc-digit-s { font-size: 13px; min-width: 18px; }
+  .dash-clock { padding: 7px 12px; }
+}
+
+
+  .qa-card { min-height: 110px !important; padding: 16px 12px !important; }
+  .qa-card .qa-ico { width: 48px !important; height: 48px !important; border-radius: 14px !important; }
+  .qa-card .qa-ico svg { width: 24px !important; height: 24px !important; }
+  .qa-card .qa-label { font-size: 13.5px !important; }
+  .qa-sub { font-size: 10px !important; }
+  /* KPI cards more compact on desktop */
+  .sav-kpi-list { display: grid !important; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .sav-kpi-item { padding: 14px 16px !important; }
+  .sav-kpi-val { font-size: 20px !important; }
+  .sav-kpi-icon { width: 44px !important; height: 44px !important; flex: 0 0 44px !important; }
+  /* SAV alerts 2-col on desktop */
+  .sav-list { display: grid !important; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .sav-date { grid-column: 1 / -1; }
+}
+
+/* ═══ OFFLINE BANNER ═══ */
+.offline-banner {
+  position: fixed; inset-inline: 0; top: 0; z-index: 9000;
+  background: linear-gradient(90deg, #b45309, #d97706);
+  color: #fff; font-size: 13.5px; font-weight: 700;
+  padding: 10px 18px; display: flex; align-items: center; gap: 10px;
+  transform: translateY(-100%);
+  transition: transform .35s cubic-bezier(.34,1.56,.64,1);
+  box-shadow: 0 4px 20px rgba(0,0,0,.35);
+}
+.offline-banner.show { transform: translateY(0); }
+.ob-ico { font-size: 18px; flex: 0 0 auto; }
+.ob-msg { flex: 1; }
+.ob-dot {
+  width: 10px; height: 10px; border-radius: 50%;
+  background: #fef3c7; flex: 0 0 10px;
+  animation: obBlink 1.2s ease-in-out infinite;
+}
+@keyframes obBlink { 50% { opacity: .2; } }
 .qa-sub { font-size: 10.5px; color: rgba(255,255,255,.4); margin-top: 3px; display: block; }
 /* Smart Alerts vertical */
 .sav-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
@@ -7841,21 +7913,268 @@ body.mobile-drawer-open { overflow: hidden; }
 
 /* ── Real-time Sync Status Dot ── */
 .sync-dot {
-  display: inline-block;
-  width: 9px; height: 9px;
-  border-radius: 50%;
-  flex: 0 0 9px;
-  margin: 0 3px;
+  display: inline-block; width: 9px; height: 9px; border-radius: 50%;
+  flex: 0 0 9px; margin: 0 3px; vertical-align: middle; cursor: default;
   transition: background .4s ease, box-shadow .4s ease;
-  cursor: default;
-  vertical-align: middle;
 }
-.sync-dot-connected  { background: #25d366; box-shadow: 0 0 6px rgba(37,211,102,.55); }
+.sync-dot-connected  { background: #10b981; box-shadow: 0 0 6px rgba(16,185,129,.55); }
 .sync-dot-connecting { background: #f59e0b; animation: syncPulse 1.2s ease-in-out infinite; }
 .sync-dot-syncing    { background: #3b82f6; animation: syncPulse .8s ease-in-out infinite; }
 .sync-dot-offline    { background: #6b7280; }
 .sync-dot-error      { background: #ef4444; animation: syncPulse 1s ease-in-out infinite; }
-@keyframes syncPulse { 0%,100%{opacity:1} 50%{opacity:.35} }
+@keyframes syncPulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+/* ═══════════════════════════════════════════════════
+   EMDADX UNIQUE UI — Modern Glass/Gradient Design
+   Different from Ozarex red → EmdadX teal/green
+═══════════════════════════════════════════════════ */
+
+/* Page transition — fade+slide */
+#page-content {
+  animation: pageSlideIn .25s cubic-bezier(.4,0,.2,1);
+}
+@keyframes pageSlideIn {
+  from { opacity:.3; transform:translateY(8px); }
+  to   { opacity:1;  transform:translateY(0); }
+}
+
+/* Sidebar items — gradient accent */
+.nav-item.active {
+  background: linear-gradient(90deg,rgba(16,185,129,.18),rgba(16,185,129,.04)) !important;
+  border-inline-start: 3px solid #10b981 !important;
+}
+
+/* EmdadX KPI cards — glass morphism style */
+.sav-kpi-item {
+  background: rgba(255,255,255,.03) !important;
+  border: 1px solid rgba(255,255,255,.07) !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.kpi-sales    { background: linear-gradient(135deg,rgba(16,185,129,.14),rgba(5,150,105,.05)) !important; border-color:rgba(16,185,129,.22) !important; }
+.kpi-cash     { background: linear-gradient(135deg,rgba(6,182,212,.14),rgba(8,145,178,.05)) !important; border-color:rgba(6,182,212,.22) !important; }
+.kpi-customers{ background: linear-gradient(135deg,rgba(99,102,241,.14),rgba(79,70,229,.05)) !important; border-color:rgba(99,102,241,.22) !important; }
+.kpi-debt     { background: linear-gradient(135deg,rgba(249,115,22,.14),rgba(234,88,12,.05)) !important; border-color:rgba(249,115,22,.22) !important; }
+.kpi-inventory{ background: linear-gradient(135deg,rgba(245,158,11,.14),rgba(217,119,6,.05)) !important; border-color:rgba(245,158,11,.22) !important; }
+.kpi-expenses { background: linear-gradient(135deg,rgba(239,68,68,.14),rgba(220,38,38,.05)) !important; border-color:rgba(239,68,68,.22) !important; }
+.kpi-sales .sav-kpi-icon    { color:#10b981 !important; background:rgba(16,185,129,.15) !important; }
+.kpi-cash .sav-kpi-icon     { color:#06b6d4 !important; background:rgba(6,182,212,.15) !important; }
+.kpi-customers .sav-kpi-icon{ color:#6366f1 !important; background:rgba(99,102,241,.15) !important; }
+.kpi-debt .sav-kpi-icon     { color:#f97316 !important; background:rgba(249,115,22,.15) !important; }
+.kpi-inventory .sav-kpi-icon{ color:#f59e0b !important; background:rgba(245,158,11,.15) !important; }
+.kpi-expenses .sav-kpi-icon { color:#ef4444 !important; background:rgba(239,68,68,.15) !important; }
+
+/* Top strip — glass */
+.dash-top-strip {
+  background: rgba(255,255,255,.02);
+  border: 1px solid rgba(255,255,255,.06);
+  border-radius: 18px; padding: 10px 12px;
+}
+.dash-balance-pill {
+  background: linear-gradient(135deg,rgba(16,185,129,.15),rgba(5,150,105,.08)) !important;
+  border-color: rgba(16,185,129,.35) !important;
+}
+.dash-strip-btn:hover {
+  background: rgba(16,185,129,.1) !important;
+  border-color: rgba(16,185,129,.3) !important;
+  color: #10b981 !important;
+}
+
+/* SAV items — glass cards */
+.sav-item {
+  background: rgba(255,255,255,.025) !important;
+  backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  border-color: rgba(255,255,255,.07) !important;
+}
+.sav-item:hover { background: rgba(16,185,129,.07) !important; border-color: rgba(16,185,129,.22) !important; }
+
+/* ════════════════════════════════════════════════
+   LOADING SPINNER — Professional, Dark-mode
+════════════════════════════════════════════════ */
+#page-loader {
+  position: fixed; inset: 0; z-index: 9999;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(var(--bg-rgb, 8,15,22),.72);
+  backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+  opacity: 0; pointer-events: none;
+  transition: opacity .22s ease;
+}
+#page-loader.show {
+  opacity: 1; pointer-events: auto;
+}
+.loader-ring {
+  width: 52px; height: 52px; position: relative;
+}
+.loader-ring::before,
+.loader-ring::after {
+  content: ''; position: absolute; border-radius: 50%;
+  border: 3px solid transparent;
+}
+.loader-ring::before {
+  inset: 0;
+  border-top-color: var(--primary);
+  border-right-color: rgba(16,185,129,.3);
+  animation: spin .75s linear infinite;
+}
+.loader-ring::after {
+  inset: 8px;
+  border-bottom-color: rgba(16,185,129,.6);
+  border-left-color: transparent;
+  animation: spin .55s linear infinite reverse;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loader-logo {
+  position: absolute; inset: 0; display: grid; place-items: center;
+  font-size: 18px; color: var(--primary);
+  animation: logoPulse 1.5s ease-in-out infinite;
+}
+@keyframes logoPulse { 0%,100%{opacity:.6;transform:scale(.9)} 50%{opacity:1;transform:scale(1)} }
+
+/* ════════════════════════════════════════════════
+   HOME BUTTON — fixed bottom-right (mobile)
+════════════════════════════════════════════════ */
+#home-fab {
+  position: fixed; inset-inline-end: 18px; bottom: 90px;
+  width: 48px; height: 48px; border-radius: 16px; z-index: 100;
+  background: linear-gradient(135deg,#059669,#10b981);
+  color: #fff; font-size: 20px;
+  display: none; align-items: center; justify-content: center;
+  box-shadow: 0 8px 24px rgba(16,185,129,.35);
+  transition: transform .18s, box-shadow .18s, opacity .22s;
+  opacity: 0;
+}
+#home-fab.visible { display: flex; opacity: 1; }
+#home-fab:hover   { transform: translateY(-3px) scale(1.06); box-shadow: 0 14px 32px rgba(16,185,129,.45); }
+#home-fab:active  { transform: scale(.9); }
+@media (min-width: 1024px) {
+  #home-fab { display: none !important; }
+}
+@media (max-width: 768px) {
+  #home-fab.visible { display: flex; }
+  #home-fab { bottom: calc(20px + env(safe-area-inset-bottom,0px)); }
+}
+
+/* ══════════════════════════════════════════
+   DASHBOARD SMART CHAT (dsc)
+══════════════════════════════════════════ */
+.dsc-wrap {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  margin-top: 20px;
+  display: flex; flex-direction: column;
+  max-height: 620px;
+}
+.dsc-header {
+  padding: 14px 18px;
+  background: linear-gradient(135deg, rgba(var(--primary-rgb),.12), rgba(var(--primary-rgb),.04));
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+}
+.dsc-header-left { display: flex; align-items: center; gap: 12px }
+.dsc-avatar {
+  width: 44px; height: 44px; border-radius: 14px; flex: 0 0 44px;
+  display: grid; place-items: center; font-size: 22px;
+  background: linear-gradient(135deg, #059669, #10b981);
+  box-shadow: 0 6px 18px rgba(16,185,129,.28);
+}
+.dsc-title { font-weight: 800; font-size: 15px; }
+.dsc-sub   { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+.dsc-clear {
+  padding: 7px 10px; border-radius: 10px; font-size: 16px;
+  background: rgba(255,255,255,.05); border: 1px solid var(--border);
+  transition: background .18s; color: var(--text-muted);
+}
+.dsc-clear:hover { background: rgba(241,92,109,.1); color: #ef4444; }
+
+.dsc-feed {
+  flex: 1; overflow-y: auto; padding: 16px 14px; display: flex; flex-direction: column; gap: 10px;
+  min-height: 160px; max-height: 340px; scroll-behavior: smooth;
+}
+.dsc-msg { display: flex; gap: 10px; align-items: flex-start; animation: msgPop .2s ease; }
+.dsc-msg.dsc-user { flex-direction: row-reverse; }
+.dsc-msg.dsc-bot .dsc-bubble {
+  background: rgba(255,255,255,.05); border: 1px solid var(--border); border-radius: 16px 16px 16px 4px;
+}
+.dsc-msg.dsc-user .dsc-bubble {
+  background: rgba(var(--primary-rgb),.15); border: 1px solid rgba(var(--primary-rgb),.2);
+  border-radius: 16px 16px 4px 16px;
+}
+.dsc-bubble {
+  padding: 10px 14px; font-size: 14px; line-height: 1.75;
+  max-width: min(80%, 560px); word-break: break-word; white-space: pre-wrap;
+}
+.dsc-file-preview {
+  display: flex; align-items: center; gap: 9px; padding: 10px 13px;
+  background: rgba(255,255,255,.05); border: 1px solid var(--border); border-radius: 14px;
+  max-width: 280px;
+}
+.dsc-file-ico { font-size: 24px; flex: 0 0 auto; }
+.dsc-file-name { font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dsc-file-size { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+img.dsc-img { max-width: 240px; border-radius: 13px; margin-top: 6px; cursor: zoom-in; }
+audio.dsc-audio { max-width: 260px; margin-top: 6px; border-radius: 10px; }
+
+.dsc-typing { display: flex; gap: 5px; align-items: center; padding: 12px 14px; }
+.dsc-typing span {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--text-muted); animation: dscBounce 1.2s infinite;
+}
+.dsc-typing span:nth-child(2){animation-delay:.2s}
+.dsc-typing span:nth-child(3){animation-delay:.4s}
+@keyframes dscBounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-6px)}}
+
+.dsc-chips {
+  display: flex; flex-wrap: wrap; gap: 7px; padding: 10px 14px;
+  border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+  background: rgba(255,255,255,.015); max-height: 88px; overflow-y: auto;
+}
+.dsc-chip {
+  padding: 6px 12px; border-radius: 999px; font-size: 12.5px; font-weight: 700; cursor: pointer;
+  background: rgba(var(--primary-rgb),.08); border: 1px solid rgba(var(--primary-rgb),.2);
+  color: var(--text); transition: all .18s; white-space: nowrap; flex: 0 0 auto;
+}
+.dsc-chip:hover { background: rgba(var(--primary-rgb),.18); border-color: var(--primary); color: var(--primary); transform: translateY(-2px); }
+
+.dsc-composer {
+  display: flex; align-items: flex-end; gap: 7px; padding: 10px 12px;
+  background: var(--bg-soft);
+}
+.dsc-attach, .dsc-mic {
+  width: 42px; height: 42px; border-radius: 13px; flex: 0 0 42px;
+  display: grid; place-items: center; font-size: 18px;
+  background: rgba(255,255,255,.05); border: 1px solid var(--border);
+  transition: background .18s, transform .12s;
+}
+.dsc-attach:hover,.dsc-mic:hover { background: rgba(255,255,255,.1); }
+.dsc-attach:active,.dsc-mic:active { transform: scale(.9); }
+.dsc-mic.recording { background: rgba(239,68,68,.15); border-color: #ef4444; animation: syncPulse .8s infinite; }
+.dsc-field {
+  flex: 1; min-width: 0; background: var(--surface); border: 1.5px solid var(--border);
+  border-radius: 18px; padding: 9px 13px;
+  transition: border-color .2s, box-shadow .2s;
+}
+.dsc-field:focus-within { border-color: rgba(var(--primary-rgb),.4); box-shadow: 0 0 0 3px rgba(var(--primary-rgb),.07); }
+.dsc-field textarea {
+  width: 100%; min-width: 0; border: 0; outline: none; resize: none; background: none;
+  color: var(--text); min-height: 22px; max-height: 100px; font-size: 14.5px; line-height: 1.6;
+}
+.dsc-field textarea::placeholder { color: var(--text-muted); }
+.dsc-send {
+  width: 44px; height: 44px; flex: 0 0 44px; border-radius: 14px;
+  background: var(--primary); color: #fff; font-size: 18px; font-weight: 900;
+  box-shadow: 0 8px 22px rgba(var(--primary-rgb),.28);
+  display: grid; place-items: center; transition: transform .12s, box-shadow .15s;
+}
+.dsc-send:active { transform: scale(.88); }
+@media (max-width: 768px) {
+  .dsc-wrap { max-height: none; border-radius: 16px; }
+  .dsc-feed { max-height: 280px; }
+  .dsc-bubble { max-width: 90%; font-size: 13.5px; }
+  img.dsc-img { max-width: 190px; }
+}
 
 /* Back button in topbar */
 .topbar-back-btn { display: none; }
@@ -7866,16 +8185,16 @@ body.mobile-drawer-open { overflow: hidden; }
   display: inline-flex; align-items: center; gap: 6px;
   padding: 6px 11px; margin: 0 2px;
   border-radius: 11px;
-  background: rgba(219, 32, 51, .08);
-  border: 1px solid rgba(219, 32, 51, .45);
-  box-shadow: 0 0 10px rgba(219,32,51,.25), inset 0 0 8px rgba(219,32,51,.08);
-  color: #ef4458;
+  background: rgba(56, 189, 248, .08);
+  border: 1px solid rgba(56, 189, 248, .45);
+  box-shadow: 0 0 10px rgba(56,189,248,.25), inset 0 0 8px rgba(56,189,248,.08);
+  color: #38bdf8;
   cursor: pointer;
   position: relative;
   transition: box-shadow .25s ease, transform .15s ease, border-color .25s ease;
   white-space: nowrap;
 }
-.paper-counter:hover { box-shadow: 0 0 16px rgba(219,32,51,.45), inset 0 0 10px rgba(219,32,51,.12); transform: translateY(-1px); border-color: rgba(219,32,51,.7); }
+.paper-counter:hover { box-shadow: 0 0 16px rgba(56,189,248,.45), inset 0 0 10px rgba(56,189,248,.12); transform: translateY(-1px); border-color: rgba(56,189,248,.7); }
 .paper-counter svg { width: 16px; height: 16px; flex-shrink: 0; }
 .paper-counter-num {
   font-size: 13.5px; font-weight: 800; letter-spacing: .3px;
@@ -7964,263 +8283,6 @@ body.mobile-drawer-open { overflow: hidden; }
 .qa-customer:hover { border-color: #10b981; box-shadow: 0 10px 34px rgba(16,185,129,.32); }
 .qa-customer:hover .qa-glow { opacity: .28; }
 
-/* ═══════════════════════════════════════════════════════════════
-   LIQUID GLASS UI — Applied to QA Cards & SAV Items
-   Modern iOS-style frosted glass with vivid color glows
-═══════════════════════════════════════════════════════════════ */
-
-/* ── Google Fonts bold override ── */
-* { font-family: 'Cairo', 'Cairo Play', 'Segoe UI', Tahoma, Arial, sans-serif !important; }
-.qa-label, .qa-sub, .sav-title, .sav-sub, .kpi-v3 .kpi-label, .kpi-v3 .kpi-value,
-.sav-kpi-label, .sav-kpi-val, .page-title, .topbar-title, .stat-label, .stat-value,
-.nav-item, .nav-label, .dash-card-title, .alert-title, .modal-title, h1, h2, h3, h4, h5 {
-  font-family: 'Cairo', 'Cairo Play', sans-serif !important;
-  font-weight: 800 !important;
-  letter-spacing: -.3px;
-}
-.sav-sub, .qa-sub, .stat-label, .kpi-trend, .sav-kpi-trend { font-weight: 600 !important; }
-
-/* ── Liquid Glass — QA Cards ── */
-.qa-card {
-  background: rgba(255,255,255,.055) !important;
-  backdrop-filter: blur(24px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(24px) saturate(180%) !important;
-  border: 1px solid rgba(255,255,255,.15) !important;
-  border-radius: 24px !important;
-  box-shadow:
-    0 8px 32px rgba(0,0,0,.28),
-    inset 0 1px 0 rgba(255,255,255,.18),
-    inset 0 -1px 0 rgba(0,0,0,.12) !important;
-  min-height: 140px !important;
-  padding: 24px 16px !important;
-  transition: transform .22s cubic-bezier(.34,1.56,.64,1),
-              box-shadow .22s ease,
-              border-color .22s ease !important;
-  position: relative; overflow: hidden;
-}
-.qa-card::before {
-  content: '';
-  position: absolute; inset: 0;
-  background: linear-gradient(135deg, rgba(255,255,255,.12) 0%, transparent 60%);
-  border-radius: inherit; pointer-events: none;
-}
-.qa-card:hover {
-  transform: translateY(-6px) scale(1.02) !important;
-  box-shadow:
-    0 20px 50px rgba(0,0,0,.35),
-    inset 0 1px 0 rgba(255,255,255,.25),
-    inset 0 -1px 0 rgba(0,0,0,.1) !important;
-}
-.qa-card:active { transform: translateY(-2px) scale(.98) !important; }
-
-.qa-invoice  { border-color: rgba(139,92,246,.4) !important; }
-.qa-customer { border-color: rgba(16,185,129,.4) !important; }
-.qa-issuance { border-color: rgba(249,115,22,.4) !important; }
-.qa-collect  { border-color: rgba(6,182,212,.4) !important; }
-
-.qa-invoice:hover  { border-color: rgba(139,92,246,.7) !important; box-shadow: 0 20px 50px rgba(139,92,246,.25), inset 0 1px 0 rgba(255,255,255,.25) !important; }
-.qa-customer:hover { border-color: rgba(16,185,129,.7) !important; box-shadow: 0 20px 50px rgba(16,185,129,.25), inset 0 1px 0 rgba(255,255,255,.25) !important; }
-.qa-issuance:hover { border-color: rgba(249,115,22,.7) !important; box-shadow: 0 20px 50px rgba(249,115,22,.25), inset 0 1px 0 rgba(255,255,255,.25) !important; }
-.qa-collect:hover  { border-color: rgba(6,182,212,.7) !important;  box-shadow: 0 20px 50px rgba(6,182,212,.25),  inset 0 1px 0 rgba(255,255,255,.25) !important; }
-
-.qa-card .qa-ico {
-  border-radius: 18px !important;
-  width: 64px !important; height: 64px !important;
-  box-shadow: 0 8px 24px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.35) !important;
-}
-.qa-card .qa-ico svg { width: 32px !important; height: 32px !important; }
-.qa-card .qa-label {
-  font-size: 15px !important; font-weight: 900 !important;
-  letter-spacing: -.4px;
-  text-shadow: 0 1px 4px rgba(0,0,0,.3);
-}
-.qa-card .qa-glow {
-  background-size: 100% 100% !important;
-  opacity: .18 !important;
-}
-
-/* ── Liquid Glass — SAV Items (smart alert cards) ── */
-.sav-item {
-  background: rgba(255,255,255,.045) !important;
-  backdrop-filter: blur(20px) saturate(160%) !important;
-  -webkit-backdrop-filter: blur(20px) saturate(160%) !important;
-  border: 1px solid rgba(255,255,255,.1) !important;
-  border-radius: 20px !important;
-  box-shadow:
-    0 4px 24px rgba(0,0,0,.22),
-    inset 0 1px 0 rgba(255,255,255,.14) !important;
-  transition: all .22s cubic-bezier(.4,0,.2,1) !important;
-  position: relative; overflow: hidden;
-}
-.sav-item::before {
-  content: '';
-  position: absolute; top: 0; inset-inline-start: 0; inset-inline-end: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,.3), transparent);
-  pointer-events: none;
-}
-.sav-item:hover {
-  background: rgba(255,255,255,.07) !important;
-  transform: translateX(-4px) scale(1.005) !important;
-  box-shadow: 0 8px 32px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.2) !important;
-}
-.sav-item.pulse-danger  { border-color: rgba(239,68,68,.38) !important; box-shadow: 0 4px 24px rgba(239,68,68,.12), inset 0 1px 0 rgba(255,255,255,.14) !important; }
-.sav-item.pulse-warning { border-color: rgba(245,158,11,.32) !important; }
-.sav-item.pulse-success { border-color: rgba(var(--primary-rgb),.28) !important; }
-
-/* ── Liquid Glass — KPI Cards ── */
-.sav-kpi-item {
-  backdrop-filter: blur(16px) saturate(150%) !important;
-  -webkit-backdrop-filter: blur(16px) saturate(150%) !important;
-  border-radius: 20px !important;
-  box-shadow: 0 4px 20px rgba(0,0,0,.18), inset 0 1px 0 rgba(255,255,255,.1) !important;
-  position: relative; overflow: hidden;
-}
-.sav-kpi-item::before {
-  content: '';
-  position: absolute; inset: 0;
-  background: linear-gradient(135deg, rgba(255,255,255,.07) 0%, transparent 50%);
-  border-radius: inherit; pointer-events: none;
-}
-.sav-kpi-item:hover {
-  transform: translateY(-3px) !important;
-  box-shadow: 0 12px 36px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.16) !important;
-}
-.sav-kpi-val { font-size: 24px !important; font-weight: 900 !important; }
-
-/* ── Liquid Glass — SAV Icon ── */
-.sav-icon {
-  border-radius: 14px !important;
-  box-shadow: 0 4px 12px rgba(0,0,0,.2), inset 0 1px 0 rgba(255,255,255,.2) !important;
-  background: rgba(255,255,255,.08) !important;
-  backdrop-filter: blur(8px) !important;
-}
-.sav-icon.ink-icon { background: rgba(var(--primary-rgb),.14) !important; }
-.sav-icon.paper-icon { background: rgba(219,32,51,.12) !important; color: var(--primary); }
-
-/* ── Dash Cards — Glass ── */
-.dash-card {
-  background: rgba(255,255,255,.04) !important;
-  backdrop-filter: blur(14px) saturate(140%) !important;
-  -webkit-backdrop-filter: blur(14px) saturate(140%) !important;
-  border: 1px solid rgba(255,255,255,.09) !important;
-  border-radius: 22px !important;
-  box-shadow: 0 4px 24px rgba(0,0,0,.18), inset 0 1px 0 rgba(255,255,255,.1) !important;
-}
-
-/* ── Top Strip — Glass ── */
-.dash-top-strip {
-  background: rgba(255,255,255,.04) !important;
-  backdrop-filter: blur(16px) !important;
-  -webkit-backdrop-filter: blur(16px) !important;
-  border: 1px solid rgba(255,255,255,.09) !important;
-  border-radius: 20px !important;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.12) !important;
-}
-
-/* ── Sidebar nav items — Glass on hover ── */
-.nav-item {
-  border-radius: 14px !important;
-  transition: all .2s ease !important;
-  font-weight: 800 !important;
-}
-.nav-item:hover:not(.active) {
-  background: rgba(255,255,255,.06) !important;
-  backdrop-filter: blur(8px) !important;
-}
-.nav-item.active {
-  background: rgba(var(--primary-rgb),.14) !important;
-  border: 1px solid rgba(var(--primary-rgb),.28) !important;
-  backdrop-filter: blur(12px) !important;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.1), 0 4px 16px rgba(var(--primary-rgb),.15) !important;
-}
-
-/* ── collect card color — Cyan ── */
-.qa-collect { border-color: rgba(6,182,212,.4) !important; }
-.qa-collect .qa-glow { background: radial-gradient(circle at 50% 40%, #06b6d4, transparent 70%); }
-.qa-collect .qa-ico { background: linear-gradient(135deg,#06b6d4,#0284c7); box-shadow: 0 6px 22px rgba(6,182,212,.5), inset 0 1px 0 rgba(255,255,255,.25) !important; }
-
-/* ── issuance card — Orange ── */
-.qa-issuance { border-color: rgba(249,115,22,.4) !important; }
-.qa-issuance .qa-glow { background: radial-gradient(circle at 50% 40%, #f97316, transparent 70%); }
-.qa-issuance .qa-ico { background: linear-gradient(135deg,#f97316,#c2410c); box-shadow: 0 6px 22px rgba(249,115,22,.5), inset 0 1px 0 rgba(255,255,255,.25) !important; }
-
-/* ── QA Grid better on mobile ── */
-@media(max-width:640px){
-  .qa-grid { grid-template-columns: repeat(2,1fr) !important; gap: 10px !important; }
-  .qa-card { min-height: 118px !important; padding: 18px 12px !important; }
-  .qa-card .qa-ico { width: 54px !important; height: 54px !important; }
-  .qa-card .qa-label { font-size: 13.5px !important; }
-}
-
-/* ── FLOATING QUICK-ACCESS BAR (new feature) ──
-   Shows on mobile bottom as 4-icon quick bar   */
-#float-quick-bar {
-  display: none;
-  position: fixed; inset-inline: 12px; bottom: calc(16px + env(safe-area-inset-bottom,0px));
-  background: rgba(10,15,20,.88);
-  backdrop-filter: blur(28px) saturate(200%);
-  -webkit-backdrop-filter: blur(28px) saturate(200%);
-  border: 1px solid rgba(255,255,255,.12);
-  border-radius: 22px;
-  padding: 10px 8px;
-  z-index: 80;
-  box-shadow: 0 20px 60px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.15);
-  align-items: center; justify-content: space-around; gap: 4px;
-}
-@media(max-width:768px){ #float-quick-bar { display: flex; } }
-.fqb-btn {
-  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px;
-  padding: 8px 4px; border-radius: 15px; font-size: 10.5px; font-weight: 800;
-  color: var(--text-muted); transition: all .18s cubic-bezier(.34,1.56,.64,1);
-  background: transparent; min-height: 54px;
-}
-.fqb-btn:active { transform: scale(.88); }
-.fqb-btn .fqb-ico {
-  width: 36px; height: 36px; border-radius: 12px;
-  display: grid; place-items: center; font-size: 18px;
-  background: rgba(255,255,255,.06);
-  border: 1px solid rgba(255,255,255,.09);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.12);
-  transition: all .18s ease;
-}
-.fqb-btn:active .fqb-ico { transform: scale(.85); }
-.fqb-btn.fqb-invoice  .fqb-ico { background:rgba(139,92,246,.2);  border-color:rgba(139,92,246,.3);  color:#c4b5fd; }
-.fqb-btn.fqb-customer .fqb-ico { background:rgba(16,185,129,.2);  border-color:rgba(16,185,129,.3);  color:#6ee7b7; }
-.fqb-btn.fqb-issue    .fqb-ico { background:rgba(249,115,22,.2);  border-color:rgba(249,115,22,.3);  color:#fdba74; }
-.fqb-btn.fqb-collect  .fqb-ico { background:rgba(6,182,212,.2);   border-color:rgba(6,182,212,.3);   color:#67e8f9; }
-
-/* ── LIVE CLOCK in sidebar ── */
-#live-clock {
-  font-size: 13px; font-weight: 700; color: var(--text-muted);
-  padding: 8px 16px 6px; text-align: center; letter-spacing: .5px;
-  border-bottom: 1px solid var(--border);
-}
-#live-clock .clock-time { font-size: 20px; font-weight: 900; color: var(--text); letter-spacing: 1px; }
-#live-clock .clock-date { font-size: 11.5px; margin-top: 2px; }
-
-/* ═══════════════════════════════════════════════════
-   OFFLINE BANNER + BADGE
-═══════════════════════════════════════════════════ */
-.offline-banner {
-  position: fixed; inset-inline: 0; top: 0; z-index: 9000;
-  background: linear-gradient(90deg, #b45309, #d97706);
-  color: #fff; font-size: 13.5px; font-weight: 700;
-  padding: 10px 18px; display: flex; align-items: center; gap: 10px;
-  transform: translateY(-100%);
-  transition: transform .35s cubic-bezier(.34,1.56,.64,1);
-  box-shadow: 0 4px 20px rgba(0,0,0,.35);
-}
-.offline-banner.show { transform: translateY(0); }
-.ob-ico { font-size: 18px; flex: 0 0 auto; }
-.ob-msg { flex: 1; }
-.ob-dot {
-  width: 10px; height: 10px; border-radius: 50%;
-  background: #fef3c7; flex: 0 0 10px;
-  animation: blink 1.2s ease-in-out infinite;
-}
-@keyframes blink { 50% { opacity: .2; } }
-
 .qa-issuance { border-color: rgba(234,88,12,.4); }
 .qa-issuance .qa-glow { background: radial-gradient(circle at 50% 40%, #f97316, transparent 70%); }
 .qa-issuance .qa-ico { background: linear-gradient(135deg,#fb923c,#ea580c); box-shadow: 0 6px 22px rgba(234,88,12,.55), inset 0 1px 0 rgba(255,255,255,.25); }
@@ -8303,9 +8365,9 @@ body.mobile-drawer-open { overflow: hidden; }
 .ai-msg-user { align-self: flex-end; flex-direction: row-reverse; }
 .ai-avatar {
   width: 38px; height: 38px; flex-shrink: 0; border-radius: 50%;
-  background: linear-gradient(135deg, #ef4458, #db2033);
+  background: linear-gradient(135deg, #34d399, #10b981);
   display: flex; align-items: center; justify-content: center;
-  font-size: 19px; box-shadow: 0 4px 12px rgba(219,32,51,.4);
+  font-size: 19px; box-shadow: 0 4px 12px rgba(16,185,129,.4);
 }
 .ai-bubble { padding: 13px 16px; border-radius: 16px; font-size: 14.5px; line-height: 1.7; font-weight: 600; }
 .ai-msg-bot .ai-bubble { background: var(--surface-2); color: var(--text); border-bottom-left-radius: 4px; }
@@ -8319,7 +8381,7 @@ body.mobile-drawer-open { overflow: hidden; }
   white-space: nowrap; max-width: 100%; box-sizing: border-box;
   flex: 0 1 auto;
 }
-.ai-chip:hover { background: rgba(239,68,88,.12); border-color: #ef4458; color: #db2033; transform: translateY(-2px); }
+.ai-chip:hover { background: rgba(16,185,129,.12); border-color: #34d399; color: #10b981; transform: translateY(-2px); }
 .ai-input-bar { display: flex; gap: 10px; padding: 14px 20px; border-top: 1px solid var(--border); background: var(--bg-soft); box-sizing: border-box; max-width: 100%; }
 .ai-input-bar .form-control { flex: 1; min-width: 0; }
 .ai-typing-dots { display: inline-flex; gap: 4px; align-items: center; }
@@ -8617,17 +8679,17 @@ html[dir="ltr"] .nav-item:hover { transform: translateX(3px); }
   display: inline-flex; align-items: center; gap: 6px;
   padding: 6px 11px; margin: 0 2px;
   border-radius: 11px;
-  background: rgba(219, 32, 51, .08);
-  border: 1px solid rgba(219, 32, 51, .45);
-  box-shadow: 0 0 10px rgba(219,32,51,.25), inset 0 0 8px rgba(219,32,51,.08);
-  color: #ef4458;
+  background: rgba(56, 189, 248, .08);
+  border: 1px solid rgba(56, 189, 248, .45);
+  box-shadow: 0 0 10px rgba(56,189,248,.25), inset 0 0 8px rgba(56,189,248,.08);
+  color: #38bdf8;
   cursor: pointer; position: relative;
   transition: box-shadow .25s ease, transform .15s ease, border-color .25s ease;
   white-space: nowrap;
 }
 .paper-counter:hover {
-  box-shadow: 0 0 16px rgba(219,32,51,.45), inset 0 0 10px rgba(219,32,51,.12);
-  transform: translateY(-1px); border-color: rgba(219,32,51,.7);
+  box-shadow: 0 0 16px rgba(56,189,248,.45), inset 0 0 10px rgba(56,189,248,.12);
+  transform: translateY(-1px); border-color: rgba(56,189,248,.7);
 }
 .paper-counter svg { width: 16px; height: 16px; flex-shrink: 0; }
 .paper-counter-num {
@@ -8666,44 +8728,6 @@ html[dir="ltr"] .nav-item:hover { transform: translateX(3px); }
     overflow-y: auto;
   }
 }
-
-/* ===== QURAN VERSE IN SMART ALERT ===== */
-.smart-alert-icon.quran-icon,
-.smart-alert-icon.paper-icon {
-  background: linear-gradient(135deg, #1a0a0e, #2d0f15);
-  border: 1px solid rgba(219,32,51,.35);
-  cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  padding: 6px;
-  transition: all .2s ease;
-}
-.smart-alert-icon.quran-icon:hover,
-.smart-alert-icon.paper-icon:hover {
-  border-color: #db2033;
-  box-shadow: 0 0 12px rgba(219,32,51,.4);
-}
-.quran-ayah {
-  font-size: 11px;
-  font-family: 'Amiri', 'Traditional Arabic', serif;
-  color: #f59e0b;
-  text-align: center;
-  line-height: 1.5;
-  font-weight: 600;
-  direction: rtl;
-}
-
-/* Topbar refresh button — mobile only */
-.topbar-refresh-btn { display: none; }
-@media (max-width: 768px) {
-  .topbar-refresh-btn {
-    display: inline-flex;
-    color: var(--text-muted);
-  }
-  .topbar-refresh-btn.spinning svg {
-    animation: spin360 .7s ease both;
-  }
-}
-@keyframes spin360 { from{transform:rotate(0)} to{transform:rotate(360deg)} }
 
 /* ═══════════════════════════════════════════════════════════
    DESKTOP LAYOUT FIX — min-width 1025px
@@ -8806,6 +8830,18 @@ html[dir="ltr"] .nav-item:hover { transform: translateX(3px); }
 </head>
 <body>
 
+<!-- ── PAGE LOADER SPINNER ── -->
+<div id="page-loader" role="status" aria-label="جاري التحميل">
+  <div class="loader-ring">
+    <span class="loader-logo">🌿</span>
+  </div>
+</div>
+
+<!-- ── HOME FAB ── -->
+<button id="home-fab" onclick="navigate('dashboard')" title="الرئيسية" aria-label="العودة للرئيسية">
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+</button>
+
 <!-- ============== LOGIN PAGE ============== -->
 <div id="login-page" class="login-wrap">
   <div class="login-bg-shapes">
@@ -8816,9 +8852,9 @@ html[dir="ltr"] .nav-item:hover { transform: translateX(3px); }
   </div>
   <div class="login-card">
     <div class="login-logo login-logo-svg">
-      <img src="icons/logo-square.png" onerror="this.onerror=null;this.src='/icons/logo-square.png'" alt="Ozarex" style="width:100%;height:100%;object-fit:cover;border-radius:14px">
+      <img src="icons/logo-square.png" onerror="this.onerror=null;this.src='/icons/logo-square.png'" alt="EmdadX" style="width:100%;height:100%;object-fit:cover;border-radius:14px">
     </div>
-    <h1>أوزاريكس</h1>
+    <h1>إمداد إكس</h1>
     <p class="sub">نظام إدارة التوريدات والمحاسبة المتكامل</p>
     <form id="login-form">
       <div class="form-group">
@@ -8842,19 +8878,14 @@ html[dir="ltr"] .nav-item:hover { transform: translateX(3px); }
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-brand">
       <div>
-        <div class="brand-name">أوزاريكس</div>
+        <div class="brand-name">إمداد إكس</div>
         <div class="brand-sub">نظام الإدارة</div>
       </div>
-      <div class="brand-logo brand-logo-svg" aria-label="Ozarex">
-        <img src="icons/logo-square.png" onerror="this.onerror=null;this.src='/icons/logo-square.png'" alt="Ozarex" style="width:100%;height:100%;object-fit:cover;border-radius:12px">
+      <div class="brand-logo brand-logo-svg" aria-label="EmdadX">
+        <img src="icons/logo-square.png" onerror="this.onerror=null;this.src='/icons/logo-square.png'" alt="EmdadX" style="width:100%;height:100%;object-fit:cover;border-radius:12px">
       </div>
     </div>
     <nav class="sidebar-nav" id="sidebar-nav"></nav>
-
-    <div id="live-clock" aria-live="polite" aria-label="الساعة الحالية">
-      <div class="clock-time">--:--:--</div>
-      <div class="clock-date">جاري التحميل</div>
-    </div>
 
     <button class="sidebar-logout" onclick="logout()">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
@@ -8865,9 +8896,9 @@ html[dir="ltr"] .nav-item:hover { transform: translateX(3px); }
   <div class="main-content">
     <div class="company-banner">
       <div class="banner-inner">
-        <img class="banner-icon" src="icons/logo-square.png" onerror="this.onerror=null;this.src='/icons/logo-square.png'" alt="Ozarex" style="width:28px;height:28px;border-radius:6px;object-fit:cover;flex-shrink:0">
-        <span class="banner-name">أوزاريكس</span>
-        <span class="banner-tag">OZAREX • For Medical Solution</span>
+        <img class="banner-icon" src="icons/logo-square.png" onerror="this.onerror=null;this.src='/icons/logo-square.png'" alt="EmdadX" style="width:28px;height:28px;border-radius:6px;object-fit:cover;flex-shrink:0">
+        <span class="banner-name">إمداد إكس</span>
+        <span class="banner-tag">EMDADX • For Medical Solution</span>
       </div>
     </div>
     <header class="topbar">
@@ -8876,9 +8907,6 @@ html[dir="ltr"] .nav-item:hover { transform: translateX(3px); }
       </button>
       <button class="icon-btn topbar-back-btn" id="topbar-back-btn" onclick="goBack()" title="رجوع للصفحة السابقة" style="display:none">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-      </button>
-      <button class="icon-btn topbar-refresh-btn" id="topbar-refresh-btn" onclick="topbarRefresh()" title="تحديث الصفحة">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
       </button>
       <div class="topbar-title" id="topbar-title">لوحة التحكم</div>
 
@@ -8922,7 +8950,11 @@ html[dir="ltr"] .nav-item:hover { transform: translateX(3px); }
           <rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" y1="16" x2="8" y2="16"/><line x1="16" y1="16" x2="16" y2="16"/>
         </svg>
       </button>
-
+      <div class="paper-counter" id="paper-counter" title="إجمالي الورق في المخزن" onclick="navigate('inventory')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        <span class="paper-counter-num" id="paper-counter-num">0</span>
+        <span class="paper-counter-delta" id="paper-counter-delta"></span>
+      </div>
       <span id="sync-status-dot" class="sync-dot sync-dot-connecting" title="جاري الاتصال..." aria-label="حالة المزامنة"></span>
       <button class="icon-btn" id="notif-btn" onclick="openNotifications()" title="الإشعارات">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
@@ -8933,7 +8965,7 @@ html[dir="ltr"] .nav-item:hover { transform: translateX(3px); }
     <div class="page-content" id="page-content"></div>
 
     <footer class="app-footer">
-      <div>جميع الحقوق محفوظة © 2026 أوزاريكس</div>
+      <div>جميع الحقوق محفوظة © 2026 إمداد إكس</div>
       <div class="version">الإصدار 2.1.0</div>
     </footer>
   </div>
@@ -9006,9 +9038,9 @@ html[dir="ltr"] .nav-item:hover { transform: translateX(3px); }
 /* =========================================================
    DATA LAYER (LocalStorage) - Robust with auto-backup rotation
 ========================================================= */
-const STORAGE_KEY = 'ozarex_erp_v1';
-const SESSION_KEY = 'ozarex_session';
-const BACKUP_KEY_PREFIX = 'ozarex_erp_backup_';
+const STORAGE_KEY = 'emdadx_erp_v1';
+const SESSION_KEY = 'emdadx_session';
+const BACKUP_KEY_PREFIX = 'emdadx_erp_backup_';
 const MAX_BACKUPS = 5;
 
 /* =========================================================
@@ -9020,18 +9052,15 @@ const MAX_BACKUPS = 5;
 function detectApiBase() {
   const origin = window.location.origin; // e.g. https://erp.example.com
   const p = window.location.pathname || '/';
-  const m = p.match(/^(\/Ozarex)(\/|$)/);
+  const m = p.match(/^(\/EmdadX-ERP)(\/|$)/);
   const prefix = m ? m[1] : '';
   return origin + prefix;
 }
 const API_BASE = detectApiBase();
 
-/* ═══════════════════════════════════════════════════════
-   CLIENT ID — unique per browser tab (stays same on reload)
-═══════════════════════════════════════════════════════ */
 const _CLIENT_ID = (() => {
-  let id = sessionStorage.getItem('_ozarex_cid');
-  if (!id) { id = Math.random().toString(36).slice(2, 10) + Date.now().toString(36); sessionStorage.setItem('_ozarex_cid', id); }
+  let id = sessionStorage.getItem('_emdadx_cid');
+  if (!id) { id = Math.random().toString(36).slice(2,10) + Date.now().toString(36); sessionStorage.setItem('_emdadx_cid', id); }
   return id;
 })();
 
@@ -9047,7 +9076,7 @@ const DB = {
 
   _bootstrapped: false,
   _bootstrapData: null,
-  _serverVersion: 0,   // last known server version
+  _serverVersion: 0,
 
   load() {
     if (this._bootstrapData) {
@@ -9066,9 +9095,9 @@ const DB = {
     return false;
   },
 
-  _saveTimer:    null,
+  _saveTimer: null,
   _saveInflight: false,
-  _savePending:  false,
+  _savePending: false,
 
   save() {
     if (this._saveTimer) clearTimeout(this._saveTimer);
@@ -9119,18 +9148,18 @@ const DB = {
 ═══════════════════════════════════════════════════════════════ */
 const OfflineManager = (() => {
 
-  const IDB_NAME    = 'ozarex-offline';
+  const IDB_NAME    = 'emdadx-offline';
   const QUEUE_STORE = 'sync_queue';
   const SNAP_STORE  = 'data_snapshot';
   const SNAP_KEY    = 'latest';
-  const LS_SNAP     = 'oz_offline_snap';
+  const LS_SNAP     = 'em_offline_snap';
 
   let _db       = null;
   let _sw       = null;
   let _online   = navigator.onLine;
   let _pending  = 0;
   let _flushing = false;
-  let _lastSaveAt = 0;   // timestamp of last successful POST
+  let _lastSaveAt = 0;
 
   /* ── IndexedDB ── */
   async function openDB() {
@@ -9198,7 +9227,7 @@ const OfflineManager = (() => {
 
   /* ── Live POST to server ── */
   async function postToServer(data) {
-    _lastSaveAt = Date.now();  // track when we last saved
+    _lastSaveAt = Date.now();
     const res = await fetch(API_BASE + '/api/data', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json', 'X-Client-Id': _CLIENT_ID },
@@ -9233,7 +9262,7 @@ const OfflineManager = (() => {
 
     // Register background sync if SW available
     if (_sw && 'sync' in _sw) {
-      try { await _sw.sync.register('ozarex-sync'); } catch (_) {}
+      try { await _sw.sync.register('emdadx-sync'); } catch (_) {}
     }
   }
 
@@ -9341,35 +9370,22 @@ const OfflineManager = (() => {
   return { init, trySave, flushQueue, getCachedData, get isOnline() { return _online; } };
 })();
 
+
 const SyncEngine = (() => {
-  let _es = null;             // EventSource
-  let _reconnectTimer = null;
-  let _reconnectDelay = 1000; // starts at 1s, doubles up to 30s
-  let _online = navigator.onLine;
-  let _connected = false;
-  let _isSyncing = false;
-  let _lastRemoteVersion = 0;
-  let _pendingVersionToApply = 0;
-  let _syncThrottle = null;
+  let _es=null, _reconnectTimer=null, _reconnectDelay=1000;
+  let _online=navigator.onLine, _connected=false;
+  let _isSyncing=false, _syncThrottle=null, _pollTimer=null;
 
-  /* UI indicators */
   function setStatus(state) {
-    // state: 'connected' | 'connecting' | 'offline' | 'syncing' | 'error'
-    const el = document.getElementById('sync-status-dot');
-    if (!el) return;
-    const colors = { connected:'#25d366', connecting:'#f59e0b', offline:'#6b7280', syncing:'#3b82f6', error:'#ef4444' };
-    const labels = { connected:'متزامن', connecting:'جاري الاتصال...', offline:'غير متصل', syncing:'يتزامن...', error:'خطأ في المزامنة' };
-    el.style.background = colors[state] || colors.offline;
-    el.title = labels[state] || state;
-    el.className = 'sync-dot sync-dot-' + state;
+    const el=document.getElementById('sync-status-dot');
+    if(!el)return;
+    const colors={connected:'#10b981',connecting:'#f59e0b',offline:'#6b7280',syncing:'#3b82f6',error:'#ef4444'};
+    const labels={connected:'متزامن ✓',connecting:'جاري الاتصال...',offline:'غير متصل',syncing:'يتزامن...',error:'خطأ في المزامنة'};
+    el.style.background=colors[state]||colors.offline;
+    el.title=labels[state]||state;
+    el.className='sync-dot sync-dot-'+state;
   }
 
-  function showSyncToast(msg, isError = false) {
-    if (isError && typeof toast === 'function') toast(msg, 'error');
-    // silent toasts for normal sync activity
-  }
-
-  /* Fetch fresh data from server and apply to DB without re-render flicker */
 
   /* ZERO-FLICKER SYNC */
   function smartPageUpdate(reason) {
@@ -9429,47 +9445,24 @@ const SyncEngine = (() => {
     } catch(e){}
   }
 
-  async function pullLatest(reason = '') {
-    if (_isSyncing) return;
-    _isSyncing = true;
-    setStatus('syncing');
+  async function pullLatest(reason='') {
+    if(_isSyncing)return;
+    _isSyncing=true; setStatus('syncing');
     try {
-      const res = await fetch(API_BASE + '/api/data', {
-        headers: { 'Accept': 'application/json', 'X-Client-Id': _CLIENT_ID },
-        cache: 'no-store'
-      });
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      const fresh = await res.json();
-      const newVer = fresh.__version || 0;
-
-      // Skip if we already have this version
-      if (newVer && newVer <= DB._serverVersion) {
-        setStatus('connected');
-        return;
-      }
-
-      DB._bootstrapData = fresh;
-      DB._serverVersion = newVer;
-
-      // ── SILENT BACKGROUND MERGE ─────────────────────────────
-      // Update DB.data in-place without re-render.
-      // The user sees NO flicker, NO reset, NO lost input.
+      const res=await fetch(API_BASE+'/api/data',{headers:{'Accept':'application/json','X-Client-Id':_CLIENT_ID},cache:'no-store'});
+      if(!res.ok)throw new Error('HTTP '+res.status);
+      const fresh=await res.json();
+      const newVer=fresh.__version||0;
+      if(newVer && newVer<=DB._serverVersion){setStatus('connected');return;}
+      DB._bootstrapData=fresh; DB._serverVersion=newVer;
       silentMerge(fresh);
-
-      // Smart sync: update current page in-place without flicker
       smartPageUpdate(reason);
-
       setStatus('connected');
       console.log('[Sync] smartPageUpdate v'+newVer+' ('+reason+')');
-    } catch (e) {
-      console.error('[Sync] Pull failed:', e);
-      setStatus('error');
-    } finally {
-      _isSyncing = false;
-    }
+    } catch(e){console.error('[Sync] Pull failed:',e);setStatus('error');}
+    finally{_isSyncing=false;}
   }
 
-  // Merge fresh server data into DB.data without touching the DOM
   function silentMerge(fresh) {
     const skip = new Set(['__version']);
     for (const key of Object.keys(fresh)) {
@@ -9482,7 +9475,6 @@ const SyncEngine = (() => {
         DB.data[key] = fresh[key];
       }
     }
-    // Fix required arrays
     const arrays = ['users','customers','products','invoices','payments','expenses',
       'stockMoves','issuances','bankTransfers','suppliers','supplierPayments',
       'notes','auditLog','employees','salaryRuns'];
@@ -9492,7 +9484,6 @@ const SyncEngine = (() => {
     DB.data.customers.forEach(c => { if (!c.customPrices) c.customPrices = {}; });
   }
 
-  // Update only the numeric stat elements on dashboard without full re-render
   function silentDashboardUpdate() {
     try {
       const fmtN = n => Number(n||0).toLocaleString('en-US');
@@ -9562,114 +9553,35 @@ const SyncEngine = (() => {
     } catch(e) { /* non-critical */ }
   }
 
-
-  /* Connect SSE */
-  function connect() {
-    if (_es) { try { _es.close(); } catch {} _es = null; }
-    if (!_online) { setStatus('offline'); return; }
-    setStatus('connecting');
-
-    _es = new EventSource(API_BASE + '/api/events');
-
-    _es.onopen = () => {
-      _connected = true;
-      _reconnectDelay = 1000; // reset back-off
-      setStatus('connected');
-      console.log('[Sync] SSE connected');
-      // Pull latest on (re)connect to catch any missed changes
-      pullLatest('reconnect');
-    };
-
-    _es.onmessage = (e) => {
-      if (!e.data || e.data.startsWith(':')) return; // heartbeat comment
-      try {
-        const msg = JSON.parse(e.data);
-        if (msg.event === 'connected') {
-          _lastRemoteVersion = msg.version || 0;
-          return;
-        }
-        if (msg.event === 'data_changed') {
-          // Skip our own changes (source match OR recent self-save within 2s)
-          const isSelf = msg.source === _CLIENT_ID;
-          const recentSave = (Date.now() - (_lastSaveAt || 0)) < 2000;
-          if (isSelf || recentSave) {
-            DB._serverVersion = msg.version;
-            return;
-          }
-          // Another device changed data — pull fresh
-          _lastRemoteVersion = msg.version;
-          throttledPull('data_changed from ' + (msg.source || 'unknown'));
-        }
-      } catch (err) {
-        console.warn('[Sync] Bad SSE message:', e.data);
-      }
-    };
-
-    _es.onerror = () => {
-      _connected = false;
-      try { _es.close(); } catch {}
-      _es = null;
-      setStatus(_online ? 'connecting' : 'offline');
-      scheduleReconnect();
-    };
+  function scheduleReconnect(){
+    if(_reconnectTimer)return;
+    _reconnectTimer=setTimeout(()=>{_reconnectTimer=null;connect();},_reconnectDelay);
+    _reconnectDelay=Math.min(_reconnectDelay*2,30000);
   }
 
-  function scheduleReconnect() {
-    if (_reconnectTimer) return;
-    if (!_online) return;
-    _reconnectTimer = setTimeout(() => {
-      _reconnectTimer = null;
-      console.log(`[Sync] Reconnecting (delay was ${_reconnectDelay}ms)...`);
-      connect();
-    }, _reconnectDelay);
-    _reconnectDelay = Math.min(_reconnectDelay * 2, 30000); // max 30s
+  function onSelfSaved(v){if(v)DB._serverVersion=v;setStatus('connected');}
+  function onSaveError(e){setStatus('error');if(typeof toast==='function')toast('فشل حفظ البيانات: '+e.message,'error');}
+
+  function startPollingFallback(){
+    if(_pollTimer)return;
+    _pollTimer=setInterval(async()=>{
+      if(_connected||!_online)return;
+      try{const r=await fetch(API_BASE+'/api/version',{cache:'no-store'});if(!r.ok)return;const{version}=await r.json();if(version&&version>DB._serverVersion)throttledPull('polling');}catch{}
+    },10000);
   }
 
-  /* Called by DB._flush after successful save */
-  function onSelfSaved(newVersion) {
-    if (newVersion) DB._serverVersion = newVersion;
-    setStatus('connected');
-  }
-
-  /* Called by DB._flush on save error */
-  function onSaveError(e) {
-    setStatus('error');
-    showSyncToast('فشل حفظ البيانات: ' + e.message, true);
-  }
-
-  /* Fallback polling when SSE is unavailable */
-  let _pollTimer = null;
-  function startPollingFallback() {
-    if (_pollTimer) return;
-    _pollTimer = setInterval(async () => {
-      if (_connected || !_online) return;
-      try {
-        const r = await fetch(API_BASE + '/api/version', { cache: 'no-store' });
-        if (!r.ok) return;
-        const { version } = await r.json();
-        if (version && version > DB._serverVersion) {
-          throttledPull('polling-fallback');
-        }
-      } catch {}
-    }, 10000); // poll every 10s only as fallback
-  }
-
-  /* Init */
-  function init() {
-    window.addEventListener('online',  () => { _online = true;  setStatus('connecting'); connect(); });
-    window.addEventListener('offline', () => { _online = false; setStatus('offline'); });
+  function init(){
+    window.addEventListener('online',()=>{_online=true;setStatus('connecting');connect();});
+    window.addEventListener('offline',()=>{_online=false;setStatus('offline');});
     connect();
     startPollingFallback();
   }
 
-  /* Expose */
-  return { init, pullLatest, onSelfSaved, onSaveError, setStatus };
+  return{init,pullLatest,onSelfSaved,onSaveError,setStatus};
 })();
 
 
-
 async function bootstrapFromServer() {
-  // Try live server first
   try {
     const res = await fetch(API_BASE + '/api/data', {
       headers: { 'Accept': 'application/json' },
@@ -9678,32 +9590,26 @@ async function bootstrapFromServer() {
     });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const ct = res.headers.get('content-type') || '';
-    if (!ct.includes('application/json'))
-      throw new Error('ليس JSON');
+    if (!ct.includes('application/json')) throw new Error('ليس JSON');
     DB._bootstrapData = await res.json();
     DB._bootstrapped = true;
-    return; // ✓ live
+    return;
   } catch (e) {
     console.warn('[Bootstrap] Server unreachable, trying offline snapshot:', e.message);
   }
-
-  // Fallback: load from localStorage snapshot (offline mode)
   const snap = OfflineManager.getCachedData();
   if (snap) {
-    console.info('[Bootstrap] Loaded from offline snapshot ✓');
+    console.info('[Bootstrap] Loaded from offline snapshot');
     DB._bootstrapData = snap;
     DB._bootstrapped  = true;
-    // Show offline banner immediately
     const banner = document.getElementById('offline-banner');
     if (banner) {
       banner.querySelector('.ob-msg').textContent = 'أوف لاين — العمل على البيانات المحفوظة محلياً';
       banner.classList.add('show');
     }
-    return; // ✓ offline
+    return;
   }
-
-  // No snapshot either
-  throw new Error('تعذّر الوصول للسيرفر (' + API_BASE + ').\nتأكد إن السيرفر شغال، أو افتح البرنامج وأنت أونلاين أول مرة.');
+  throw new Error('تعذّر الوصول للسيرفر (' + API_BASE + ').\nافتح البرنامج وأنت أونلاين أول مرة.');
 }
 
 
@@ -9728,7 +9634,7 @@ function seedData() {
     employees: [],
     salaryRuns: [],
     settings: {
-      companyName: 'أوزاريكس',
+      companyName: 'إمداد إكس',
       companyAddress: '',
       companyPhone: '',
       taxNumber: '',
@@ -9841,25 +9747,6 @@ function logout() {
   const homeBtn = document.getElementById('topbar-home-btn'); if (homeBtn) homeBtn.style.display = 'none';
   const reciterInline = document.getElementById('reciter-inline'); if (reciterInline) reciterInline.style.display = 'none';
 }
-
-// ===== AUTO-LOGOUT AFTER 2 MINUTES IDLE =====
-let _idleTimer = null;
-const IDLE_TIMEOUT = 2 * 60 * 1000; // 2 minutes
-function resetIdleTimer() {
-  if (!currentUser) return;
-  clearTimeout(_idleTimer);
-  _idleTimer = setTimeout(() => {
-    if (currentUser) {
-      toast('تم تسجيل الخروج تلقائياً بسبب عدم النشاط', 'info');
-      setTimeout(logout, 1200);
-    }
-  }, IDLE_TIMEOUT);
-}
-// Track user activity
-['mousemove','mousedown','keydown','touchstart','scroll','click'].forEach(evt => {
-  document.addEventListener(evt, resetIdleTimer, { passive: true });
-});
-
 function restoreSession() {
   const uid = sessionStorage.getItem(SESSION_KEY);
   if (!uid) return false;
@@ -10033,19 +9920,6 @@ function celebrate() {
 }
 
 function toast(msg, type='success', duration) {
-  // Errors & warnings are important → show them in the premium centered modal.
-  // Success & info stay as lightweight toasts (so they don't interrupt flow).
-  if (type === 'error' || type === 'warning') {
-    notify({
-      type: type,
-      title: type === 'error' ? 'تنبيه' : 'انتبه',
-      message: msg,
-      showMeta: false,
-      autoClose: true,
-      duration: type === 'error' ? 4000 : 4500
-    });
-    return;
-  }
   const box = document.getElementById('toast-container');
   const el = document.createElement('div');
   el.className = 'toast ' + type;
@@ -10053,8 +9927,8 @@ function toast(msg, type='success', duration) {
   el.innerHTML = `<span class="icon">${ic}</span><span class="msg">${escapeHtml(msg)}</span><span class="close-x" style="margin-right:auto;font-size:18px;font-weight:900;cursor:pointer;color:var(--text-muted);padding:0 6px">×</span>`;
   el.querySelector('.close-x').onclick = () => { el.style.opacity='0'; setTimeout(()=>el.remove(), 300); };
   box.appendChild(el);
-  playTone(type);
-  const auto = duration || 3000;
+  try { playTone(type); } catch(_) {}
+  const auto = duration || (type === 'error' || type === 'warning' ? 5000 : 3000);
   setTimeout(()=> { el.style.opacity='0'; el.style.transition='opacity .3s'; setTimeout(()=>el.remove(), 300); }, auto);
 }
 
@@ -10149,7 +10023,14 @@ function notify(opts) {
     overlay.classList.remove('show');
     overlay.classList.add('closing');
     if (_notifyTimer) clearTimeout(_notifyTimer);
-    setTimeout(() => overlay.remove(), 250);
+    if (_notifyRAF) cancelAnimationFrame(_notifyRAF);
+    setTimeout(() => { try { overlay.remove(); } catch(_){} }, 250);
+    // Also sweep any other stale overlays
+    setTimeout(() => {
+      document.querySelectorAll('.notify-overlay').forEach(o => {
+        if (!o.classList.contains('show')) try { o.remove(); } catch(_){}
+      });
+    }, 300);
   }
   overlay.querySelector('.notify-close').onclick = close;
   overlay.querySelector('.notify-ok-btn').onclick = close;
@@ -10171,6 +10052,8 @@ function notify(opts) {
 
 
 function openModal(title, bodyHTML, footerHTML='', size='') {
+  // Remove any stale notification overlay before opening modal
+  document.querySelectorAll('.notify-overlay:not(.show)').forEach(o => { try{o.remove();}catch(_){} });
   const m = document.getElementById('modal');
   m.className = 'modal' + (size ? ' '+size : '');
   m.innerHTML = `
@@ -10185,7 +10068,13 @@ function openModal(title, bodyHTML, footerHTML='', size='') {
   `;
   document.getElementById('modal-overlay').classList.add('show');
 }
-function closeModal() { document.getElementById('modal-overlay').classList.remove('show'); }
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('show');
+  // Safety: remove any stray notification overlay that might block clicks
+  document.querySelectorAll('.notify-overlay').forEach(o => {
+    if (!o.classList.contains('show')) o.remove();
+  });
+}
 
 function confirmDialog(msg, onYes) {
   openModal('تأكيد',
@@ -10211,7 +10100,7 @@ const NAV_ITEMS = [
   { key: 'inventory', label: 'المخازن', color: '#84cc16', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>', section: 'ops' },
   { key: 'expenses', label: 'المصروفات', color: '#ef4444', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>', section: 'ops' },
   { key: 'reports', label: 'التقارير', color: '#a855f7', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>', section: 'ops' },
-  { key: 'aiassistant', label: 'المساعد الذكي', color: '#ef4458', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" y1="16" x2="8" y2="16"/><line x1="16" y1="16" x2="16" y2="16"/></svg>', section: 'ops' },
+  { key: 'aiassistant', label: 'المساعد الذكي', color: '#34d399', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" y1="16" x2="8" y2="16"/><line x1="16" y1="16" x2="16" y2="16"/></svg>', section: 'ops' },
   { key: 'users', label: 'المستخدمين', color: '#14b8a6', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>', section: 'admin' },
   { key: 'audit', label: 'سجل التعديلات', color: '#dc2626', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>', section: 'admin' },
   { key: 'settings', label: 'الإعدادات', color: '#64748b', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>', section: 'admin' }
@@ -10248,7 +10137,7 @@ function renderSidebar() {
     }
     if (it.key === 'audit' && currentUser.role === 'admin') {
       // Count audit entries NOT yet seen by the admin
-      const lastSeen = parseInt(localStorage.getItem('ozarex_audit_seen_ts') || '0');
+      const lastSeen = parseInt(localStorage.getItem('emdadx_audit_seen_ts') || '0');
       const unread = (DB.data.auditLog || []).filter(e => e.timestamp > lastSeen).length;
       if (unread > 0) badge = `<span class="badge badge-audit">${unread > 99 ? '99+' : unread}</span>`;
     }
@@ -10272,6 +10161,26 @@ function hexToRgba(hex, alpha) {
 }
 
 let _navHistory = [];
+/* ════════════════════════════════════════════════
+   PAGE LOADER — show/hide helpers
+════════════════════════════════════════════════ */
+function showLoader() {
+  const l = document.getElementById('page-loader');
+  if (l) l.classList.add('show');
+}
+function hideLoader() {
+  const l = document.getElementById('page-loader');
+  if (l) l.classList.remove('show');
+}
+
+/* Home FAB — show on any page except dashboard */
+function updateHomeFab() {
+  const fab = document.getElementById('home-fab');
+  if (!fab) return;
+  const show = typeof currentPage !== 'undefined' && currentPage !== 'dashboard';
+  fab.classList.toggle('visible', show);
+}
+
 function navigate(page, isBack) {
   if (!can(page)) { toast('ليس لديك صلاحية للوصول لهذه الصفحة', 'error'); return; }
   if (!isBack && typeof currentPage !== 'undefined' && currentPage && currentPage !== page) {
@@ -10284,7 +10193,6 @@ function navigate(page, isBack) {
   const titles = { dashboard:'لوحة التحكم', customers:'العملاء والمراكز', issuances:'صرف الورق للمراكز', invoices:'الفواتير', payments:'التحصيل والمديونيات', transfers:'التحويلات البنكية', suppliers:'الموردين', inventory:'إدارة المخازن', expenses:'المصروفات', reports:'التقارير', aiassistant:'المساعد الذكي', users:'إدارة المستخدمين', audit:'سجل التعديلات الذكي', settings:'الإعدادات' };
   document.getElementById('topbar-title').innerText = titles[page] || '';
 
-  // Fade-out → render → fade-in (prevents flash)
   const pc = document.getElementById('page-content');
   if (pc && !isBack) {
     pc.style.transition = 'opacity .12s ease, transform .12s ease';
@@ -10298,7 +10206,6 @@ function navigate(page, isBack) {
   if (typeof updateHomeFab === 'function') updateHomeFab();
   window.scrollTo(0, 0);
 
-  // Fade-in after render
   if (pc && !isBack) {
     requestAnimationFrame(() => {
       pc.style.opacity   = '1';
@@ -10306,22 +10213,6 @@ function navigate(page, isBack) {
       setTimeout(() => { pc.style.transition = ''; }, 160);
     });
   }
-}
-
-function topbarRefresh() {
-  const btn = document.getElementById('topbar-refresh-btn');
-  if (btn) {
-    btn.classList.add('spinning');
-    setTimeout(() => btn.classList.remove('spinning'), 800);
-  }
-  // Pull latest data silently in background — no re-render flicker
-  SyncEngine.pullLatest('manual-refresh').then(() => {
-    // Only re-render if on dashboard (update live numbers)
-    if (typeof currentPage !== 'undefined' && currentPage === 'dashboard') {
-      silentDashboardUpdate();
-    }
-    toast('تم التحديث ✓');
-  });
 }
 
 function goBack() {
@@ -10335,26 +10226,27 @@ function updateBackButton() {
   if (btn) btn.style.display = _navHistory.length > 0 ? 'grid' : 'none';
 }
 
-// Stock counter: paper/plastic/photo types only
+// Stock counter: total quantity of ALL products combined, with a green +delta on increase
 let _paperCountLast = null;
 function updatePaperCounter() {
   const el = document.getElementById('paper-counter');
   const numEl = document.getElementById('paper-counter-num');
   if (!el || !numEl || !DB.data || !DB.data.products) return;
-  // Count only paper/plastic/photo — exclude ink/toner/cartridge
+  // Count only paper/plastic/photo products — exclude ink, toner, cartridge
   const excludeWords = ['حبر','تنر','تونر','ink','toner','كارتريدج','cartridge','ريبون','ribbon'];
-  const includeWords = ['ورق','بلاستك','بلاستيك','فوتو','photo','paper','a4','a3','a5','a6','b4','b5','فيلم','film','لفة','رزمة','رول'];
+  const includeWords = ['ورق','بلاستك','بلاستيك','فوتو','photo','paper','a4','a3','a5','a6','b4','b5','فيلم'];
   const paperProds = DB.data.products.filter(p => {
     const name = (p.name || '').toLowerCase();
     const unit = (p.unit || '').toLowerCase();
-    const type = (p.type || '').toLowerCase();
-    if (excludeWords.some(w => name.includes(w) || type.includes(w))) return false;
-    if (includeWords.some(w => name.includes(w) || type.includes(w) || unit.includes(w))) return true;
+    // Exclude ink/toner explicitly
+    if (excludeWords.some(w => name.includes(w))) return false;
+    // Include if name or unit has paper/plastic/photo keyword
+    if (includeWords.some(w => name.includes(w) || unit.includes(w))) return true;
+    // Also include if unit is ورقة/وحدة/لفة (typical paper/plastic units)
     if (['ورقة','لفة','رزمة','رول'].some(w => unit.includes(w))) return true;
     return false;
   });
-  const total = (paperProds.length ? paperProds : DB.data.products)
-    .reduce((s,p)=> s + (Number(p.quantity)||0), 0);
+  const total = paperProds.reduce((s,p)=> s + (Number(p.quantity)||0), 0);
 
   numEl.textContent = fmt(Math.round(total));
 
@@ -10661,8 +10553,10 @@ function updateWalletBadge() {
 
 document.addEventListener('DOMContentLoaded', async () => {
   loadTheme();
+  // Global safety net: a stray (hidden) notification overlay must never block clicks.
+  // On every pointer-down, sweep away any .notify-overlay that isn't actively shown.
   document.addEventListener('pointerdown', () => {
-    document.querySelectorAll('.notify-overlay:not(.show)').forEach(o => { try{o.remove();}catch(_){} });
+    document.querySelectorAll('.notify-overlay:not(.show)').forEach(o => o.remove());
   }, true);
   try {
     await bootstrapFromServer();
@@ -10673,7 +10567,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
   if (!DB.load()) seedData();
   // Ensure latest schema bits exist
-  if (!DB.data.settings) DB.data.settings = { companyName:'أوزاريكس', taxRate:0, currency:'جنيه', soundEnabled: true };
+  if (!DB.data.settings) DB.data.settings = { companyName:'إمداد إكس', taxRate:0, currency:'جنيه', soundEnabled: true };
   if (DB.data.settings.soundEnabled === undefined) DB.data.settings.soundEnabled = true;
   if (!DB.data.counters) DB.data.counters = { invoice: 1000, issuance: 1000, purchase: 1000 };
   if (!DB.data.counters.issuance) DB.data.counters.issuance = 1000;
@@ -10694,21 +10588,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.addEventListener('click', audioResume);
   document.addEventListener('keydown', audioResume);
 
-  if (restoreSession()) {
-    startApp();
-    // Start real-time sync after app is ready
-    SyncEngine.init();
-  }
+  if (restoreSession()) { startApp(); SyncEngine.init(); OfflineManager.init(); }
 
   document.getElementById('login-form').addEventListener('submit', e => {
     e.preventDefault();
     const u = document.getElementById('login-username').value.trim();
     const p = document.getElementById('login-password').value;
-    if (login(u, p)) {
-      toast('مرحباً بك ' + currentUser.name);
-      startApp();
-      SyncEngine.init(); // start sync after login
-    }
+    if (login(u, p)) { toast('مرحباً بك ' + currentUser.name); startApp(); SyncEngine.init(); OfflineManager.init(); }
     else toast('بيانات الدخول غير صحيحة', 'error');
   });
 
@@ -11126,6 +11012,283 @@ function openNotifications() {
    DASHBOARD
 ========================================================= */
 let dashCharts = {};
+/* ═══════════════════════════════════════════════════════
+   DASHBOARD SMART CHAT ENGINE
+   Features: text Q&A · file upload · voice recording ·
+   smart commands · image preview · business insights
+═══════════════════════════════════════════════════════ */
+const DSC = (() => {
+  let _recorder = null, _recChunks = [], _recTimer = null, _recSecs = 0;
+  let _msgs = []; // in-memory chat history
+
+  const $ = id => document.getElementById(id);
+  const escH = s => String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const fmtH = n => Number(n||0).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0});
+  const cur = () => (DB.data.settings||{}).currency || 'ج';
+
+  const FILE_ICONS = { image:'🖼️', pdf:'📕', word:'📘', excel:'📗', audio:'🎵', video:'🎬', zip:'🗜️', default:'📎' };
+  function fileIcon(f) {
+    if(f.type.startsWith('image/'))return'image';
+    if(f.type.startsWith('audio/'))return'audio';
+    if(f.type.startsWith('video/'))return'video';
+    if(f.name.endsWith('.pdf'))return'pdf';
+    if(/\.docx?$/.test(f.name))return'word';
+    if(/\.(xlsx?|csv)$/.test(f.name))return'excel';
+    if(/\.(zip|rar|7z)$/.test(f.name))return'zip';
+    return'default';
+  }
+  function hSize(b){const u=['B','KB','MB','GB'];let i=0,n=b;while(n>=1024&&i<3){n/=1024;i++}return`${n.toFixed(1)} ${u[i]}`;}
+
+  function appendMsg(html, role='bot') {
+    const feed = $('dsc-feed'); if(!feed) return;
+    const div = document.createElement('div');
+    div.className = 'dsc-msg dsc-' + role;
+    div.innerHTML = `<div class="dsc-bubble">${html}</div>`;
+    // Remove typing if present
+    const typing = feed.querySelector('.dsc-typing-wrap');
+    if(typing) typing.remove();
+    feed.appendChild(div);
+    feed.scrollTop = feed.scrollHeight;
+    _msgs.push({role, html, ts: Date.now()});
+  }
+
+  function showTyping() {
+    const feed = $('dsc-feed'); if(!feed) return;
+    const div = document.createElement('div');
+    div.className = 'dsc-msg dsc-bot dsc-typing-wrap';
+    div.innerHTML = `<div class="dsc-bubble dsc-typing"><span></span><span></span><span></span></div>`;
+    feed.appendChild(div);
+    feed.scrollTop = feed.scrollHeight;
+  }
+
+  /* ── SMART ANSWER ENGINE ── */
+  function answer(q) {
+    const ql = (q||'').toLowerCase().trim();
+    const inv = DB.data.invoices||[], prods = DB.data.products||[];
+    const custs = DB.data.customers||[], supps = DB.data.suppliers||[];
+    const today = new Date().toISOString().slice(0,10);
+    const monthStart = today.slice(0,7)+'-01';
+    const has = (...w) => w.some(x => ql.includes(x));
+
+    // ── TOP CUSTOMERS by spending ──
+    if(has('أكتر عميل','اكتر عميل','أفضل عميل')) {
+      const map = {};
+      inv.forEach(i=>{map[i.customerId]=(map[i.customerId]||0)+(i.total||0);});
+      const sorted = Object.entries(map).sort((a,b)=>b[1]-a[1]).slice(0,5);
+      if(!sorted.length) return '👥 لا توجد مبيعات بعد.';
+      const list = sorted.map(([cid,amt],i)=>{
+        const c = custs.find(x=>x.id===cid);
+        return `${i+1}. <b>${escH(c?c.name:cid)}</b> — ${fmtH(amt)} ${cur()}`;
+      }).join('<br>');
+      return `🏆 <b>أكتر العملاء شراءً:</b><br>${list}`;
+    }
+
+    // ── DEBTORS ──
+    if(has('عليه فلوس','مديون','ديون','دين','مدين','عملاء عليهم')) {
+      const debtors = custs.filter(c=>(c.balance||0)>0).sort((a,b)=>b.balance-a.balance);
+      if(!debtors.length) return '✅ كل العملاء حسابهم مسدّد!';
+      const total = debtors.reduce((s,c)=>s+(c.balance||0),0);
+      const list = debtors.slice(0,5).map((c,i)=>`${i+1}. <b>${escH(c.name)}</b>: ${fmtH(c.balance)} ${cur()}`).join('<br>');
+      return `💸 إجمالي الديون: <b>${fmtH(total)} ${cur()}</b> (${debtors.length} عميل)<br><br>${list}`;
+    }
+
+    // ── SALES TODAY / MONTH ──
+    if(has('مبيعات','بعت','مبيعاتي')) {
+      const todaySales = inv.filter(i=>i.date===today).reduce((s,i)=>s+(i.total||0),0);
+      const monthSales = inv.filter(i=>(i.date||'')>=monthStart).reduce((s,i)=>s+(i.total||0),0);
+      const total = inv.reduce((s,i)=>s+(i.total||0),0);
+      return `📊 <b>المبيعات:</b><br>• اليوم: <b>${fmtH(todaySales)} ${cur()}</b><br>• الشهر: <b>${fmtH(monthSales)} ${cur()}</b><br>• الإجمالي الكلي: <b>${fmtH(total)} ${cur()}</b>`;
+    }
+
+    // ── PROFIT ──
+    if(has('ربح','أرباح','مكسب','الربح')) {
+      const monthInvs = inv.filter(i=>(i.date||'')>=monthStart);
+      const revenue = monthInvs.reduce((s,i)=>s+(i.total||0),0);
+      let cogs=0;
+      monthInvs.forEach(inv=>{
+        (inv.items||[]).forEach(it=>{
+          const p=prods.find(x=>x.id===it.productId);
+          cogs+=(p?p.cost||0:0)*(it.qty||it.quantity||0);
+        });
+      });
+      const expenses=(DB.data.expenses||[]).filter(e=>e.kind!=='purchase'&&(e.date||'')>=monthStart).reduce((s,e)=>s+(e.amount||0),0);
+      const profit=revenue-cogs-expenses;
+      const margin=revenue>0?(profit/revenue*100):0;
+      return `💰 <b>صافي الربح هذا الشهر:</b> <b style="color:${profit>=0?'#10b981':'#ef4444'}">${fmtH(profit)} ${cur()}</b><br>• الإيرادات: ${fmtH(revenue)} ${cur()}<br>• التكلفة: ${fmtH(cogs)} ${cur()}<br>• المصروفات: ${fmtH(expenses)} ${cur()}<br>• هامش الربح: <b>${margin.toFixed(1)}%</b>`;
+    }
+
+    // ── LOW STOCK ──
+    if(has('قرب يخلص','ينفذ','نفذ','منخفض','تنبيه مخزون')) {
+      const low=prods.filter(p=>(p.quantity||0)<=(p.minQuantity||0));
+      if(!low.length)return'✅ كل المنتجات فوق الحد الأدنى للمخزون.';
+      return`⚠️ <b>منتجات قرب تخلص (${low.length}):</b><br>`+low.slice(0,8).map(p=>`• <b>${escH(p.name)}</b>: ${fmtH(p.quantity)} ${escH(p.unit||'')} (الحد: ${fmtH(p.minQuantity)})`).join('<br>');
+    }
+
+    // ── INVENTORY ──
+    if(has('مخزن','مخزون','الاصناف','البضاعة','المخزن')) {
+      if(!prods.length)return'📦 لا توجد منتجات في المخزن بعد.';
+      const totalQty=prods.reduce((s,p)=>s+(Number(p.quantity)||0),0);
+      const sorted=[...prods].sort((a,b)=>(b.quantity||0)-(a.quantity||0));
+      const list=sorted.slice(0,8).map(p=>`• <b>${escH(p.name)}</b>: ${fmtH(p.quantity||0)} ${escH(p.unit||'')}`).join('<br>');
+      return`📦 <b>المخزن (${prods.length} صنف | إجمالي ${fmtH(totalQty)} وحدة):</b><br>${list}${prods.length>8?`<br>...و${prods.length-8} صنف آخر`:''}`;
+    }
+
+    // ── SUPPLIERS ──
+    if(has('مورد','موردين','عليا للمورد')) {
+      if(!supps.length)return'🏭 لا يوجد موردين مسجلين.';
+      let totalOwed=0,owedList=[];
+      supps.forEach(s=>{
+        if(typeof supplierMetrics==='function'){const m=supplierMetrics(s.id);if(m.balance>0){totalOwed+=m.balance;owedList.push({name:s.name,bal:m.balance});}}
+      });
+      if(!owedList.length)return'✅ مفيش مستحقات على الموردين.';
+      owedList.sort((a,b)=>b.bal-a.bal);
+      return`🏭 <b>إجمالي اللي عليك للموردين:</b> ${fmtH(totalOwed)} ${cur()}<br>`+owedList.slice(0,5).map((s,i)=>`${i+1}. <b>${escH(s.name)}</b>: ${fmtH(s.bal)} ${cur()}`).join('<br>');
+    }
+
+    // ── CUSTOMERS COUNT ──
+    if(has('كام عميل','عدد العملاء','العملاء')) {
+      const withDebt=custs.filter(c=>(c.balance||0)>0).length;
+      return`👥 <b>العملاء:</b> ${custs.length} عميل | ${withDebt} عليهم مديونية | ${custs.length-withDebt} حسابهم مسدّد`;
+    }
+
+    // ── SUMMARY ──
+    if(has('ملخص','الوضع','الشركة','تقرير','إزاي','ازاي')) {
+      const monthSales=inv.filter(i=>(i.date||'')>=monthStart).reduce((s,i)=>s+(i.total||0),0);
+      const totalDebt=custs.reduce((s,c)=>s+(c.balance||0),0);
+      const low=prods.filter(p=>(p.quantity||0)<=(p.minQuantity||0)).length;
+      const unpaid=inv.filter(i=>i.status!=='paid').length;
+      return`📋 <b>ملخص الشركة:</b><br>• مبيعات الشهر: <b>${fmtH(monthSales)} ${cur()}</b><br>• إجمالي الديون: <b>${fmtH(totalDebt)} ${cur()}</b><br>• عملاء: <b>${custs.length}</b><br>• أصناف منخفضة: <b>${low}</b><br>• فواتير غير مدفوعة: <b>${unpaid}</b>`;
+    }
+
+    // ── ADD CUSTOMER COMMAND ──
+    if(has('أضف عميل','اضف عميل','سجل عميل')) {
+      const name = q.replace(/نفذ.*?:/i,'').replace(/أضف عميل|اضف عميل|سجل عميل/gi,'').trim();
+      if(!name||name.length<2)return'👤 اكتب: "أضف عميل [الاسم]" مثلاً: "أضف عميل محمد علي"';
+      if(DB.data.customers.find(c=>c.name===name))return`⚠️ العميل "<b>${escH(name)}</b>" موجود بالفعل.`;
+      DB.data.customers.push({id:Math.random().toString(36).slice(2,9),name,balance:0,creditLimit:0,customPrices:{},createdAt:Date.now()});
+      DB.save();
+      if(typeof renderSidebar==='function')renderSidebar();
+      return`✅ تم إضافة العميل "<b>${escH(name)}</b>" بنجاح!`;
+    }
+
+    // ── ADD TO STOCK COMMAND ──
+    if(has('أضف للمخزن','اضف للمخزن','أضف مخزون','زود المخزن')) {
+      const numMatch=q.match(/(\d[\d,.]*)/);
+      const qty=numMatch?parseFloat(numMatch[1].replace(',','')):0;
+      if(qty<=0)return'📦 مثال: "أضف 5000 ورقة A4 للمخزن"';
+      let name=q.replace(/\d[\d,.]*/g,'').replace(/أضف.*?مخزن|للمخزن|الى المخزن/gi,'').replace(/ورقة|لفة|وحدة|رزمة/g,'').trim();
+      if(!name)name='منتج جديد';
+      const existing=DB.data.products.find(p=>(p.name||'').toLowerCase().includes(name.toLowerCase().slice(0,4)));
+      if(existing){
+        existing.quantity=(existing.quantity||0)+qty;
+        DB.save();
+        return`✅ تم إضافة <b>${fmtH(qty)}</b> وحدة لـ "<b>${escH(existing.name)}</b>". الكمية الجديدة: <b>${fmtH(existing.quantity)}</b>`;
+      }
+      DB.data.products.push({id:Math.random().toString(36).slice(2,9),name,quantity:qty,cost:0,price:0,unit:'وحدة',minQuantity:0,type:'أخرى',createdAt:Date.now()});
+      DB.save();
+      return`✅ تم إنشاء منتج "<b>${escH(name)}</b>" بكمية <b>${fmtH(qty)}</b> في المخزن.`;
+    }
+
+    // ── SPARE PARTS ──
+    if(has('قطع غيار','قطع الغيار','غيار')) {
+      const spares=prods.filter(p=>(p.type||'')==='قطع غيار');
+      if(!spares.length)return'🔧 لا توجد قطع غيار مسجلة.';
+      return'🔧 <b>قطع الغيار:</b><br>'+spares.map(p=>`• <b>${escH(p.name)}</b>: ${fmtH(p.quantity)} ${escH(p.unit||'')}`).join('<br>');
+    }
+
+    // ── HELP ──
+    if(has('مساعدة','help','ايه اللي تقدر','ايه اللي يمكنك')) {
+      return`🌟 <b>أقدر أساعدك في:</b><br>📊 تقارير المبيعات والأرباح<br>📦 استعلام وإضافة المخزون<br>💸 قائمة الديون والمدينين<br>🏭 مستحقات الموردين<br>👥 إدارة العملاء<br>⚡ تنفيذ أوامر مباشرة زي "أضف عميل محمد"<br>📎 رفع صور الفواتير والوثائق<br>🎤 تسجيل ملاحظات صوتية`;
+    }
+
+    return `🤔 مش فاهم السؤال ده. جرّب تسألني عن:<br>• المبيعات أو الأرباح<br>• المخزون والأصناف<br>• الديون والعملاء<br>• أو اكتب "أضف عميل [الاسم]" / "أضف للمخزن [كمية] [صنف]"<br>أو اضغط أحد الأزرار السريعة 👆`;
+  }
+
+  /* ── PUBLIC API ── */
+  function ask(q) {
+    q = (q||'').trim();
+    if(!q) return;
+    appendMsg(escH(q),'user');
+    $('dsc-input') && ($('dsc-input').value='');
+    showTyping();
+    setTimeout(()=>{ appendMsg(answer(q),'bot'); },(200+Math.random()*300)|0);
+  }
+
+  function handleFiles(files) {
+    if(!files||!files.length) return;
+    [...files].forEach(f => {
+      const kind = fileIcon(f);
+      const icon = FILE_ICONS[kind]||FILE_ICONS.default;
+      const isImg = f.type.startsWith('image/');
+      const isAudio = f.type.startsWith('audio/');
+      const reader = new FileReader();
+      reader.onload = e => {
+        const src = e.target.result;
+        let html = `<div class="dsc-file-preview"><span class="dsc-file-ico">${icon}</span><div><div class="dsc-file-name">${escH(f.name)}</div><div class="dsc-file-size">${hSize(f.size)}</div></div></div>`;
+        if(isImg) html += `<br><img class="dsc-img" src="${src}" alt="${escH(f.name)}" onclick="this.style.opacity=.5">`;
+        if(isAudio) html += `<br><audio class="dsc-audio" controls src="${src}"></audio>`;
+        appendMsg(html,'user');
+        // Smart file analysis
+        setTimeout(()=>{
+          if(isImg) appendMsg(`🖼️ تم رفع الصورة "<b>${escH(f.name)}</b>" بحجم ${hSize(f.size)}.<br>يمكنك حفظها مرجعاً أو ربطها بعملية.`,'bot');
+          else if(isAudio) appendMsg(`🎵 تم رفع التسجيل "<b>${escH(f.name)}</b>" — ${hSize(f.size)}.`,'bot');
+          else appendMsg(`📎 تم رفع الملف "<b>${escH(f.name)}</b>" — ${hSize(f.size)}.<br>لو محتاج أحلل محتواه، أخبرني بنوعه.`,'bot');
+        }, 400);
+      };
+      reader.readAsDataURL(f);
+    });
+  }
+
+  async function toggleVoice() {
+    const btn = $('dsc-mic');
+    if(_recorder && _recorder.state === 'recording') {
+      // stop
+      clearInterval(_recTimer);
+      _recorder.stop();
+      btn && btn.classList.remove('recording');
+      btn && (btn.textContent = '🎤');
+      return;
+    }
+    if(!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) return typeof toast==='function' && toast('المتصفح لا يدعم التسجيل','error');
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({audio:true});
+      const mime = ['audio/webm;codecs=opus','audio/webm','audio/ogg','audio/mp4',''].find(t=>!t||MediaRecorder.isTypeSupported(t))||'';
+      _recorder = new MediaRecorder(stream, mime?{mimeType:mime}:{});
+      _recChunks = [];
+      _recorder.ondataavailable = e => e.data.size && _recChunks.push(e.data);
+      _recorder.onstop = async () => {
+        const blob = new Blob(_recChunks,{type:_recorder.mimeType||'audio/webm'});
+        const url = URL.createObjectURL(blob);
+        const secs = _recSecs;
+        appendMsg(`<div class="dsc-file-preview"><span class="dsc-file-ico">🎤</span><div><div class="dsc-file-name">تسجيل صوتي (${secs}ث)</div><div class="dsc-file-size">${hSize(blob.size)}</div></div></div><br><audio class="dsc-audio" controls src="${url}"></audio>`,'user');
+        setTimeout(()=>appendMsg(`🎤 تم حفظ التسجيل الصوتي (${secs} ثانية). يمكنك استخدامه كملاحظة صوتية لأي عملية.`,'bot'),400);
+        stream.getTracks().forEach(t=>t.stop());
+      };
+      _recorder.start(200);
+      _recSecs = 0;
+      btn && btn.classList.add('recording');
+      btn && (btn.textContent = '⏹');
+      _recTimer = setInterval(()=>{ _recSecs++; }, 1000);
+      typeof toast === 'function' && toast('🎤 يسجّل... اضغط ⏹ للإيقاف');
+    } catch { typeof toast==='function' && toast('تعذّر الوصول للميكروفون','error'); }
+  }
+
+  function clear() {
+    _msgs = [];
+    const feed = $('dsc-feed');
+    if(!feed)return;
+    feed.innerHTML=`<div class="dsc-msg dsc-bot"><div class="dsc-bubble">تم مسح المحادثة. كيف أقدر أساعدك؟ 🌿</div></div>`;
+  }
+
+  return { ask, handleFiles, toggleVoice, clear };
+})();
+
+function dscAsk(q)         { DSC.ask(q); }
+function dscSend()         { const el=document.getElementById('dsc-input'); DSC.ask(el?el.value:''); }
+function dscHandleFiles(f) { DSC.handleFiles(f); }
+function dscToggleVoice()  { DSC.toggleVoice(); }
+function dscClear()        { DSC.clear(); }
+
 function renderDashboard() {
   // Destroy old charts
   Object.values(dashCharts).forEach(c => c && c.destroy());
@@ -11431,14 +11594,17 @@ function renderDashboard() {
           <div class="dash-balance-label">الرصيد الحالي</div>
         </div>
       </div>
-      <button class="dash-strip-btn" onclick="navigate('dashboard')">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-        لوحة التحكم
-      </button>
-      <button class="dash-strip-btn" onclick="SyncEngine.pullLatest('manual')">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
-        تحديث
-      </button>
+      <div class="dash-clock" id="dash-clock">
+        <div class="dc-time" id="dc-time">
+          <span class="dc-digit" id="dc-h">--</span>
+          <span class="dc-sep">:</span>
+          <span class="dc-digit" id="dc-m">--</span>
+          <span class="dc-sep dc-sep-s">:</span>
+          <span class="dc-digit dc-digit-s" id="dc-s">--</span>
+          <span class="dc-ampm" id="dc-ampm"></span>
+        </div>
+        <div class="dc-date" id="dc-date">...</div>
+      </div>
     </div>
 
     <!-- QUICK ACTIONS -->
@@ -11477,8 +11643,8 @@ function renderDashboard() {
       <div class="sav-item pulse-${paperPulseInfo.level}" data-card="paper">
         <div class="sav-left">
           <span class="pulse-dot pulse-${paperPulseInfo.level}"></span>
-          <div class="sav-icon paper-icon" onclick="navigate('inventory')" title="المخزن">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          <div class="sav-icon paper-icon" onclick="toggleReciter()" title="سورة يوسف">
+            <span class="quran-ayah">﴿وَاللَّهُ غَالِبٌ﴾</span>
           </div>
           <div class="sav-body">
             <div class="sav-title">الورق <span class="sav-qty" data-live="paper-qty">${fmt(paperTotalQty).split('.')[0]} ${paperUnit}</span></div>
@@ -11654,6 +11820,7 @@ function renderDashboard() {
     buildDashCharts();
     setupSmartAlertPopovers();
     renderTodayPulse();
+    startDashClock();
     const cf = document.getElementById('cashflow-period');
     if (cf) renderCashFlow(cf.value);
     ['spark-sales','spark-cash','spark-cust'].forEach((id,idx) => {
@@ -11668,6 +11835,40 @@ function renderDashboard() {
       ctx.stroke();
     });
   }, 50);
+}
+
+/* ── DASHBOARD ANIMATED CLOCK ── */
+let _dashClockTimer = null;
+function startDashClock() {
+  if (_dashClockTimer) clearInterval(_dashClockTimer);
+  const hEl = document.getElementById('dc-h');
+  const mEl = document.getElementById('dc-m');
+  const sEl = document.getElementById('dc-s');
+  const apEl = document.getElementById('dc-ampm');
+  const dEl = document.getElementById('dc-date');
+  if (!hEl) return;
+
+  function flip(el, val) {
+    if (el.textContent !== val) {
+      el.classList.remove('flip'); void el.offsetWidth;
+      el.textContent = val;
+      el.classList.add('flip');
+    }
+  }
+
+  function tick() {
+    const now = new Date();
+    let h = now.getHours();
+    const ampm = h >= 12 ? 'م' : 'ص';
+    h = h % 12 || 12;
+    flip(hEl, String(h).padStart(2,'0'));
+    flip(mEl, String(now.getMinutes()).padStart(2,'0'));
+    flip(sEl, String(now.getSeconds()).padStart(2,'0'));
+    if (apEl) apEl.textContent = ampm;
+    if (dEl) dEl.textContent = now.toLocaleDateString('ar-EG', { weekday:'long', day:'numeric', month:'long' });
+  }
+  tick();
+  _dashClockTimer = setInterval(tick, 1000);
 }
 
 /* ========================= CENTERS DROPDOWN WIDGET ========================= */
@@ -14744,7 +14945,7 @@ function buildInvoiceHTML(inv, opts) {
       <div class="top">
         ${s.companyLogo ? `<img class="logo" src="${s.companyLogo}" alt="شعار">` : `<img class="logo" src="icons/logo-square.png" onerror="this.style.display='none'" alt="شعار">`}
         <h1>${escapeHtml(s.companyName||'الشركة')}</h1>
-        <div class="sub">OZAREX - FOR MEDICAL SOLUTION</div>
+        <div class="sub">EMDADX - FOR MEDICAL SOLUTION</div>
         <div class="info">
           ${s.companyAddress ? `${escapeHtml(s.companyAddress)} • ` : ''}${s.companyPhone ? `📞 ${escapeHtml(s.companyPhone)}` : ''}${s.taxNumber ? ` • سجل ضريبي: ${escapeHtml(s.taxNumber)}` : ''}
         </div>
@@ -14835,7 +15036,7 @@ async function sendInvoiceWhatsApp(id) {
   const s = DB.data.settings;
   const due = inv.total - inv.paid;
   const msgLines = [
-    `*${s.companyName || 'OZAREX'}*`,
+    `*${s.companyName || 'EMDADX'}*`,
     `━━━━━━━━━━━━━━`,
     `📋 *فاتورة رقم #${inv.number}*`,
     `📅 التاريخ: ${inv.date}`,
@@ -14936,7 +15137,7 @@ async function renderInvoiceToPngBlob(inv, c) {
   <div style="text-align:center;border-bottom:3px solid #111827;padding-bottom:18px;margin-bottom:20px">
     ${s.companyLogo ? `<img src="${s.companyLogo}" alt="logo" style="display:block;margin:0 auto 12px;max-height:84px;max-width:240px;object-fit:contain" crossorigin="anonymous">` : ''}
     <div style="font-size:30px;font-weight:900;color:#0a0a0a;letter-spacing:-0.5px;line-height:1.2">${escapeHtml(s.companyName||'الشركة')}</div>
-    <div style="font-size:12px;color:#059669;margin-top:4px;font-weight:700;letter-spacing:1px">OZAREX • For Medical Solution</div>
+    <div style="font-size:12px;color:#059669;margin-top:4px;font-weight:700;letter-spacing:1px">EMDADX • For Medical Solution</div>
     <div style="font-size:11.5px;color:#525252;margin-top:8px;line-height:1.6">
       ${s.companyAddress ? escapeHtml(s.companyAddress) + ' • ' : ''}${s.companyPhone ? '📞 ' + escapeHtml(s.companyPhone) : ''}${s.taxNumber ? ' • سجل ضريبي: ' + escapeHtml(s.taxNumber) : ''}
     </div>
@@ -15146,7 +15347,7 @@ let _ratesCache = null;
 async function getCurrencyRates() {
   // Try cached rates first
   try {
-    const raw = localStorage.getItem('ozarex_currency_rates');
+    const raw = localStorage.getItem('emdadx_currency_rates');
     if (raw) {
       const cached = JSON.parse(raw);
       const age = Date.now() - cached.fetchedAt;
@@ -15179,7 +15380,7 @@ async function getCurrencyRates() {
     rates.GBP_to_EGP = (data.rates.EGP || 0) / (data.rates.GBP || 1);
     rates.SAR_to_EGP = (data.rates.EGP || 0) / (data.rates.SAR || 1);
     rates.AED_to_EGP = (data.rates.EGP || 0) / (data.rates.AED || 1);
-    try { localStorage.setItem('ozarex_currency_rates', JSON.stringify(rates)); } catch (e) {}
+    try { localStorage.setItem('emdadx_currency_rates', JSON.stringify(rates)); } catch (e) {}
     _ratesCache = rates;
     return rates;
   } catch (err) {
@@ -15476,7 +15677,7 @@ function sendInvoiceReminderWhatsApp(customerId, kind, itemId) {
   }
 
   const msgLines = [
-    `🌟 *${s.companyName || 'OZAREX'}* 🌟`,
+    `🌟 *${s.companyName || 'EMDADX'}* 🌟`,
     `━━━━━━━━━━━━━━`,
     `🌺 السلام عليكم ورحمة الله ${c.name}`,
     `أتمنى أن تكونوا بأفضل حال 🤲`,
@@ -15519,7 +15720,7 @@ function sendAllDebtsReminderWhatsApp(customerId) {
     .filter(inv => inv.customerId === customerId && (inv.total - (inv.paid || 0)) > 0 && !inv.sourceIssuanceId);
 
   const msgLines = [
-    `🌟 *${s.companyName || 'OZAREX'}* 🌟`,
+    `🌟 *${s.companyName || 'EMDADX'}* 🌟`,
     `━━━━━━━━━━━━━━`,
     `🌺 السلام عليكم ورحمة الله ${c.name}`,
     `أتمنى أن تكونوا بأفضل حال 🤲`,
@@ -15576,7 +15777,7 @@ async function sendCustomerStatementWhatsApp(customerId) {
   const totalPaid = payments.reduce((s2,p)=>s2+(p.amount||0), 0);
 
   const msgLines = [
-    `*${s.companyName || 'OZAREX'}*`,
+    `*${s.companyName || 'EMDADX'}*`,
     `━━━━━━━━━━━━━━`,
     `📋 *كشف حساب - ${c.name}*`,
     `📅 حتى ${todayStr()}`,
@@ -18752,7 +18953,7 @@ async function getClientIP() {
   if (_clientIPCache) return _clientIPCache;
   // Try cached from previous session
   try {
-    const cached = localStorage.getItem('ozarex_client_ip');
+    const cached = localStorage.getItem('emdadx_client_ip');
     if (cached) {
       const obj = JSON.parse(cached);
       if (Date.now() - obj.ts < 6 * 60 * 60 * 1000) { // 6h cache
@@ -18769,7 +18970,7 @@ async function getClientIP() {
     if (resp.ok) {
       const data = await resp.json();
       _clientIPCache = data.ip || 'محلي';
-      try { localStorage.setItem('ozarex_client_ip', JSON.stringify({ ip: _clientIPCache, ts: Date.now() })); } catch (e) {}
+      try { localStorage.setItem('emdadx_client_ip', JSON.stringify({ ip: _clientIPCache, ts: Date.now() })); } catch (e) {}
       return _clientIPCache;
     }
   } catch (e) {
@@ -18904,7 +19105,7 @@ function logAudit(opts) {
 /* When admin opens the audit page, mark all current entries as "seen" */
 function markAuditAsSeen() {
   try {
-    localStorage.setItem('ozarex_audit_seen_ts', String(Date.now()));
+    localStorage.setItem('emdadx_audit_seen_ts', String(Date.now()));
   } catch (e) {}
   if (typeof renderSidebar === 'function') renderSidebar();
 }
@@ -19714,9 +19915,8 @@ function askAI(presetQuestion) {
       <div class="ai-bubble">${escapeHtml(q)}</div>
     </div>`);
 
-  // Try task execution first
-  const taskResult = aiExecuteTask(q);
-  const answer = taskResult !== null ? taskResult : aiAnswer(q);
+  // compute answer
+  const answer = aiAnswer(q);
 
   // typing indicator then answer
   messages.insertAdjacentHTML('beforeend', `
@@ -19739,138 +19939,6 @@ function askAI(presetQuestion) {
 }
 
 // The "brain": analyzes the real company data and answers in Arabic
-
-// ============================================================
-//  ⚡ AI TASK EXECUTION — تنفيذ المهام مباشرة
-// ============================================================
-function aiTaskPrompt(type) {
-  const messages = document.getElementById('ai-chat-messages');
-  const prompts = {
-    stock_add: 'مثال: "نفذ المهمة: أضف للمخزن 10000 ورقة A3" أو "أضف 500 فيلم بلاستك A3"',
-    customer_add: 'مثال: "نفذ المهمة: أضف عميل جديد اسمه محمد أحمد"',
-    issuance: 'مثال: "نفذ المهمة: صرف 3000 ورقة A4 للعميل [اسم العميل] بسعر 4 جنيه"',
-    stock_query: 'مثال: "كام ورقة A4 في المخزن؟" أو "إيه اللي في المخزن؟"'
-  };
-  const input = document.getElementById('ai-input');
-  if (input) {
-    input.value = '';
-    input.placeholder = prompts[type] || 'اكتب أمرك...';
-    input.focus();
-  }
-  messages.insertAdjacentHTML('beforeend', `
-    <div class="ai-msg ai-msg-bot">
-      <div class="ai-avatar">🤖</div>
-      <div class="ai-bubble">${prompts[type]}<br><br><small style="color:var(--text-muted)">اكتب الأمر في الخانة بالأسفل واضغط إرسال</small></div>
-    </div>`);
-  messages.scrollTop = messages.scrollHeight;
-}
-
-function aiExecuteTask(q) {
-  // ---- ADD TO STOCK ----
-  const addStock = q.match(/أضف.*?للمخزن.*?(\d[\d,]*)\s*(ورقة|ورق|فيلم|لفة|وحدة|رزمة)?\s*(.*?)(?:\s|$)/i)
-    || q.match(/(\d[\d,]*)\s*(ورقة|ورق|فيلم|لفة|وحدة|رزمة)?\s*(.*?)\s*(?:للمخزن|في المخزن)/i);
-
-  if (q.includes('أضف') && (q.includes('مخزن') || q.includes('مخزون') || q.includes('كمية'))) {
-    // Parse: أضف [qty] [unit] [name]
-    const numMatch = q.match(/(\d[\d,.]*)/);
-    const qty = numMatch ? parseFloat(numMatch[1].replace(',','')) : 0;
-    if (qty <= 0) return '❌ مش قادر أفهم الكمية. مثال: "أضف 10000 ورقة A3 للمخزن"';
-
-    // Extract product name — what comes after the number and unit
-    let name = q.replace(/نفذ المهمة[:\s]*/i,'').replace(/أضف.*?للمخزن|أضف.*?في المخزن/i,'')
-               .replace(/\d[\d,.]*/g,'').replace(/ورقة|ورق|فيلم|لفة|وحدة|رزمة/g,'')
-               .replace(/كمية|في|من|إلى|الى/g,'').trim();
-    if (!name) name = 'منتج جديد';
-
-    // Try to find existing product
-    const existing = DB.data.products.find(p =>
-      name.split(' ').some(w => w.length > 1 && (p.name||'').toLowerCase().includes(w.toLowerCase())));
-
-    if (existing) {
-      const before = existing.quantity;
-      existing.quantity += qty;
-      DB.data.stockMoves = DB.data.stockMoves || [];
-      DB.data.stockMoves.push({ id:'sm_'+uid(), productId:existing.id, type:'in',
-        quantity:qty, date:todayStr(), reference:'إضافة عبر المساعد الذكي', createdAt:Date.now() });
-      DB.save();
-      renderSidebar(); updateNotifBadge();
-      return `✅ <b>تم!</b> أضفت <b>${fmt(qty)}</b> وحدة لـ "<b>${escapeHtml(existing.name)}</b>"<br>الكمية: ${fmt(before)} ← <b>${fmt(existing.quantity)}</b>`;
-    } else {
-      // Create new product
-      const newProd = { id:'p_'+uid(), name: name, quantity: qty, cost:0, price:0,
-        unit:'وحدة', minQuantity:0, type:'ورق', createdAt:Date.now() };
-      DB.data.products = DB.data.products || [];
-      DB.data.products.push(newProd);
-      DB.data.stockMoves = DB.data.stockMoves || [];
-      DB.data.stockMoves.push({ id:'sm_'+uid(), productId:newProd.id, type:'in',
-        quantity:qty, date:todayStr(), reference:'إضافة عبر المساعد الذكي', createdAt:Date.now() });
-      DB.save();
-      renderSidebar(); updateNotifBadge();
-      return `✅ <b>تم!</b> أنشأت منتج جديد "<b>${escapeHtml(name)}</b>" بكمية <b>${fmt(qty)}</b> وحدة في المخزن.<br><small>يمكنك تعديل بياناته (السعر والتكلفة) من صفحة المخازن.</small>`;
-    }
-  }
-
-  // ---- ADD CUSTOMER ----
-  if (q.includes('أضف') && q.includes('عميل')) {
-    let name = q.replace(/نفذ المهمة[:\s]*/i,'').replace(/أضف.*?عميل.*?(?:اسمه|جديد|بـ)?/i,'').trim();
-    if (!name || name.length < 2) return '❌ مش قادر أفهم اسم العميل. مثال: "أضف عميل اسمه محمد أحمد"';
-    const exists = DB.data.customers.find(c => c.name === name);
-    if (exists) return `⚠️ العميل "<b>${escapeHtml(name)}</b>" موجود بالفعل.`;
-    const newCust = { id:'c_'+uid(), name:name, balance:0, creditLimit:0,
-      phone:'', address:'', customPrices:{}, createdAt:Date.now() };
-    DB.data.customers = DB.data.customers || [];
-    DB.data.customers.push(newCust);
-    DB.save(); renderSidebar();
-    return `✅ <b>تم!</b> أضفت العميل "<b>${escapeHtml(name)}</b>" بنجاح.<br><small>يمكنك إضافة رقم هاتفه وعنوانه من صفحة العملاء.</small>`;
-  }
-
-  // ---- ISSUANCE / INVOICE ----
-  if ((q.includes('صرف') || q.includes('فاتورة')) && q.includes('ورق') || q.includes('صرف')) {
-    const numMatch = q.match(/(\d[\d,.]*)/);
-    const qty = numMatch ? parseFloat(numMatch[1].replace(',','')) : 0;
-
-    // Try to find customer name in text
-    const custMatch = q.match(/(?:للعميل|لـ|لعميل)\s+([^،,\d]+)/i);
-    const custName = custMatch ? custMatch[1].trim() : '';
-    const customer = custName ? DB.data.customers.find(c =>
-      (c.name||'').toLowerCase().includes(custName.toLowerCase())) : null;
-
-    // Try to find price
-    const priceMatch = q.match(/(?:بسعر|سعر|بـ)\s*(\d[\d,.]*)/i);
-    const price = priceMatch ? parseFloat(priceMatch[1].replace(',','')) : 0;
-
-    if (qty <= 0) return '❌ مش قادر أفهم الكمية. مثال: "صرف 3000 ورقة A4 للعميل محمد بسعر 4 جنيه"';
-    if (!customer) {
-      const custList = (DB.data.customers||[]).slice(0,5).map(c=>c.name).join('، ');
-      return `❌ مش لاقي العميل. العملاء المتاحين: <b>${custList||'لا يوجد عملاء بعد'}</b><br>مثال: "صرف 3000 ورقة للعميل ${custList.split('،')[0]||'اسم العميل'} بسعر 4"`;
-    }
-
-    // Find paper product
-    const paper = (DB.data.products||[]).find(p =>
-      (p.type||'').includes('ورق') || (p.name||'').includes('ورق') || (p.name||'').includes('A4'));
-
-    if (!paper) return '❌ مفيش منتجات ورق في المخزن. أضف منتجات أولاً من المخازن.';
-    if (paper.quantity < qty) return `⚠️ الكمية المطلوبة (${fmt(qty)}) أكبر من المتاح (${fmt(paper.quantity)}). هل تريد المتابعة رغم ذلك؟ اكتب "نعم صرف" للتأكيد.`;
-
-    const total = qty * (price || paper.price || 0);
-    const invNum = ++DB.data.counters.invoice;
-    const invoiceId = 'inv_'+uid();
-    DB.data.invoices = DB.data.invoices || [];
-    DB.data.invoices.push({ id:invoiceId, number:invNum, customerId:customer.id,
-      date:todayStr(), items:[{productId:paper.id,productName:paper.name,qty,price:price||paper.price||0,total}],
-      subtotal:total, tax:0, discount:0, total, paid:0, status:'unpaid', paymentMethod:'آجل', createdAt:Date.now() });
-    paper.quantity -= qty;
-    customer.balance = (customer.balance||0) + total;
-    DB.data.stockMoves = DB.data.stockMoves || [];
-    DB.data.stockMoves.push({ id:'sm_'+uid(), productId:paper.id, type:'out',
-      quantity:qty, date:todayStr(), reference:'صرف عبر المساعد #'+invNum, createdAt:Date.now() });
-    DB.save(); renderSidebar(); updateNotifBadge();
-    return `✅ <b>تم تنفيذ الصرف!</b><br>• العميل: <b>${escapeHtml(customer.name)}</b><br>• الكمية: <b>${fmt(qty)} ${escapeHtml(paper.unit||'')}</b> من ${escapeHtml(paper.name)}<br>• الإجمالي: <b>${fmt(total)} ج.م</b><br>• فاتورة رقم: <b>#${invNum}</b> (آجل)<br><br><button class="btn btn-sm btn-primary" onclick="navigate('invoices')" style="margin-top:6px">📄 عرض الفاتورة</button>`;
-  }
-
-  return null; // not a task
-}
-
 function aiAnswer(qRaw) {
   const q = (qRaw || '').toLowerCase().trim();
   const cur = (DB.data.settings && DB.data.settings.currency) || 'جنيه';
@@ -19997,12 +20065,6 @@ function aiAnswer(qRaw) {
     const unpaid = invoices.filter(i=>i.status==='unpaid'||i.status==='partial').length;
     const monthInv = invoices.filter(i=>(i.date||'')>=monthStart).length;
     return `🧾 <b>الفواتير:</b><br>• الإجمالي: <b>${total}</b><br>• هذا الشهر: <b>${monthInv}</b><br>• غير مدفوعة/جزئية: <b>${unpaid}</b>`;
-  }
-
-  // ---- TASK COMMANDS (نفذ المهمة) ----
-  if (has('نفذ', 'نفذ المهمة', 'اضف', 'أضف', 'صرف')) {
-    const result = aiExecuteTask(q);
-    if (result) return result;
   }
 
   // ---- AVERAGE INVOICE VALUE (متوسط الفاتورة) ----
@@ -20183,7 +20245,7 @@ function renderSettings() {
         <ol style="margin:0 0 14px 22px;color:#0c4a6e;font-size:13px;line-height:2">
           <li>اضغط <b>"📥 تنزيل نسخة احتياطية"</b> أدناه — هينزل ملف JSON</li>
           <li>افتح OneDrive من المتصفح أو من تطبيق ويندوز</li>
-          <li>ارفع الملف لمجلد <b>"النسخ الاحتياطية - أوزاريكس"</b></li>
+          <li>ارفع الملف لمجلد <b>"النسخ الاحتياطية - إمداد إكس"</b></li>
           <li>OneDrive هيحفظه تلقائياً على السحابة وعلى كل أجهزتك</li>
         </ol>
         <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">
@@ -20388,7 +20450,7 @@ function removeLogo() {
 /* =========================================================
    PROFESSIONAL BACKUP SYSTEM (متوافق مع SQLite migration)
    ─────────────────────────────────────────────────────────
-   Format spec: Ozarex ERP Backup v2
+   Format spec: EmdadX ERP Backup v2
    - schema_version: integer that defines the structure version.
      v1 = legacy raw dump (old format)
      v2 = current structured format with metadata + tables + schema
@@ -20398,7 +20460,7 @@ function removeLogo() {
      SQLite columns. Counters become a sequence-state table.
 ========================================================= */
 const BACKUP_SCHEMA_VERSION = 2;
-const BACKUP_APP_NAME = 'Ozarex ERP';
+const BACKUP_APP_NAME = 'EmdadX ERP';
 
 /* Defines the canonical tables and their primary keys.
    The same definitions will guide the future SQL CREATE TABLE statements. */
@@ -20465,11 +20527,11 @@ function buildBackupEnvelope() {
   return payload;
 }
 
-/* Pretty filename: ozarex_backup_2026-05-23_14-32.json */
+/* Pretty filename: emdadx_backup_2026-05-23_14-32.json */
 function backupFilename() {
   const d = new Date();
   const pad = n => String(n).padStart(2, '0');
-  return `ozarex_backup_${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}_${pad(d.getHours())}-${pad(d.getMinutes())}.json`;
+  return `emdadx_backup_${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}_${pad(d.getHours())}-${pad(d.getMinutes())}.json`;
 }
 
 function exportBackup() {
@@ -20485,7 +20547,7 @@ function exportBackup() {
     URL.revokeObjectURL(url);
     const sizeKB = (data.length / 1024).toFixed(1);
     // Track last backup date
-    try { localStorage.setItem('ozarex_last_backup', new Date().toISOString()); } catch (e) {}
+    try { localStorage.setItem('emdadx_last_backup', new Date().toISOString()); } catch (e) {}
     refreshBackupReminder();
     toast(`تم تصدير النسخة الاحتياطية (${envelope.summary.total_records} سجل، ${sizeKB} KB)`);
   } catch (err) {
@@ -20499,7 +20561,7 @@ function refreshBackupReminder() {
   const banner = document.getElementById('backup-reminder-banner');
   if (!banner) return;
   let last;
-  try { last = localStorage.getItem('ozarex_last_backup'); } catch (e) {}
+  try { last = localStorage.getItem('emdadx_last_backup'); } catch (e) {}
   if (!last) {
     // Never backed up - show banner
     banner.style.display = 'flex';
@@ -20517,14 +20579,14 @@ function refreshBackupReminder() {
 
 function dismissBackupReminder() {
   // Snooze for 24h
-  try { localStorage.setItem('ozarex_backup_snooze', String(Date.now() + 24*60*60*1000)); } catch (e) {}
+  try { localStorage.setItem('emdadx_backup_snooze', String(Date.now() + 24*60*60*1000)); } catch (e) {}
   const banner = document.getElementById('backup-reminder-banner');
   if (banner) banner.style.display = 'none';
 }
 
 function checkBackupSnooze() {
   let snooze;
-  try { snooze = parseInt(localStorage.getItem('ozarex_backup_snooze') || '0'); } catch (e) { snooze = 0; }
+  try { snooze = parseInt(localStorage.getItem('emdadx_backup_snooze') || '0'); } catch (e) { snooze = 0; }
   return snooze > Date.now();
 }
 
@@ -20569,7 +20631,7 @@ function _inferSqlType(rows, col) {
 function buildSqlDump() {
   const lines = [];
   const now = new Date().toISOString();
-  lines.push('-- Ozarex ERP — SQL Dump');
+  lines.push('-- EmdadX ERP — SQL Dump');
   lines.push('-- Generated: ' + now);
   lines.push('-- Compatible with: SQLite 3.x, MySQL 5.7+ (with minor tweaks)');
   lines.push('-- Schema version: ' + BACKUP_SCHEMA_VERSION);
@@ -20679,7 +20741,7 @@ function buildExcelCsv() {
     bankTransfers: 'التحويلات البنكية', suppliers: 'الموردين', supplierPayments: 'دفعات الموردين'
   };
 
-  lines.push(_csvEscape('Ozarex ERP — نسخة Excel'));
+  lines.push(_csvEscape('EmdadX ERP — نسخة Excel'));
   lines.push(_csvEscape('تاريخ التصدير: ' + new Date().toLocaleString('ar-EG')));
   lines.push('');
 
@@ -20875,7 +20937,7 @@ function exportBackupZIP() {
 
     // README
     const readme = [
-      'Ozarex ERP — Backup Archive',
+      'EmdadX ERP — Backup Archive',
       '═══════════════════════════',
       '',
       'Exported: ' + envelope.exported_at,
@@ -24881,41 +24943,9 @@ function exportSuppliersCSV() {
   URL.revokeObjectURL(url);
   toast('تم تصدير ملف Excel ✓');
 }
-
-/* ══════════════════════════════════════════
-   FLOATING QUICK BAR — show only when logged in
-   LIVE CLOCK — sidebar widget
-══════════════════════════════════════════ */
-function initFloatBar() {
-  const bar = document.getElementById('float-quick-bar');
-  if (bar) bar.style.display = 'flex';
-}
-
-function startLiveClock() {
-  const el = document.getElementById('live-clock');
-  if (!el) return;
-  function tick() {
-    const now = new Date();
-    const time = now.toLocaleTimeString('ar-EG', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
-    const date = now.toLocaleDateString('ar-EG', {weekday:'short', day:'numeric', month:'short'});
-    el.innerHTML = `<div class="clock-time">${time}</div><div class="clock-date">${date}</div>`;
-  }
-  tick();
-  setInterval(tick, 1000);
-}
-
-// Hook into startApp
-const _origStartApp = typeof startApp === 'function' ? startApp : null;
-if (_origStartApp) {
-  window.startApp = function() {
-    _origStartApp();
-    setTimeout(() => { initFloatBar(); startLiveClock(); OfflineManager.init(); }, 200);
-  };
-}
-
 </script>
 
-<!-- ── OFFLINE BANNER ── -->
+<!-- OFFLINE BANNER -->
 <div id="offline-banner" class="offline-banner" role="alert" aria-live="assertive">
   <span class="ob-ico">📡</span>
   <span class="ob-msg">أوف لاين — ستتم المزامنة عند عودة الاتصال</span>
