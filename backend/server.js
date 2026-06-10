@@ -73,7 +73,7 @@ function sendJSON(res, status, obj) {
     'Cache-Control':  'no-store',
     'Access-Control-Allow-Origin':  '*',
     'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Client-Id, X-Offline-Sync'
   });
   res.end(body);
 }
@@ -155,7 +155,7 @@ const server = http.createServer(async (req, res) => {
     res.writeHead(204, {
       'Access-Control-Allow-Origin':  '*',
       'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Client-Id, X-Offline-Sync',
       'Access-Control-Max-Age': '86400'
     });
     return res.end();
@@ -182,6 +182,20 @@ const server = http.createServer(async (req, res) => {
         version: _dataVersion,
         connectedClients: _clients.size
       });
+    }
+
+    /* ── Service Worker — root scope ── */
+    if (pathname === '/sw.js') {
+      const swPath = path.join(PUBLIC, 'sw.js');
+      if (fs.existsSync(swPath)) {
+        const data = fs.readFileSync(swPath);
+        res.writeHead(200, {
+          'Content-Type': 'application/javascript; charset=utf-8',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Service-Worker-Allowed': '/'
+        });
+        return res.end(data);
+      }
     }
 
     /* ── Version check (lightweight — no data transfer) ── */

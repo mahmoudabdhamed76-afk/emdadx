@@ -8153,6 +8153,39 @@ html[dir="ltr"] .nav-item:hover { transform: translateX(3px); }
   }
 }
 
+
+/* ── Real-time sync dot ── */
+.sync-dot {
+  display: inline-block; width: 9px; height: 9px; border-radius: 50%;
+  flex: 0 0 9px; margin: 0 3px; vertical-align: middle; cursor: default;
+  transition: background .4s ease, box-shadow .4s ease;
+}
+.sync-dot-connected  { background: #10b981; box-shadow: 0 0 6px rgba(16,185,129,.55); }
+.sync-dot-connecting { background: #f59e0b; animation: syncPulse 1.2s ease-in-out infinite; }
+.sync-dot-syncing    { background: #3b82f6; animation: syncPulse .8s ease-in-out infinite; }
+.sync-dot-offline    { background: #6b7280; }
+.sync-dot-error      { background: #ef4444; animation: syncPulse 1s ease-in-out infinite; }
+@keyframes syncPulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+/* ── topbar refresh button spinning ── */
+#topbar-refresh-btn.spinning svg { animation: refreshSpin .9s cubic-bezier(.4,0,.2,1); }
+@keyframes refreshSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+/* ── offline banner ── */
+.offline-banner {
+  position: fixed; inset-inline: 0; top: 0; z-index: 9000;
+  background: linear-gradient(90deg, #b45309, #d97706);
+  color: #fff; font-size: 13.5px; font-weight: 700;
+  padding: 10px 18px; display: flex; align-items: center; gap: 10px;
+  transform: translateY(-100%);
+  transition: transform .35s cubic-bezier(.34,1.56,.64,1);
+  box-shadow: 0 4px 20px rgba(0,0,0,.35);
+}
+.offline-banner.show { transform: translateY(0); }
+.ob-ico { font-size: 18px; flex: 0 0 auto; }
+.ob-msg { flex: 1; }
+.ob-dot { width: 10px; height: 10px; border-radius: 50%; background: #fef3c7; flex: 0 0 10px; animation: obBlink 1.2s ease-in-out infinite; }
+@keyframes obBlink { 50% { opacity: .2; } }
 </style>
 </head>
 <body>
@@ -8270,6 +8303,10 @@ html[dir="ltr"] .nav-item:hover { transform: translateX(3px); }
         <span class="paper-counter-num" id="paper-counter-num">0</span>
         <span class="paper-counter-delta" id="paper-counter-delta"></span>
       </div>
+      <span id="sync-status-dot" class="sync-dot sync-dot-connecting" title="جاري الاتصال..."></span>
+      <button class="icon-btn" id="topbar-refresh-btn" onclick="topbarRefresh()" title="تحديث (يعمل في الخلفية)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+      </button>
       <button class="icon-btn" id="notif-btn" onclick="openNotifications()" title="الإشعارات">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
         <span class="notif-dot" id="notif-dot" style="display:none"></span>
@@ -8414,19 +8451,11 @@ const DB = {
     if (this._saveInflight) { this._savePending = true; return; }
     this._saveInflight = true;
     try {
-      const res = await fetch(API_BASE + '/api/data', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(this.data)
-      });
-      if (!res.ok) {
-        const text = await res.text().catch(() => '');
-        throw new Error('HTTP ' + res.status + ' ' + text);
-      }
+      await OfflineManager.trySave(this.data);
       window.__lastSaveOk = Date.now();
     } catch (e) {
       console.error('Save failed:', e);
-      if (typeof toast === 'function') toast('فشل حفظ البيانات على السيرفر: ' + e.message, 'error');
+      SyncEngine.onSaveError(e);
     } finally {
       this._saveInflight = false;
       if (this._savePending) { this._savePending = false; this._flush(); }
@@ -8449,25 +8478,413 @@ const DB = {
   }
 };
 
-async function bootstrapFromServer() {
-  let res;
-  try {
-    res = await fetch(API_BASE + '/api/data', {
-      headers: { 'Accept': 'application/json' },
-      cache: 'no-store'
-    });
-  } catch (e) {
-    throw new Error('تعذّر الوصول للسيرفر (' + API_BASE + '). تأكد إن السيرفر شغال وإن الرابط صحيح.');
-  }
-  if (!res.ok) throw new Error('السيرفر رد بخطأ HTTP ' + res.status);
 
-  // Detect ISP/captive-portal HTML redirect (e.g. TE Data) instead of JSON
-  const ct = res.headers.get('content-type') || '';
-  if (!ct.includes('application/json')) {
-    throw new Error('الرد مش JSON (محتمل إعادة توجيه من مزود الإنترنت). افتح البرنامج عبر HTTPS بدومين صحيح.');
+/* ═══════════════════════════════════════════════════════
+   CLIENT ID — unique per tab
+═══════════════════════════════════════════════════════ */
+const _CLIENT_ID = (() => {
+  let id = sessionStorage.getItem('_emdadx_cid');
+  if (!id) { id = Math.random().toString(36).slice(2,10) + Date.now().toString(36); sessionStorage.setItem('_emdadx_cid', id); }
+  return id;
+})();
+
+/* ═══════════════════════════════════════════════════════
+   OFFLINE MANAGER
+   - localStorage snapshot (instant, survives offline refresh)
+   - IndexedDB queue (survives tab close)
+   - Service Worker BackgroundSync
+   - flushQueue on reconnect
+═══════════════════════════════════════════════════════ */
+const OfflineManager = (() => {
+  const IDB_NAME = 'emdadx-offline';
+  const QUEUE_STORE = 'sync_queue';
+  const LS_SNAP = 'em_offline_snap';
+
+  let _db = null, _sw = null;
+  let _online = navigator.onLine;
+  let _pending = 0, _flushing = false;
+  let _lastSaveAt = 0;
+
+  async function openDB() {
+    if (_db) return _db;
+    return new Promise((res, rej) => {
+      const req = indexedDB.open(IDB_NAME, 1);
+      req.onupgradeneeded = e => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains(QUEUE_STORE))
+          db.createObjectStore(QUEUE_STORE, { keyPath: 'id', autoIncrement: true });
+        if (!db.objectStoreNames.contains('data_snapshot'))
+          db.createObjectStore('data_snapshot', { keyPath: 'key' });
+      };
+      req.onsuccess = e => { _db = e.target.result; res(_db); };
+      req.onerror = () => rej(req.error);
+    });
   }
-  DB._bootstrapData = await res.json();
-  DB._bootstrapped = true;
+
+  async function enqueue(data) {
+    const db = await openDB();
+    await new Promise((res, rej) => {
+      const tx = db.transaction(QUEUE_STORE, 'readwrite');
+      tx.objectStore(QUEUE_STORE).clear();
+      tx.objectStore(QUEUE_STORE).add({ payload: data, ts: Date.now() });
+      tx.oncomplete = res; tx.onerror = () => rej(tx.error);
+    });
+    _pending = 1; updateUI();
+  }
+
+  async function dequeue() {
+    const db = await openDB();
+    return new Promise((res, rej) => {
+      const req = db.transaction(QUEUE_STORE).objectStore(QUEUE_STORE).getAll();
+      req.onsuccess = () => res(req.result || []);
+      req.onerror = () => rej(req.error);
+    });
+  }
+
+  async function clearQueue() {
+    const db = await openDB();
+    await new Promise((res, rej) => {
+      const tx = db.transaction(QUEUE_STORE, 'readwrite');
+      tx.objectStore(QUEUE_STORE).clear();
+      tx.oncomplete = res; tx.onerror = () => rej(tx.error);
+    });
+    _pending = 0; updateUI();
+  }
+
+  function saveSnap(data) {
+    try { localStorage.setItem(LS_SNAP, JSON.stringify({ data, ts: Date.now() })); } catch(_) {}
+  }
+  function loadSnap() {
+    try { const raw = localStorage.getItem(LS_SNAP); return raw ? JSON.parse(raw) : null; } catch(_) { return null; }
+  }
+
+  async function postToServer(data) {
+    _lastSaveAt = Date.now();
+    const res = await fetch(API_BASE + '/api/data', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Client-Id': _CLIENT_ID },
+      body: JSON.stringify(data),
+      signal: AbortSignal.timeout(8000)
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const json = await res.json().catch(() => ({}));
+    if (json.version) DB._serverVersion = json.version;
+    SyncEngine.onSelfSaved(json.version);
+    return json;
+  }
+
+  async function trySave(data) {
+    saveSnap(data); // always snapshot first
+    if (_online) {
+      try {
+        await postToServer(data);
+        if (_pending > 0) await clearQueue();
+        return;
+      } catch (e) {
+        console.warn('[Offline] live POST failed, queuing:', e.message);
+      }
+    }
+    await enqueue(data);
+    if (_sw && 'sync' in _sw) { try { await _sw.sync.register('emdadx-sync'); } catch(_) {} }
+  }
+
+  async function flushQueue() {
+    if (_flushing || !_online) return;
+    const items = await dequeue();
+    if (!items.length) return;
+    _flushing = true;
+    SyncEngine.setStatus('syncing');
+    try {
+      const latest = items[items.length - 1];
+      await postToServer(latest.payload);
+      await clearQueue();
+      if (typeof toast === 'function') toast('✓ تم رفع البيانات المحفوظة أوف لاين');
+      SyncEngine.setStatus('connected');
+      setTimeout(() => SyncEngine.pullLatest('back-online'), 500);
+    } catch (e) {
+      console.error('[Offline] flush failed:', e);
+      SyncEngine.setStatus('error');
+    } finally { _flushing = false; }
+  }
+
+  function updateUI() {
+    const banner = document.getElementById('offline-banner');
+    if (banner) {
+      banner.classList.toggle('show', !_online);
+      const m = banner.querySelector('.ob-msg');
+      if (m) m.textContent = _pending > 0
+        ? 'أوف لاين — ' + _pending + ' تغيير في الانتظار'
+        : 'أوف لاين — ستتم المزامنة عند عودة الاتصال';
+    }
+  }
+
+  async function registerSW() {
+    if (!('serviceWorker' in navigator)) return;
+    try {
+      const reg = await navigator.serviceWorker.register(API_BASE + '/sw.js', { scope: API_BASE + '/' });
+      _sw = reg;
+      navigator.serviceWorker.addEventListener('message', e => {
+        if (e.data?.type === 'SYNC_COMPLETE') {
+          _pending = 0; updateUI();
+          if (typeof toast === 'function') toast('✓ تمت المزامنة في الخلفية');
+          SyncEngine.pullLatest('sw-sync');
+        }
+      });
+      console.log('[SW] registered');
+    } catch (e) { console.warn('[SW] registration failed:', e.message); }
+  }
+
+  async function init() {
+    await registerSW();
+    window.addEventListener('online', () => {
+      _online = true; updateUI();
+      SyncEngine.setStatus('connecting');
+      flushQueue();
+    });
+    window.addEventListener('offline', () => {
+      _online = false; updateUI();
+      SyncEngine.setStatus('offline');
+    });
+    try {
+      const items = await dequeue();
+      if (items.length > 0) { _pending = 1; updateUI(); if (_online) flushQueue(); }
+    } catch(_) {}
+    updateUI();
+  }
+
+  function getCachedData() { const s = loadSnap(); return s ? s.data : null; }
+  function getLastSaveAt() { return _lastSaveAt; }
+
+  return { init, trySave, flushQueue, getCachedData, getLastSaveAt, get isOnline(){ return _online; } };
+})();
+
+/* ═══════════════════════════════════════════════════════
+   REAL-TIME SYNC ENGINE (SSE + zero-flicker)
+═══════════════════════════════════════════════════════ */
+const SyncEngine = (() => {
+  let _es = null, _reconnectTimer = null, _reconnectDelay = 1000;
+  let _online = navigator.onLine, _connected = false;
+  let _isSyncing = false, _syncThrottle = null, _pollTimer = null;
+  let _lastMsgAt = 0;
+
+  function setStatus(state) {
+    const el = document.getElementById('sync-status-dot');
+    if (!el) return;
+    const colors = { connected:'#10b981', connecting:'#f59e0b', offline:'#6b7280', syncing:'#3b82f6', error:'#ef4444' };
+    const labels = { connected:'متزامن ✓', connecting:'جاري الاتصال...', offline:'غير متصل', syncing:'يتزامن...', error:'خطأ بالمزامنة' };
+    el.style.background = colors[state] || colors.offline;
+    el.title = labels[state] || state;
+    el.className = 'sync-dot sync-dot-' + state;
+  }
+
+  /* merge fresh data into DB.data WITHOUT touching DOM */
+  function silentMerge(fresh) {
+    const skip = new Set(['__version']);
+    for (const key of Object.keys(fresh)) {
+      if (skip.has(key)) continue;
+      if (Array.isArray(fresh[key])) DB.data[key] = fresh[key];
+      else if (fresh[key] && typeof fresh[key] === 'object') DB.data[key] = Object.assign({}, DB.data[key] || {}, fresh[key]);
+      else if (fresh[key] !== undefined) DB.data[key] = fresh[key];
+    }
+    const arrays = ['users','customers','products','invoices','payments','expenses','stockMoves','issuances','bankTransfers','suppliers','supplierPayments','notes','auditLog','employees','salaryRuns'];
+    for (const k of arrays) if (!Array.isArray(DB.data[k])) DB.data[k] = [];
+    if (!DB.data.settings) DB.data.settings = {};
+    if (!DB.data.counters) DB.data.counters = { invoice:1000, issuance:1000, purchase:1000 };
+    DB.data.customers.forEach(cu => { if (!cu.customPrices) cu.customPrices = {}; });
+  }
+
+  /* update only what's visible — never full re-render */
+  function smartPageUpdate(reason) {
+    const page = typeof currentPage !== 'undefined' ? currentPage : '';
+    if (!page) return;
+    if (typeof updateNotifBadge === 'function') updateNotifBadge();
+    if (typeof updatePaperCounter === 'function') updatePaperCounter();
+
+    const hasModal = !!document.querySelector('.modal-overlay.show, .modal.show');
+    const tag = document.activeElement ? document.activeElement.tagName : '';
+    const hasInput = ['INPUT','TEXTAREA','SELECT'].includes(tag);
+    if (hasModal || hasInput) {
+      clearTimeout(window._deferSync);
+      window._deferSync = setTimeout(() => smartPageUpdate('deferred'), 4000);
+      return;
+    }
+
+    const pc = document.getElementById('page-content');
+    if (!pc) return;
+
+    // dashboard or any page: silent re-render with scroll preserved
+    const scrollY = pc.scrollTop;
+    const R = {
+      dashboard: typeof renderDashboard === 'function' ? renderDashboard : null,
+      customers: typeof renderCustomers === 'function' ? renderCustomers : null,
+      invoices:  typeof renderInvoices  === 'function' ? renderInvoices  : null,
+      payments:  typeof renderPayments  === 'function' ? renderPayments  : null,
+      inventory: typeof renderInventory === 'function' ? renderInventory : null,
+      suppliers: typeof renderSuppliers === 'function' ? renderSuppliers : null,
+      issuances: typeof renderIssuances === 'function' ? renderIssuances : null,
+      expenses:  typeof renderExpenses  === 'function' ? renderExpenses  : null,
+    };
+    const fn = R[page];
+    if (!fn) return;
+    fn();
+    requestAnimationFrame(() => { pc.scrollTop = scrollY; });
+    console.log('[Sync] page updated:', page, '(' + reason + ')');
+  }
+
+  async function pullLatest(reason = '') {
+    if (_isSyncing) return;
+    _isSyncing = true; setStatus('syncing');
+    try {
+      const res = await fetch(API_BASE + '/api/data', {
+        headers: { 'Accept': 'application/json', 'X-Client-Id': _CLIENT_ID },
+        cache: 'no-store'
+      });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const fresh = await res.json();
+      const newVer = fresh.__version || 0;
+      if (newVer && newVer <= DB._serverVersion) { setStatus('connected'); return; }
+      DB._bootstrapData = fresh;
+      DB._serverVersion = newVer;
+      silentMerge(fresh);
+      smartPageUpdate(reason);
+      setStatus('connected');
+    } catch (e) {
+      console.error('[Sync] pull failed:', e);
+      setStatus(_online ? 'error' : 'offline');
+    } finally { _isSyncing = false; }
+  }
+
+  function throttledPull(reason) {
+    if (_syncThrottle) return;
+    _syncThrottle = setTimeout(() => { _syncThrottle = null; pullLatest(reason); }, 80);
+  }
+
+  function connect() {
+    if (_es) { try { _es.close(); } catch(_) {} _es = null; }
+    if (!_online) { setStatus('offline'); return; }
+    setStatus('connecting');
+    _es = new EventSource(API_BASE + '/api/events');
+    _es.onopen = () => {
+      _connected = true; _reconnectDelay = 1000; _lastMsgAt = Date.now();
+      setStatus('connected');
+      pullLatest('reconnect');
+    };
+    _es.onmessage = (e) => {
+      _lastMsgAt = Date.now();
+      if (!e.data || e.data.startsWith(':')) return;
+      try {
+        const msg = JSON.parse(e.data);
+        if (msg.event === 'connected') { DB._serverVersion = msg.version || 0; return; }
+        if (msg.event === 'data_changed') {
+          const isSelf = msg.source === _CLIENT_ID;
+          const recentSave = (Date.now() - (OfflineManager.getLastSaveAt() || 0)) < 2000;
+          if (isSelf || recentSave) { DB._serverVersion = msg.version; return; }
+          throttledPull('data_changed');
+        }
+      } catch(_) {}
+    };
+    _es.onerror = () => {
+      _connected = false;
+      try { _es.close(); } catch(_) {}
+      _es = null;
+      setStatus(_online ? 'connecting' : 'offline');
+      scheduleReconnect();
+    };
+  }
+
+  function scheduleReconnect() {
+    if (_reconnectTimer) return;
+    _reconnectTimer = setTimeout(() => { _reconnectTimer = null; connect(); }, _reconnectDelay);
+    _reconnectDelay = Math.min(_reconnectDelay * 2, 30000);
+  }
+
+  function onSelfSaved(v) { if (v) DB._serverVersion = v; setStatus('connected'); }
+  function onSaveError(e) { setStatus('error'); if (typeof toast === 'function') toast('فشل حفظ البيانات: ' + e.message, 'error'); }
+
+  /* polling fallback + SSE watchdog (mobile: SSE dies silently when app backgrounds) */
+  function startPollingFallback() {
+    if (_pollTimer) return;
+    _pollTimer = setInterval(async () => {
+      if (!_online) return;
+      // watchdog: no message (incl. heartbeats) for 45s → connection is dead
+      if (_connected && (Date.now() - _lastMsgAt) > 45000) {
+        console.warn('[Sync] SSE stale, reconnecting');
+        _connected = false;
+        connect();
+        return;
+      }
+      // fallback poll when disconnected
+      if (!_connected) {
+        try {
+          const r = await fetch(API_BASE + '/api/version', { cache: 'no-store' });
+          if (!r.ok) return;
+          const { version } = await r.json();
+          if (version && version > DB._serverVersion) throttledPull('polling');
+        } catch(_) {}
+      }
+    }, 10000);
+  }
+
+  function init() {
+    window.addEventListener('online',  () => { _online = true;  setStatus('connecting'); connect(); });
+    window.addEventListener('offline', () => { _online = false; setStatus('offline'); });
+    // mobile: when app returns to foreground, SSE is usually dead — verify & reconnect
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible' && _online) {
+        connect();
+        pullLatest('visibility');
+      }
+    });
+    window.addEventListener('focus', () => { if (_online) pullLatest('focus'); });
+    connect();
+    startPollingFallback();
+  }
+
+  return { init, pullLatest, onSelfSaved, onSaveError, setStatus };
+})();
+
+/* ── topbar manual refresh (runs silently in background) ── */
+function topbarRefresh() {
+  const btn = document.getElementById('topbar-refresh-btn');
+  if (btn) { btn.classList.add('spinning'); setTimeout(() => btn.classList.remove('spinning'), 900); }
+  SyncEngine.pullLatest('manual-refresh').then(() => {
+    if (typeof toast === 'function') toast('تم التحديث ✓');
+  });
+}
+
+
+async function bootstrapFromServer() {
+  // Try live server first (6s timeout)
+  try {
+    const res = await fetch(API_BASE + '/api/data', {
+      headers: { 'Accept': 'application/json' },
+      cache: 'no-store',
+      signal: AbortSignal.timeout(6000)
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const ct = res.headers.get('content-type') || '';
+    if (!ct.includes('application/json')) throw new Error('ليس JSON');
+    DB._bootstrapData = await res.json();
+    DB._bootstrapped = true;
+    return; // online
+  } catch (e) {
+    console.warn('[Bootstrap] server unreachable, trying offline snapshot:', e.message);
+  }
+  // Offline fallback: localStorage snapshot
+  const snap = OfflineManager.getCachedData();
+  if (snap) {
+    console.info('[Bootstrap] loaded offline snapshot');
+    DB._bootstrapData = snap;
+    DB._bootstrapped  = true;
+    const banner = document.getElementById('offline-banner');
+    if (banner) {
+      const m = banner.querySelector('.ob-msg');
+      if (m) m.textContent = 'أوف لاين — العمل على البيانات المحفوظة محلياً';
+      banner.classList.add('show');
+    }
+    return; // offline
+  }
+  throw new Error('تعذّر الوصول للسيرفر (' + API_BASE + ').\nافتح البرنامج وأنت أونلاين أول مرة عشان البيانات تتخزن للعمل أوف لاين.');
 }
 
 
@@ -9410,13 +9827,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.addEventListener('click', audioResume);
   document.addEventListener('keydown', audioResume);
 
-  if (restoreSession()) startApp();
+  if (restoreSession()) { startApp(); SyncEngine.init(); OfflineManager.init(); }
 
   document.getElementById('login-form').addEventListener('submit', e => {
     e.preventDefault();
     const u = document.getElementById('login-username').value.trim();
     const p = document.getElementById('login-password').value;
-    if (login(u, p)) { toast('مرحباً بك ' + currentUser.name); startApp(); }
+    if (login(u, p)) { toast('مرحباً بك ' + currentUser.name); startApp(); SyncEngine.init(); OfflineManager.init(); }
     else toast('بيانات الدخول غير صحيحة', 'error');
   });
 
@@ -23549,5 +23966,13 @@ function exportSuppliersCSV() {
   toast('تم تصدير ملف Excel ✓');
 }
 </script>
+
+<!-- OFFLINE BANNER -->
+<div id="offline-banner" class="offline-banner" role="alert">
+  <span class="ob-ico">📡</span>
+  <span class="ob-msg">أوف لاين — ستتم المزامنة عند عودة الاتصال</span>
+  <span class="ob-dot"></span>
+</div>
+
 </body>
 </html>
