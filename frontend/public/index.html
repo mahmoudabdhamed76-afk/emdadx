@@ -9251,6 +9251,7 @@ const OfflineManager = (() => {
         await postToServer(data);
         // Clear any queued saves — we're synced
         if (_pending > 0) await clearQueue();
+        setTimeout(() => SyncEngine.pullLatest('post-save', true), 250);
         return;
       } catch (e) {
         console.warn('[Offline] Live POST failed, queuing:', e.message);
@@ -9445,7 +9446,7 @@ const SyncEngine = (() => {
     } catch(e){}
   }
 
-  async function pullLatest(reason='') {
+  async function pullLatest(reason='', force=false) {
     if(_isSyncing)return;
     _isSyncing=true; setStatus('syncing');
     try {
@@ -9453,7 +9454,7 @@ const SyncEngine = (() => {
       if(!res.ok)throw new Error('HTTP '+res.status);
       const fresh=await res.json();
       const newVer=fresh.__version||0;
-      if(newVer && newVer<=DB._serverVersion){setStatus('connected');return;}
+      if(!force && newVer && newVer<=DB._serverVersion){setStatus('connected');return;}
       DB._bootstrapData=fresh; DB._serverVersion=newVer;
       silentMerge(fresh);
       smartPageUpdate(reason);
@@ -9574,7 +9575,7 @@ const SyncEngine = (() => {
       _reconnectDelay=1000;
       setStatus('connected');
       console.log('[Sync] SSE connected');
-      pullLatest('reconnect');
+      pullLatest('reconnect', true);
     };
     _es.onmessage=(e)=>{
       if(!e.data||e.data.startsWith(':'))return;
@@ -9599,7 +9600,7 @@ const SyncEngine = (() => {
     };
   }
 
-  function onSelfSaved(v){if(v)DB._serverVersion=v;setStatus('connected');}
+  function onSelfSaved(v){if(v)DB._serverVersion=v;setStatus('connected');setTimeout(()=>pullLatest('self-save',true),250);}
   function onSaveError(e){setStatus('error');if(typeof toast==='function')toast('فشل حفظ البيانات: '+e.message,'error');}
 
   function startPollingFallback(){
@@ -9613,6 +9614,9 @@ const SyncEngine = (() => {
   function init(){
     window.addEventListener('online',()=>{_online=true;setStatus('connecting');connect();});
     window.addEventListener('offline',()=>{_online=false;setStatus('offline');});
+    window.addEventListener('focus',()=>{ if(_online) throttledPull('focus'); });
+    document.addEventListener('visibilitychange',()=>{ if(!document.hidden && _online) throttledPull('visibility'); });
+    window.addEventListener('pageshow',()=>{ if(_online) throttledPull('pageshow'); });
     connect();
     startPollingFallback();
   }
