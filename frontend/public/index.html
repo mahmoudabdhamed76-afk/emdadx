@@ -10,7 +10,7 @@
 
 <!-- PWA: install to home screen with company logo -->
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#0a0f1c">
+<meta name="theme-color" content="#04060c">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -8610,6 +8610,22 @@ input, textarea, select { transition: border-color .16s ease, box-shadow .16s ea
   transform: translateY(-1px) scale(1.08);
   filter: drop-shadow(0 0 8px rgba(16,217,160,.55));
 }
+
+/* kill any white strip below content (PWA standalone + overscroll) */
+html { background-color: #04060c !important; }
+body { min-height: 100dvh; background-color: #04060c !important; overscroll-behavior-y: none; }
+
+/* voice note recording */
+#note-rec-btn { background: rgba(46,159,255,.12); border: 1px solid rgba(46,159,255,.3); color: #2e9fff; font-weight: 800; }
+#note-rec-btn.recording {
+  background: rgba(255,77,94,.15) !important;
+  border-color: rgba(255,77,94,.5) !important;
+  color: #ff4d5e !important;
+  animation: recPulse 1.2s ease-in-out infinite;
+}
+@keyframes recPulse { 50% { box-shadow: 0 0 16px rgba(255,77,94,.4); } }
+#note-rec-preview { display: flex; }
+audio::-webkit-media-controls-panel { background: rgba(15,23,42,.9); }
 </style>
 </head>
 <body>
@@ -8780,6 +8796,11 @@ input, textarea, select { transition: border-color .16s ease, box-shadow .16s ea
         <option value="sky">🔵 أزرق</option>
       </select>
       <button class="btn btn-primary btn-sm" onclick="addQuickNote()">➕ إضافة الملاحظة</button>
+      <button class="btn btn-sm" id="note-rec-btn" onclick="toggleNoteRecording()" title="تسجيل صوتي">🎙️ تسجيل</button>
+    </div>
+    <div id="note-rec-preview" style="display:none; margin-top:8px; align-items:center; gap:8px;">
+      <audio id="note-rec-audio" controls style="flex:1; height:36px; border-radius:10px;"></audio>
+      <button class="btn btn-sm" onclick="discardNoteRecording()" title="حذف التسجيل">🗑️</button>
     </div>
   </div>
 
@@ -12510,15 +12531,85 @@ function closeNotesPanel() {
   p.setAttribute('aria-hidden', 'true');
 }
 
+/* ═══ Voice note recording (MediaRecorder, iOS-compatible) ═══ */
+let _recorder = null, _recChunks = [], _recBase64 = null, _recStream = null, _recTimer = null, _recSec = 0;
+
+function _recMime() {
+  const types = ['audio/mp4', 'audio/webm;codecs=opus', 'audio/webm', 'audio/ogg'];
+  for (const t of types) if (window.MediaRecorder && MediaRecorder.isTypeSupported(t)) return t;
+  return '';
+}
+
+async function toggleNoteRecording() {
+  const btn = document.getElementById('note-rec-btn');
+  if (_recorder && _recorder.state === 'recording') { _recorder.stop(); return; }
+  if (!navigator.mediaDevices?.getUserMedia) { toast('المتصفح لا يدعم التسجيل', 'error'); return; }
+  try {
+    _recStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  } catch (e) {
+    toast('اسمح بالوصول للميكروفون من إعدادات المتصفح', 'warning');
+    return;
+  }
+  const mime = _recMime();
+  try {
+    _recorder = mime ? new MediaRecorder(_recStream, { mimeType: mime }) : new MediaRecorder(_recStream);
+  } catch (e) {
+    _recorder = new MediaRecorder(_recStream);
+  }
+  _recChunks = [];
+  _recorder.ondataavailable = e => { if (e.data && e.data.size) _recChunks.push(e.data); };
+  _recorder.onstop = () => {
+    clearInterval(_recTimer);
+    _recStream.getTracks().forEach(t => t.stop());
+    const blob = new Blob(_recChunks, { type: _recorder.mimeType || 'audio/webm' });
+    if (blob.size > 4 * 1024 * 1024) { toast('التسجيل طويل جداً (الحد 4MB) — سجّل أقصر', 'warning'); resetRecUI(); return; }
+    const reader = new FileReader();
+    reader.onload = () => {
+      _recBase64 = reader.result; // data:audio/...;base64,xxx
+      const prev = document.getElementById('note-rec-preview');
+      const aud  = document.getElementById('note-rec-audio');
+      if (aud) aud.src = _recBase64;
+      if (prev) prev.style.display = 'flex';
+      toast('✓ تم التسجيل — اضغط إضافة الملاحظة لحفظه');
+    };
+    reader.readAsDataURL(blob);
+    resetRecUI();
+  };
+  _recorder.start();
+  _recSec = 0;
+  const btnEl = document.getElementById('note-rec-btn');
+  if (btnEl) { btnEl.classList.add('recording'); btnEl.innerHTML = '⏹️ <span id="rec-sec">0</span>ث — إيقاف'; }
+  _recTimer = setInterval(() => {
+    _recSec++;
+    const s = document.getElementById('rec-sec');
+    if (s) s.textContent = _recSec;
+    if (_recSec >= 120) _recorder.stop(); // hard limit 2min
+  }, 1000);
+}
+
+function resetRecUI() {
+  const btn = document.getElementById('note-rec-btn');
+  if (btn) { btn.classList.remove('recording'); btn.innerHTML = '🎙️ تسجيل'; }
+}
+
+function discardNoteRecording() {
+  _recBase64 = null;
+  const prev = document.getElementById('note-rec-preview');
+  const aud  = document.getElementById('note-rec-audio');
+  if (aud) aud.src = '';
+  if (prev) prev.style.display = 'none';
+}
+
 function addQuickNote() {
   const ta = document.getElementById('notes-add-text');
   const colorSel = document.getElementById('notes-add-color');
   const text = (ta.value || '').trim();
-  if (!text) { toast('اكتب الملاحظة الأول', 'warning'); ta.focus(); return; }
+  if (!text && !_recBase64) { toast('اكتب الملاحظة أو سجّل صوت الأول', 'warning'); ta.focus(); return; }
   if (!DB.data.notes) DB.data.notes = [];
   DB.data.notes.unshift({
     id: 'note_' + uid(),
-    text,
+    text: text || '🎙️ ملاحظة صوتية',
+    audio: _recBase64 || null,
     color: colorSel.value || 'amber',
     pinned: false,
     done: false,
@@ -12527,6 +12618,7 @@ function addQuickNote() {
   });
   DB.save();
   ta.value = '';
+  discardNoteRecording();
   renderNotesList();
   updateNotesCount();
   toast('✓ تم حفظ الملاحظة');
@@ -12635,6 +12727,7 @@ function renderNotesList() {
     <div class="note-card note-${n.color || 'amber'} ${n.pinned ? 'pinned' : ''} ${n.done ? 'done' : ''}" data-id="${n.id}">
       ${n.pinned ? '<div class="note-pin-badge">📌</div>' : ''}
       <div class="note-text">${escapeHtml(n.text).replace(/\n/g, '<br>')}</div>
+      ${n.audio ? `<audio controls src="${n.audio}" style="width:100%; height:36px; margin-top:8px; border-radius:10px;"></audio>` : ''}
       <div class="note-meta">
         <span class="note-time">⏱ ${timeAgo(n.createdAt)}</span>
       </div>
