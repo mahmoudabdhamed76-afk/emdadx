@@ -810,31 +810,65 @@ table.data-table tbody tr:last-child td { border-bottom: none; }
 /* ========================= TOAST ========================= */
 .toast-container {
   position: fixed;
-  top: 50%; left: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 200;
+  /* Desktop: top-right (RTL-aware via physical values) */
+  top: calc(14px + env(safe-area-inset-top, 0px));
+  right: calc(16px + env(safe-area-inset-right, 0px));
+  left: auto;
+  transform: none;
+  z-index: 9500;
   display: flex; flex-direction: column;
-  gap: 12px;
+  gap: 10px;
   pointer-events: none;
+  max-width: min(420px, calc(100vw - 32px));
+}
+/* Mobile: top-center with safe-area (iPhone notch) */
+@media (max-width: 768px) {
+  .toast-container {
+    top: calc(10px + env(safe-area-inset-top, 0px));
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    width: calc(100vw - 24px);
+    max-width: 430px;
+    align-items: center;
+  }
 }
 .toast {
   background: var(--surface);
   border: none;
   border-radius: var(--radius-lg);
-  padding: 16px 22px;
+  padding: 13px 18px;
   box-shadow:
-    0 20px 50px rgba(0,0,0,.25),
-    0 8px 20px rgba(0,0,0,.15),
+    0 16px 40px rgba(0,0,0,.22),
+    0 6px 16px rgba(0,0,0,.12),
     0 0 0 1px rgba(0,0,0,.04);
-  min-width: 360px;
-  max-width: 500px;
-  display: flex; align-items: center; gap: 14px;
-  animation: toastPopIn .35s cubic-bezier(.34, 1.56, .64, 1);
-  font-size: 15px;
+  min-width: 0;
+  width: 100%;
+  max-width: 420px;
+  display: flex; align-items: center; gap: 12px;
+  animation: toastSlideIn .38s cubic-bezier(.34, 1.56, .64, 1);
+  font-size: 14px;
   font-weight: 700;
   pointer-events: auto;
   position: relative;
   overflow: hidden;
+}
+.toast.toast-leaving {
+  animation: toastFadeOut .3s ease forwards;
+}
+@keyframes toastSlideIn {
+  from { transform: translateX(-40px) translateY(-8px); opacity: 0; }
+  to   { transform: translateX(0)     translateY(0);    opacity: 1; }
+}
+@media (max-width: 768px) {
+  @keyframes toastSlideIn {
+    from { transform: translateY(-30px) scale(.95); opacity: 0; }
+    to   { transform: translateY(0)     scale(1);   opacity: 1; }
+  }
+}
+@keyframes toastFadeOut {
+  from { transform: translateY(0);    opacity: 1; }
+  to   { transform: translateY(-12px); opacity: 0; }
 }
 [data-theme="dark"] .toast {
   box-shadow:
@@ -850,10 +884,7 @@ table.data-table tbody tr:last-child td { border-bottom: none; }
   width: 5px;
   background: var(--primary);
 }
-@keyframes toastPopIn {
-  from { transform: scale(.85); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
-}
+
 .toast.success { background: var(--surface); }
 .toast.error   { background: var(--surface); }
 .toast.warning { background: var(--surface); }
@@ -8186,6 +8217,32 @@ html[dir="ltr"] .nav-item:hover { transform: translateX(3px); }
 .ob-msg { flex: 1; }
 .ob-dot { width: 10px; height: 10px; border-radius: 50%; background: #fef3c7; flex: 0 0 10px; animation: obBlink 1.2s ease-in-out infinite; }
 @keyframes obBlink { 50% { opacity: .2; } }
+
+/* ── HOME FAB — fixed button, visible on all pages except dashboard ── */
+#home-fab {
+  position: fixed;
+  inset-inline-end: calc(18px + env(safe-area-inset-right, 0px));
+  bottom: calc(22px + env(safe-area-inset-bottom, 0px));
+  width: 52px; height: 52px;
+  border-radius: 17px;
+  z-index: 150;
+  background: linear-gradient(135deg, var(--primary-dark, #047857), var(--primary, #10b981));
+  color: #fff;
+  display: none;
+  align-items: center; justify-content: center;
+  box-shadow: 0 10px 28px rgba(16,185,129,.4), inset 0 1px 0 rgba(255,255,255,.25);
+  transition: transform .2s cubic-bezier(.34,1.56,.64,1), box-shadow .2s ease, opacity .25s ease;
+  opacity: 0;
+  border: none; cursor: pointer;
+}
+#home-fab.visible { display: flex; opacity: 1; animation: fabPop .35s cubic-bezier(.34,1.56,.64,1); }
+@keyframes fabPop { from { transform: scale(.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+#home-fab:hover  { transform: translateY(-4px) scale(1.07); box-shadow: 0 16px 38px rgba(16,185,129,.5), inset 0 1px 0 rgba(255,255,255,.3); }
+#home-fab:active { transform: scale(.88); }
+@media (max-width: 768px) {
+  #home-fab { width: 48px; height: 48px; border-radius: 15px; }
+  #home-fab svg { width: 20px; height: 20px; }
+}
 </style>
 </head>
 <body>
@@ -8844,6 +8901,14 @@ const SyncEngine = (() => {
 })();
 
 /* ── topbar manual refresh (runs silently in background) ── */
+/* Home FAB — show on every page except dashboard */
+function updateHomeFab() {
+  const fab = document.getElementById('home-fab');
+  if (!fab) return;
+  const show = typeof currentPage !== 'undefined' && currentPage !== 'dashboard';
+  fab.classList.toggle('visible', show);
+}
+
 function topbarRefresh() {
   const btn = document.getElementById('topbar-refresh-btn');
   if (btn) { btn.classList.add('spinning'); setTimeout(() => btn.classList.remove('spinning'), 900); }
@@ -9196,15 +9261,23 @@ function celebrate() {
 
 function toast(msg, type='success', duration) {
   const box = document.getElementById('toast-container');
+  if (!box) return;
+  // Keep max 3 toasts visible — remove oldest
+  while (box.children.length >= 3) box.firstChild.remove();
   const el = document.createElement('div');
   el.className = 'toast ' + type;
   const ic = { success:'✓', error:'✕', warning:'⚠', info:'ℹ' }[type] || 'ℹ';
-  el.innerHTML = `<span class="icon">${ic}</span><span class="msg">${escapeHtml(msg)}</span><span class="close-x" style="margin-right:auto;font-size:18px;font-weight:900;cursor:pointer;color:var(--text-muted);padding:0 6px">×</span>`;
-  el.querySelector('.close-x').onclick = () => { el.style.opacity='0'; setTimeout(()=>el.remove(), 300); };
+  el.innerHTML = `<span class="icon">${ic}</span><span class="msg">${escapeHtml(msg)}</span><span class="close-x" style="margin-inline-start:auto;font-size:18px;font-weight:900;cursor:pointer;color:var(--text-muted);padding:0 6px">×</span>`;
+  const dismiss = () => {
+    if (el.classList.contains('toast-leaving')) return;
+    el.classList.add('toast-leaving');
+    setTimeout(() => el.remove(), 320);
+  };
+  el.querySelector('.close-x').onclick = dismiss;
   box.appendChild(el);
   try { playTone(type); } catch(_) {}
   const auto = duration || (type === 'error' || type === 'warning' ? 5000 : 3000);
-  setTimeout(()=> { el.style.opacity='0'; el.style.transition='opacity .3s'; setTimeout(()=>el.remove(), 300); }, auto);
+  setTimeout(dismiss, auto);
 }
 
 /* ============================================================
@@ -9451,6 +9524,7 @@ function navigate(page, isBack) {
   const renderers = { dashboard: renderDashboard, customers: renderCustomers, issuances: renderIssuances, invoices: renderInvoices, payments: renderPayments, transfers: renderTransfersPage, suppliers: renderSuppliers, inventory: renderInventory, expenses: renderExpenses, reports: renderReports, aiassistant: renderAIAssistant, users: renderUsers, audit: renderAuditLog, settings: renderSettings };
   (renderers[page] || renderDashboard)();
   updateBackButton();
+  updateHomeFab();
   window.scrollTo(0,0);
 }
 
@@ -23966,6 +24040,11 @@ function exportSuppliersCSV() {
   toast('تم تصدير ملف Excel ✓');
 }
 </script>
+
+<!-- HOME FAB — return to dashboard from any page -->
+<button id="home-fab" onclick="navigate('dashboard')" title="العودة للرئيسية" aria-label="العودة للرئيسية">
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+</button>
 
 <!-- OFFLINE BANNER -->
 <div id="offline-banner" class="offline-banner" role="alert">
