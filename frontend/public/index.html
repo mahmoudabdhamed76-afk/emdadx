@@ -8245,6 +8245,8 @@ html[dir="ltr"] .nav-item:hover { transform: translateX(3px); }
   #home-fab svg { width: 20px; height: 20px; }
 }
 
+}
+
 /* ═══════════════════════════════════════════════════════════════
    PREMIUM FINTECH DARK THEME — Financial Dashboard Look
    Black → Deep Navy gradient · Glassmorphism · Glowing borders
@@ -8906,6 +8908,19 @@ audio::-webkit-media-controls-panel { background: rgba(15,23,42,.9); }
   .lgx-right { padding: 22px 16px calc(28px + env(safe-area-inset-bottom, 0px)); }
   .lgx-card { padding: 30px 22px 24px; }
 }
+
+/* ── Mobile: sidebar above bottom nav + logout visible ── */
+@media (max-width: 768px) {
+  .sidebar { z-index: 300 !important; }
+  .sidebar-backdrop { z-index: 290 !important; }
+  .sidebar-logout {
+    margin-bottom: calc(14px + env(safe-area-inset-bottom, 0px)) !important;
+    background: rgba(255,77,94,.1) !important;
+    border: 1px solid rgba(255,77,94,.3) !important;
+    color: #ff8c96 !important;
+    font-weight: 800 !important;
+  }
+}
 </style>
 </head>
 <body>
@@ -8976,8 +8991,6 @@ audio::-webkit-media-controls-panel { background: rgba(15,23,42,.9); }
           <div class="lgx-brand-sub">EMDAD X — للتوريدات العمومية</div>
         </div>
       </div>
-
-      <h2 class="lgx-headline">منظومة أعمال متكاملة<br>بمزامنة لحظية بين كل أجهزتك</h2>
 
       <div class="lgx-stats">
         <div class="lgx-stat"><div class="lgx-stat-v">+14</div><div class="lgx-stat-l">وحدة إدارية</div></div>
