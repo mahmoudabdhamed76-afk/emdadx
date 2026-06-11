@@ -7603,16 +7603,17 @@ body.mobile-drawer-open { overflow: hidden; }
   /* Toasts compact */
   .toast-container {
     position: fixed !important;
-    top: 50% !important;
+    top: calc(10px + env(safe-area-inset-top, 0px)) !important;
     left: 50% !important;
     right: auto !important;
     inset-inline-start: auto !important;
     inset-inline-end: auto !important;
-    transform: translate(-50%, -50%) !important;
-    width: 88vw !important;
-    max-width: 360px !important;
-    z-index: 2000;
+    transform: translateX(-50%) !important;
+    width: calc(100vw - 24px) !important;
+    max-width: 430px !important;
+    z-index: 9500;
     pointer-events: none;
+    align-items: center;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -8621,12 +8622,6 @@ input::placeholder, textarea::placeholder { color: var(--text-soft) !important; 
   <span id="reciter-label">▶ سورة يوسف</span>
 </div>
 
-<div class="home-fab" id="home-fab" onclick="navigate('dashboard')" title="العودة للصفحة الرئيسية" style="display:none !important">
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-    <polyline points="9 22 9 12 15 12 15 22"/>
-  </svg>
-</div>
 
 <div class="autosave-indicator" id="autosave-indicator">
   <span class="autosave-dot"></span>
@@ -9096,6 +9091,7 @@ const SyncEngine = (() => {
 function updateHomeFab() {
   const fab = document.getElementById('home-fab');
   if (!fab) return;
+  fab.style.display = '';   // clear any inline display:none (e.g. from logout)
   const show = typeof currentPage !== 'undefined' && currentPage !== 'dashboard';
   fab.classList.toggle('visible', show);
 }
