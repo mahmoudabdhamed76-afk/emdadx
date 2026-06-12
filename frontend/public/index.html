@@ -9169,8 +9169,15 @@ audio::-webkit-media-controls-panel { background: rgba(15,23,42,.9); }
    LOGIN — LIGHT MODE OVERRIDE (page stays light, app stays dark)
 ═══════════════════════════════════════════════════════════════ */
 .lgn-wrap {
-  background: linear-gradient(135deg, #d8f5ea 0%, #c0ecf2 35%, #b3d9f5 70%, #a8cdf2 100%) !important;
+  background: linear-gradient(135deg, #059669 0%, #0d9488 30%, #0284c7 65%, #1d4ed8 100%) !important;
 }
+.lgn-foot { color: rgba(255,255,255,.78) !important; }
+.lgn-grid {
+  background-image:
+    linear-gradient(rgba(255,255,255,.1) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.1) 1px, transparent 1px) !important;
+}
+.lgn-aurora { opacity: .3 !important; }
 .lgn-aurora { opacity: .5 !important; }
 .lgn-b1 { background: radial-gradient(circle, rgba(46,159,255,.22), transparent 65%) !important; }
 .lgn-b2 { background: radial-gradient(circle, rgba(16,217,160,.2), transparent 70%) !important; }
@@ -9253,7 +9260,7 @@ audio::-webkit-media-controls-panel { background: rgba(15,23,42,.9); }
 /* ── AI FAB — floating assistant on dashboard ── */
 #ai-fab {
   position: fixed;
-  inset-inline-start: calc(18px + env(safe-area-inset-left, 0px));
+  inset-inline-end: calc(18px + env(safe-area-inset-left, 0px));
   bottom: calc(22px + env(safe-area-inset-bottom, 0px));
   width: 54px; height: 54px;
   border-radius: 18px; border: none; cursor: pointer;
@@ -20790,38 +20797,47 @@ function aiAnswer(qRaw) {
     return ans;
   }
 
-  // ---- MONTHLY PAPER OUTPUT (طلعنا قد ايه ورق) — most specific, first ----
-  if (has('طلعنا', 'صرفنا', 'خرج', 'اتصرف') && has('ورق', 'بلاستك', 'بلاستيك', 'خامة')) {
-    const issuances = DB.data.issuances || [];
+  // ---- MONTHLY PAPER OUTPUT from stock (طلعنا قد ايه ورق) ----
+  if (has('طلعنا', 'صرفنا', 'خرج', 'اتصرف', 'طلع', 'نزل') && has('ورق', 'بلاستك', 'بلاستيك', 'خامة', 'مخزن')) {
     const monthEnd = today.slice(0,7) + '-31';
-    const monthIss = issuances.filter(i => (i.date||'') >= monthStart && (i.date||'') <= monthEnd);
-    if (!monthIss.length) return '📦 مفيش صرف ورق مسجل الشهر ده (من ' + monthStart + ' لحد النهارده).';
+    const mNum = Number(today.slice(5,7));
+    const mStartLabel = '1-' + mNum;
+    const mEndLabel = '30-' + mNum;
 
     const isPlastic = (n) => { n=(n||'').toLowerCase(); return n.includes('بلاستك')||n.includes('بلاستيك')||n.includes('plastic'); };
     const isInk = (n) => { n=(n||'').toLowerCase(); return n.includes('حبر')||n.includes('تنر')||n.includes('تونر')||n.includes('ink')||n.includes('toner'); };
 
-    let paperQty = 0, plasticQty = 0;
+    const moves = (DB.data.stockMoves || []).filter(m =>
+      m.type === 'out' && (m.date||'') >= monthStart && (m.date||'') <= monthEnd
+    );
+
+    let paperQty = 0, plasticQty = 0, otherQty = 0;
     const byProduct = {};
-    monthIss.forEach(iss => {
-      (iss.items || []).forEach(it => {
-        const name = it.name || (products.find(p=>p.id===it.productId)||{}).name || 'غير معروف';
-        if (isInk(name)) return; // الحبر مش ضمن الورق/البلاستك
-        const qty = Number(it.qty || it.quantity || 0);
-        if (isPlastic(name)) plasticQty += qty; else paperQty += qty;
-        byProduct[name] = (byProduct[name] || 0) + qty;
-      });
+    moves.forEach(m => {
+      const p = products.find(x => x.id === m.productId);
+      const name = (p && p.name) || m.note || 'صنف غير معروف';
+      if (isInk(name)) return;
+      const qty = Number(m.quantity || m.qty || 0);
+      if (!qty) return;
+      if (isPlastic(name)) plasticQty += qty;
+      else if ((name||'').toLowerCase().match(/ورق|paper|a4|a3|a5|b4|b5|فرخ|ريم|رزمة|فوتو|photo|لفة|فيلم/)) paperQty += qty;
+      else otherQty += qty;
+      byProduct[name] = (byProduct[name] || 0) + qty;
     });
 
-    const total = paperQty + plasticQty;
-    if (!total) return '📦 مفيش كميات ورق أو بلاستك في صرف الشهر ده.';
+    const total = paperQty + plasticQty + otherQty;
+    if (!total) return '\u{1F4E6} مفيش حركات صرف من المخزن مسجلة الشهر ده (من ' + mStartLabel + ' لحد ' + mEndLabel + ').<br>اتأكد إن الفواتير وصرف الورق بيتسجلوا بكمياتهم.';
+
     const breakdown = Object.entries(byProduct).sort((a,b)=>b[1]-a[1])
-      .map(([name, qty]) => '&nbsp;&nbsp;• ' + name + ': <b>' + fmt(qty).split('.')[0] + '</b>')
+      .map(([name, qty]) => '&nbsp;&nbsp;\u2022 ' + name + ': <b>' + fmt(qty).split('.')[0] + '</b>')
       .join('<br>');
-    return '📦 <b>صرف الشهر</b> (من ' + monthStart + ' إلى آخر الشهر):<br>' +
-      '🧻 ورق: <b>' + fmt(paperQty).split('.')[0] + '</b> وحدة<br>' +
-      '🛍️ بلاستك: <b>' + fmt(plasticQty).split('.')[0] + '</b> وحدة<br>' +
-      '📊 الإجمالي: <b>' + fmt(total).split('.')[0] + '</b> وحدة من ' + monthIss.length + ' عملية صرف<br><br>' +
-      '<b>التصنيف بالتفصيل:</b><br>' + breakdown;
+    let ans = '\u{1F4E6} <b>اللي طلع من المخزن الشهر ده</b> (من ' + mStartLabel + ' إلى ' + mEndLabel + '):<br>';
+    ans += '\u{1F9FB} ورق: <b>' + fmt(paperQty).split('.')[0] + '</b> وحدة<br>';
+    ans += '\u{1F6CD}\uFE0F بلاستك: <b>' + fmt(plasticQty).split('.')[0] + '</b> وحدة<br>';
+    if (otherQty) ans += '\u{1F4CB} أصناف أخرى: <b>' + fmt(otherQty).split('.')[0] + '</b> وحدة<br>';
+    ans += '\u{1F4CA} الإجمالي: <b>' + fmt(total).split('.')[0] + '</b> وحدة من ' + moves.length + ' حركة صرف<br><br>';
+    ans += '<b>التصنيف بالتفصيل:</b><br>' + breakdown;
+    return ans;
   }
 
   // ---- SUPPLIERS we owe (عليا للموردين) — checked BEFORE debts (more specific) ----
