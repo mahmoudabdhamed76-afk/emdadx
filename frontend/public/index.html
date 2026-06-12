@@ -8911,8 +8911,8 @@ audio::-webkit-media-controls-panel { background: rgba(15,23,42,.9); }
 
 /* ── Mobile: sidebar above bottom nav + logout visible ── */
 @media (max-width: 768px) {
-  .sidebar { z-index: 300 !important; }
-  .sidebar-backdrop { z-index: 290 !important; }
+  .sidebar { z-index: 1100 !important; }
+  .overlay-backdrop { z-index: 1050 !important; }
   .sidebar-logout {
     margin-bottom: calc(14px + env(safe-area-inset-bottom, 0px)) !important;
     background: rgba(255,77,94,.1) !important;
@@ -8920,6 +8920,249 @@ audio::-webkit-media-controls-panel { background: rgba(15,23,42,.9); }
     color: #ff8c96 !important;
     font-weight: 800 !important;
   }
+}
+
+/* ── Logo: white background (logo is dark — needs light bg) ── */
+.lgx-brand img, .lgx-mini-logo img, .boot-logo,
+.sidebar-brand img, .brand-logo img, .banner-icon {
+  background: #fff !important;
+  padding: 4px !important;
+  object-fit: contain !important;
+}
+
+/* ═══ Churn risk section ═══ */
+.churn-section {
+  margin-top: 20px; padding: 20px;
+  border-radius: 20px;
+  background: linear-gradient(160deg, rgba(15,23,42,.72), rgba(8,13,26,.88));
+  backdrop-filter: blur(18px) saturate(150%);
+  border: 1px solid rgba(255,157,46,.18);
+  box-shadow: 0 8px 28px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.05);
+}
+.churn-title { font-size: 17px; font-weight: 900; color: #fff; }
+.churn-sub { font-size: 12.5px; color: #9fb0cc; font-weight: 600; margin-top: 4px; }
+.churn-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 12px; margin-top: 16px; }
+.churn-empty { padding: 22px; text-align: center; color: #6ef0c8; font-weight: 800; font-size: 14.5px; }
+.churn-card {
+  padding: 14px 16px; border-radius: 16px;
+  background: rgba(255,255,255,.03);
+  border: 1px solid rgba(255,255,255,.08);
+  display: flex; flex-direction: column; gap: 8px;
+  transition: transform .18s cubic-bezier(.34,1.56,.64,1), box-shadow .2s ease;
+}
+.churn-card:hover { transform: translateY(-3px); }
+.churn-row1 { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.churn-name { font-size: 15px; font-weight: 900; color: #fff; cursor: pointer; }
+.churn-name:hover { color: #2e9fff; }
+.churn-badge { font-size: 11px; font-weight: 900; padding: 3px 12px; border-radius: 99px; }
+.churn-high   { border-color: rgba(255,77,94,.35); }
+.churn-high .churn-badge   { background: rgba(255,77,94,.15); color: #ff8c96; border: 1px solid rgba(255,77,94,.4); }
+.churn-high:hover { box-shadow: 0 10px 28px rgba(0,0,0,.4), 0 0 22px rgba(255,77,94,.15); }
+.churn-medium { border-color: rgba(255,157,46,.3); }
+.churn-medium .churn-badge { background: rgba(255,157,46,.14); color: #ffc27a; border: 1px solid rgba(255,157,46,.4); }
+.churn-low    { border-color: rgba(245,210,60,.25); }
+.churn-low .churn-badge    { background: rgba(245,210,60,.12); color: #f5d23c; border: 1px solid rgba(245,210,60,.35); }
+.churn-meta { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: #9fb0cc; font-weight: 700; }
+.churn-meta b { color: #fff; }
+.churn-action { font-size: 12.5px; font-weight: 800; color: #7fc4ff; }
+.churn-btns { display: flex; gap: 8px; margin-top: 2px; }
+.churn-btn {
+  flex: 1; text-align: center; padding: 8px; border-radius: 11px;
+  font-size: 12.5px; font-weight: 800; text-decoration: none;
+  background: rgba(46,159,255,.12); color: #7fc4ff;
+  border: 1px solid rgba(46,159,255,.3);
+  transition: all .15s ease;
+}
+.churn-btn:hover { background: rgba(46,159,255,.22); }
+.churn-btn-wa { background: rgba(16,217,160,.12); color: #6ef0c8; border-color: rgba(16,217,160,.3); }
+.churn-btn-wa:hover { background: rgba(16,217,160,.22); }
+.churn-nophone { font-size: 11.5px; color: #6b7d9e; font-weight: 700; }
+
+/* ═══════════════════════════════════════════════════════════════
+   LGN — AURORA CENTERED LOGIN (v2, original design)
+═══════════════════════════════════════════════════════════════ */
+.lgn-wrap {
+  position: fixed; inset: 0; z-index: 500;
+  display: flex; align-items: center; justify-content: center;
+  background: #04060c;
+  overflow: hidden;
+}
+
+/* drifting aurora blobs */
+.lgn-aurora { position: absolute; inset: 0; filter: blur(70px); opacity: .55; }
+.lgn-blob { position: absolute; border-radius: 50%; }
+.lgn-b1 { width: 480px; height: 480px; background: radial-gradient(circle, #0a3d62, transparent 65%); top: -10%; inset-inline-start: -8%; animation: blobDrift1 16s ease-in-out infinite; }
+.lgn-b2 { width: 420px; height: 420px; background: radial-gradient(circle, #10d9a022, #10d9a011 40%, transparent 70%); bottom: -12%; inset-inline-end: -6%; animation: blobDrift2 19s ease-in-out infinite; }
+.lgn-b3 { width: 340px; height: 340px; background: radial-gradient(circle, #6366f126, transparent 65%); top: 35%; inset-inline-start: 55%; animation: blobDrift3 22s ease-in-out infinite; }
+@keyframes blobDrift1 { 0%,100%{transform:translate(0,0) scale(1)} 50%{transform:translate(60px,40px) scale(1.12)} }
+@keyframes blobDrift2 { 0%,100%{transform:translate(0,0) scale(1)} 50%{transform:translate(-50px,-35px) scale(1.08)} }
+@keyframes blobDrift3 { 0%,100%{transform:translate(0,0) scale(1)} 50%{transform:translate(-40px,50px) scale(.92)} }
+
+/* faint perspective grid floor */
+.lgn-grid {
+  position: absolute; inset-inline: 0; bottom: 0; height: 42%;
+  background-image:
+    linear-gradient(rgba(46,159,255,.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(46,159,255,.07) 1px, transparent 1px);
+  background-size: 46px 46px;
+  -webkit-mask-image: linear-gradient(to top, rgba(0,0,0,.8), transparent);
+  mask-image: linear-gradient(to top, rgba(0,0,0,.8), transparent);
+  transform: perspective(500px) rotateX(38deg);
+  transform-origin: bottom;
+}
+
+.lgn-stage {
+  position: relative; z-index: 2;
+  display: flex; flex-direction: column; align-items: center;
+  width: 100%; max-width: 410px;
+  padding: 24px 18px;
+}
+
+/* logo orb with orbiting rings */
+.lgn-orb {
+  position: relative;
+  width: 108px; height: 108px;
+  display: grid; place-items: center;
+  margin-bottom: -54px; z-index: 3;
+  animation: orbIn .7s cubic-bezier(.25,.46,.45,.94) both;
+}
+@keyframes orbIn { from { opacity: 0; transform: translateY(-18px) scale(.8);} to { opacity:1; transform: translateY(0) scale(1);} }
+.lgn-orb img {
+  width: 84px; height: 84px; border-radius: 24px;
+  background: #fff; padding: 5px; object-fit: contain;
+  box-shadow: 0 0 0 4px rgba(255,255,255,.06), 0 0 44px rgba(16,217,160,.3), 0 14px 36px rgba(0,0,0,.6);
+}
+.lgn-ring {
+  position: absolute; border-radius: 50%;
+  border: 1.5px solid transparent;
+  pointer-events: none;
+}
+.lgn-r1 {
+  width: 128px; height: 128px;
+  border-top-color: rgba(16,217,160,.6); border-inline-end-color: rgba(16,217,160,.15);
+  animation: ringSpin 4.5s linear infinite;
+}
+.lgn-r2 {
+  width: 148px; height: 148px;
+  border-bottom-color: rgba(46,159,255,.5); border-inline-start-color: rgba(46,159,255,.12);
+  animation: ringSpin 7s linear infinite reverse;
+}
+@keyframes ringSpin { to { transform: rotate(360deg); } }
+
+/* card */
+.lgn-card {
+  width: 100%;
+  padding: 72px 32px 28px;
+  border-radius: 28px;
+  background: linear-gradient(170deg, rgba(15,23,42,.82), rgba(7,11,22,.94));
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  border: 1px solid rgba(255,255,255,.09);
+  box-shadow:
+    0 30px 70px rgba(0,0,0,.65),
+    inset 0 1px 0 rgba(255,255,255,.08),
+    0 0 60px rgba(16,217,160,.05);
+  text-align: center;
+  animation: cardRise .6s .1s cubic-bezier(.25,.46,.45,.94) both;
+}
+@keyframes cardRise { from { opacity: 0; transform: translateY(24px);} to { opacity: 1; transform: translateY(0);} }
+
+.lgn-title { font-size: 24px; font-weight: 900; color: #fff; letter-spacing: -.4px; margin: 0 0 4px; }
+.lgn-sub { font-size: 13.5px; color: #9fb0cc; font-weight: 600; margin: 0 0 26px; }
+
+/* fields */
+.lgn-field {
+  position: relative; margin-bottom: 14px;
+  animation: cardRise .5s .22s cubic-bezier(.25,.46,.45,.94) both;
+}
+.lgn-field:nth-of-type(2) { animation-delay: .3s; }
+.lgn-fico {
+  position: absolute; inset-inline-start: 15px; top: 50%; transform: translateY(-50%);
+  color: #5d7195; display: grid; place-items: center; pointer-events: none;
+  transition: color .2s ease;
+}
+.lgn-fico svg { width: 18px; height: 18px; }
+.lgn-field:focus-within .lgn-fico { color: #10d9a0; }
+.lgn-input {
+  width: 100%;
+  padding: 15px 46px 15px 46px;
+  font-size: 14.5px; font-weight: 700; color: #fff;
+  background: rgba(255,255,255,.045) !important;
+  border: 1.5px solid rgba(255,255,255,.1) !important;
+  border-radius: 14px !important;
+  text-align: right;
+  transition: border-color .2s ease, box-shadow .2s ease, background .2s ease;
+  box-shadow: none !important;
+}
+.lgn-input::placeholder { color: #5d7195; font-weight: 600; }
+.lgn-input:focus {
+  outline: none;
+  background: rgba(255,255,255,.07) !important;
+  border-color: rgba(16,217,160,.55) !important;
+  box-shadow: 0 0 0 4px rgba(16,217,160,.1) !important;
+}
+.lgn-eye {
+  position: absolute; inset-inline-end: 12px; top: 50%; transform: translateY(-50%);
+  background: none; border: none; cursor: pointer;
+  color: #5d7195; display: grid; place-items: center; padding: 4px;
+  transition: color .15s ease;
+}
+.lgn-eye svg { width: 18px; height: 18px; }
+.lgn-eye:hover { color: #10d9a0; }
+
+/* button — emerald gradient with sweeping shine */
+.lgn-btn {
+  position: relative; overflow: hidden;
+  width: 100%; margin-top: 10px;
+  padding: 15px;
+  font-size: 15.5px; font-weight: 900; color: #04261c;
+  border: none; border-radius: 14px; cursor: pointer;
+  background: linear-gradient(120deg, #10d9a0, #4aeebc);
+  box-shadow: 0 10px 30px rgba(16,217,160,.35), inset 0 1px 0 rgba(255,255,255,.4);
+  transition: transform .15s cubic-bezier(.34,1.56,.64,1), box-shadow .22s ease;
+  animation: cardRise .5s .38s cubic-bezier(.25,.46,.45,.94) both;
+}
+.lgn-btn:hover { transform: translateY(-2px); box-shadow: 0 16px 40px rgba(16,217,160,.5), inset 0 1px 0 rgba(255,255,255,.45); }
+.lgn-btn:active { transform: scale(.97); }
+.lgn-btn-shine {
+  position: absolute; top: 0; bottom: 0; width: 55%;
+  background: linear-gradient(105deg, transparent, rgba(255,255,255,.45), transparent);
+  inset-inline-start: -60%;
+  animation: btnShine 3.2s ease-in-out infinite;
+}
+@keyframes btnShine { 0%, 60% { inset-inline-start: -60%; } 100% { inset-inline-start: 130%; } }
+
+/* feature chips */
+.lgn-chips {
+  display: flex; justify-content: center; flex-wrap: wrap; gap: 8px;
+  margin-top: 22px;
+  animation: cardRise .5s .48s cubic-bezier(.25,.46,.45,.94) both;
+}
+.lgn-chip {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-size: 11.5px; font-weight: 800; color: #9fb0cc;
+  padding: 6px 13px; border-radius: 99px;
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.09);
+}
+.lgn-chip i {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--c); box-shadow: 0 0 9px var(--c);
+}
+
+.lgn-foot {
+  margin-top: 20px;
+  font-size: 11px; font-weight: 800; letter-spacing: 2px;
+  color: #5d7195;
+}
+
+@media (max-width: 480px) {
+  .lgn-stage { max-width: 100%; padding: 18px 14px calc(18px + env(safe-area-inset-bottom, 0px)); }
+  .lgn-card { padding: 66px 22px 24px; border-radius: 24px; }
+  .lgn-orb { width: 96px; height: 96px; margin-bottom: -48px; }
+  .lgn-orb img { width: 76px; height: 76px; }
+  .lgn-r1 { width: 114px; height: 114px; }
+  .lgn-r2 { width: 132px; height: 132px; }
 }
 </style>
 </head>
@@ -8931,119 +9174,61 @@ audio::-webkit-media-controls-panel { background: rgba(15,23,42,.9); }
 </div>
 
 <!-- ============== LOGIN PAGE ============== -->
-<div id="login-page" class="lgx-wrap">
+<div id="login-page" class="lgn-wrap">
 
-  <!-- ════ LEFT PANEL — Holographic City + Branding ════ -->
-  <div class="lgx-left">
-    <div class="lgx-city">
-      <svg viewBox="0 0 600 700" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
-        <defs>
-          <linearGradient id="bld1" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stop-color="#2e9fff" stop-opacity=".55"/>
-            <stop offset="1" stop-color="#2e9fff" stop-opacity=".04"/>
-          </linearGradient>
-          <linearGradient id="bld2" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stop-color="#a855f7" stop-opacity=".5"/>
-            <stop offset="1" stop-color="#a855f7" stop-opacity=".03"/>
-          </linearGradient>
-          <linearGradient id="bld3" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stop-color="#10d9a0" stop-opacity=".45"/>
-            <stop offset="1" stop-color="#10d9a0" stop-opacity=".03"/>
-          </linearGradient>
-        </defs>
-        <!-- grid floor -->
-        <g stroke="#2e9fff" stroke-opacity=".12" stroke-width="1">
-          <line x1="0" y1="640" x2="600" y2="640"/><line x1="0" y1="660" x2="600" y2="660"/><line x1="0" y1="685" x2="600" y2="685"/>
-          <line x1="60" y1="620" x2="0" y2="700"/><line x1="160" y1="620" x2="120" y2="700"/><line x1="260" y1="620" x2="245" y2="700"/>
-          <line x1="360" y1="620" x2="375" y2="700"/><line x1="460" y1="620" x2="495" y2="700"/><line x1="560" y1="620" x2="600" y2="690"/>
-        </g>
-        <!-- buildings -->
-        <g class="lgx-bldgs">
-          <rect x="30"  y="380" width="70"  height="260" fill="url(#bld1)" stroke="#2e9fff" stroke-opacity=".5" stroke-width="1.2" rx="3"/>
-          <rect x="120" y="290" width="85"  height="350" fill="url(#bld2)" stroke="#a855f7" stroke-opacity=".5" stroke-width="1.2" rx="3"/>
-          <rect x="225" y="180" width="100" height="460" fill="url(#bld1)" stroke="#2e9fff" stroke-opacity=".6" stroke-width="1.4" rx="4"/>
-          <rect x="345" y="320" width="80"  height="320" fill="url(#bld3)" stroke="#10d9a0" stroke-opacity=".5" stroke-width="1.2" rx="3"/>
-          <rect x="445" y="240" width="95"  height="400" fill="url(#bld2)" stroke="#a855f7" stroke-opacity=".55" stroke-width="1.3" rx="3"/>
-          <!-- windows -->
-          <g fill="#7fc4ff" opacity=".7">
-            <rect x="245" y="210" width="9" height="6" rx="1" class="w w1"/><rect x="265" y="210" width="9" height="6" rx="1" class="w w3"/>
-            <rect x="285" y="240" width="9" height="6" rx="1" class="w w2"/><rect x="245" y="270" width="9" height="6" rx="1" class="w w4"/>
-            <rect x="305" y="270" width="9" height="6" rx="1" class="w w1"/><rect x="265" y="310" width="9" height="6" rx="1" class="w w3"/>
-            <rect x="140" y="320" width="8" height="6" rx="1" class="w w2" fill="#d3a5ff"/><rect x="170" y="350" width="8" height="6" rx="1" class="w w4" fill="#d3a5ff"/>
-            <rect x="465" y="270" width="8" height="6" rx="1" class="w w1" fill="#d3a5ff"/><rect x="495" y="310" width="8" height="6" rx="1" class="w w3" fill="#d3a5ff"/>
-            <rect x="365" y="350" width="8" height="6" rx="1" class="w w2" fill="#6ef0c8"/><rect x="390" y="390" width="8" height="6" rx="1" class="w w4" fill="#6ef0c8"/>
-            <rect x="50" y="410" width="8" height="6" rx="1" class="w w3"/><rect x="75" y="450" width="8" height="6" rx="1" class="w w1"/>
-          </g>
-          <!-- antenna beacons -->
-          <circle cx="275" cy="172" r="3.5" fill="#2e9fff" class="beacon"/>
-          <circle cx="492" cy="232" r="3" fill="#a855f7" class="beacon b2"/>
-        </g>
-        <!-- scan line -->
-        <rect x="0" y="0" width="600" height="2.5" fill="#2e9fff" opacity=".35" class="lgx-scan"/>
-      </svg>
-    </div>
-
-    <div class="lgx-left-content">
-      <div class="lgx-brand">
-        <img src="icons/logo-square.png" alt="EmdadX" onerror="this.style.display='none'">
-        <div>
-          <div class="lgx-brand-name">إمداد إكس</div>
-          <div class="lgx-brand-sub">EMDAD X — للتوريدات العمومية</div>
-        </div>
-      </div>
-
-      <div class="lgx-stats">
-        <div class="lgx-stat"><div class="lgx-stat-v">+14</div><div class="lgx-stat-l">وحدة إدارية</div></div>
-        <div class="lgx-stat"><div class="lgx-stat-v">&lt;500ms</div><div class="lgx-stat-l">سرعة المزامنة</div></div>
-        <div class="lgx-stat"><div class="lgx-stat-v">24/7</div><div class="lgx-stat-l">يعمل أوف لاين</div></div>
-      </div>
-
-      <ul class="lgx-features">
-        <li><span class="lgx-fdot" style="--c:#10d9a0"></span> فواتير ومخازن وتحصيلات في مكان واحد</li>
-        <li><span class="lgx-fdot" style="--c:#2e9fff"></span> تقارير مالية ذكية ولوحة تحكم لحظية</li>
-        <li><span class="lgx-fdot" style="--c:#a855f7"></span> مساعد ذكي وتنبيهات نابضة للمخزون</li>
-      </ul>
-    </div>
+  <!-- animated aurora background -->
+  <div class="lgn-aurora" aria-hidden="true">
+    <span class="lgn-blob lgn-b1"></span>
+    <span class="lgn-blob lgn-b2"></span>
+    <span class="lgn-blob lgn-b3"></span>
   </div>
+  <div class="lgn-grid" aria-hidden="true"></div>
 
-  <!-- ════ RIGHT PANEL — Glass Login Form ════ -->
-  <div class="lgx-right">
-    <div class="lgx-card">
-      <div class="lgx-card-glow" aria-hidden="true"></div>
+  <div class="lgn-stage">
 
-      <div class="lgx-card-head">
-        <div class="lgx-mini-logo">
-          <img src="icons/logo-square.png" alt="" onerror="this.style.display='none'">
-        </div>
-        <h1>مرحباً بعودتك 👋</h1>
-        <p>سجّل دخولك للمتابعة إلى لوحة التحكم</p>
-      </div>
+    <!-- logo with orbiting rings -->
+    <div class="lgn-orb">
+      <span class="lgn-ring lgn-r1"></span>
+      <span class="lgn-ring lgn-r2"></span>
+      <img src="icons/logo-square.png" alt="EmdadX" onerror="this.style.display='none'">
+    </div>
+
+    <div class="lgn-card">
+      <h1 class="lgn-title">إمداد إكس</h1>
+      <p class="lgn-sub">سجّل دخولك إلى لوحة التحكم</p>
 
       <form id="login-form" autocomplete="on">
-        <div class="lgx-field">
-          <input class="lgx-input" id="login-username" autocomplete="username" required placeholder=" ">
-          <label class="lgx-label" for="login-username">اسم المستخدم</label>
-          <span class="lgx-field-ico">
+        <div class="lgn-field">
+          <span class="lgn-fico">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
           </span>
+          <input class="lgn-input" id="login-username" autocomplete="username" required placeholder="اسم المستخدم">
         </div>
 
-        <div class="lgx-field">
-          <input class="lgx-input" id="login-password" type="password" autocomplete="current-password" required placeholder=" ">
-          <label class="lgx-label" for="login-password">كلمة المرور</label>
-          <span class="lgx-field-ico lgx-eye" onclick="lgxTogglePass()" title="إظهار/إخفاء">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        <div class="lgn-field">
+          <span class="lgn-fico">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
           </span>
+          <input class="lgn-input" id="login-password" type="password" autocomplete="current-password" required placeholder="كلمة المرور">
+          <button type="button" class="lgn-eye" onclick="lgxTogglePass()" title="إظهار/إخفاء" tabindex="-1">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
         </div>
 
-        <button class="lgx-btn" type="submit">
-          <span>تسجيل الدخول</span>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 12h14"/><path d="M12 5l-7 7 7 7"/></svg>
+        <button class="lgn-btn" type="submit">
+          تسجيل الدخول
+          <span class="lgn-btn-shine" aria-hidden="true"></span>
         </button>
       </form>
 
-      <div class="lgx-foot">نظام آمن · بياناتك مشفّرة ومتزامنة لحظياً</div>
+      <div class="lgn-chips">
+        <span class="lgn-chip"><i style="--c:#10d9a0"></i> مزامنة لحظية</span>
+        <span class="lgn-chip"><i style="--c:#2e9fff"></i> يعمل أوف لاين</span>
+        <span class="lgn-chip"><i style="--c:#a855f7"></i> آمن ومشفّر</span>
+      </div>
     </div>
+
+    <div class="lgn-foot">EMDAD X — للتوريدات العمومية</div>
   </div>
 </div>
 
@@ -19985,7 +20170,107 @@ function renderAIAssistant() {
         </button>
       </div>
     </div>
+
+    <!-- ═══ العملاء المعرضون للفقد ═══ -->
+    <div class="churn-section">
+      <div class="churn-head">
+        <div>
+          <div class="churn-title">⚠️ العملاء المعرضون للفقد</div>
+          <div class="churn-sub">تحليل ذكي لسجل المبيعات — عملاء انخفض نشاطهم مقارنة بعاداتهم السابقة</div>
+        </div>
+      </div>
+      <div id="churn-list" class="churn-list"></div>
+    </div>
   `;
+  renderChurnRisk();
+}
+
+/* ═══════════════════════════════════════════════════════
+   CHURN RISK — العملاء المعرضون للفقد
+   يقارن مدة الغياب بمتوسط الفترة بين مشتريات كل عميل
+═══════════════════════════════════════════════════════ */
+function computeChurnRisk() {
+  const today = new Date(todayStr());
+  const out = [];
+  (DB.data.customers || []).forEach(cu => {
+    const invs = (DB.data.invoices || [])
+      .filter(i => i.customerId === cu.id && i.date)
+      .sort((a, b) => a.date.localeCompare(b.date));
+    if (!invs.length) return;
+
+    const lastDate = new Date(invs[invs.length - 1].date);
+    const daysSince = Math.floor((today - lastDate) / 86400000);
+    const totalSpend = invs.reduce((s, i) => s + (i.total || 0), 0);
+
+    // average gap between purchases (their personal habit)
+    let avgGap = 0;
+    if (invs.length >= 2) {
+      let gaps = 0;
+      for (let i = 1; i < invs.length; i++)
+        gaps += (new Date(invs[i].date) - new Date(invs[i-1].date)) / 86400000;
+      avgGap = gaps / (invs.length - 1);
+    }
+
+    let risk = null, ratio = 0;
+    if (avgGap >= 3) {
+      ratio = daysSince / avgGap;
+      if (ratio >= 2.5)      risk = 'high';
+      else if (ratio >= 1.6) risk = 'medium';
+      else if (ratio >= 1.1) risk = 'low';
+    } else {
+      // single purchase or very tight history → absolute thresholds
+      if (daysSince >= 90)      risk = 'high';
+      else if (daysSince >= 45) risk = 'medium';
+      else if (daysSince >= 21) risk = 'low';
+    }
+    if (!risk) return;
+
+    out.push({ cu, daysSince, totalSpend, avgGap: Math.round(avgGap), risk, invCount: invs.length });
+  });
+
+  const order = { high: 0, medium: 1, low: 2 };
+  out.sort((a, b) => order[a.risk] - order[b.risk] || b.totalSpend - a.totalSpend);
+  return out.slice(0, 15);
+}
+
+function renderChurnRisk() {
+  const box = document.getElementById('churn-list');
+  if (!box) return;
+  const list = computeChurnRisk();
+
+  if (!list.length) {
+    box.innerHTML = `<div class="churn-empty">✅ ممتاز — لا يوجد عملاء معرضون للفقد حالياً. كل عملائك نشطون!</div>`;
+    return;
+  }
+
+  const riskMeta = {
+    high:   { label: 'مرتفع',  cls: 'churn-high',   action: '📞 تواصل عاجل + عرض خاص لاستعادته' },
+    medium: { label: 'متوسط', cls: 'churn-medium', action: '💬 رسالة متابعة وعرض بسيط' },
+    low:    { label: 'منخفض', cls: 'churn-low',    action: '👀 متابعة دورية' }
+  };
+
+  box.innerHTML = list.map(r => {
+    const m = riskMeta[r.risk];
+    const phone = (r.cu.phone || '').replace(/[^0-9+]/g, '');
+    const waMsg = encodeURIComponent('أهلاً ' + r.cu.name + ' 👋 وحشتنا! عندنا عروض مميزة ليك — كلمنا');
+    return `
+    <div class="churn-card ${m.cls}">
+      <div class="churn-row1">
+        <div class="churn-name" onclick="navigate('customers')" title="عرض العملاء">${escapeHtml(r.cu.name)}</div>
+        <span class="churn-badge">${m.label}</span>
+      </div>
+      <div class="churn-meta">
+        <span>🕐 آخر شراء منذ <b>${r.daysSince}</b> يوم</span>
+        <span>💰 مشترياته: <b>${fmt(r.totalSpend).split('.')[0]}</b> ${(DB.data.settings||{}).currency||'ج'}</span>
+        <span>🧾 ${r.invCount} فاتورة${r.avgGap ? ' • متوسط كل ' + r.avgGap + ' يوم' : ''}</span>
+      </div>
+      <div class="churn-action">${m.action}</div>
+      <div class="churn-btns">
+        ${phone ? `<a class="churn-btn" href="tel:${phone}">📞 اتصال</a>
+        <a class="churn-btn churn-btn-wa" href="https://wa.me/${phone.startsWith('0') ? '2' + phone : phone}?text=${waMsg}" target="_blank" rel="noopener">💬 واتساب</a>` : '<span class="churn-nophone">لا يوجد رقم هاتف</span>'}
+      </div>
+    </div>`;
+  }).join('');
 }
 
 function askAI(presetQuestion) {
