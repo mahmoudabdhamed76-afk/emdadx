@@ -9164,6 +9164,81 @@ audio::-webkit-media-controls-panel { background: rgba(15,23,42,.9); }
   .lgn-r1 { width: 114px; height: 114px; }
   .lgn-r2 { width: 132px; height: 132px; }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   LOGIN — LIGHT MODE OVERRIDE (page stays light, app stays dark)
+═══════════════════════════════════════════════════════════════ */
+.lgn-wrap {
+  background: linear-gradient(165deg, #f7f9fd 0%, #eef3fa 55%, #e7edf8 100%) !important;
+}
+.lgn-aurora { opacity: .5 !important; }
+.lgn-b1 { background: radial-gradient(circle, rgba(46,159,255,.22), transparent 65%) !important; }
+.lgn-b2 { background: radial-gradient(circle, rgba(16,217,160,.2), transparent 70%) !important; }
+.lgn-b3 { background: radial-gradient(circle, rgba(168,85,247,.14), transparent 65%) !important; }
+.lgn-grid {
+  background-image:
+    linear-gradient(rgba(11,21,48,.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(11,21,48,.06) 1px, transparent 1px) !important;
+}
+
+/* logo orb on light */
+.lgn-orb img {
+  box-shadow: 0 0 0 4px #fff, 0 0 34px rgba(16,217,160,.25), 0 12px 30px rgba(11,21,48,.18) !important;
+}
+.lgn-r1 { border-top-color: rgba(5,150,105,.55) !important; border-inline-end-color: rgba(5,150,105,.15) !important; }
+.lgn-r2 { border-bottom-color: rgba(46,159,255,.45) !important; border-inline-start-color: rgba(46,159,255,.12) !important; }
+
+/* card — clean white glass */
+.lgn-card {
+  background: rgba(255,255,255,.88) !important;
+  backdrop-filter: blur(22px) saturate(140%) !important;
+  -webkit-backdrop-filter: blur(22px) saturate(140%) !important;
+  border: 1px solid rgba(11,21,48,.08) !important;
+  box-shadow:
+    0 24px 60px rgba(11,21,48,.14),
+    inset 0 1px 0 rgba(255,255,255,.9),
+    0 0 0 1px rgba(255,255,255,.6) !important;
+}
+.lgn-title { color: #0b1530 !important; }
+.lgn-sub   { color: #5b6b85 !important; }
+
+/* fields — light inputs + FIX icon overlap */
+.lgn-input {
+  background: #f2f5fa !important;
+  border: 1.5px solid #dde5f0 !important;
+  color: #0b1530 !important;
+  padding-block: 15px !important;
+  padding-inline-start: 48px !important;  /* مساحة الأيقونة (يمين في RTL) */
+  padding-inline-end: 46px !important;    /* مساحة العين */
+  text-align: right;
+}
+.lgn-input::placeholder { color: #8fa0b8 !important; }
+.lgn-input:focus {
+  background: #fff !important;
+  border-color: rgba(5,150,105,.55) !important;
+  box-shadow: 0 0 0 4px rgba(16,217,160,.14) !important;
+}
+.lgn-fico { color: #93a4bd !important; }
+.lgn-field:focus-within .lgn-fico { color: #059669 !important; }
+.lgn-eye { color: #93a4bd !important; }
+.lgn-eye:hover { color: #059669 !important; }
+
+/* button — emerald on light */
+.lgn-btn {
+  background: linear-gradient(120deg, #059669, #10d9a0) !important;
+  color: #fff !important;
+  box-shadow: 0 12px 30px rgba(5,150,105,.32), inset 0 1px 0 rgba(255,255,255,.35) !important;
+}
+.lgn-btn:hover { box-shadow: 0 16px 40px rgba(5,150,105,.42), inset 0 1px 0 rgba(255,255,255,.4) !important; }
+
+/* chips + footer */
+.lgn-chip {
+  background: #fff !important;
+  border: 1px solid #e2e9f3 !important;
+  color: #5b6b85 !important;
+  box-shadow: 0 2px 8px rgba(11,21,48,.05);
+}
+.lgn-foot { color: #93a4bd !important; }
 </style>
 </head>
 <body>
