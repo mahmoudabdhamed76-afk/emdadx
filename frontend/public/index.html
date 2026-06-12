@@ -9169,7 +9169,7 @@ audio::-webkit-media-controls-panel { background: rgba(15,23,42,.9); }
    LOGIN — LIGHT MODE OVERRIDE (page stays light, app stays dark)
 ═══════════════════════════════════════════════════════════════ */
 .lgn-wrap {
-  background: linear-gradient(165deg, #f7f9fd 0%, #eef3fa 55%, #e7edf8 100%) !important;
+  background: linear-gradient(135deg, #d8f5ea 0%, #c0ecf2 35%, #b3d9f5 70%, #a8cdf2 100%) !important;
 }
 .lgn-aurora { opacity: .5 !important; }
 .lgn-b1 { background: radial-gradient(circle, rgba(46,159,255,.22), transparent 65%) !important; }
@@ -9239,6 +9239,42 @@ audio::-webkit-media-controls-panel { background: rgba(15,23,42,.9); }
   box-shadow: 0 2px 8px rgba(11,21,48,.05);
 }
 .lgn-foot { color: #93a4bd !important; }
+
+.churn-gap-head {
+  grid-column: 1 / -1;
+  margin-top: 10px; padding: 10px 14px;
+  font-size: 13.5px; font-weight: 900; color: #ffc27a;
+  background: rgba(255,157,46,.08);
+  border: 1px solid rgba(255,157,46,.22);
+  border-radius: 13px;
+}
+.churn-btn-wa { cursor: pointer; }
+
+/* ── AI FAB — floating assistant on dashboard ── */
+#ai-fab {
+  position: fixed;
+  inset-inline-start: calc(18px + env(safe-area-inset-left, 0px));
+  bottom: calc(22px + env(safe-area-inset-bottom, 0px));
+  width: 54px; height: 54px;
+  border-radius: 18px; border: none; cursor: pointer;
+  z-index: 150;
+  background: linear-gradient(135deg, #6366f1, #a855f7);
+  color: #fff;
+  display: none; align-items: center; justify-content: center;
+  box-shadow: 0 10px 30px rgba(124,84,247,.45), inset 0 1px 0 rgba(255,255,255,.25);
+  transition: transform .2s cubic-bezier(.34,1.56,.64,1), box-shadow .2s ease, opacity .25s ease;
+  opacity: 0;
+  animation: aiFabGlow 2.6s ease-in-out infinite;
+}
+#ai-fab.visible { display: flex; opacity: 1; }
+@keyframes aiFabGlow { 50% { box-shadow: 0 10px 36px rgba(124,84,247,.65), inset 0 1px 0 rgba(255,255,255,.3); } }
+#ai-fab:hover  { transform: translateY(-4px) scale(1.07); }
+#ai-fab:active { transform: scale(.88); }
+@media (max-width: 768px) {
+  #ai-fab { width: 50px; height: 50px; bottom: calc(84px + env(safe-area-inset-bottom, 0px)); }
+}
+/* topbar AI icon hidden — moved to FAB */
+#ai-icon-btn { display: none !important; }
 </style>
 </head>
 <body>
@@ -9944,6 +9980,12 @@ function updateHomeFab() {
   document.querySelectorAll('#bottom-nav .bn-item').forEach(b => {
     b.classList.toggle('active', b.dataset.page === currentPage);
   });
+  // AI FAB — on dashboard only
+  const aiFab = document.getElementById('ai-fab');
+  if (aiFab) {
+    aiFab.style.display = '';
+    aiFab.classList.toggle('visible', currentPage === 'dashboard');
+  }
 }
 
 function lgxTogglePass() {
@@ -10126,6 +10168,7 @@ function logout() {
   document.getElementById('login-form').reset();
   const fab = document.getElementById('home-fab'); if (fab) fab.style.display = 'none';
   const bnav = document.getElementById('bottom-nav'); if (bnav) bnav.style.display = 'none';
+  const aifab = document.getElementById('ai-fab'); if (aifab) aifab.style.display = 'none';
   const bar = document.getElementById('reciter-bar'); if (bar) bar.style.display = 'none';
   const homeBtn = document.getElementById('topbar-home-btn'); if (homeBtn) homeBtn.style.display = 'none';
   const reciterInline = document.getElementById('reciter-inline'); if (reciterInline) reciterInline.style.display = 'none';
@@ -20223,6 +20266,7 @@ function renderAIAssistant() {
 
       <div class="ai-suggestions" id="ai-suggestions">
         ${[
+          'طلعنا قد إيه ورق الشهر ده؟',
           'كام مبيعاتي الشهر ده؟',
           'إيه صافي الربح؟',
           'مين أكتر عميل عليه فلوس؟',
@@ -20308,6 +20352,23 @@ function computeChurnRisk() {
   return out.slice(0, 15);
 }
 
+/* المراكز اللي مطلعش لها ورق خلال 20 يوم */
+function computeIssuanceGap() {
+  const today = new Date(todayStr());
+  const out = [];
+  (DB.data.customers || []).forEach(cu => {
+    const iss = (DB.data.issuances || [])
+      .filter(i => i.customerId === cu.id && i.date)
+      .sort((a, b) => a.date.localeCompare(b.date));
+    if (!iss.length) return;
+    const lastDate = new Date(iss[iss.length - 1].date);
+    const daysSince = Math.floor((today - lastDate) / 86400000);
+    if (daysSince >= 20) out.push({ cu, daysSince, issCount: iss.length });
+  });
+  out.sort((a, b) => b.daysSince - a.daysSince);
+  return out.slice(0, 15);
+}
+
 function renderChurnRisk() {
   const box = document.getElementById('churn-list');
   if (!box) return;
@@ -20346,6 +20407,33 @@ function renderChurnRisk() {
       </div>
     </div>`;
   }).join('');
+
+  // المراكز بدون صرف ورق 20+ يوم
+  const gap = computeIssuanceGap();
+  if (gap.length) {
+    box.insertAdjacentHTML('beforeend', `
+      <div class="churn-gap-head">📄 مراكز لم يُصرف لها ورق منذ 20 يوم أو أكثر (${gap.length})</div>
+      ${gap.map(g => {
+        const phone = (g.cu.phone || '').replace(/[^0-9+]/g, '');
+        return `
+        <div class="churn-card churn-medium">
+          <div class="churn-row1">
+            <div class="churn-name" onclick="navigate('issuances')" title="صفحة الصرف">${escapeHtml(g.cu.name)}</div>
+            <span class="churn-badge">بدون صرف</span>
+          </div>
+          <div class="churn-meta">
+            <span>📦 آخر صرف ورق منذ <b>${g.daysSince}</b> يوم</span>
+            <span>🧾 ${g.issCount} عملية صرف سابقة</span>
+          </div>
+          <div class="churn-action">📞 تواصل مع المركز واسأل عن احتياجاتهم من الورق</div>
+          <div class="churn-btns">
+            ${phone ? `<a class="churn-btn" href="tel:${phone}">📞 اتصال</a>` : '<span class="churn-nophone">لا يوجد رقم هاتف</span>'}
+            <button class="churn-btn churn-btn-wa" onclick="navigate('issuances')">📦 صرف ورق</button>
+          </div>
+        </div>`;
+      }).join('')}
+    `);
+  }
 }
 
 function askAI(presetQuestion) {
@@ -20405,6 +20493,40 @@ function aiAnswer(qRaw) {
     const p = products.find(x => x.id === it.productId);
     return s + ((p ? (p.cost||0) : 0) * (it.qty||it.quantity||0));
   }, 0);
+
+  // ---- MONTHLY PAPER OUTPUT (طلعنا قد ايه ورق) — most specific, first ----
+  if (has('طلعنا', 'صرفنا', 'خرج', 'اتصرف') && has('ورق', 'بلاستك', 'بلاستيك', 'خامة')) {
+    const issuances = DB.data.issuances || [];
+    const monthEnd = today.slice(0,7) + '-31';
+    const monthIss = issuances.filter(i => (i.date||'') >= monthStart && (i.date||'') <= monthEnd);
+    if (!monthIss.length) return '📦 مفيش صرف ورق مسجل الشهر ده (من ' + monthStart + ' لحد النهارده).';
+
+    const isPlastic = (n) => { n=(n||'').toLowerCase(); return n.includes('بلاستك')||n.includes('بلاستيك')||n.includes('plastic'); };
+    const isInk = (n) => { n=(n||'').toLowerCase(); return n.includes('حبر')||n.includes('تنر')||n.includes('تونر')||n.includes('ink')||n.includes('toner'); };
+
+    let paperQty = 0, plasticQty = 0;
+    const byProduct = {};
+    monthIss.forEach(iss => {
+      (iss.items || []).forEach(it => {
+        const name = it.name || (products.find(p=>p.id===it.productId)||{}).name || 'غير معروف';
+        if (isInk(name)) return; // الحبر مش ضمن الورق/البلاستك
+        const qty = Number(it.qty || it.quantity || 0);
+        if (isPlastic(name)) plasticQty += qty; else paperQty += qty;
+        byProduct[name] = (byProduct[name] || 0) + qty;
+      });
+    });
+
+    const total = paperQty + plasticQty;
+    if (!total) return '📦 مفيش كميات ورق أو بلاستك في صرف الشهر ده.';
+    const breakdown = Object.entries(byProduct).sort((a,b)=>b[1]-a[1])
+      .map(([name, qty]) => '&nbsp;&nbsp;• ' + name + ': <b>' + fmt(qty).split('.')[0] + '</b>')
+      .join('<br>');
+    return '📦 <b>صرف الشهر</b> (من ' + monthStart + ' إلى آخر الشهر):<br>' +
+      '🧻 ورق: <b>' + fmt(paperQty).split('.')[0] + '</b> وحدة<br>' +
+      '🛍️ بلاستك: <b>' + fmt(plasticQty).split('.')[0] + '</b> وحدة<br>' +
+      '📊 الإجمالي: <b>' + fmt(total).split('.')[0] + '</b> وحدة من ' + monthIss.length + ' عملية صرف<br><br>' +
+      '<b>التصنيف بالتفصيل:</b><br>' + breakdown;
+  }
 
   // ---- SUPPLIERS we owe (عليا للموردين) — checked BEFORE debts (more specific) ----
   if (has('مورد', 'موردين', 'للمورد', 'مورّد') || (has('عليا') && has('مورد'))) {
@@ -25404,6 +25526,11 @@ function exportSuppliersCSV() {
     <span>التقارير</span>
   </button>
 </nav>
+
+<!-- AI FAB — floating on dashboard -->
+<button id="ai-fab" onclick="navigate('aiassistant')" title="المساعد الذكي" aria-label="المساعد الذكي">
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" y1="16" x2="8" y2="16"/><line x1="16" y1="16" x2="16" y2="16"/></svg>
+</button>
 
 <!-- OFFLINE BANNER -->
 <div id="offline-banner" class="offline-banner" role="alert">
