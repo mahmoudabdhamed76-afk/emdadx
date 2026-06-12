@@ -9275,6 +9275,42 @@ audio::-webkit-media-controls-panel { background: rgba(15,23,42,.9); }
 }
 /* topbar AI icon hidden — moved to FAB */
 #ai-icon-btn { display: none !important; }
+
+/* ═══ 🎯 Prospects (العملاء المستهدفون) ═══ */
+.prospects-section { border-color: rgba(168,85,247,.2) !important; margin-top: 16px; }
+.churn-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.prospect-summary { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.psum-chip {
+  font-size: 12px; font-weight: 800; color: #9fb0cc;
+  padding: 7px 14px; border-radius: 99px;
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.1);
+}
+.psum-chip b { color: #fff; }
+.psum-close { border-color: rgba(16,217,160,.35); color: #6ef0c8; }
+.psum-risk  { border-color: rgba(255,77,94,.4);  color: #ff8c96; animation: syncPulse 1.6s ease-in-out infinite; }
+.psum-won   { border-color: rgba(16,217,160,.4); color: #6ef0c8; }
+.prospect-form, .prospect-offer {
+  margin-top: 14px; padding: 14px;
+  border-radius: 14px;
+  background: rgba(255,255,255,.03);
+  border: 1px solid rgba(168,85,247,.22);
+}
+.pf-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 9px; }
+.prospect-card { border-inline-start: 3px solid var(--st) !important; }
+.prospect-score { display: flex; align-items: center; gap: 10px; }
+.ps-bar {
+  flex: 1; height: 6px; border-radius: 99px;
+  background: rgba(255,255,255,.07); overflow: hidden;
+}
+.ps-bar span { display: block; height: 100%; border-radius: 99px; transition: width .4s ease; box-shadow: 0 0 10px currentColor; }
+.ps-num { font-size: 11px; font-weight: 900; white-space: nowrap; }
+.offer-preview {
+  padding: 12px 14px; border-radius: 12px;
+  background: rgba(16,217,160,.06);
+  border: 1px dashed rgba(16,217,160,.35);
+  font-size: 13px; line-height: 1.9; color: #c6d2e8;
+}
 </style>
 </head>
 <body>
@@ -20267,6 +20303,7 @@ function renderAIAssistant() {
       <div class="ai-suggestions" id="ai-suggestions">
         ${[
           'طلعنا قد إيه ورق الشهر ده؟',
+          'إيه أخبار الفرص والمستهدفين؟',
           'كام مبيعاتي الشهر ده؟',
           'إيه صافي الربح؟',
           'مين أكتر عميل عليه فلوس؟',
@@ -20300,9 +20337,249 @@ function renderAIAssistant() {
       </div>
       <div id="churn-list" class="churn-list"></div>
     </div>
+
+    <!-- ═══ 🎯 العملاء المستهدفون ═══ -->
+    <div class="churn-section prospects-section">
+      <div class="churn-head">
+        <div>
+          <div class="churn-title">🎯 العملاء المستهدفون</div>
+          <div class="churn-sub">فرص تعاقد جديدة — متابعة ذكية وتذكير تلقائي واقتراح الخطوة التالية</div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="toggleProspectForm()">➕ عميل مستهدف</button>
+      </div>
+      <div id="prospect-summary" class="prospect-summary"></div>
+      <div id="prospect-form" class="prospect-form" style="display:none"></div>
+      <div id="prospects-list" class="churn-list"></div>
+    </div>
   `;
   renderChurnRisk();
+  renderProspects();
 }
+
+/* ═══════════════════════════════════════════════════════
+   🎯 PROSPECTS — العملاء المستهدفون (sales pipeline)
+   مخزنة في settings._prospects وبتتزامن مع كل الأجهزة
+═══════════════════════════════════════════════════════ */
+const PROSPECT_STAGES = {
+  new:         { label: 'جديد',           base: 25, color: '#7fc4ff' },
+  contacted:   { label: 'تم التواصل',     base: 40, color: '#2e9fff' },
+  negotiating: { label: 'تفاوض',          base: 60, color: '#ffc27a' },
+  offer:       { label: 'عرض مُرسل',      base: 75, color: '#a855f7' },
+  closing:     { label: 'قرب الإغلاق',    base: 90, color: '#10d9a0' },
+};
+
+function getProspects() {
+  if (!DB.data.settings) DB.data.settings = {};
+  if (!Array.isArray(DB.data.settings._prospects)) DB.data.settings._prospects = [];
+  return DB.data.settings._prospects;
+}
+
+function prospectDays(p) {
+  if (!p.lastContact) return 999;
+  return Math.max(0, Math.floor((new Date(todayStr()) - new Date(p.lastContact)) / 86400000));
+}
+
+function prospectScore(p) {
+  const base = (PROSPECT_STAGES[p.stage] || PROSPECT_STAGES.new).base;
+  const d = prospectDays(p);
+  let score = base;
+  if (d > 14) score -= 25;
+  else if (d > 7) score -= 12;
+  return Math.max(5, Math.min(95, score));
+}
+
+function prospectNextStep(p) {
+  const d = prospectDays(p);
+  const urgent = d >= 7 ? '⚠️ متابعة عاجلة! ' : '';
+  const steps = {
+    new:         '📞 اتصال تعريفي بالمسؤول',
+    contacted:   '🏢 رتّب زيارة أو اجتماع',
+    negotiating: '📝 ابعت عرض سعر رسمي',
+    offer:       '📦 ابعت عينة وتابع رد العرض',
+    closing:     '✍️ حدد ميعاد توقيع التعاقد',
+  };
+  return urgent + (steps[p.stage] || steps.new);
+}
+
+function toggleProspectForm(editId) {
+  const box = document.getElementById('prospect-form');
+  if (!box) return;
+  if (box.style.display !== 'none' && !editId) { box.style.display = 'none'; return; }
+  const p = editId ? getProspects().find(x => x.id === editId) : {};
+  box.style.display = 'block';
+  box.innerHTML = `
+    <div class="pf-grid">
+      <input class="form-control" id="pf-company" placeholder="اسم الشركة / الجهة *" value="${escapeHtml(p.company||'')}">
+      <input class="form-control" id="pf-person" placeholder="اسم المسؤول" value="${escapeHtml(p.person||'')}">
+      <input class="form-control" id="pf-phone" placeholder="رقم الهاتف" value="${escapeHtml(p.phone||'')}">
+      <input class="form-control" id="pf-address" placeholder="العنوان" value="${escapeHtml(p.address||'')}">
+      <input class="form-control" id="pf-value" type="number" placeholder="قيمة التعاقد المتوقعة" value="${p.expectedValue||''}">
+      <input class="form-control" id="pf-last" type="date" title="تاريخ آخر تواصل" value="${p.lastContact||todayStr()}">
+      <select class="form-control" id="pf-stage">
+        ${Object.entries(PROSPECT_STAGES).map(([k,v]) => `<option value="${k}" ${p.stage===k?'selected':''}>${v.label}</option>`).join('')}
+      </select>
+    </div>
+    <div style="display:flex; gap:8px; margin-top:10px;">
+      <button class="btn btn-primary btn-sm" onclick="saveProspect('${editId||''}')">💾 حفظ</button>
+      <button class="btn btn-sm" onclick="document.getElementById('prospect-form').style.display='none'">إلغاء</button>
+    </div>
+  `;
+}
+
+function saveProspect(editId) {
+  const v = id => (document.getElementById(id)||{}).value || '';
+  const company = v('pf-company').trim();
+  if (!company) { toast('اكتب اسم الشركة الأول', 'warning'); return; }
+  const list = getProspects();
+  const data = {
+    company, person: v('pf-person').trim(), phone: v('pf-phone').trim(),
+    address: v('pf-address').trim(),
+    expectedValue: Number(v('pf-value')) || 0,
+    lastContact: v('pf-last') || todayStr(),
+    stage: v('pf-stage') || 'new',
+  };
+  if (editId) {
+    const p = list.find(x => x.id === editId);
+    if (p) Object.assign(p, data);
+  } else {
+    list.unshift(Object.assign({ id: 'pr_' + uid(), createdAt: todayStr(), offer: null }, data));
+  }
+  DB.save();
+  document.getElementById('prospect-form').style.display = 'none';
+  renderProspects();
+  toast('✓ تم حفظ العميل المستهدف');
+}
+
+function prospectAction(id, action) {
+  const list = getProspects();
+  const p = list.find(x => x.id === id);
+  if (!p) return;
+  if (action === 'contacted') { p.lastContact = todayStr(); toast('✓ تم تسجيل التواصل اليوم'); }
+  if (action === 'won')  { p.stage = 'won';  toast('🎉 مبروك التعاقد!'); }
+  if (action === 'lost') { p.stage = 'lost'; toast('تم نقل الفرصة للمفقودة'); }
+  if (action === 'delete') {
+    const i = list.indexOf(p); if (i > -1) list.splice(i, 1);
+    toast('تم الحذف');
+  }
+  DB.save();
+  renderProspects();
+}
+
+/* مصمم العروض: يبني رسالة عرض جاهزة للواتساب */
+function toggleOfferDesigner(id) {
+  const card = document.getElementById('pr-offer-' + id);
+  if (!card) return;
+  if (card.style.display !== 'none') { card.style.display = 'none'; return; }
+  const p = getProspects().find(x => x.id === id) || {};
+  const o = p.offer || {};
+  card.style.display = 'block';
+  card.innerHTML = `
+    <div class="pf-grid">
+      <input class="form-control" id="of-items-${id}" placeholder="المنتجات / الخدمة (مثال: ورق A4 + فوتو لامع)" value="${escapeHtml(o.items||'')}">
+      <input class="form-control" id="of-price-${id}" placeholder="السعر (مثال: 450 ج للرزمة)" value="${escapeHtml(o.price||'')}">
+      <input class="form-control" id="of-disc-${id}" placeholder="الخصم / الميزة (مثال: خصم 10% أول طلبية)" value="${escapeHtml(o.disc||'')}">
+      <input class="form-control" id="of-valid-${id}" placeholder="صلاحية العرض (مثال: 7 أيام)" value="${escapeHtml(o.valid||'')}">
+    </div>
+    <div style="display:flex; gap:8px; margin-top:10px;">
+      <button class="btn btn-primary btn-sm" onclick="buildOffer('${id}')">📝 تجهيز العرض</button>
+    </div>
+    <div id="of-preview-${id}" style="margin-top:10px;">${o.text ? '<div class="offer-preview">' + escapeHtml(o.text).replace(/\n/g,'<br>') + '</div>' : ''}</div>
+  `;
+}
+
+function buildOffer(id) {
+  const p = getProspects().find(x => x.id === id);
+  if (!p) return;
+  const v = el => (document.getElementById(el)||{}).value || '';
+  const items = v('of-items-'+id), price = v('of-price-'+id), disc = v('of-disc-'+id), valid = v('of-valid-'+id);
+  if (!items || !price) { toast('اكتب المنتجات والسعر على الأقل', 'warning'); return; }
+  const s = DB.data.settings || {};
+  const companyName = s.companyName || 'إمداد إكس للتوريدات العمومية';
+  let text = 'السلام عليكم أ/ ' + (p.person || p.company) + ' 👋\n\n';
+  text += 'يسعدنا في *' + companyName + '* نقدم لحضراتكم عرضنا الخاص:\n\n';
+  text += '📦 *المنتجات:* ' + items + '\n';
+  text += '💰 *السعر:* ' + price + '\n';
+  if (disc)  text += '🎁 *مميزات العرض:* ' + disc + '\n';
+  if (valid) text += '⏳ *صلاحية العرض:* ' + valid + '\n';
+  text += '\n📸 هنبعت لحضراتكم صور المنتجات والعينات حالاً';
+  text += '\n\nتحت أمركم في أي وقت 🌹';
+  p.offer = { items, price, disc, valid, text, createdAt: todayStr() };
+  p.stage = 'offer';
+  DB.save();
+  renderProspects();
+  setTimeout(() => toggleOfferDesigner(id), 50);
+  toast('✓ العرض جاهز — ابعته واتساب');
+}
+
+function renderProspects() {
+  const box = document.getElementById('prospects-list');
+  const sumBox = document.getElementById('prospect-summary');
+  if (!box) return;
+  const all = getProspects();
+  const active = all.filter(p => p.stage !== 'won' && p.stage !== 'lost');
+  const weekAgo = new Date(Date.now() - 7*86400000).toISOString().slice(0,10);
+
+  // الملخص اليومي
+  if (sumBox) {
+    const fresh = active.filter(p => (p.createdAt||'') >= weekAgo).length;
+    const closing = active.filter(p => p.stage === 'closing' || p.stage === 'offer').length;
+    const atRisk = active.filter(p => prospectDays(p) >= 7).length;
+    const won = all.filter(p => p.stage === 'won').length;
+    sumBox.innerHTML = `
+      <span class="psum-chip"><b>${fresh}</b> فرصة جديدة هذا الأسبوع</span>
+      <span class="psum-chip psum-close"><b>${closing}</b> قريبة من الإغلاق</span>
+      ${atRisk ? `<span class="psum-chip psum-risk"><b>${atRisk}</b> ⚠️ معرضة للضياع (بدون متابعة)</span>` : ''}
+      ${won ? `<span class="psum-chip psum-won"><b>${won}</b> 🎉 تعاقدات ناجحة</span>` : ''}
+    `;
+  }
+
+  if (!active.length) {
+    box.innerHTML = '<div class="churn-empty">🎯 سجّل أول عميل مستهدف وابدأ متابعة فرص التعاقد</div>';
+    return;
+  }
+
+  active.sort((a,b) => prospectScore(b) - prospectScore(a));
+  const cur = (DB.data.settings||{}).currency || 'ج';
+
+  box.innerHTML = active.map(p => {
+    const st = PROSPECT_STAGES[p.stage] || PROSPECT_STAGES.new;
+    const score = prospectScore(p);
+    const d = prospectDays(p);
+    const phone = (p.phone||'').replace(/[^0-9+]/g, '');
+    const waPhone = phone.startsWith('0') ? '2' + phone : phone;
+    const waText = p.offer && p.offer.text ? encodeURIComponent(p.offer.text) : encodeURIComponent('أهلاً ' + (p.person||p.company) + ' 👋 معاك ' + ((DB.data.settings||{}).companyName||'إمداد إكس') + ' — حابين نتواصل معاكم بخصوص التوريدات');
+    const atRisk = d >= 7;
+    return `
+    <div class="churn-card prospect-card ${atRisk ? 'churn-medium' : ''}" style="--st:${st.color}">
+      <div class="churn-row1">
+        <div class="churn-name">${escapeHtml(p.company)}</div>
+        <span class="churn-badge" style="background:${st.color}22; color:${st.color}; border:1px solid ${st.color}55">${st.label}</span>
+      </div>
+      <div class="churn-meta">
+        ${p.person ? `<span>👤 ${escapeHtml(p.person)}</span>` : ''}
+        ${p.expectedValue ? `<span>💰 متوقع: <b>${fmt(p.expectedValue).split('.')[0]}</b> ${cur}</span>` : ''}
+        <span>🕐 آخر تواصل منذ <b>${d === 999 ? '—' : d}</b> يوم</span>
+        ${p.address ? `<span>📍 ${escapeHtml(p.address)}</span>` : ''}
+      </div>
+      <div class="prospect-score">
+        <div class="ps-bar"><span style="width:${score}%; background:${st.color}"></span></div>
+        <span class="ps-num" style="color:${st.color}">${score}% نسبة نجاح متوقعة</span>
+      </div>
+      <div class="churn-action">${prospectNextStep(p)}${atRisk ? ' <b style="color:#ff8c96">(مفيش متابعة من ' + d + ' يوم)</b>' : ''}</div>
+      <div class="churn-btns" style="flex-wrap:wrap">
+        ${phone ? `<a class="churn-btn" href="tel:${phone}">📞</a>
+        <a class="churn-btn churn-btn-wa" href="https://wa.me/${waPhone}?text=${waText}" target="_blank" rel="noopener">💬 ${p.offer ? 'ابعت العرض' : 'واتساب'}</a>` : ''}
+        <button class="churn-btn" onclick="toggleOfferDesigner('${p.id}')">📝 تصميم عرض</button>
+        <button class="churn-btn" onclick="prospectAction('${p.id}','contacted')">✅ تواصلت اليوم</button>
+        <button class="churn-btn" onclick="toggleProspectForm('${p.id}')">✏️</button>
+        <button class="churn-btn" style="color:#6ef0c8" onclick="prospectAction('${p.id}','won')">🎉 تم التعاقد</button>
+        <button class="churn-btn" style="color:#ff8c96" onclick="prospectAction('${p.id}','lost')">✖️</button>
+      </div>
+      <div id="pr-offer-${p.id}" class="prospect-offer" style="display:none"></div>
+    </div>`;
+  }).join('');
+}
+
 
 /* ═══════════════════════════════════════════════════════
    CHURN RISK — العملاء المعرضون للفقد
@@ -20493,6 +20770,25 @@ function aiAnswer(qRaw) {
     const p = products.find(x => x.id === it.productId);
     return s + ((p ? (p.cost||0) : 0) * (it.qty||it.quantity||0));
   }, 0);
+
+  // ---- PROSPECTS (العملاء المستهدفون) ----
+  if (has('مستهدف', 'مستهدفين', 'فرص', 'فرصة', 'تعاقدات')) {
+    const pr = ((DB.data.settings||{})._prospects) || [];
+    const active = pr.filter(p => p.stage !== 'won' && p.stage !== 'lost');
+    if (!active.length) return '🎯 مفيش عملاء مستهدفين مسجلين. افتح قسم العملاء المستهدفين تحت وسجّل أول فرصة!';
+    const closing = active.filter(p => p.stage === 'closing' || p.stage === 'offer');
+    const atRisk = active.filter(p => {
+      const d = p.lastContact ? Math.floor((new Date(today) - new Date(p.lastContact))/86400000) : 999;
+      return d >= 7;
+    });
+    const totalVal = active.reduce((s,p)=>s+(p.expectedValue||0),0);
+    let ans = '🎯 <b>ملخص الفرص:</b><br>';
+    ans += '&nbsp;&nbsp;• فرص نشطة: <b>' + active.length + '</b> بقيمة متوقعة ' + fmtm(totalVal) + '<br>';
+    ans += '&nbsp;&nbsp;• قريبة من الإغلاق: <b>' + closing.length + '</b><br>';
+    if (atRisk.length) ans += '&nbsp;&nbsp;• ⚠️ معرضة للضياع (بدون متابعة 7+ أيام): <b>' + atRisk.length + '</b> — ' + atRisk.slice(0,3).map(p=>p.company).join('، ') + '<br>';
+    if (closing.length) ans += '<br>💡 ركّز النهارده على: <b>' + closing[0].company + '</b> — ' + (closing[0].stage==='closing'?'حدد ميعاد التوقيع':'تابع رد العرض');
+    return ans;
+  }
 
   // ---- MONTHLY PAPER OUTPUT (طلعنا قد ايه ورق) — most specific, first ----
   if (has('طلعنا', 'صرفنا', 'خرج', 'اتصرف') && has('ورق', 'بلاستك', 'بلاستيك', 'خامة')) {
