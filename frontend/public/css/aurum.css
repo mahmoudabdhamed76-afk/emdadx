@@ -1,0 +1,1070 @@
+/* ════════════════════════════════════════════════════════════════════
+   EmdadX · AURUM  — visual system v4
+   ------------------------------------------------------------------
+   Identity taken from the EmdadX logo: deep ink navy + gold arcs.
+   Loaded AFTER the legacy inline styles; every rule is scoped under
+   html.aurum so it wins over older theme layers without touching them.
+
+   Themes : html.aurum[data-theme="dark"]   (Midnight)
+            html.aurum[data-theme="light"]  (Paper)
+   Layout : html.aurum.ax-rail  → collapsed icon-rail sidebar (desktop)
+   Fonts  : IBM Plex Sans Arabic (UI) · Readex Pro (display / numbers)
+════════════════════════════════════════════════════════════════════ */
+
+/* ───────────────────────── 1. TOKENS ───────────────────────── */
+html.aurum {
+  --ax-font: 'IBM Plex Sans Arabic', 'Cairo', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --ax-display: 'Readex Pro', 'IBM Plex Sans Arabic', 'Cairo', system-ui, sans-serif;
+  --ax-radius: 14px;
+  --ax-radius-sm: 10px;
+  --ax-radius-lg: 20px;
+  --ax-ease: cubic-bezier(.22, .61, .36, 1);
+  --ax-spring: cubic-bezier(.34, 1.4, .64, 1);
+  --ax-side-w: 256px;
+  --ax-rail-w: 76px;
+  /* hero is always navy — the brand panel */
+  --ax-hero-bg: #0A1733;
+  --ax-hero-bg-2: #0F2250;
+  --ax-hero-text: #F3F6FC;
+  --ax-hero-muted: #9FB0D3;
+  --ax-hero-gold: #E9B650;
+}
+
+html.aurum[data-theme="dark"] {
+  color-scheme: dark;
+  --ax-bg: #070E1F;
+  --ax-side: #091327;
+  --ax-surface: #0D1932;
+  --ax-surface-2: #12213F;
+  --ax-surface-3: #19294B;
+  --ax-line: rgba(150, 172, 216, .12);
+  --ax-line-2: rgba(150, 172, 216, .22);
+  --ax-text: #ECF1FA;
+  --ax-muted: #94A3C2;
+  --ax-faint: #62718F;
+  --ax-gold: #E4B04A;
+  --ax-gold-2: #F3C868;
+  --ax-gold-soft: rgba(228, 176, 74, .13);
+  --ax-primary: #E4B04A;
+  --ax-primary-hover: #F0C261;
+  --ax-primary-ink: #1A1305;
+  --ax-primary-rgb: 228, 176, 74;
+  --ax-blue: #6B97FF;
+  --ax-blue-soft: rgba(107, 151, 255, .14);
+  --ax-ok: #37C592;   --ax-ok-soft: rgba(55, 197, 146, .14);
+  --ax-warn: #F2A93B; --ax-warn-soft: rgba(242, 169, 59, .14);
+  --ax-bad: #F26467;  --ax-bad-soft: rgba(242, 100, 103, .14);
+  --ax-violet: #A48BFF; --ax-violet-soft: rgba(164, 139, 255, .14);
+  --ax-teal: #3CC7D6;  --ax-teal-soft: rgba(60, 199, 214, .14);
+  --ax-shadow: 0 1px 0 rgba(255, 255, 255, .035) inset, 0 10px 30px rgba(0, 0, 0, .28);
+  --ax-shadow-lg: 0 30px 80px rgba(0, 0, 0, .55);
+  --ax-hover: rgba(150, 172, 216, .07);
+  --ax-active: rgba(228, 176, 74, .10);
+  --ax-input: #0A162D;
+  --ax-ripple: rgba(255, 255, 255, .14);
+}
+
+html.aurum[data-theme="light"] {
+  color-scheme: light;
+  --ax-bg: #F2F4F9;
+  --ax-side: #FFFFFF;
+  --ax-surface: #FFFFFF;
+  --ax-surface-2: #F6F8FC;
+  --ax-surface-3: #ECF0F7;
+  --ax-line: rgba(13, 31, 72, .09);
+  --ax-line-2: rgba(13, 31, 72, .17);
+  --ax-text: #0D1B3D;
+  --ax-muted: #56647F;
+  --ax-faint: #8793AB;
+  --ax-gold: #B98314;
+  --ax-gold-2: #D29F2E;
+  --ax-gold-soft: rgba(197, 142, 26, .12);
+  --ax-primary: #13306E;
+  --ax-primary-hover: #1B3F8C;
+  --ax-primary-ink: #FFFFFF;
+  --ax-primary-rgb: 19, 48, 110;
+  --ax-blue: #1F55D6;
+  --ax-blue-soft: rgba(31, 85, 214, .10);
+  --ax-ok: #0F9064;   --ax-ok-soft: rgba(15, 144, 100, .10);
+  --ax-warn: #C27405; --ax-warn-soft: rgba(194, 116, 5, .11);
+  --ax-bad: #D23A3F;  --ax-bad-soft: rgba(210, 58, 63, .10);
+  --ax-violet: #6C4FD8; --ax-violet-soft: rgba(108, 79, 216, .10);
+  --ax-teal: #0E8A9A;  --ax-teal-soft: rgba(14, 138, 154, .10);
+  --ax-shadow: 0 1px 2px rgba(13, 27, 61, .05), 0 6px 20px rgba(13, 27, 61, .06);
+  --ax-shadow-lg: 0 30px 80px rgba(13, 27, 61, .22);
+  --ax-hover: rgba(13, 31, 72, .045);
+  --ax-active: rgba(19, 48, 110, .07);
+  --ax-input: #FFFFFF;
+  --ax-ripple: rgba(13, 27, 61, .08);
+}
+
+/* legacy variables → Aurum values (so every old component follows) */
+html.aurum[data-theme] {
+  --bg: var(--ax-bg);
+  --bg-soft: var(--ax-surface-2);
+  --surface: var(--ax-surface);
+  --surface-2: var(--ax-surface-2);
+  --surface-3: var(--ax-surface-3);
+  --border: var(--ax-line);
+  --border-strong: var(--ax-line-2);
+  --text: var(--ax-text);
+  --text-muted: var(--ax-muted);
+  --text-soft: var(--ax-faint);
+  --primary: var(--ax-primary);
+  --primary-dark: var(--ax-primary-hover);
+  --primary-light: var(--ax-gold-2);
+  --primary-rgb: var(--ax-primary-rgb);
+  --primary-50: var(--ax-gold-soft);
+  --primary-100: var(--ax-gold-soft);
+  --success: var(--ax-ok);
+  --danger: var(--ax-bad);
+  --warning: var(--ax-warn);
+  --info: var(--ax-blue);
+  --accent-blue: var(--ax-blue);
+  --font: var(--ax-font);
+  --shadow-sm: var(--ax-shadow);
+  --shadow: var(--ax-shadow);
+  --shadow-lg: var(--ax-shadow-lg);
+  --grad-primary: var(--ax-primary);
+  --tint-emerald: var(--ax-surface); --tint-mint: var(--ax-surface); --tint-lavender: var(--ax-surface);
+  --tint-purple: var(--ax-surface);  --tint-peach: var(--ax-surface); --tint-rose: var(--ax-surface);
+  --tint-amber: var(--ax-surface);   --tint-sky: var(--ax-surface);  --tint-cream: var(--ax-surface);
+  --sidebar-w: var(--ax-side-w);
+}
+html.aurum.ax-rail[data-theme] { --sidebar-w: var(--ax-rail-w); }
+
+/* ───────────────────────── 2. BASE ───────────────────────── */
+html.aurum, html.aurum body {
+  background: var(--ax-bg) !important;
+  background-color: var(--ax-bg) !important;
+  background-image: none !important;
+}
+html.aurum body {
+  font-family: var(--ax-font) !important;
+  color: var(--ax-text);
+  font-weight: 500;
+  letter-spacing: 0;
+  -webkit-font-smoothing: antialiased;
+}
+html.aurum[data-theme="dark"] body::before {
+  background:
+    radial-gradient(1100px 520px at 88% -14%, rgba(91, 140, 255, .07), transparent 62%),
+    radial-gradient(900px 460px at 0% -10%, rgba(228, 176, 74, .045), transparent 60%) !important;
+}
+html.aurum[data-theme="light"] body::before { background: none !important; }
+html.aurum button, html.aurum input, html.aurum select, html.aurum textarea { font-family: var(--ax-font) !important; }
+
+html.aurum h1, html.aurum h2, html.aurum h3, html.aurum h4,
+html.aurum .page-title, html.aurum .dash-card-title, html.aurum .modal-title,
+html.aurum .topbar-title, html.aurum .stat-value {
+  color: var(--ax-text) !important;
+  font-family: var(--ax-display) !important;
+  letter-spacing: 0 !important;
+}
+html.aurum .page-subtitle, html.aurum .stat-label, html.aurum .text-muted,
+html.aurum .sub, html.aurum .meta, html.aurum .table-meta { color: var(--ax-muted) !important; }
+html.aurum td { color: var(--ax-text) !important; }
+html.aurum a, html.aurum .link, html.aurum .dash-card-action { color: var(--ax-blue) !important; }
+html.aurum ::selection { background: var(--ax-gold-soft); color: var(--ax-text); }
+
+html.aurum *:focus-visible {
+  outline: 2px solid var(--ax-gold) !important;
+  outline-offset: 2px !important;
+}
+
+html.aurum ::-webkit-scrollbar { width: 10px; height: 10px; }
+html.aurum ::-webkit-scrollbar-track { background: transparent; }
+html.aurum ::-webkit-scrollbar-thumb { background: var(--ax-line-2); border-radius: 99px; border: 3px solid var(--ax-bg); }
+html.aurum ::-webkit-scrollbar-thumb:hover { background: var(--ax-faint); }
+
+/* number typography */
+html.aurum .kpi-value, html.aurum .pg-value, html.aurum .dash-bigcard-value,
+html.aurum .stat-value, html.aurum .stat-card .value, html.aurum .ax-num {
+  font-family: var(--ax-display) !important;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ───────────────────────── 3. SIDEBAR ───────────────────────── */
+html.aurum .sidebar, html.aurum aside.sidebar {
+  width: var(--sidebar-w) !important;
+  background: var(--ax-side) !important;
+  backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
+  border-inline-start: 0 !important;
+  border-inline-end: 1px solid var(--ax-line) !important;
+  box-shadow: none !important;
+  padding: 14px 12px !important;
+  display: flex !important; flex-direction: column;
+  transition: width .28s var(--ax-ease), transform .3s var(--ax-ease) !important;
+  overflow-x: hidden;
+}
+html.aurum .main-content { margin-right: var(--sidebar-w) !important; transition: margin .28s var(--ax-ease); }
+
+html.aurum .sidebar-brand {
+  display: flex !important; align-items: center !important; gap: 12px !important;
+  flex-direction: row-reverse !important; justify-content: flex-end !important;
+  padding: 6px 6px 16px !important; margin: 0 0 8px !important;
+  border-bottom: 1px solid var(--ax-line) !important;
+  background: none !important; position: relative;
+}
+html.aurum .sidebar-brand::after {
+  content: ''; position: absolute; bottom: -1px; inset-inline-start: 6px; width: 38px; height: 2px;
+  background: var(--ax-gold); border-radius: 2px;
+}
+html.aurum .brand-logo {
+  width: 42px !important; height: 42px !important; flex: 0 0 42px !important;
+  border-radius: 50% !important; background: #fff !important; padding: 3px !important;
+  box-shadow: 0 0 0 1px var(--ax-line-2), 0 6px 16px rgba(0, 0, 0, .18) !important;
+  overflow: hidden;
+}
+html.aurum .brand-logo img { border-radius: 50% !important; object-fit: contain !important; background: #fff !important; padding: 0 !important; }
+html.aurum .brand-name { font-family: var(--ax-display) !important; font-weight: 600 !important; font-size: 17px !important; color: var(--ax-text) !important; }
+html.aurum .brand-sub { font-size: 11.5px !important; color: var(--ax-muted) !important; font-weight: 500 !important; }
+
+html.aurum .sidebar-nav { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 4px 0 8px; }
+html.aurum .nav-section-title {
+  font-size: 11px !important; font-weight: 600 !important; letter-spacing: .3px !important;
+  color: var(--ax-faint) !important; padding: 14px 12px 6px !important; margin: 0 !important;
+  text-transform: none !important; white-space: nowrap;
+}
+html.aurum .nav-item {
+  position: relative;
+  display: flex !important; align-items: center !important; gap: 12px !important;
+  padding: 9px 12px !important; margin: 1px 0 !important;
+  border-radius: var(--ax-radius-sm) !important;
+  background: transparent !important;
+  color: var(--ax-muted) !important;
+  font-weight: 500 !important; font-size: 14px !important;
+  border: 0 !important; box-shadow: none !important; filter: none !important;
+  transform: none !important;
+  transition: background .18s ease, color .18s ease !important;
+  animation: axFade .35s var(--ax-ease) both !important;
+  white-space: nowrap;
+}
+html.aurum .nav-item::after { display: none !important; }
+html.aurum .nav-item span { color: inherit !important; }
+html.aurum .nav-item .nav-icon-colored, html.aurum .nav-item .icon {
+  width: 32px !important; height: 32px !important; flex: 0 0 32px !important;
+  display: grid !important; place-items: center !important;
+  border-radius: 9px !important;
+  background: transparent !important; border: 0 !important; box-shadow: none !important;
+  color: inherit !important;
+  transition: background .18s ease, color .18s ease;
+}
+html.aurum .nav-item .icon svg { width: 18px !important; height: 18px !important; }
+html.aurum .nav-item:hover:not(.active) {
+  background: var(--ax-hover) !important; color: var(--ax-text) !important;
+  transform: none !important; filter: none !important;
+}
+html.aurum .nav-item:hover .icon { color: var(--nav-color, var(--ax-text)) !important; }
+html.aurum .nav-item.active {
+  background: var(--ax-active) !important;
+  color: var(--ax-text) !important;
+  font-weight: 600 !important;
+  box-shadow: none !important; filter: none !important; transform: none !important;
+}
+html.aurum .nav-item.active::before {
+  content: ''; position: absolute; inset-inline-start: -12px; top: 8px; bottom: 8px; width: 3px;
+  border-radius: 0 3px 3px 0; background: var(--ax-gold);
+}
+html.aurum .nav-item.active .icon { color: var(--ax-gold) !important; background: var(--ax-gold-soft) !important; }
+html.aurum .nav-item .badge {
+  margin-inline-start: auto !important;
+  min-width: 22px; height: 20px; padding: 0 7px !important;
+  border-radius: 99px !important; display: grid !important; place-items: center;
+  font-size: 11px !important; font-weight: 700 !important;
+  background: var(--ax-bad-soft) !important; color: var(--ax-bad) !important; border: 0 !important;
+  box-shadow: none !important;
+}
+
+html.aurum .sidebar-logout {
+  margin: 8px 0 0 !important;
+  display: flex !important; align-items: center; gap: 10px;
+  padding: 10px 12px !important; border-radius: var(--ax-radius-sm) !important;
+  background: transparent !important; border: 1px solid var(--ax-line) !important;
+  color: var(--ax-muted) !important; font-weight: 500 !important; font-size: 13.5px !important;
+  white-space: nowrap;
+}
+html.aurum .sidebar-logout:hover { color: var(--ax-bad) !important; border-color: var(--ax-bad-soft) !important; background: var(--ax-bad-soft) !important; }
+
+/* rail toggle (injected by aurum.js) */
+html.aurum .ax-rail-btn {
+  margin-inline-start: auto; width: 30px; height: 30px; flex: 0 0 30px;
+  display: grid; place-items: center; border-radius: 8px;
+  background: transparent; border: 1px solid var(--ax-line); color: var(--ax-muted); cursor: pointer;
+  transition: background .18s, color .18s, transform .28s var(--ax-ease);
+}
+html.aurum .ax-rail-btn:hover { background: var(--ax-hover); color: var(--ax-text); }
+html.aurum .ax-rail-btn svg { width: 16px; height: 16px; }
+
+/* ── collapsed rail (desktop) ── */
+@media (min-width: 769px) {
+  html.aurum.ax-rail .sidebar { padding: 14px 10px !important; }
+  html.aurum.ax-rail .sidebar-brand { flex-direction: column !important; align-items: center !important; justify-content: center !important; gap: 10px !important; }
+  html.aurum.ax-rail .sidebar-brand > div:not(.brand-logo) { display: none !important; }
+  html.aurum.ax-rail .sidebar-brand::after { inset-inline-start: calc(50% - 19px); }
+  html.aurum.ax-rail .ax-rail-btn { margin: 0; transform: rotate(180deg); }
+  html.aurum.ax-rail .nav-section-title { font-size: 0 !important; padding: 8px 0 !important; }
+  html.aurum.ax-rail .nav-section-title::before { content: ''; display: block; height: 1px; margin: 0 14px; background: var(--ax-line); }
+  html.aurum.ax-rail .nav-item { justify-content: center !important; padding: 7px 0 !important; }
+  html.aurum.ax-rail .nav-item > span:not(.icon):not(.badge) { display: none !important; }
+  html.aurum.ax-rail .nav-item .badge {
+    position: absolute; top: 3px; inset-inline-end: 8px;
+    min-width: 16px; height: 16px; padding: 0 4px !important; font-size: 10px !important;
+  }
+  html.aurum.ax-rail .nav-item.active::before { inset-inline-start: -10px; }
+  html.aurum.ax-rail .sidebar-logout { justify-content: center; font-size: 0 !important; padding: 10px 0 !important; }
+}
+
+/* ───────────────────────── 4. TOPBAR ───────────────────────── */
+html.aurum .company-banner { display: none !important; }
+html.aurum .topbar {
+  position: sticky !important; top: 0 !important; z-index: 55 !important;
+  min-height: 64px !important;
+  padding: 10px 24px !important;
+  padding-top: max(10px, env(safe-area-inset-top, 0px)) !important;
+  gap: 10px !important;
+  background: color-mix(in srgb, var(--ax-bg) 82%, transparent) !important;
+  backdrop-filter: blur(14px) saturate(140%) !important;
+  -webkit-backdrop-filter: blur(14px) saturate(140%) !important;
+  border-bottom: 1px solid var(--ax-line) !important;
+  box-shadow: none !important;
+}
+html.aurum .topbar-title {
+  font-size: 19px !important; font-weight: 600 !important; white-space: nowrap;
+  overflow: hidden; text-overflow: ellipsis;
+}
+html.aurum .icon-btn {
+  width: 40px !important; height: 40px !important; min-width: 40px;
+  border-radius: var(--ax-radius-sm) !important;
+  background: transparent !important;
+  border: 1px solid var(--ax-line) !important;
+  color: var(--ax-muted) !important;
+  box-shadow: none !important;
+  display: grid; place-items: center;
+  transition: background .18s, color .18s, border-color .18s !important;
+}
+html.aurum .icon-btn:hover { background: var(--ax-hover) !important; color: var(--ax-text) !important; border-color: var(--ax-line-2) !important; }
+html.aurum .icon-btn svg { width: 19px; height: 19px; }
+html.aurum .topbar-home-btn { background: transparent !important; box-shadow: none !important; color: var(--ax-muted) !important; animation: none !important; }
+html.aurum .icon-btn .notif-dot { background: var(--ax-bad) !important; box-shadow: 0 0 0 2px var(--ax-bg) !important; }
+
+html.aurum .search-box {
+  background: var(--ax-surface) !important;
+  border: 1px solid var(--ax-line) !important;
+  border-radius: var(--ax-radius-sm) !important;
+  height: 40px; min-width: 260px; max-width: 420px; flex: 1 1 320px;
+  padding: 0 10px !important; box-shadow: none !important;
+}
+html.aurum .search-box:focus-within { border-color: var(--ax-gold) !important; box-shadow: 0 0 0 3px var(--ax-gold-soft) !important; }
+html.aurum .search-box input { background: transparent !important; border: 0 !important; color: var(--ax-text) !important; box-shadow: none !important; font-size: 13.5px !important; }
+html.aurum .search-mic-btn { background: var(--ax-surface-2) !important; color: var(--ax-muted) !important; border: 0 !important; box-shadow: none !important; }
+html.aurum .search-results {
+  background: var(--ax-surface) !important; border: 1px solid var(--ax-line-2) !important;
+  border-radius: var(--ax-radius) !important; box-shadow: var(--ax-shadow-lg) !important;
+  backdrop-filter: none !important;
+}
+html.aurum .search-result-item:hover { background: var(--ax-hover) !important; }
+html.aurum .qnav-tile { background: var(--ax-surface-2) !important; color: var(--ax-text) !important; box-shadow: none !important; border: 1px solid var(--ax-line); }
+html.aurum .qnav-tile i { background: var(--ax-gold-soft) !important; color: var(--ax-gold) !important; }
+
+html.aurum .paper-counter, html.aurum .reciter-inline {
+  display: inline-flex !important; flex-direction: row !important; align-items: center !important; gap: 6px !important;
+  height: 36px; padding: 0 12px !important; border-radius: 99px !important;
+  background: var(--ax-surface) !important; border: 1px solid var(--ax-line) !important;
+  color: var(--ax-muted) !important; box-shadow: none !important; font-size: 12.5px !important; font-weight: 600 !important;
+}
+html.aurum .paper-counter svg { width: 16px !important; height: 16px !important; color: var(--ax-gold); }
+html.aurum .paper-counter-num { font-family: var(--ax-display); color: var(--ax-text) !important; font-size: 13px !important; }
+html.aurum .reciter-inline .pulse-dot { background: var(--ax-ok) !important; }
+
+html.aurum .ax-theme-btn .ax-sun { display: none; }
+html.aurum[data-theme="light"] .ax-theme-btn .ax-sun { display: block; }
+html.aurum[data-theme="light"] .ax-theme-btn .ax-moon { display: none; }
+
+/* ───────────────────────── 5. PAGE CHROME ───────────────────────── */
+html.aurum .page-content, html.aurum #page-content { padding: 24px 28px 40px !important; max-width: 1480px; }
+html.aurum .page-header { position: static !important; background: none !important; border: 0 !important; padding: 0 !important; margin-bottom: 18px !important; box-shadow: none !important; }
+html.aurum .page-title { font-size: 24px !important; font-weight: 600 !important; }
+html.aurum .page-subtitle { font-size: 13.5px !important; margin-top: 4px !important; }
+html.aurum .section-action-bar { gap: 8px !important; margin-bottom: 18px !important; flex-wrap: wrap; }
+
+/* cards: one calm surface everywhere */
+html.aurum .dash-card, html.aurum .card, html.aurum .table-wrap, html.aurum .settings-card,
+html.aurum .panel, html.aurum .data-card, html.aurum .centers-widget, html.aurum .churn-section,
+html.aurum .filter-bar, html.aurum .ai-chat-wrap, html.aurum .table-scroll {
+  background: var(--ax-surface) !important;
+  backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
+  border: 1px solid var(--ax-line) !important;
+  border-radius: var(--ax-radius) !important;
+  box-shadow: var(--ax-shadow) !important;
+}
+html.aurum .dash-card:hover { transform: none !important; border-color: var(--ax-line-2) !important; }
+html.aurum .filter-bar { padding: 12px !important; gap: 8px !important; margin-bottom: 14px !important; }
+html.aurum .dash-card-header { border-bottom: 1px solid var(--ax-line) !important; }
+html.aurum .dash-card-title { font-size: 15px !important; font-weight: 600 !important; }
+
+/* ── generic stat cards (issuances page etc.) ── */
+html.aurum .stats-grid { gap: 14px !important; }
+html.aurum .stat-card {
+  position: relative; overflow: hidden;
+  background: var(--ax-surface) !important; color: var(--ax-text) !important;
+  border: 1px solid var(--ax-line) !important; border-radius: var(--ax-radius) !important;
+  box-shadow: var(--ax-shadow) !important; padding: 18px 18px 16px !important;
+  animation: axRise .45s var(--ax-ease) both !important;
+  filter: none !important;
+}
+html.aurum .stat-card::before {
+  content: ''; position: absolute; top: 0; inset-inline: 0; height: 3px;
+  background: var(--ax-sc, var(--ax-line-2)); opacity: .9;
+}
+html.aurum .stat-card:hover { transform: translateY(-2px) !important; border-color: var(--ax-line-2) !important; filter: none !important; }
+html.aurum .stat-card.info, html.aurum .stat-card.stat-info { --ax-sc: var(--ax-blue); }
+html.aurum .stat-card.success, html.aurum .stat-card.stat-success, html.aurum .stat-card.stat-primary { --ax-sc: var(--ax-ok); }
+html.aurum .stat-card.warning, html.aurum .stat-card.stat-warning { --ax-sc: var(--ax-warn); }
+html.aurum .stat-card.danger, html.aurum .stat-card.stat-danger { --ax-sc: var(--ax-bad); }
+html.aurum .stat-card .label, html.aurum .stat-card .stat-label { color: var(--ax-muted) !important; font-size: 12.5px !important; font-weight: 500 !important; }
+html.aurum .stat-card .value, html.aurum .stat-card .stat-value { color: var(--ax-text) !important; font-size: 26px !important; font-weight: 600 !important; }
+html.aurum .stat-card .stat-sub { color: var(--ax-faint) !important; font-size: 12px !important; }
+html.aurum .stat-card .icon-wrap { background: var(--ax-gold-soft) !important; color: var(--ax-gold) !important; box-shadow: none !important; }
+html.aurum .stat-card .accent-stripe { display: none !important; }
+
+/* ── big KPI cards (dashboard) ── */
+html.aurum .kpi-grid-v3 { gap: 14px !important; }
+html.aurum .kpi-v3 {
+  background: var(--ax-surface) !important; border: 1px solid var(--ax-line) !important;
+  border-radius: var(--ax-radius) !important; box-shadow: var(--ax-shadow) !important;
+  padding: 18px !important; gap: 14px !important; backdrop-filter: none !important;
+  animation: axRise .5s var(--ax-ease) both;
+}
+html.aurum .kpi-v3::before { display: none !important; }
+html.aurum .kpi-v3:hover { transform: translateY(-2px) !important; border-color: var(--ax-line-2) !important; }
+html.aurum .kpi-v3 .kpi-icon {
+  width: 46px !important; height: 46px !important; border-radius: 12px !important;
+  background: var(--ax-k-soft, var(--ax-gold-soft)) !important; color: var(--ax-k, var(--ax-gold)) !important;
+  box-shadow: none !important;
+}
+html.aurum .kpi-v3 .kpi-icon svg { width: 22px; height: 22px; stroke-width: 2; }
+html.aurum .kpi-v3 .kpi-label { color: var(--ax-muted) !important; font-weight: 500 !important; font-size: 12.5px !important; margin-bottom: 6px !important; }
+html.aurum .kpi-v3 .kpi-value { color: var(--ax-text) !important; font-size: 26px !important; font-weight: 600 !important; letter-spacing: 0 !important; }
+html.aurum .kpi-v3 .kpi-value .currency { font-family: var(--ax-font); font-size: 12px !important; color: var(--ax-faint); opacity: 1 !important; }
+html.aurum .kpi-v3 .kpi-trend { font-weight: 600 !important; }
+html.aurum .kpi-v3 .kpi-trend.up { color: var(--ax-ok) !important; }
+html.aurum .kpi-v3 .kpi-trend.down { color: var(--ax-bad) !important; }
+html.aurum .kpi-v3 .kpi-trend .ts { color: var(--ax-faint) !important; font-weight: 500; }
+html.aurum .kpi-teal   { --ax-k: var(--ax-teal);   --ax-k-soft: var(--ax-teal-soft); }
+html.aurum .kpi-green  { --ax-k: var(--ax-ok);     --ax-k-soft: var(--ax-ok-soft); }
+html.aurum .kpi-purple { --ax-k: var(--ax-violet); --ax-k-soft: var(--ax-violet-soft); }
+html.aurum .kpi-red    { --ax-k: var(--ax-bad);    --ax-k-soft: var(--ax-bad-soft); }
+html.aurum .kpi-orange { --ax-k: var(--ax-warn);   --ax-k-soft: var(--ax-warn-soft); }
+
+/* ── pulse grid: status cards ── */
+html.aurum .pulse-grid { gap: 14px !important; }
+html.aurum .pg-card {
+  background: var(--ax-surface) !important;
+  border: 1px solid var(--ax-line) !important;
+  border-radius: var(--ax-radius) !important;
+  box-shadow: var(--ax-shadow) !important;
+  backdrop-filter: none !important; filter: none !important;
+  animation: axRise .5s var(--ax-ease) both !important;
+  min-height: 0 !important; padding: 16px 16px 10px !important;
+}
+html.aurum .pg-card::before {
+  content: '' !important; position: absolute; top: 0; inset-inline: 0; height: 3px; background: var(--ax-pg, var(--ax-line-2)) !important;
+  border-radius: 0; inset-block-start: 0;
+}
+html.aurum .pg-card:hover { transform: translateY(-2px) !important; border-color: var(--ax-line-2) !important; filter: none !important; }
+html.aurum .pg-icon {
+  background: var(--ax-pg-soft, var(--ax-gold-soft)) !important; color: var(--ax-pg, var(--ax-gold)) !important;
+  border: 0 !important; box-shadow: none !important; width: 42px !important; height: 42px !important; flex-basis: 42px !important;
+}
+html.aurum .pg-title { color: var(--ax-text) !important; font-weight: 600 !important; font-size: 14px !important; }
+html.aurum .pg-value {
+  background: transparent !important; border: 0 !important; padding: 0 !important;
+  color: var(--ax-text) !important; font-size: 20px !important; font-weight: 600 !important; margin-top: 2px !important;
+}
+html.aurum .pg-status { color: var(--ax-pg, var(--ax-muted)) !important; font-weight: 500 !important; font-size: 12.5px !important; }
+html.aurum .pg-danger  { --ax-pg: var(--ax-bad);    --ax-pg-soft: var(--ax-bad-soft);  animation: axRise .5s var(--ax-ease) both !important; }
+html.aurum .pg-warning { --ax-pg: var(--ax-warn);   --ax-pg-soft: var(--ax-warn-soft); }
+html.aurum .pg-success { --ax-pg: var(--ax-ok);     --ax-pg-soft: var(--ax-ok-soft); }
+html.aurum .pg-info    { --ax-pg: var(--ax-blue);   --ax-pg-soft: var(--ax-blue-soft); }
+html.aurum .pg-purple  { --ax-pg: var(--ax-violet); --ax-pg-soft: var(--ax-violet-soft); }
+html.aurum .pg-danger .pg-status::before {
+  content: ''; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: var(--ax-bad);
+  margin-inline-end: 6px; vertical-align: middle; animation: axPing 1.8s ease-out infinite;
+}
+html.aurum .pulse-grid .pg-card:nth-child(1) { animation-delay: .02s !important; }
+html.aurum .pulse-grid .pg-card:nth-child(2) { animation-delay: .06s !important; }
+html.aurum .pulse-grid .pg-card:nth-child(3) { animation-delay: .10s !important; }
+html.aurum .pulse-grid .pg-card:nth-child(4) { animation-delay: .14s !important; }
+html.aurum .pulse-grid .pg-card:nth-child(5) { animation-delay: .18s !important; }
+html.aurum .pulse-grid .pg-card:nth-child(6) { animation-delay: .22s !important; }
+
+/* ── big coloured cards (suppliers etc.) → calm surfaces with a tinted icon ── */
+html.aurum .dash-bigcards { gap: 14px !important; }
+html.aurum .dash-bigcard {
+  background: var(--ax-surface) !important; color: var(--ax-text) !important;
+  border: 1px solid var(--ax-line) !important; border-radius: var(--ax-radius) !important;
+  box-shadow: var(--ax-shadow) !important; min-height: 96px !important; padding: 16px 18px !important;
+  animation: axRise .45s var(--ax-ease) both;
+}
+html.aurum .dash-bigcard::before, html.aurum .dash-bigcard::after { display: none !important; }
+html.aurum .dash-bigcard:hover { transform: translateY(-2px) !important; border-color: var(--ax-line-2) !important; }
+html.aurum .dash-bigcard-icon {
+  width: 46px; height: 46px; flex: 0 0 46px; border-radius: 12px; display: grid; place-items: center;
+  font-size: 22px !important; filter: none !important; transform: none !important;
+  background: var(--ax-bc-soft, var(--ax-gold-soft));
+}
+html.aurum .dash-bigcard-label { color: var(--ax-muted) !important; text-shadow: none !important; font-weight: 500 !important; font-size: 12.5px !important; }
+html.aurum .dash-bigcard-value { color: var(--ax-bc, var(--ax-text)) !important; text-shadow: none !important; font-size: 23px !important; font-weight: 600 !important; letter-spacing: 0 !important; }
+html.aurum .dash-bigcard-foot { color: var(--ax-faint) !important; opacity: 1 !important; }
+html.aurum .dash-bg-red, html.aurum .dash-bg-pink     { --ax-bc: var(--ax-bad);    --ax-bc-soft: var(--ax-bad-soft); }
+html.aurum .dash-bg-green, html.aurum .dash-bg-teal   { --ax-bc: var(--ax-ok);     --ax-bc-soft: var(--ax-ok-soft); }
+html.aurum .dash-bg-orange, html.aurum .dash-bg-amber { --ax-bc: var(--ax-warn);   --ax-bc-soft: var(--ax-warn-soft); }
+html.aurum .dash-bg-sky    { --ax-bc: var(--ax-blue);   --ax-bc-soft: var(--ax-blue-soft); }
+html.aurum .dash-bg-purple { --ax-bc: var(--ax-violet); --ax-bc-soft: var(--ax-violet-soft); }
+
+/* the old quick-action tiles are replaced by the hero action row */
+html.aurum .qa-section { display: none !important; }
+
+/* ───────────────────────── 6. CONTROLS ───────────────────────── */
+html.aurum .btn {
+  border-radius: var(--ax-radius-sm) !important;
+  font-weight: 600 !important; font-size: 13.5px !important;
+  min-height: 38px; padding: 8px 16px !important;
+  box-shadow: none !important; text-shadow: none !important;
+  transition: background .18s, color .18s, border-color .18s, transform .12s var(--ax-ease) !important;
+}
+html.aurum .btn:active { transform: scale(.97) !important; }
+html.aurum .btn-sm { min-height: 32px; padding: 5px 12px !important; font-size: 12.5px !important; }
+html.aurum .btn-primary, html.aurum button.btn-primary {
+  background: var(--ax-primary) !important; background-image: none !important;
+  color: var(--ax-primary-ink) !important; border: 1px solid transparent !important;
+}
+html.aurum .btn-primary:hover { background: var(--ax-primary-hover) !important; transform: none !important; }
+html.aurum .btn-secondary {
+  background: var(--ax-surface) !important; color: var(--ax-text) !important;
+  border: 1px solid var(--ax-line-2) !important;
+}
+html.aurum .btn-secondary:hover { background: var(--ax-surface-2) !important; }
+html.aurum .btn-ghost { background: transparent !important; color: var(--ax-muted) !important; border: 1px solid transparent !important; }
+html.aurum .btn-ghost:hover { background: var(--ax-hover) !important; color: var(--ax-text) !important; }
+html.aurum .btn-success { background: var(--ax-ok) !important; color: #fff !important; border: 0 !important; }
+html.aurum .btn-danger  { background: var(--ax-bad) !important; color: #fff !important; border: 0 !important; }
+html.aurum .btn-warning { background: var(--ax-warn) !important; color: #1d1203 !important; border: 0 !important; }
+html.aurum .btn-shine::after { display: none !important; }
+html.aurum .btn-icon {
+  width: 32px; height: 32px; border-radius: 8px !important; display: inline-grid !important; place-items: center;
+  background: transparent !important; border: 1px solid transparent !important; color: var(--ax-muted);
+  transition: background .15s, color .15s !important;
+}
+html.aurum .btn-icon:hover { background: var(--ax-hover) !important; color: var(--ax-text); }
+
+html.aurum input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]),
+html.aurum select, html.aurum textarea, html.aurum .form-control {
+  background: var(--ax-input) !important;
+  border: 1px solid var(--ax-line-2) !important;
+  color: var(--ax-text) !important;
+  border-radius: var(--ax-radius-sm) !important;
+  box-shadow: none !important;
+  font-weight: 500 !important;
+}
+html.aurum input::placeholder, html.aurum textarea::placeholder { color: var(--ax-faint) !important; }
+html.aurum input:focus, html.aurum select:focus, html.aurum textarea:focus, html.aurum .form-control:focus {
+  border-color: var(--ax-gold) !important;
+  box-shadow: 0 0 0 3px var(--ax-gold-soft) !important;
+  outline: none !important;
+}
+html.aurum input[type="checkbox"], html.aurum input[type="radio"] { accent-color: var(--ax-gold); }
+html.aurum .form-group label, html.aurum label { color: var(--ax-muted); font-weight: 600; }
+html.aurum select option { background: var(--ax-surface); color: var(--ax-text); }
+
+/* tabs (suppliers etc.) → segmented control */
+html.aurum .sup-tabs {
+  display: inline-flex !important; gap: 4px !important; padding: 4px !important; margin-bottom: 16px !important;
+  background: var(--ax-surface) !important; border: 1px solid var(--ax-line) !important; border-radius: 12px !important;
+  flex-wrap: wrap;
+}
+html.aurum .sup-tab {
+  border: 0 !important; background: transparent !important; color: var(--ax-muted) !important;
+  border-radius: 9px !important; padding: 8px 16px !important; font-weight: 600 !important; box-shadow: none !important;
+}
+html.aurum .sup-tab.active { background: var(--ax-active) !important; color: var(--ax-text) !important; box-shadow: inset 0 -2px 0 var(--ax-gold) !important; }
+
+/* tables */
+html.aurum .data-table thead th, html.aurum table thead th {
+  background: var(--ax-surface-2) !important; color: var(--ax-muted) !important;
+  font-weight: 600 !important; font-size: 12px !important; letter-spacing: 0 !important;
+  border-bottom: 1px solid var(--ax-line) !important; white-space: nowrap;
+  position: sticky; top: 0; z-index: 1;
+}
+html.aurum .data-table tbody tr, html.aurum table tbody tr { border-bottom: 1px solid var(--ax-line) !important; }
+html.aurum .data-table tbody tr:hover, html.aurum table tbody tr:hover { background: var(--ax-hover) !important; }
+html.aurum .data-table td { border-color: var(--ax-line) !important; }
+
+/* status badges */
+html.aurum .badge-status {
+  border-radius: 99px !important; padding: 3px 10px !important; font-size: 11.5px !important; font-weight: 600 !important;
+  border: 0 !important; background: var(--ax-surface-3) !important; color: var(--ax-muted) !important;
+}
+html.aurum .badge-paid, html.aurum .badge-success { background: var(--ax-ok-soft) !important; color: var(--ax-ok) !important; }
+html.aurum .badge-partial, html.aurum .badge-warning { background: var(--ax-warn-soft) !important; color: var(--ax-warn) !important; }
+html.aurum .badge-unpaid, html.aurum .badge-loss { background: var(--ax-bad-soft) !important; color: var(--ax-bad) !important; }
+html.aurum .badge-info { background: var(--ax-blue-soft) !important; color: var(--ax-blue) !important; }
+html.aurum .text-success, html.aurum .positive { color: var(--ax-ok) !important; }
+html.aurum .text-warning { color: var(--ax-warn) !important; }
+html.aurum .text-danger, html.aurum .negative { color: var(--ax-bad) !important; }
+
+html.aurum .empty-state { color: var(--ax-muted) !important; }
+
+/* ───────────────────────── 7. OVERLAYS ───────────────────────── */
+html.aurum .modal-overlay { background: rgba(4, 9, 22, .62) !important; backdrop-filter: blur(4px) !important; }
+html.aurum[data-theme="light"] .modal-overlay { background: rgba(13, 27, 61, .32) !important; }
+html.aurum .modal {
+  background: var(--ax-surface) !important; color: var(--ax-text);
+  border: 1px solid var(--ax-line-2) !important; border-radius: var(--ax-radius-lg) !important;
+  box-shadow: var(--ax-shadow-lg) !important; backdrop-filter: none !important;
+}
+html.aurum .modal-header { border-bottom: 1px solid var(--ax-line) !important; background: none !important; }
+html.aurum .modal-title { font-size: 17px !important; font-weight: 600 !important; }
+html.aurum .modal-footer { border-top: 1px solid var(--ax-line) !important; background: var(--ax-surface-2) !important; }
+html.aurum .modal-overlay.show .modal { animation: axModal .26s var(--ax-ease) both !important; }
+
+html.aurum .toast-container {
+  position: fixed !important; top: 76px !important; bottom: auto !important;
+  inset-inline-end: 20px !important; inset-inline-start: auto !important; left: auto;
+  transform: none !important; width: auto !important; max-width: min(400px, calc(100vw - 24px)) !important;
+  z-index: 9500 !important; align-items: stretch !important;
+}
+html.aurum .toast {
+  background: var(--ax-surface) !important; color: var(--ax-text) !important;
+  border: 1px solid var(--ax-line-2) !important; border-inline-start: 3px solid var(--ax-t, var(--ax-gold)) !important;
+  border-radius: 12px !important; box-shadow: var(--ax-shadow-lg) !important; backdrop-filter: none !important;
+  font-weight: 500 !important; font-size: 13.5px !important; line-height: 1.6;
+}
+html.aurum .toast.success { --ax-t: var(--ax-ok); }
+html.aurum .toast.error { --ax-t: var(--ax-bad); }
+html.aurum .toast.warning { --ax-t: var(--ax-warn); }
+html.aurum .toast.info { --ax-t: var(--ax-blue); }
+html.aurum .toast .icon { background: color-mix(in srgb, var(--ax-t, var(--ax-gold)) 16%, transparent) !important; color: var(--ax-t, var(--ax-gold)) !important; box-shadow: none !important; }
+
+html.aurum .notes-panel { background: var(--ax-surface) !important; border-inline-start: 1px solid var(--ax-line-2) !important; }
+html.aurum .ripple-circle { background: var(--ax-ripple) !important; }
+
+/* ───────────────────────── 8. FLOATING + MOBILE NAV ───────────────────────── */
+html.aurum #ai-fab {
+  width: 52px !important; height: 52px !important; border-radius: 50% !important;
+  background: var(--ax-hero-bg) !important; color: var(--ax-hero-gold) !important;
+  box-shadow: 0 0 0 1px rgba(233, 182, 80, .45), 0 12px 30px rgba(0, 0, 0, .35) !important;
+  animation: none !important;
+}
+html.aurum #ai-fab::before {
+  content: ''; position: absolute; inset: -5px; border-radius: 50%;
+  border: 1.5px solid transparent; border-top-color: var(--ax-hero-gold); border-inline-start-color: rgba(107, 151, 255, .7);
+  animation: axSpin 6s linear infinite;
+}
+html.aurum #home-fab {
+  background: var(--ax-surface) !important; color: var(--ax-text) !important;
+  border: 1px solid var(--ax-line-2) !important; box-shadow: var(--ax-shadow-lg) !important; border-radius: 14px !important;
+}
+
+html.aurum #bottom-nav {
+  background: color-mix(in srgb, var(--ax-side) 90%, transparent) !important;
+  backdrop-filter: blur(16px) saturate(140%) !important; -webkit-backdrop-filter: blur(16px) saturate(140%) !important;
+  border-top: 1px solid var(--ax-line) !important; box-shadow: 0 -8px 30px rgba(0, 0, 0, .18) !important;
+  padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px)) !important;
+  align-items: flex-end !important;
+}
+html.aurum .bn-item {
+  color: var(--ax-faint) !important; background: transparent !important; box-shadow: none !important;
+  font-weight: 600 !important; font-size: 10.5px !important; gap: 3px !important; padding: 6px 2px 4px !important; position: relative;
+}
+html.aurum .bn-item svg { width: 22px !important; height: 22px !important; filter: none !important; transform: none !important; }
+html.aurum .bn-item.active { color: var(--ax-text) !important; background: transparent !important; }
+html.aurum .bn-item.active svg { color: var(--ax-gold) !important; }
+html.aurum .bn-item.active::after {
+  content: ''; position: absolute; top: -6px; left: 50%; width: 22px; height: 3px; margin-left: -11px;
+  border-radius: 0 0 3px 3px; background: var(--ax-gold);
+}
+html.aurum .bn-create {
+  flex: 0 0 auto !important; max-width: none !important;
+  width: 56px; height: 56px; margin: -22px 4px 2px !important; padding: 0 !important;
+  border-radius: 18px !important;
+  background: var(--ax-hero-bg) !important; color: var(--ax-hero-gold) !important;
+  box-shadow: 0 0 0 1px rgba(233, 182, 80, .5), 0 10px 26px rgba(0, 0, 0, .35) !important;
+  display: grid !important; place-items: center;
+  transition: transform .2s var(--ax-spring) !important;
+}
+html.aurum .bn-create svg { width: 26px !important; height: 26px !important; transition: transform .3s var(--ax-spring); }
+html.aurum .bn-create.open svg { transform: rotate(45deg) !important; }
+html.aurum .bn-create span { display: none; }
+
+@media (max-width: 768px) {
+  html.aurum .sidebar {
+    width: min(86vw, 300px) !important;
+    z-index: 1100 !important;
+    box-shadow: var(--ax-shadow-lg) !important;
+  }
+  html.aurum .main-content { margin-right: 0 !important; }
+  html.aurum .topbar { padding: 8px 12px !important; padding-top: max(8px, env(safe-area-inset-top, 0px)) !important; min-height: 56px !important; }
+  html.aurum .topbar-title { font-size: 17px !important; }
+  html.aurum .icon-btn { width: 38px !important; height: 38px !important; min-width: 38px; }
+  html.aurum .paper-counter, html.aurum .reciter-inline, html.aurum #topbar-refresh-btn, html.aurum .topbar-home-btn { display: none !important; }
+  html.aurum .page-content, html.aurum #page-content { padding: 14px 14px calc(96px + env(safe-area-inset-bottom, 0px)) !important; }
+  html.aurum .page-title { font-size: 20px !important; }
+  html.aurum #home-fab { display: none !important; }
+  html.aurum #ai-fab { bottom: calc(90px + env(safe-area-inset-bottom, 0px)) !important; }
+  html.aurum .toast-container { top: max(64px, calc(env(safe-area-inset-top, 0px) + 60px)) !important; inset-inline: 12px !important; max-width: none !important; }
+  html.aurum .modal { border-radius: 20px 20px 0 0 !important; }
+}
+
+/* ───────────────────────── 9. LOGIN ───────────────────────── */
+html.aurum .lgn-wrap { background: #070F24 !important; }
+html.aurum .lgn-grid { display: none !important; }
+html.aurum .lgn-aurora { opacity: 1 !important; filter: none !important; }
+html.aurum .lgn-blob { border-radius: 50%; background: none !important; animation: axSpin 60s linear infinite !important; }
+html.aurum .lgn-b1 {
+  width: 120vmax !important; height: 120vmax !important; top: -60vmax !important; inset-inline-start: -30vmax !important;
+  border: 2px solid transparent; border-top-color: rgba(233, 182, 80, .5); border-inline-end-color: rgba(233, 182, 80, .16);
+}
+html.aurum .lgn-b2 {
+  width: 95vmax !important; height: 95vmax !important; bottom: -55vmax !important; inset-inline-end: -25vmax !important; top: auto !important;
+  border: 2px solid transparent; border-bottom-color: rgba(107, 151, 255, .45); border-inline-start-color: rgba(107, 151, 255, .14);
+  animation-direction: reverse !important; animation-duration: 80s !important;
+}
+html.aurum .lgn-b3 {
+  width: 60vmax !important; height: 60vmax !important; top: 20% !important; inset-inline-start: 55% !important;
+  border: 1px solid rgba(233, 182, 80, .1);
+}
+html.aurum .lgn-card {
+  background: #FFFFFF !important; border: 0 !important; border-radius: 22px !important;
+  box-shadow: 0 40px 90px rgba(0, 0, 0, .45) !important; backdrop-filter: none !important;
+}
+html.aurum .lgn-title { color: #0D1B3D !important; font-family: var(--ax-display) !important; font-weight: 600 !important; }
+html.aurum .lgn-sub { color: #56647F !important; }
+html.aurum #login-page .lgn-input {
+  background: #F4F6FB !important; border: 1px solid rgba(13, 31, 72, .14) !important; color: #0D1B3D !important;
+}
+html.aurum #login-page .lgn-input::placeholder { color: #8793AB !important; }
+html.aurum #login-page .lgn-input:focus { background: #fff !important; border-color: #C58E1A !important; box-shadow: 0 0 0 3px rgba(197, 142, 26, .16) !important; }
+html.aurum .lgn-btn {
+  background: #0F2250 !important; color: #F3C868 !important; font-family: var(--ax-display) !important; font-weight: 600 !important;
+  box-shadow: 0 12px 26px rgba(15, 34, 80, .35) !important;
+}
+html.aurum .lgn-btn:hover { background: #13306E !important; }
+html.aurum .lgn-chip { background: #F4F6FB !important; border: 1px solid rgba(13, 31, 72, .1) !important; color: #56647F !important; }
+html.aurum .lgn-foot { color: rgba(236, 241, 250, .55) !important; letter-spacing: 3px !important; }
+html.aurum .lgn-r1 { border-top-color: rgba(233, 182, 80, .8) !important; border-inline-end-color: rgba(233, 182, 80, .2) !important; }
+html.aurum .lgn-r2 { border-bottom-color: rgba(107, 151, 255, .7) !important; border-inline-start-color: rgba(107, 151, 255, .15) !important; }
+
+/* ───────────────────────── 10. MOTION ───────────────────────── */
+@keyframes axFade  { from { opacity: 0; } to { opacity: 1; } }
+@keyframes axRise  { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes axModal { from { opacity: 0; transform: translateY(14px) scale(.985); } to { opacity: 1; transform: none; } }
+@keyframes axSpin  { to { transform: rotate(360deg); } }
+@keyframes axPing  { 0% { box-shadow: 0 0 0 0 rgba(242, 100, 103, .55); } 80%, 100% { box-shadow: 0 0 0 7px rgba(242, 100, 103, 0); } }
+@keyframes axDraw  { from { stroke-dashoffset: var(--ax-len, 400); } }
+@keyframes axSheet { from { transform: translateY(100%); } to { transform: none; } }
+
+@media (prefers-reduced-motion: reduce) {
+  html.aurum *, html.aurum *::before, html.aurum *::after {
+    animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important;
+  }
+}
+
+/* ───────────────────────── 11. DASHBOARD HERO (signature) ───────────────────────── */
+html.aurum .ax-hero {
+  position: relative; overflow: hidden; isolation: isolate;
+  display: grid; grid-template-columns: minmax(0, 1fr) 272px; gap: 28px;
+  padding: 28px 30px; margin: 0 0 20px;
+  border-radius: var(--ax-radius-lg);
+  color: var(--ax-hero-text);
+  background:
+    radial-gradient(700px 320px at 12% 0%, rgba(107, 151, 255, .16), transparent 60%),
+    linear-gradient(135deg, var(--ax-hero-bg) 0%, var(--ax-hero-bg-2) 100%);
+  border: 1px solid rgba(233, 182, 80, .22);
+  box-shadow: 0 20px 50px rgba(5, 12, 30, .35);
+  animation: axRise .5s var(--ax-ease) both;
+}
+html.aurum .ax-hero::after {
+  content: ''; position: absolute; inset-inline: 30px; bottom: 0; height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(233, 182, 80, .7), transparent);
+}
+html.aurum .ax-hero-arcs {
+  position: absolute; z-index: -1; width: 520px; height: 520px;
+  inset-inline-end: -150px; top: -170px; opacity: .9; pointer-events: none;
+  animation: axSpin 90s linear infinite;
+}
+html.aurum .ax-arc { fill: none; stroke-width: 3; stroke-linecap: round; }
+html.aurum .ax-arc-gold  { stroke: rgba(233, 182, 80, .55); stroke-dasharray: 520 600; }
+html.aurum .ax-arc-blue  { stroke: rgba(107, 151, 255, .45); stroke-dasharray: 300 640; stroke-dashoffset: -200; }
+html.aurum .ax-arc-faint { stroke: rgba(255, 255, 255, .06); stroke-width: 1; }
+html.aurum .ax-hero-main { min-width: 0; }
+html.aurum .ax-eyebrow { color: var(--ax-hero-gold); font-weight: 600; font-size: 13.5px; }
+html.aurum .ax-hero-title {
+  font-family: var(--ax-display) !important; color: var(--ax-hero-text) !important;
+  font-size: 30px !important; font-weight: 600 !important; line-height: 1.25; margin: 4px 0 6px !important;
+}
+html.aurum .ax-hero-date { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; color: var(--ax-hero-muted); font-size: 13px; }
+html.aurum .ax-hero-date i { width: 4px; height: 4px; border-radius: 50%; background: var(--ax-hero-gold); display: inline-block; }
+html.aurum .ax-today {
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; margin: 22px 0 20px;
+  border-block: 1px solid rgba(255, 255, 255, .08);
+}
+html.aurum .ax-fig { padding: 14px 16px 14px 0; border-inline-end: 1px solid rgba(255, 255, 255, .08); min-width: 0; }
+html.aurum .ax-fig:last-child { border-inline-end: 0; }
+html.aurum .ax-fig + .ax-fig { padding-inline-start: 18px; }
+html.aurum .ax-fig span { display: block; color: var(--ax-hero-muted); font-size: 12px; font-weight: 500; }
+html.aurum .ax-fig b { display: block; color: var(--ax-hero-text); font-size: 22px; font-weight: 600; margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+html.aurum .ax-fig em { font-style: normal; color: var(--ax-hero-muted); font-size: 11.5px; }
+html.aurum .ax-fig.ax-neg b { color: #FF9C9E; }
+html.aurum .ax-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+html.aurum .ax-act {
+  display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 14px;
+  border-radius: 11px; cursor: pointer; font-family: var(--ax-font); font-weight: 600; font-size: 13.5px;
+  color: var(--ax-hero-text); background: rgba(255, 255, 255, .07); border: 1px solid rgba(255, 255, 255, .12);
+  transition: background .18s, border-color .18s, transform .14s var(--ax-spring);
+}
+html.aurum .ax-act svg { width: 17px; height: 17px; }
+html.aurum .ax-act:hover { background: rgba(255, 255, 255, .13); border-color: rgba(255, 255, 255, .22); }
+html.aurum .ax-act:active { transform: scale(.96); }
+html.aurum .ax-act-main { background: var(--ax-hero-gold); color: #1A1305; border-color: transparent; }
+html.aurum .ax-act-main:hover { background: #F5C866; }
+html.aurum .ax-act-ghost { background: transparent; }
+html.aurum .ax-act-sep { width: 1px; height: 22px; background: rgba(255, 255, 255, .14); margin: 0 4px; }
+html.aurum .ax-chips { margin-top: 14px; display: flex; gap: 8px; flex-wrap: wrap; }
+html.aurum .ax-chip {
+  border: 1px solid rgba(255, 140, 142, .35); background: rgba(242, 100, 103, .14); color: #FFB3B4;
+  border-radius: 99px; padding: 5px 12px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: var(--ax-font);
+}
+html.aurum .ax-chip::before { content: ''; display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: #FF7B7E; margin-inline-end: 7px; vertical-align: middle; animation: axPing 1.8s ease-out infinite; }
+
+html.aurum .ax-target {
+  background: rgba(255, 255, 255, .045); border: 1px solid rgba(255, 255, 255, .09);
+  border-radius: 16px; padding: 16px 18px; display: flex; flex-direction: column; align-items: center; gap: 12px;
+  align-self: stretch;
+}
+html.aurum .ax-target-head { width: 100%; display: flex; align-items: center; justify-content: space-between; color: var(--ax-hero-muted); font-size: 12.5px; font-weight: 600; }
+html.aurum .ax-link {
+  display: inline-flex; align-items: center; gap: 5px; background: none; border: 0; cursor: pointer;
+  color: var(--ax-hero-gold); font-family: var(--ax-font); font-weight: 600; font-size: 12.5px; padding: 2px;
+}
+html.aurum .ax-link svg { width: 14px; height: 14px; }
+html.aurum .ax-ring { position: relative; width: 132px; height: 132px; }
+html.aurum .ax-ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+html.aurum .ax-ring-track { fill: none; stroke: rgba(255, 255, 255, .09); stroke-width: 9; }
+html.aurum .ax-ring-bar { fill: none; stroke: var(--ax-hero-gold); stroke-width: 9; stroke-linecap: round; animation: axDraw 1.1s var(--ax-ease) both; filter: drop-shadow(0 0 6px rgba(233, 182, 80, .45)); }
+html.aurum .ax-still .ax-ring-bar { animation: none; }
+html.aurum .ax-ring-center { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; }
+html.aurum .ax-ring-center b { font-size: 28px; font-weight: 600; color: var(--ax-hero-text); line-height: 1; }
+html.aurum .ax-ring-center span { font-size: 11px; color: var(--ax-hero-muted); margin-top: 4px; }
+html.aurum .ax-target-meta { width: 100%; display: grid; gap: 6px; font-size: 12.5px; }
+html.aurum .ax-target-meta > div { display: flex; justify-content: space-between; gap: 8px; color: var(--ax-hero-muted); }
+html.aurum .ax-target-meta b { color: var(--ax-hero-text); font-weight: 600; }
+html.aurum .ax-target-meta .ax-target-hint { justify-content: center; margin-top: 4px; padding-top: 8px; border-top: 1px dashed rgba(255, 255, 255, .12); color: var(--ax-hero-muted); }
+html.aurum .ax-target-hint b { color: var(--ax-hero-gold) !important; margin-inline: 4px; }
+html.aurum .ax-target-hint.ax-ok { color: #7FE3BD !important; font-weight: 600; }
+html.aurum .ax-target-empty { text-align: center; display: grid; gap: 6px; padding: 18px 4px; color: var(--ax-hero-muted); font-size: 12.5px; line-height: 1.7; }
+html.aurum .ax-target-empty b { color: var(--ax-hero-text); font-size: 15px; font-family: var(--ax-display); font-weight: 600; }
+
+@media (max-width: 1180px) {
+  html.aurum .ax-hero { grid-template-columns: 1fr; }
+  html.aurum .ax-target { flex-direction: row; flex-wrap: wrap; justify-content: center; }
+  html.aurum .ax-target-head { order: -1; }
+  html.aurum .ax-target-meta { width: auto; flex: 1 1 200px; }
+}
+@media (max-width: 768px) {
+  html.aurum .ax-hero { padding: 20px 18px; gap: 16px; border-radius: 18px; }
+  html.aurum .ax-hero-title { font-size: 24px !important; }
+  html.aurum .ax-hero-arcs { width: 360px; height: 360px; inset-inline-end: -140px; top: -130px; }
+  html.aurum .ax-today { grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 16px 0; }
+  html.aurum .ax-fig { padding: 12px 0; border-inline-end: 0; border-bottom: 1px solid rgba(255, 255, 255, .08); }
+  html.aurum .ax-fig + .ax-fig { padding-inline-start: 0; }
+  html.aurum .ax-fig:nth-child(even) { padding-inline-start: 14px; border-inline-start: 1px solid rgba(255, 255, 255, .08); }
+  html.aurum .ax-fig:nth-last-child(-n+2) { border-bottom: 0; }
+  html.aurum .ax-fig b { font-size: 19px; }
+  html.aurum .ax-actions { display: grid; grid-template-columns: repeat(2, 1fr); }
+  html.aurum .ax-act { justify-content: center; }
+  html.aurum .ax-act-sep { display: none; }
+  html.aurum .ax-ring { width: 108px; height: 108px; }
+}
+
+/* ───────────────────────── 12. DAY CLOSING ───────────────────────── */
+html.aurum .ax-modal-lead { color: var(--ax-muted); font-size: 13.5px; line-height: 1.8; margin: 0 0 14px; }
+html.aurum .ax-dc-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+html.aurum .ax-dc-bar label { margin: 0; }
+html.aurum .ax-dc-bar input { max-width: 200px; }
+html.aurum .ax-dc-tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-bottom: 14px; }
+html.aurum .ax-dc-tile {
+  background: var(--ax-surface-2); border: 1px solid var(--ax-line); border-radius: 12px; padding: 12px 14px;
+  border-top: 3px solid var(--ax-dt, var(--ax-blue));
+}
+html.aurum .ax-dc-tile.ax-t-ok { --ax-dt: var(--ax-ok); }
+html.aurum .ax-dc-tile.ax-t-bad { --ax-dt: var(--ax-bad); }
+html.aurum .ax-dc-tile.ax-t-gold { --ax-dt: var(--ax-gold); background: var(--ax-gold-soft); }
+html.aurum .ax-dc-tile span { display: block; font-size: 12px; color: var(--ax-muted); }
+html.aurum .ax-dc-tile b { display: block; font-size: 20px; font-weight: 600; color: var(--ax-text); margin: 4px 0 2px; }
+html.aurum .ax-dc-tile em { font-style: normal; font-size: 11.5px; color: var(--ax-faint); }
+html.aurum .ax-dc-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+html.aurum .ax-dc-box { background: var(--ax-surface); border: 1px solid var(--ax-line); border-radius: 12px; padding: 12px 14px; }
+html.aurum .ax-dc-wide { grid-column: 1 / -1; }
+html.aurum .ax-dc-box h4 { margin: 0 0 8px; font-size: 13px; font-weight: 600; color: var(--ax-text); font-family: var(--ax-display); }
+html.aurum .ax-dc-row, html.aurum .ax-dc-head { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--ax-line); font-size: 13px; }
+html.aurum .ax-dc-row:last-child { border-bottom: 0; }
+html.aurum .ax-dc-row span, html.aurum .ax-dc-head span { flex: 1; color: var(--ax-text); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+html.aurum .ax-dc-row em, html.aurum .ax-dc-head em { font-style: normal; color: var(--ax-muted); width: 90px; text-align: left; }
+html.aurum .ax-dc-row b, html.aurum .ax-dc-head b { font-weight: 600; min-width: 110px; text-align: left; }
+html.aurum .ax-dc-head { font-size: 11.5px; color: var(--ax-faint); }
+html.aurum .ax-dc-head span, html.aurum .ax-dc-head b { color: var(--ax-faint); font-weight: 500; }
+html.aurum .ax-dc-note span { color: var(--ax-muted); }
+html.aurum .ax-dc-empty { color: var(--ax-faint); font-size: 12.5px; padding: 8px 0; }
+@media (max-width: 900px) {
+  html.aurum .ax-dc-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  html.aurum .ax-dc-grid { grid-template-columns: 1fr; }
+}
+
+/* ───────────────────────── 13. COLLECTIONS CALENDAR ───────────────────────── */
+html.aurum .ax-cal-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
+html.aurum .ax-cal-nav { display: flex; align-items: center; gap: 10px; }
+html.aurum .ax-cal-nav b { font-family: var(--ax-display); font-weight: 600; font-size: 17px; min-width: 130px; text-align: center; }
+html.aurum .ax-cal-sum { display: flex; flex-wrap: wrap; gap: 14px; font-size: 12.5px; color: var(--ax-muted); }
+html.aurum .ax-cal-sum b { color: var(--ax-text); font-weight: 600; margin-inline-start: 4px; }
+html.aurum .ax-cal-sum i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-inline-end: 6px; vertical-align: middle; }
+html.aurum .ax-dot-in { background: var(--ax-ok); }
+html.aurum .ax-dot-bad { background: var(--ax-bad); }
+html.aurum .ax-dot-out { background: var(--ax-warn); }
+html.aurum .ax-bad-text b { color: var(--ax-bad); }
+html.aurum .ax-cal-week, html.aurum .ax-cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+html.aurum .ax-cal-week span { text-align: center; font-size: 11.5px; color: var(--ax-faint); font-weight: 600; padding: 4px 0; }
+html.aurum .ax-cal-cell {
+  min-height: 74px; border-radius: 10px; padding: 6px 7px; text-align: start;
+  display: flex; flex-direction: column; gap: 3px; align-items: stretch;
+  background: var(--ax-surface-2); border: 1px solid var(--ax-line); color: var(--ax-text);
+  cursor: pointer; font-family: var(--ax-font); transition: border-color .15s, background .15s;
+}
+html.aurum .ax-cal-cell:hover { border-color: var(--ax-line-2); background: var(--ax-hover); }
+html.aurum .ax-cal-pad { background: transparent; border-color: transparent; cursor: default; }
+html.aurum .ax-cal-d { font-size: 12.5px; font-weight: 600; color: var(--ax-muted); }
+html.aurum .ax-cal-in, html.aurum .ax-cal-out {
+  font-size: 11px; font-weight: 600; border-radius: 6px; padding: 1px 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+html.aurum .ax-cal-in { background: var(--ax-ok-soft); color: var(--ax-ok); }
+html.aurum .ax-cal-out { background: var(--ax-warn-soft); color: var(--ax-warn); }
+html.aurum .ax-cal-cell.ax-over .ax-cal-in { background: var(--ax-bad-soft); color: var(--ax-bad); }
+html.aurum .ax-cal-cell.ax-today { border-color: var(--ax-gold); box-shadow: inset 0 0 0 1px var(--ax-gold); }
+html.aurum .ax-cal-cell.ax-today .ax-cal-d { color: var(--ax-gold); }
+html.aurum .ax-cal-cell.ax-sel { background: var(--ax-active); border-color: var(--ax-line-2); }
+html.aurum .ax-cal-detail { margin-top: 14px; border-top: 1px solid var(--ax-line); padding-top: 12px; }
+html.aurum .ax-cal-detail h4 { margin: 0 0 8px; font-size: 14px; font-family: var(--ax-display); font-weight: 600; }
+html.aurum .ax-cal-item { display: flex; align-items: center; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--ax-line); }
+html.aurum .ax-cal-item > div { flex: 1; min-width: 0; display: grid; }
+html.aurum .ax-cal-item > div b { font-weight: 600; font-size: 13.5px; }
+html.aurum .ax-cal-item > div span { font-size: 12px; color: var(--ax-muted); }
+html.aurum .ax-cal-item .ax-in { color: var(--ax-ok); font-weight: 600; }
+html.aurum .ax-cal-item .ax-out { color: var(--ax-warn); font-weight: 600; }
+@media (max-width: 640px) {
+  html.aurum .ax-cal-week, html.aurum .ax-cal-grid { gap: 3px; }
+  html.aurum .ax-cal-week span { font-size: 10px; }
+  html.aurum .ax-cal-cell { min-height: 52px; padding: 4px; border-radius: 8px; }
+  html.aurum .ax-cal-in, html.aurum .ax-cal-out { font-size: 0; height: 5px; padding: 0; border-radius: 3px; }
+  html.aurum .ax-cal-in { background: var(--ax-ok); }
+  html.aurum .ax-cal-out { background: var(--ax-warn); }
+  html.aurum .ax-cal-cell.ax-over .ax-cal-in { background: var(--ax-bad); }
+}
+
+/* ───────────────────────── 14. QUICK-CREATE SHEET (mobile) ───────────────────────── */
+#ax-sheet { position: fixed; inset: 0; z-index: 1200; pointer-events: none; }
+#ax-sheet .ax-sheet-scrim { position: absolute; inset: 0; background: rgba(4, 9, 22, .5); opacity: 0; transition: opacity .25s ease; }
+#ax-sheet .ax-sheet-panel {
+  position: absolute; inset-inline: 0; bottom: 0;
+  background: var(--ax-surface); border-top: 1px solid var(--ax-line-2);
+  border-radius: 22px 22px 0 0; padding: 8px 16px calc(96px + env(safe-area-inset-bottom, 0px));
+  transform: translateY(100%); transition: transform .32s var(--ax-ease);
+  box-shadow: var(--ax-shadow-lg);
+}
+#ax-sheet.show { pointer-events: auto; }
+#ax-sheet.show .ax-sheet-scrim { opacity: 1; }
+#ax-sheet.show .ax-sheet-panel { transform: none; }
+#ax-sheet .ax-sheet-grip { width: 40px; height: 4px; border-radius: 4px; background: var(--ax-line-2); margin: 4px auto 10px; }
+#ax-sheet .ax-sheet-title { font-family: var(--ax-display); font-weight: 600; color: var(--ax-text); margin: 0 4px 12px; }
+#ax-sheet .ax-sheet-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+#ax-sheet .ax-sheet-btn {
+  display: grid; justify-items: center; gap: 7px; padding: 12px 4px; border-radius: 14px;
+  background: var(--ax-surface-2); border: 1px solid var(--ax-line); color: var(--ax-text);
+  font-family: var(--ax-font); font-weight: 600; font-size: 12px; cursor: pointer;
+}
+#ax-sheet .ax-sheet-btn svg {
+  width: 40px; height: 40px; padding: 10px; border-radius: 12px;
+  background: var(--ax-sc-soft); color: var(--ax-sc);
+}
+#ax-sheet .ax-c-gold   { --ax-sc: var(--ax-gold);   --ax-sc-soft: var(--ax-gold-soft); }
+#ax-sheet .ax-c-blue   { --ax-sc: var(--ax-blue);   --ax-sc-soft: var(--ax-blue-soft); }
+#ax-sheet .ax-c-ok     { --ax-sc: var(--ax-ok);     --ax-sc-soft: var(--ax-ok-soft); }
+#ax-sheet .ax-c-violet { --ax-sc: var(--ax-violet); --ax-sc-soft: var(--ax-violet-soft); }
+#ax-sheet .ax-c-bad    { --ax-sc: var(--ax-bad);    --ax-sc-soft: var(--ax-bad-soft); }
+#ax-sheet .ax-c-teal   { --ax-sc: var(--ax-teal);   --ax-sc-soft: var(--ax-teal-soft); }
+#ax-sheet .ax-c-warn   { --ax-sc: var(--ax-warn);   --ax-sc-soft: var(--ax-warn-soft); }
+@media (min-width: 769px) { html.aurum .bn-create, #ax-sheet { display: none !important; } }
+@media (max-width: 768px) { html.aurum .ax-rail-btn { display: none; } }
+
+/* ───────────────────────── 15. REFINEMENTS ───────────────────────── */
+html.aurum .section-action-bar {
+  justify-content: flex-start !important; max-width: none !important; margin: 0 0 18px !important;
+  padding: 0 !important; background: none !important; border: 0 !important; box-shadow: none !important;
+}
+html.aurum .section-action-bar .btn { padding: 8px 16px !important; font-size: 13.5px !important; font-weight: 600 !important; min-width: 0 !important; }
+html.aurum .backup-reminder-banner {
+  background: var(--ax-surface) !important; color: var(--ax-text) !important;
+  border: 1px solid var(--ax-line) !important; border-inline-start: 3px solid var(--ax-gold) !important;
+  border-radius: 12px !important; box-shadow: var(--ax-shadow) !important;
+}
+html.aurum .backup-reminder-banner .brb-msg { color: var(--ax-text) !important; font-weight: 600; }
+html.aurum .ax-target {
+  background: rgba(6, 13, 32, .55); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+}
+html.aurum .ax-act { padding: 0 12px; gap: 7px; }
+html.aurum .ax-actions { gap: 6px; }
+@media (max-width: 768px) {
+  html.aurum .topbar-spacer { display: none !important; }
+  html.aurum .topbar-title { flex: 1 1 auto !important; min-width: 0; }
+  html.aurum #notes-icon-btn { display: none !important; }
+  html.aurum .ax-hero-arcs { opacity: .35; width: 300px; height: 300px; top: -170px; inset-inline-end: -150px; }
+  html.aurum #ai-fab { width: 46px !important; height: 46px !important; }
+  html.aurum .backup-reminder-banner { flex-wrap: wrap; gap: 8px; }
+}
+
+/* ───────────────────────── 16. REPORTS ───────────────────────── */
+html.aurum .rep-stat-card {
+  background: var(--ax-surface) !important; color: var(--ax-text) !important;
+  border: 1px solid var(--ax-line) !important; border-radius: var(--ax-radius) !important;
+  box-shadow: var(--ax-shadow) !important; position: relative; overflow: hidden;
+  animation: axRise .45s var(--ax-ease) both;
+}
+html.aurum .rep-stat-card::before {
+  content: ''; position: absolute; top: 0; inset-inline: 0; height: 3px; background: var(--ax-rc, var(--ax-gold));
+}
+html.aurum .rep-stat-card::after { display: none !important; }
+html.aurum .rep-stat-card .rep-stat-icon {
+  background: var(--ax-rc-soft, var(--ax-gold-soft)) !important; color: var(--ax-rc, var(--ax-gold)) !important;
+  box-shadow: none !important; filter: none !important; border-radius: 12px !important;
+}
+html.aurum .rep-stat-label { color: var(--ax-muted) !important; opacity: 1 !important; font-weight: 500 !important; }
+html.aurum .rep-stat-value { color: var(--ax-text) !important; font-family: var(--ax-display) !important; font-weight: 600 !important; text-shadow: none !important; }
+html.aurum .rep-stat-sub { color: var(--ax-faint) !important; opacity: 1 !important; }
+html.aurum .rep-stat-card.grad-teal   { --ax-rc: var(--ax-teal);   --ax-rc-soft: var(--ax-teal-soft); }
+html.aurum .rep-stat-card.grad-sky    { --ax-rc: var(--ax-blue);   --ax-rc-soft: var(--ax-blue-soft); }
+html.aurum .rep-stat-card.grad-orange { --ax-rc: var(--ax-warn);   --ax-rc-soft: var(--ax-warn-soft); }
+html.aurum .rep-stat-card.grad-green  { --ax-rc: var(--ax-ok);     --ax-rc-soft: var(--ax-ok-soft); }
+html.aurum .rep-stat-card.grad-purple { --ax-rc: var(--ax-violet); --ax-rc-soft: var(--ax-violet-soft); }
+html.aurum .rep-stat-card.grad-red    { --ax-rc: var(--ax-bad);    --ax-rc-soft: var(--ax-bad-soft); }
+html.aurum .rep-panel {
+  background: var(--ax-surface) !important; border: 1px solid var(--ax-line) !important;
+  border-radius: var(--ax-radius) !important; box-shadow: var(--ax-shadow) !important;
+}
+html.aurum .rep-panel-header { background: var(--ax-surface-2) !important; border-bottom: 1px solid var(--ax-line) !important; color: var(--ax-text) !important; }
+html.aurum .reports-tabs-sidebar {
+  background: var(--ax-surface) !important; border: 1px solid var(--ax-line) !important; box-shadow: var(--ax-shadow) !important;
+}
+html.aurum .rep-tab { color: var(--ax-muted) !important; border-radius: 10px !important; font-weight: 500 !important; }
+html.aurum .rep-tab:hover { background: var(--ax-hover) !important; color: var(--ax-text) !important; }
+html.aurum .rep-tab.active { background: var(--ax-active) !important; color: var(--ax-text) !important; box-shadow: inset -3px 0 0 var(--ax-gold) !important; font-weight: 600 !important; }
+html.aurum .rep-stat-card .rep-stat-icon { width: 44px !important; height: 44px !important; display: grid !important; place-items: center !important; font-size: 21px !important; margin-bottom: 10px; }

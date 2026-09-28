@@ -6,11 +6,11 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>نظام إدارة إمداد إكس - ERP</title>
+<title>إمداد إكس — إدارة التوريدات</title>
 
 <!-- PWA: install to home screen with company logo -->
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#04060c">
+<meta name="theme-color" content="#081226">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -20,11 +20,20 @@
 <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/modern-screenshot@4.5.5/dist/index.min.js"></script>
+<link rel="stylesheet" href="fonts/fonts.css">
+<script src="vendor/chart.umd.js"></script>
+<script src="vendor/modern-screenshot.js"></script>
+<script>
+/* Aurum UI: apply saved theme + layout before first paint (no flash) */
+(function(){
+  var d = document.documentElement;
+  var t = 'dark', rail = false;
+  try { t = localStorage.getItem('theme') || 'dark'; rail = localStorage.getItem('ax_rail') === '1'; } catch (e) {}
+  d.setAttribute('data-theme', t === 'light' ? 'light' : 'dark');
+  d.classList.add('aurum');
+  if (rail) d.classList.add('ax-rail');
+})();
+</script>
 <style>
 /* ========================= VARIABLES ========================= */
 :root {
@@ -132,25 +141,6 @@
   --shadow-glow: 0 0 0 4px rgba(16,185,129,.30);
   --shadow-card-glow: 0 0 50px rgba(59,130,246,.07);
 }
-
-/* ========================= LIGHT THEME EXPLICIT OVERRIDES ========================= */
-[data-theme="light"] .sidebar {
-  background: #ffffff;
-  box-shadow: -2px 0 12px rgba(15,23,42,.07);
-}
-[data-theme="light"] .sidebar-brand { border-bottom-color: #e3e8ee; }
-[data-theme="light"] .brand-name { color: #0f172a; }
-[data-theme="light"] .brand-sub { color: #64748b; }
-[data-theme="light"] .nav-section-title { color: #94a3b8; }
-[data-theme="light"] .nav-item { color: #334155; }
-[data-theme="light"] .nav-item:hover { background: rgba(15,23,42,.06); color: #0f172a; }
-[data-theme="light"] .nav-item.active { background: rgba(5,150,105,.10); color: #0f172a; }
-[data-theme="light"] .sidebar-footer { border-top-color: #e3e8ee; }
-[data-theme="light"] .user-pill { background: #f8fafc; }
-[data-theme="light"] .user-name { color: #0f172a; }
-[data-theme="light"] .user-role { color: #64748b; }
-[data-theme="light"] .topbar { background: rgba(255,255,255,0.95); border-bottom-color: #e3e8ee; }
-[data-theme="light"] .topbar-title { color: #0f172a; }
 
 /* ========================= RESET / BASE ========================= */
 *, *::before, *::after { box-sizing: border-box; }
@@ -9337,7 +9327,168 @@ audio::-webkit-media-controls-panel { background: rgba(15,23,42,.9); }
   border: 1px dashed rgba(16,217,160,.35);
   font-size: 13px; line-height: 1.9; color: #c6d2e8;
 }
+
+/* ════════════════════════════════════════════════════════════════
+   BOLD SOLID THEME — v2 (نسخة الألوان الصريحة الممتلئة)
+   كروت ممتلئة بألوان كاملة + قائمة جانبية ملوّنة + أنيميشن جديد
+════════════════════════════════════════════════════════════════ */
+
+/* ── Pulse Grid: solid filled cards instead of glass+neon ── */
+.pg-card {
+  border: none !important;
+  background: var(--pgc, linear-gradient(135deg, #334155, #475569)) !important;
+  backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
+  box-shadow: 0 10px 26px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.16) !important;
+  animation: pgPop .45s cubic-bezier(.25,.46,.45,.94) both !important;
+}
+.pg-card::before {
+  content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 0;
+  background: radial-gradient(circle at 88% 12%, rgba(255,255,255,.16), transparent 55%);
+}
+.pg-card > * { position: relative; z-index: 1; }
+@keyframes pgPop { from { opacity: 0; transform: translateY(16px) scale(.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
+.pg-accent { display: none !important; }
+.pg-icon { background: rgba(255,255,255,.2) !important; border-color: rgba(255,255,255,.3) !important; color: #fff !important; }
+.pg-title, .pg-value { color: #fff !important; }
+.pg-value { background: rgba(255,255,255,.16) !important; border-color: rgba(255,255,255,.22) !important; }
+.pg-status { color: rgba(255,255,255,.85) !important; }
+.pg-card:hover { transform: translateY(-5px) scale(1.012) !important; filter: brightness(1.08); box-shadow: 0 16px 38px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.2) !important; }
+
+.pg-danger  { --pgc: linear-gradient(135deg, #b91c1c, #ef4444); animation: pgPop .45s cubic-bezier(.25,.46,.45,.94) both, pgPulseDanger 2.2s ease-in-out infinite !important; }
+@keyframes pgPulseDanger { 50% { box-shadow: 0 10px 30px rgba(0,0,0,.45), 0 0 26px rgba(239,68,68,.35), inset 0 1px 0 rgba(255,255,255,.18); } }
+.pg-warning { --pgc: linear-gradient(135deg, #c2410c, #f97316); }
+.pg-success { --pgc: linear-gradient(135deg, #047857, #10b981); }
+.pg-info    { --pgc: linear-gradient(135deg, #1e4db7, #2563eb); }
+.pg-purple  { --pgc: linear-gradient(135deg, #6d28d9, #8b5cf6); }
+.pg-card[data-card="treasury"] { --pgc: linear-gradient(135deg, #0f172a, #1e293b); }
+.pg-card[data-card="suppliers"] { --pgc: linear-gradient(135deg, #78350f, #b45309); }
+
+/* stagger pulse grid entrance */
+.pulse-grid .pg-card:nth-child(1) { animation-delay: .02s, 0s; }
+.pulse-grid .pg-card:nth-child(2) { animation-delay: .07s, 0s; }
+.pulse-grid .pg-card:nth-child(3) { animation-delay: .12s, 0s; }
+.pulse-grid .pg-card:nth-child(4) { animation-delay: .17s, 0s; }
+.pulse-grid .pg-card:nth-child(5) { animation-delay: .22s, 0s; }
+.pulse-grid .pg-card:nth-child(6) { animation-delay: .27s, 0s; }
+
+/* ── Sidebar nav-item: solid colored capsules using existing --nav-color ── */
+.nav-item {
+  background: var(--nav-color) !important;
+  color: #fff !important;
+  border-radius: 14px !important;
+  font-weight: 800 !important;
+  margin-bottom: 7px !important;
+  box-shadow: 0 4px 14px rgba(0,0,0,.32), inset 0 1px 0 rgba(255,255,255,.14) !important;
+  position: relative; overflow: hidden;
+  border: none !important;
+  transition: transform .2s cubic-bezier(.34,1.56,.64,1), box-shadow .22s ease, filter .2s ease !important;
+  animation: navIn .4s cubic-bezier(.25,.46,.45,.94) both;
+}
+.nav-item span { color: #fff !important; }
+.nav-icon-colored {
+  background: rgba(255,255,255,.22) !important;
+  border-color: rgba(255,255,255,.3) !important;
+  color: #fff !important;
+}
+.nav-item::after {
+  content: ''; position: absolute; top: 0; bottom: 0; width: 45%; inset-inline-start: -55%;
+  background: linear-gradient(105deg, transparent, rgba(255,255,255,.3), transparent);
+  transition: inset-inline-start .55s ease; pointer-events: none;
+}
+.nav-item:hover:not(.active) { transform: translateX(-4px) scale(1.015) !important; filter: brightness(1.12); box-shadow: 0 8px 22px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.2) !important; background: var(--nav-color) !important; }
+.nav-item:hover::after { inset-inline-start: 130%; }
+.nav-item.active {
+  filter: brightness(1.18) !important;
+  box-shadow: 0 0 0 2px rgba(255,255,255,.45), 0 8px 24px rgba(0,0,0,.5) !important;
+  background: var(--nav-color) !important;
+  border-inline-start: none !important;
+  transform: translateX(-2px) !important;
+}
+@keyframes navIn { from { opacity: 0; transform: translateX(24px); } to { opacity: 1; transform: translateX(0); } }
+.nav-item .badge { background: rgba(0,0,0,.35) !important; color: #fff !important; }
+
+/* ── Classic stat-card variants: solid fills ── */
+.stat-card.stat-primary, .stat-card.stat-success { background: linear-gradient(135deg, #047857, #10b981) !important; border: none !important; }
+.stat-card.stat-warning { background: linear-gradient(135deg, #c2410c, #f97316) !important; border: none !important; }
+.stat-card.stat-danger  { background: linear-gradient(135deg, #b91c1c, #ef4444) !important; border: none !important; }
+.stat-card.stat-info    { background: linear-gradient(135deg, #1e4db7, #2563eb) !important; border: none !important; }
+.stat-card.stat-primary, .stat-card.stat-success, .stat-card.stat-warning, .stat-card.stat-danger, .stat-card.stat-info {
+  box-shadow: 0 10px 26px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.16) !important;
+  animation: pgPop .4s cubic-bezier(.25,.46,.45,.94) both;
+}
+.stat-card.stat-primary .label, .stat-card.stat-success .label, .stat-card.stat-warning .label,
+.stat-card.stat-danger .label, .stat-card.stat-info .label { color: rgba(255,255,255,.85) !important; }
+.stat-card.stat-primary .value, .stat-card.stat-success .value, .stat-card.stat-warning .value,
+.stat-card.stat-danger .value, .stat-card.stat-info .value { color: #fff !important; }
+.stat-card.stat-primary .icon-wrap, .stat-card.stat-success .icon-wrap, .stat-card.stat-warning .icon-wrap,
+.stat-card.stat-danger .icon-wrap, .stat-card.stat-info .icon-wrap { background: rgba(255,255,255,.2) !important; }
+.stat-card.stat-primary .accent-stripe, .stat-card.stat-success .accent-stripe, .stat-card.stat-warning .accent-stripe,
+.stat-card.stat-danger .accent-stripe, .stat-card.stat-info .accent-stripe { display: none !important; }
+
+/* ── Buttons: bold ripple-ready ── */
+.btn-primary, button.btn-primary {
+  background: linear-gradient(135deg, #047857, #10b981) !important;
+}
+
+/* ── Count-up number animation hook (JS adds .count-up-active) ── */
+.count-up-active { animation: countPop .4s cubic-bezier(.34,1.56,.64,1); }
+@keyframes countPop { from { transform: scale(.85); opacity: .5; } to { transform: scale(1); opacity: 1; } }
+
+/* ── Ripple effect ── */
+.btn, button, .nav-item, .pg-card { position: relative; }
+.ripple-circle {
+  position: absolute; border-radius: 50%; pointer-events: none;
+  background: rgba(255,255,255,.5);
+  transform: scale(0); animation: rippleAnim .55s ease-out forwards;
+  z-index: 5;
+}
+@keyframes rippleAnim { to { transform: scale(2.6); opacity: 0; } }
+
+/* ── Ctrl+K quick-nav grid (shown inside existing search-results when query is empty) ── */
+.qnav-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 7px; padding: 10px; }
+.qnav-tile {
+  display: flex; align-items: center; gap: 9px;
+  padding: 9px 10px; border-radius: 11px; cursor: pointer;
+  color: #fff; font-weight: 800; font-size: 12.5px;
+  background: var(--qc, #334155);
+  box-shadow: 0 4px 12px rgba(0,0,0,.3);
+  transition: transform .15s cubic-bezier(.34,1.56,.64,1), filter .15s ease;
+}
+.qnav-tile:hover { transform: scale(1.04); filter: brightness(1.12); }
+.qnav-tile i { width: 24px; height: 24px; display: grid; place-items: center; background: rgba(255,255,255,.22); border-radius: 7px; flex: 0 0 24px; }
+.qnav-tile i svg { width: 14px; height: 14px; }
+.qnav-label { padding: 8px 12px 2px; font-size: 11px; font-weight: 800; color: #5d7195; }
+.kbd-hint {
+  display: inline-flex; align-items: center; gap: 2px; margin-inline-start: 6px;
+  font-size: 10px; font-weight: 800; color: #5d7195;
+}
+.kbd-hint kbd { background: rgba(255,255,255,.07); padding: 1px 6px; border-radius: 5px; border: 1px solid rgba(255,255,255,.12); }
+
+/* ── Keyboard shortcuts help (press ?) ── */
+#shortcuts-overlay {
+  position: fixed; inset: 0; z-index: 9200;
+  background: rgba(3,5,10,.65); backdrop-filter: blur(6px);
+  display: none; align-items: center; justify-content: center; padding: 20px;
+}
+#shortcuts-overlay.show { display: flex; animation: cmdkFade .18s ease both; }
+@keyframes cmdkFade { from { opacity: 0; } to { opacity: 1; } }
+#shortcuts-box {
+  width: 100%; max-width: 420px;
+  background: linear-gradient(165deg, rgba(15,23,42,.97), rgba(8,13,26,.99));
+  border: 1px solid rgba(99,102,241,.3);
+  border-radius: 20px; padding: 22px;
+  box-shadow: 0 30px 70px rgba(0,0,0,.6), 0 0 60px rgba(46,159,255,.08);
+  animation: cmdkPop .22s cubic-bezier(.25,.46,.45,.94) both;
+}
+@keyframes cmdkPop { from { opacity: 0; transform: translateY(-14px) scale(.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
+.sk-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 4px; border-bottom: 1px solid rgba(255,255,255,.06); }
+.sk-row:last-child { border-bottom: none; }
+.sk-label { color: #c6d2e8; font-weight: 700; font-size: 13.5px; }
+.sk-keys kbd { background: rgba(255,255,255,.08); color: #fff; padding: 4px 9px; border-radius: 7px; border: 1px solid rgba(255,255,255,.14); font-weight: 800; font-size: 12px; font-family: inherit; }
+.sk-keys { display: flex; gap: 4px; }
+
 </style>
+<link rel="stylesheet" href="css/aurum.css">
 </head>
 <body>
 <div id="route-progress"><div class="rp-bar"></div></div>
@@ -9455,7 +9606,7 @@ audio::-webkit-media-controls-panel { background: rgba(15,23,42,.9); }
       <div class="topbar-spacer"></div>
       <div class="search-box" id="global-search-box">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="color:var(--text-muted);flex-shrink:0"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input id="global-search" placeholder="ابحث عن فاتورة، مركز، منتج، تحصيل..." autocomplete="off">
+        <input id="global-search" placeholder="ابحث... أو اضغط Ctrl+K" autocomplete="off">
         <button class="search-mic-btn" id="search-mic-btn" type="button" title="بحث صوتي" onclick="toggleVoiceSearch()">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
@@ -9504,7 +9655,7 @@ audio::-webkit-media-controls-panel { background: rgba(15,23,42,.9); }
 
     <footer class="app-footer">
       <div>جميع الحقوق محفوظة © 2026 إمداد إكس</div>
-      <div class="version">الإصدار 2.1.0</div>
+      <div class="version">الإصدار 4.0 · Aurum</div>
     </footer>
   </div>
 </div>
@@ -9885,7 +10036,7 @@ const SyncEngine = (() => {
     if (!page) return;
     if (typeof updateNotifBadge === 'function') updateNotifBadge();
     if (typeof updatePaperCounter === 'function') updatePaperCounter();
-
+    
     const hasModal = !!document.querySelector('.modal-overlay.show, .modal.show');
     const tag = document.activeElement ? document.activeElement.tagName : '';
     const hasInput = ['INPUT','TEXTAREA','SELECT'].includes(tag);
@@ -10134,7 +10285,8 @@ function seedData() {
   DB.save();
 }
 
-function dateStr(d) { return d.toISOString().slice(0,10); }
+// local calendar date (was UTC → records after midnight were dated to the previous day in Egypt)
+function dateStr(d) { return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0,10); }
 function daysAgo(n) { const d = new Date(); d.setDate(d.getDate() - n); return d; }
 function uid() { return Math.random().toString(36).slice(2, 10); }
 function fmt(n) { return Number(n||0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
@@ -10253,8 +10405,8 @@ function toggleTheme() {
   document.documentElement.setAttribute('data-theme', next);
   localStorage.setItem('theme', next);
   updateThemeIcon(next);
+  // Re-render charts if visible
   if (currentPage === 'dashboard') renderDashboard();
-  if (currentPage === 'settings') renderSettings();
 }
 function updateThemeIcon(theme) {
   const ic = document.getElementById('theme-icon');
@@ -10405,6 +10557,117 @@ function celebrate() {
     container.appendChild(p);
   }
   setTimeout(() => container.remove(), 2400);
+}
+
+/* ════════════════════════════════════════════════════════════
+   RIPPLE EFFECT — material-style click feedback (global delegate)
+════════════════════════════════════════════════════════════ */
+document.addEventListener('pointerdown', function (e) {
+  const target = e.target.closest('.btn, button, .nav-item, .pg-card, .bn-item, .stat-card');
+  if (!target || target.disabled) return;
+  const rect = target.getBoundingClientRect();
+  const size = Math.max(rect.width, rect.height) * 1.4;
+  const circle = document.createElement('span');
+  circle.className = 'ripple-circle';
+  circle.style.width = circle.style.height = size + 'px';
+  circle.style.left = (e.clientX - rect.left - size / 2) + 'px';
+  circle.style.top = (e.clientY - rect.top - size / 2) + 'px';
+  if (getComputedStyle(target).position === 'static') target.style.position = 'relative';
+  target.appendChild(circle);
+  setTimeout(() => circle.remove(), 600);
+}, true);
+
+/* ════════════════════════════════════════════════════════════
+   COUNT-UP ANIMATION — numbers tick up on render
+════════════════════════════════════════════════════════════ */
+function countUpEl(el) {
+  const raw = (el.textContent || '').trim();
+  const m = raw.match(/[\d,]+(\.\d+)?/);
+  if (!m) return;
+  const target = parseFloat(m[0].replace(/,/g, ''));
+  if (!isFinite(target) || target === 0) return;
+  const prefix = raw.slice(0, m.index), suffix = raw.slice(m.index + m[0].length);
+  const dur = 650, start = performance.now();
+  function tick(now) {
+    const p = Math.min(1, (now - start) / dur);
+    const eased = 1 - Math.pow(1 - p, 3);
+    const val = target * eased;
+    const isInt = !m[0].includes('.');
+    el.textContent = prefix + (isInt ? Math.round(val).toLocaleString('en-US') : val.toLocaleString('en-US', { maximumFractionDigits: 2 })) + suffix;
+    if (p < 1) requestAnimationFrame(tick); else el.textContent = raw;
+  }
+  requestAnimationFrame(tick);
+}
+function animateCountUps(root) {
+  const scope = root || document;
+  scope.querySelectorAll('.pg-value, .stat-card .value, .stat-value').forEach(el => {
+    el.classList.add('count-up-active');
+    countUpEl(el);
+  });
+}
+
+/* ════════════════════════════════════════════════════════════
+   CTRL+K — focus global search + quick-nav grid when empty
+════════════════════════════════════════════════════════════ */
+function showQuickNav() {
+  const sr = document.getElementById('search-results');
+  if (!sr || typeof NAV_ITEMS === 'undefined') return;
+  const items = NAV_ITEMS.filter(it => typeof can !== 'function' || can(it.key));
+  sr.innerHTML = `<div class="qnav-label">انتقال سريع</div><div class="qnav-grid">${
+    items.map(it => `<div class="qnav-tile" style="--qc:${it.color}" onclick="navigate('${it.key}');document.getElementById('search-results').classList.remove('show');document.getElementById('global-search').blur();">
+      <i>${it.icon}</i><span>${it.label}</span>
+    </div>`).join('')
+  }</div>`;
+  sr.classList.add('show');
+}
+document.addEventListener('keydown', function (e) {
+  const k = e.key.toLowerCase();
+  if ((e.ctrlKey || e.metaKey) && k === 'k') {
+    e.preventDefault();
+    const gs = document.getElementById('global-search');
+    if (!gs) return;
+    if (window.innerWidth < 992 && typeof toggleSidebar === 'function') toggleSidebar(false);
+    gs.focus();
+    if (!gs.value.trim()) showQuickNav();
+  }
+  if (e.key === '?' && !['INPUT','TEXTAREA','SELECT'].includes((document.activeElement||{}).tagName)) {
+    e.preventDefault();
+    toggleShortcuts();
+  }
+  if (e.key === 'Escape') {
+    const so = document.getElementById('shortcuts-overlay');
+    if (so) so.classList.remove('show');
+  }
+});
+
+/* ════════════════════════════════════════════════════════════
+   KEYBOARD SHORTCUTS HELP — press ?
+════════════════════════════════════════════════════════════ */
+function ensureShortcutsModal() {
+  if (document.getElementById('shortcuts-overlay')) return;
+  const SHORTCUTS = [
+    ['البحث السريع / الانتقال لأي صفحة', 'Ctrl', 'K'],
+    ['عرض هذه القائمة', '?'],
+    ['إغلاق أي نافذة مفتوحة', 'Esc'],
+    ['الرجوع للصفحة السابقة', 'Alt', '←'],
+  ];
+  const ov = document.createElement('div');
+  ov.id = 'shortcuts-overlay';
+  ov.onclick = (e) => { if (e.target === ov) toggleShortcuts(false); };
+  ov.innerHTML = `<div id="shortcuts-box">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <h3 style="margin:0;color:#fff;font-weight:900;font-size:16px">⌨️ اختصارات لوحة المفاتيح</h3>
+      <button class="icon-btn" onclick="toggleShortcuts(false)" style="width:30px;height:30px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    ${SHORTCUTS.map(s => `<div class="sk-row"><span class="sk-label">${s[0]}</span><span class="sk-keys">${s.slice(1).map(k => `<kbd>${k}</kbd>`).join('<span style="color:#5d7195">+</span>')}</span></div>`).join('')}
+  </div>`;
+  document.body.appendChild(ov);
+}
+function toggleShortcuts(force) {
+  ensureShortcutsModal();
+  const ov = document.getElementById('shortcuts-overlay');
+  const show = force !== undefined ? force : !ov.classList.contains('show');
+  ov.classList.toggle('show', show);
 }
 
 function toast(msg, type='success', duration) {
@@ -10716,7 +10979,8 @@ function navigate(page, isBack) {
     (renderers[page] || renderDashboard)();
     updateBackButton();
     updateHomeFab();
-
+    try { animateCountUps(document.getElementById('page-content')); } catch (_) {}
+    
     // Restore scroll: returning via back → restore memory, otherwise top
     const targetY = (isBack && _scrollMemory[page] !== undefined) ? _scrollMemory[page] : 0;
     window.scrollTo(0, targetY);
@@ -10824,7 +11088,7 @@ function startApp() {
 
   // Start autosave timer (every 5 seconds)
   startAutoSave();
-
+  
   // Start Quran reciter if enabled in settings
   if (DB.data.settings && DB.data.settings.reciterEnabled) {
     setTimeout(() => playReciter(), 1200);
@@ -20208,14 +20472,14 @@ function renderUsers() {
                 </div></td>
                 <td><code style="background:var(--bg-soft);padding:2px 6px;border-radius:4px">${escapeHtml(u.username)}</code></td>
                 <td><span class="badge-status ${u.role==='admin'?'badge-unpaid':u.role==='accountant'?'badge-info':'badge-paid'}">${ROLE_LABELS[u.role]}</span></td>
-                <td style="font-size:11px;color:var(--text-muted)">${perms.map(p=>pageLbl[p]||p).join('، ')}</td>
+                <td style="font-size:11px;color:var(--muted)">${perms.map(p=>pageLbl[p]||p).join('، ')}</td>
                 <td><div class="row-actions">
                   <button class="btn-icon" onclick="openUserForm('${u.id}')" title="تعديل">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                   </button>
                   ${u.id !== currentUser.id ? `<button class="btn-icon" onclick="deleteUser('${u.id}')" style="color:var(--danger)" title="حذف">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
-                  </button>` : '<span style="font-size:11px;color:var(--text-muted)">(أنت)</span>'}
+                  </button>` : '<span style="font-size:11px;color:var(--muted)">(أنت)</span>'}
                 </div></td>
               </tr>`;
             }).join('')}
@@ -20481,7 +20745,7 @@ function prospectAction(id, action) {
   const p = list.find(x => x.id === id);
   if (!p) return;
   if (action === 'contacted') { p.lastContact = todayStr(); toast('✓ تم تسجيل التواصل اليوم'); }
-  if (action === 'won')  { p.stage = 'won';  toast('🎉 مبروك التعاقد!'); }
+  if (action === 'won')  { p.stage = 'won';  celebrate(); toast('🎉 مبروك التعاقد!'); }
   if (action === 'lost') { p.stage = 'lost'; toast('تم نقل الفرصة للمفقودة'); }
   if (action === 'delete') {
     const i = list.indexOf(p); if (i > -1) list.splice(i, 1);
@@ -21089,23 +21353,15 @@ function renderSettings() {
     <div class="card" style="margin-top:20px">
       <div class="card-header"><h3 class="card-title">🌓 المظهر</h3></div>
       <div style="padding:20px">
-        <p style="color:var(--text-muted);margin-bottom:14px">اختر بين الوضع الفاتح (النهاري) والوضع الداكن (الليلي)</p>
-        ${(()=>{
-          const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
-          return `<div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
-            <button class="btn ${isDark ? 'btn-secondary' : 'btn-primary'}" onclick="toggleTheme()" style="min-width:160px;font-size:14px">
-              ${isDark ? '🌙 الوضع الليلي — اضغط للتغيير' : '☀️ الوضع النهاري — اضغط للتغيير'}
-            </button>
-            <span style="color:var(--text-muted);font-size:13px">${isDark ? 'الوضع الحالي: داكن (ليلي)' : 'الوضع الحالي: فاتح (نهاري)'}</span>
-          </div>`;
-        })()}
+        <p style="color:var(--muted);margin-bottom:14px">اختر بين الوضع الفاتح والداكن</p>
+        <button class="btn btn-secondary" onclick="toggleTheme()">🌓 تبديل الوضع</button>
       </div>
     </div>
 
     <div class="card" style="margin-top:20px">
       <div class="card-header"><h3 class="card-title">🔊 الأصوات والتنبيهات</h3></div>
       <div style="padding:20px">
-        <p style="color:var(--text-muted);margin-bottom:14px">تشغيل/إيقاف الأصوات عند الحفظ والتنبيهات</p>
+        <p style="color:var(--muted);margin-bottom:14px">تشغيل/إيقاف الأصوات عند الحفظ والتنبيهات</p>
         <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
           <button class="btn ${DB.data.settings.soundEnabled!==false?'btn-success':'btn-secondary'}" onclick="toggleSound()">
             ${DB.data.settings.soundEnabled!==false ? '🔊 الصوت مفعّل' : '🔇 الصوت مغلق'}
@@ -21160,7 +21416,7 @@ function renderSettings() {
     <div class="card" style="margin-top:20px">
       <div class="card-header"><h3 class="card-title">💾 النسخ الاحتياطي واستعادة البيانات</h3></div>
       <div style="padding:20px">
-        <p style="color:var(--text-muted);margin-bottom:14px">اختر النوع المناسب من النسخ الاحتياطية لحفظ بيانات النظام:</p>
+        <p style="color:var(--muted);margin-bottom:14px">اختر النوع المناسب من النسخ الاحتياطية لحفظ بيانات النظام:</p>
 
         <div class="backup-grid">
           <button class="backup-card backup-json" onclick="exportBackup()">
@@ -21244,7 +21500,7 @@ function renderSettings() {
 
         <input type="file" id="import-input" accept=".json" style="display:none" onchange="importBackup(event)">
 
-        <div style="margin-top:20px;padding:14px;background:var(--bg-soft);border-radius:8px;font-size:13px;color:var(--text-muted)">
+        <div style="margin-top:20px;padding:14px;background:var(--bg-soft);border-radius:8px;font-size:13px;color:var(--muted)">
           <b>📊 إحصائيات البيانات الحالية:</b><br>
           • العملاء: ${DB.data.customers.length} | المنتجات: ${DB.data.products.length}<br>
           • الفواتير: ${DB.data.invoices.length} | التحصيلات: ${DB.data.payments.length}<br>
@@ -21258,14 +21514,14 @@ function renderSettings() {
     <div class="card" style="margin-top:20px;border:1px solid var(--danger)">
       <div class="card-header" style="background:rgba(220,38,38,0.05)"><h3 class="card-title" style="color:var(--danger)">⚠️ منطقة الخطر</h3></div>
       <div style="padding:20px">
-        <p style="color:var(--text-muted);margin-bottom:14px">حذف جميع البيانات وإعادة تهيئة النظام بالبيانات التجريبية. <b>لا يمكن التراجع!</b></p>
+        <p style="color:var(--muted);margin-bottom:14px">حذف جميع البيانات وإعادة تهيئة النظام بالبيانات التجريبية. <b>لا يمكن التراجع!</b></p>
         <button class="btn" style="background:var(--danger);color:#fff" onclick="resetAllData()">🗑️ مسح جميع البيانات</button>
       </div>
     </div>
 
     <div class="card" style="margin-top:20px">
       <div class="card-header"><h3 class="card-title">ℹ️ معلومات النظام</h3></div>
-      <div style="padding:20px;color:var(--text-muted);font-size:13px;line-height:2">
+      <div style="padding:20px;color:var(--muted);font-size:13px;line-height:2">
         <div><b>الإصدار:</b> 1.0.0</div>
         <div><b>قاعدة البيانات:</b> SQLite (على السيرفر)</div>
         <div><b>تاريخ آخر حفظ:</b> ${new Date().toLocaleString('ar-EG')}</div>
@@ -22487,7 +22743,7 @@ function openIssuanceForm(customerId, productId) {
           <option value="">-- اختر النوع (ورق / بلاستك / غيره) --</option>
           ${DB.data.products.map(p => `<option value="${p.id}" data-price="${p.price}" data-qty="${p.quantity}" data-unit="${escapeHtml(p.unit||'')}" ${productId===p.id?'selected':''}>${escapeHtml(p.name)} (المتاح: ${fmt(p.quantity)} ${escapeHtml(p.unit||'')})</option>`).join('')}
         </select>
-        <small id="iss-stock-info" style="color:var(--text-muted);display:block;margin-top:4px"></small>
+        <small id="iss-stock-info" style="color:var(--muted);display:block;margin-top:4px"></small>
       </div>
 
       <div class="form-row">
@@ -25878,5 +26134,6 @@ function exportSuppliersCSV() {
   <span class="ob-dot"></span>
 </div>
 
+<script src="js/aurum.js"></script>
 </body>
 </html>

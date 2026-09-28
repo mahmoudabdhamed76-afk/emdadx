@@ -105,7 +105,11 @@ const MIME = {
   '.png':  'image/png',
   '.jpg':  'image/jpeg',
   '.jpeg': 'image/jpeg',
-  '.ico':  'image/x-icon'
+  '.ico':  'image/x-icon',
+  '.woff2': 'font/woff2',
+  '.woff':  'font/woff',
+  '.webp':  'image/webp',
+  '.map':   'application/json; charset=utf-8'
 };
 
 function serveStatic(res, filePath) {
@@ -116,7 +120,9 @@ function serveStatic(res, filePath) {
     res.writeHead(200, {
       'Content-Type':   MIME[ext] || 'application/octet-stream',
       'Content-Length': data.length,
-      'Cache-Control':  isHtml ? 'no-cache, no-store, must-revalidate' : 'no-cache',
+      'Cache-Control':  isHtml ? 'no-cache, no-store, must-revalidate'
+                      : (ext === '.woff2' || ext === '.woff') ? 'public, max-age=31536000, immutable'
+                      : 'no-cache',
       'Pragma':  'no-cache',
       'Expires': '0'
     });

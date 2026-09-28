@@ -1,7 +1,10 @@
 'use strict';
 
-const CACHE      = 'emdadx-v1';
-const APP_SHELL  = ['/', '/index.html', '/manifest.json'];
+const CACHE      = 'emdadx-v4-aurum';
+// relative to the SW scope, so it also works when the app lives under APP_PATH
+const APP_SHELL  = ['./', './index.html', './manifest.json', './css/aurum.css', './js/aurum.js',
+                    './fonts/fonts.css', './vendor/chart.umd.js', './vendor/modern-screenshot.js',
+                    './icons/logo-square.png'];
 const DB_NAME    = 'emdadx-offline';
 const QUEUE_STORE = 'sync_queue';
 const SNAP_STORE  = 'data_snapshot';
@@ -14,9 +17,13 @@ self.addEventListener('install', e => {
   );
 });
 
-/* ── Activate: claim clients ── */
+/* ── Activate: drop caches from older versions, then claim clients ── */
 self.addEventListener('activate', e => {
-  e.waitUntil(self.clients.claim());
+  e.waitUntil(
+    caches.keys()
+      .then(keys => Promise.all(keys.filter(k => k.startsWith('emdadx-') && k !== CACHE).map(k => caches.delete(k))))
+      .then(() => self.clients.claim())
+  );
 });
 
 /* ── Fetch: serve from cache when offline ── */
@@ -25,7 +32,21 @@ self.addEventListener('fetch', e => {
 
   // Only intercept same-origin GET requests for app shell
   if (e.request.method !== 'GET') return;
-  if (url.pathname.startsWith('/api/')) return; // never cache API
+  if (url.pathname.includes('/api/')) return; // never cache API
+  if (url.origin !== self.location.origin) return;
+
+  // Pages: network-first so a new release shows immediately; cache only when offline
+  if (e.request.mode === 'navigate' || url.pathname.endsWith('.html') || url.pathname.endsWith('/')) {
+    e.respondWith(
+      fetch(e.request)
+        .then(res => {
+          if (res && res.status === 200) { const clone = res.clone(); caches.open(CACHE).then(c => c.put(e.request, clone)); }
+          return res;
+        })
+        .catch(() => caches.match(e.request).then(r => r || caches.match('./index.html')))
+    );
+    return;
+  }
 
   e.respondWith(
     caches.match(e.request).then(cached => {
