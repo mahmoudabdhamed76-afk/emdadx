@@ -1,101 +1,120 @@
 /* ════════════════════════════════════════════════════════════════════
-   EmdadX · AURUM  — visual system v4
+   EmdadX · visual system v4.1  — "My Life" design language
    ------------------------------------------------------------------
-   Identity taken from the EmdadX logo: deep ink navy + gold arcs.
+   Fonts, shapes and colors follow the My Life app: Zain for display
+   and numbers, IBM Plex Sans Arabic for UI, black-on-paper monochrome
+   with soft pastel tints per domain, 20px cards and soft shadows.
    Loaded AFTER the legacy inline styles; every rule is scoped under
    html.aurum so it wins over older theme layers without touching them.
 
-   Themes : html.aurum[data-theme="dark"]   (Midnight)
-            html.aurum[data-theme="light"]  (Paper)
+   Themes : html.aurum[data-theme="light"]  (paper · black ink)
+            html.aurum[data-theme="dark"]   (black · white ink)
    Layout : html.aurum.ax-rail  → collapsed icon-rail sidebar (desktop)
-   Fonts  : IBM Plex Sans Arabic (UI) · Readex Pro (display / numbers)
 ════════════════════════════════════════════════════════════════════ */
 
 /* ───────────────────────── 1. TOKENS ───────────────────────── */
 html.aurum {
-  --ax-font: 'IBM Plex Sans Arabic', 'Cairo', system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --ax-display: 'Readex Pro', 'IBM Plex Sans Arabic', 'Cairo', system-ui, sans-serif;
-  --ax-radius: 14px;
-  --ax-radius-sm: 10px;
-  --ax-radius-lg: 20px;
-  --ax-ease: cubic-bezier(.22, .61, .36, 1);
-  --ax-spring: cubic-bezier(.34, 1.4, .64, 1);
+  /* fonts & shapes taken from My Life */
+  --ax-font: 'IBM Plex Sans Arabic', 'Cairo', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --ax-display: 'Zain', 'IBM Plex Sans Arabic', 'Cairo', system-ui, sans-serif;
+  --ax-radius: 20px;
+  --ax-radius-sm: 12px;
+  --ax-radius-lg: 28px;
+  --ax-ease: cubic-bezier(.22, 1, .36, 1);
+  --ax-spring: cubic-bezier(.34, 1.42, .5, 1);
   --ax-side-w: 256px;
   --ax-rail-w: 76px;
-  /* hero is always navy — the brand panel */
-  --ax-hero-bg: #0A1733;
-  --ax-hero-bg-2: #0F2250;
-  --ax-hero-text: #F3F6FC;
-  --ax-hero-muted: #9FB0D3;
-  --ax-hero-gold: #E9B650;
 }
 
-html.aurum[data-theme="dark"] {
-  color-scheme: dark;
-  --ax-bg: #070E1F;
-  --ax-side: #091327;
-  --ax-surface: #0D1932;
-  --ax-surface-2: #12213F;
-  --ax-surface-3: #19294B;
-  --ax-line: rgba(150, 172, 216, .12);
-  --ax-line-2: rgba(150, 172, 216, .22);
-  --ax-text: #ECF1FA;
-  --ax-muted: #94A3C2;
-  --ax-faint: #62718F;
-  --ax-gold: #E4B04A;
-  --ax-gold-2: #F3C868;
-  --ax-gold-soft: rgba(228, 176, 74, .13);
-  --ax-primary: #E4B04A;
-  --ax-primary-hover: #F0C261;
-  --ax-primary-ink: #1A1305;
-  --ax-primary-rgb: 228, 176, 74;
-  --ax-blue: #6B97FF;
-  --ax-blue-soft: rgba(107, 151, 255, .14);
-  --ax-ok: #37C592;   --ax-ok-soft: rgba(55, 197, 146, .14);
-  --ax-warn: #F2A93B; --ax-warn-soft: rgba(242, 169, 59, .14);
-  --ax-bad: #F26467;  --ax-bad-soft: rgba(242, 100, 103, .14);
-  --ax-violet: #A48BFF; --ax-violet-soft: rgba(164, 139, 255, .14);
-  --ax-teal: #3CC7D6;  --ax-teal-soft: rgba(60, 199, 214, .14);
-  --ax-shadow: 0 1px 0 rgba(255, 255, 255, .035) inset, 0 10px 30px rgba(0, 0, 0, .28);
-  --ax-shadow-lg: 0 30px 80px rgba(0, 0, 0, .55);
-  --ax-hover: rgba(150, 172, 216, .07);
-  --ax-active: rgba(228, 176, 74, .10);
-  --ax-input: #0A162D;
-  --ax-ripple: rgba(255, 255, 255, .14);
-}
-
+/* ── Light (My Life "paper") ── */
 html.aurum[data-theme="light"] {
   color-scheme: light;
-  --ax-bg: #F2F4F9;
+  --ax-bg: #F2F2F2;
   --ax-side: #FFFFFF;
   --ax-surface: #FFFFFF;
-  --ax-surface-2: #F6F8FC;
-  --ax-surface-3: #ECF0F7;
-  --ax-line: rgba(13, 31, 72, .09);
-  --ax-line-2: rgba(13, 31, 72, .17);
-  --ax-text: #0D1B3D;
-  --ax-muted: #56647F;
-  --ax-faint: #8793AB;
-  --ax-gold: #B98314;
-  --ax-gold-2: #D29F2E;
-  --ax-gold-soft: rgba(197, 142, 26, .12);
-  --ax-primary: #13306E;
-  --ax-primary-hover: #1B3F8C;
+  --ax-surface-2: #F6F6F6;
+  --ax-surface-3: #EDEDED;
+  --ax-line: #E6E6E6;
+  --ax-line-2: #D4D4D4;
+  --ax-text: #000000;
+  --ax-muted: #6B6B6B;
+  --ax-faint: #9A9A9A;
+  --ax-ink: #000000;          /* the accent is the ink itself: black */
+  --ax-on-ink: #FFFFFF;
+  --ax-deep: #000000;         /* header / hero panel */
+  --ax-on-deep: #FFFFFF;
+  --ax-deep-muted: #A6A6A6;
+  --ax-gold: var(--ax-ink);
+  --ax-gold-2: #2A2A2A;
+  --ax-gold-soft: rgba(0, 0, 0, .06);
+  --ax-primary: #000000;
+  --ax-primary-hover: #2A2A2A;
   --ax-primary-ink: #FFFFFF;
-  --ax-primary-rgb: 19, 48, 110;
-  --ax-blue: #1F55D6;
-  --ax-blue-soft: rgba(31, 85, 214, .10);
-  --ax-ok: #0F9064;   --ax-ok-soft: rgba(15, 144, 100, .10);
-  --ax-warn: #C27405; --ax-warn-soft: rgba(194, 116, 5, .11);
-  --ax-bad: #D23A3F;  --ax-bad-soft: rgba(210, 58, 63, .10);
-  --ax-violet: #6C4FD8; --ax-violet-soft: rgba(108, 79, 216, .10);
-  --ax-teal: #0E8A9A;  --ax-teal-soft: rgba(14, 138, 154, .10);
-  --ax-shadow: 0 1px 2px rgba(13, 27, 61, .05), 0 6px 20px rgba(13, 27, 61, .06);
-  --ax-shadow-lg: 0 30px 80px rgba(13, 27, 61, .22);
-  --ax-hover: rgba(13, 31, 72, .045);
-  --ax-active: rgba(19, 48, 110, .07);
-  --ax-input: #FFFFFF;
-  --ax-ripple: rgba(13, 27, 61, .08);
+  --ax-primary-rgb: 0, 0, 0;
+  --ax-blue: #1D6FF2;   --ax-blue-soft: #DBE8FE;
+  --ax-ok: #1E9A4C;     --ax-ok-soft: #DDF3E4;
+  --ax-warn: #D98200;   --ax-warn-soft: #FEE8D4;
+  --ax-bad: #E01B0F;    --ax-bad-soft: #FCDAD7;
+  --ax-violet: #7C3AED; --ax-violet-soft: #E9E1FE;
+  --ax-teal: #00A9A0;   --ax-teal-soft: #CFF3F1;
+  --ax-pink: #E8115B;   --ax-pink-soft: #FCDAE7;
+  --ax-shadow: 0 1px 2px rgba(19, 38, 48, .05), 0 8px 24px -12px rgba(19, 38, 48, .16);
+  --ax-shadow-lift: 0 2px 6px rgba(19, 38, 48, .07), 0 18px 40px -16px rgba(19, 38, 48, .28);
+  --ax-shadow-lg: 0 24px 60px -12px rgba(0, 0, 0, .28);
+  --ax-hover: rgba(0, 0, 0, .04);
+  --ax-active: rgba(0, 0, 0, .06);
+  --ax-input: #F2F2F2;
+  --ax-ripple: rgba(0, 0, 0, .08);
+}
+
+/* ── Dark (My Life night) ── */
+html.aurum[data-theme="dark"] {
+  color-scheme: dark;
+  --ax-bg: #000000;
+  --ax-side: #0A0A0A;
+  --ax-surface: #121212;
+  --ax-surface-2: #1A1A1A;
+  --ax-surface-3: #1E1E1E;
+  --ax-line: #232323;
+  --ax-line-2: #333333;
+  --ax-text: #FFFFFF;
+  --ax-muted: #9E9E9E;
+  --ax-faint: #6E6E6E;
+  --ax-ink: #FFFFFF;
+  --ax-on-ink: #000000;
+  --ax-deep: #161616;
+  --ax-on-deep: #FFFFFF;
+  --ax-deep-muted: #9E9E9E;
+  --ax-gold: var(--ax-ink);
+  --ax-gold-2: #D6D6D6;
+  --ax-gold-soft: rgba(255, 255, 255, .08);
+  --ax-primary: #FFFFFF;
+  --ax-primary-hover: #E6E6E6;
+  --ax-primary-ink: #000000;
+  --ax-primary-rgb: 255, 255, 255;
+  --ax-blue: #6FBEFF;   --ax-blue-soft: #17395A;
+  --ax-ok: #5CE89A;     --ax-ok-soft: #173E26;
+  --ax-warn: #FFBD5C;   --ax-warn-soft: #42301A;
+  --ax-bad: #FF6B6B;    --ax-bad-soft: #46212E;
+  --ax-violet: #B79BFF; --ax-violet-soft: #2C2554;
+  --ax-teal: #3EE0E8;   --ax-teal-soft: #13424B;
+  --ax-pink: #FF7C99;   --ax-pink-soft: #46212E;
+  --ax-shadow: 0 1px 2px rgba(0, 0, 0, .35), 0 10px 26px -14px rgba(0, 0, 0, .7);
+  --ax-shadow-lift: 0 2px 8px rgba(0, 0, 0, .4), 0 20px 46px -18px rgba(0, 0, 0, .75);
+  --ax-shadow-lg: 0 30px 70px rgba(0, 0, 0, .7);
+  --ax-hover: rgba(255, 255, 255, .05);
+  --ax-active: rgba(255, 255, 255, .08);
+  --ax-input: #000000;
+  --ax-ripple: rgba(255, 255, 255, .12);
+}
+
+/* hero panel follows the deep header color */
+html.aurum[data-theme] {
+  --ax-hero-bg: var(--ax-deep);
+  --ax-hero-bg-2: var(--ax-deep);
+  --ax-hero-text: var(--ax-on-deep);
+  --ax-hero-muted: var(--ax-deep-muted);
+  --ax-hero-gold: #FFFFFF;
 }
 
 /* legacy variables → Aurum values (so every old component follows) */
@@ -1068,3 +1087,257 @@ html.aurum .rep-tab { color: var(--ax-muted) !important; border-radius: 10px !im
 html.aurum .rep-tab:hover { background: var(--ax-hover) !important; color: var(--ax-text) !important; }
 html.aurum .rep-tab.active { background: var(--ax-active) !important; color: var(--ax-text) !important; box-shadow: inset -3px 0 0 var(--ax-gold) !important; font-weight: 600 !important; }
 html.aurum .rep-stat-card .rep-stat-icon { width: 44px !important; height: 44px !important; display: grid !important; place-items: center !important; font-size: 21px !important; margin-bottom: 10px; }
+
+/* ════════════════════════════════════════════════════════════════════
+   17. MY LIFE DESIGN LANGUAGE — component overrides
+   (appended last so it wins over the earlier sections)
+════════════════════════════════════════════════════════════════════ */
+
+/* type: Zain for titles and every number */
+html.aurum h1, html.aurum h2, html.aurum h3, html.aurum .page-title, html.aurum .dash-card-title,
+html.aurum .modal-title, html.aurum .topbar-title, html.aurum .brand-name {
+  font-family: var(--ax-display) !important; font-weight: 800 !important;
+}
+html.aurum .page-title { font-size: 30px !important; line-height: 1.2; }
+html.aurum .topbar-title { font-size: 22px !important; }
+html.aurum .dash-card-title { font-size: 19px !important; }
+html.aurum .modal-title { font-size: 21px !important; }
+html.aurum .kpi-value, html.aurum .pg-value, html.aurum .dash-bigcard-value, html.aurum .stat-value,
+html.aurum .stat-card .value, html.aurum .rep-stat-value, html.aurum .ax-num, html.aurum .ax-fig b,
+html.aurum .ax-ring-center b, html.aurum .paper-counter-num {
+  font-family: var(--ax-display) !important; font-weight: 800 !important; font-variant-numeric: tabular-nums;
+}
+html.aurum .kpi-v3 .kpi-value, html.aurum .stat-card .stat-value, html.aurum .stat-card .value { font-size: 32px !important; line-height: 1.1; }
+html.aurum .pg-value { font-size: 26px !important; }
+html.aurum .dash-bigcard-value, html.aurum .rep-stat-value { font-size: 28px !important; }
+html.aurum ::selection { background: var(--ax-ink); color: var(--ax-on-ink); }
+html.aurum *:focus-visible { outline-color: var(--ax-ink) !important; }
+html.aurum ::-webkit-scrollbar { width: 6px; height: 6px; }
+html.aurum ::-webkit-scrollbar-thumb { border: 0; background: var(--ax-line-2); }
+html.aurum[data-theme="dark"] body::before { background: none !important; }
+
+/* cards: borderless white paper with a soft shadow (light) / #121212 (dark) */
+html.aurum .dash-card, html.aurum .card, html.aurum .table-wrap, html.aurum .settings-card,
+html.aurum .panel, html.aurum .data-card, html.aurum .centers-widget, html.aurum .churn-section,
+html.aurum .filter-bar, html.aurum .ai-chat-wrap, html.aurum .table-scroll,
+html.aurum .stat-card, html.aurum .kpi-v3, html.aurum .pg-card, html.aurum .dash-bigcard,
+html.aurum .rep-stat-card, html.aurum .rep-panel, html.aurum .reports-tabs-sidebar,
+html.aurum .backup-reminder-banner, html.aurum .search-box, html.aurum .sup-tabs {
+  border-color: transparent !important;
+  border-radius: var(--ax-radius) !important;
+  box-shadow: var(--ax-shadow) !important;
+}
+html.aurum .stat-card:hover, html.aurum .kpi-v3:hover, html.aurum .pg-card:hover,
+html.aurum .dash-bigcard:hover, html.aurum .rep-stat-card:hover {
+  border-color: transparent !important; box-shadow: var(--ax-shadow-lift) !important; transform: translateY(-2px) !important;
+}
+html.aurum .dash-card-header { border-bottom-color: var(--ax-line) !important; }
+
+/* colored top bars → a small status dot (My Life keeps color in icons, not borders) */
+html.aurum .stat-card::before, html.aurum .rep-stat-card::before {
+  top: 18px !important; inset-inline-start: auto !important; inset-inline-end: 18px !important;
+  width: 9px !important; height: 9px !important; border-radius: 50% !important; opacity: 1 !important;
+}
+html.aurum .pg-card::before { display: none !important; }
+
+/* tinted icon tiles (pastel background, saturated glyph) */
+html.aurum .pg-icon, html.aurum .kpi-v3 .kpi-icon, html.aurum .dash-bigcard-icon, html.aurum .rep-stat-card .rep-stat-icon {
+  border-radius: 14px !important;
+}
+
+/* ── sidebar: white panel, active item = black pill ── */
+html.aurum .sidebar, html.aurum aside.sidebar { border-inline-end-color: transparent !important; box-shadow: 1px 0 0 var(--ax-line) !important; }
+html.aurum .sidebar-brand { border-bottom-color: var(--ax-line) !important; }
+html.aurum .sidebar-brand::after { display: none !important; }
+html.aurum .brand-logo { border-radius: 14px !important; }
+html.aurum .brand-logo img { border-radius: 12px !important; }
+html.aurum .brand-name { font-size: 22px !important; }
+html.aurum .nav-item { border-radius: 14px !important; padding: 8px 10px !important; font-weight: 600 !important; color: var(--ax-muted) !important; }
+html.aurum .nav-item:hover:not(.active) { background: var(--ax-hover) !important; color: var(--ax-text) !important; }
+html.aurum .nav-item:hover .icon { color: inherit !important; }
+html.aurum .nav-item.active {
+  background: var(--ax-ink) !important; color: var(--ax-on-ink) !important; font-weight: 700 !important;
+  box-shadow: 0 8px 20px -10px rgba(0, 0, 0, .45) !important;
+}
+html.aurum .nav-item.active::before { display: none !important; }
+html.aurum .nav-item.active .icon { background: transparent !important; color: var(--ax-on-ink) !important; }
+html.aurum .nav-item .icon { border-radius: 10px !important; }
+html.aurum .nav-item .badge { background: var(--ax-bad) !important; color: #fff !important; }
+html.aurum .nav-section-title { font-weight: 700 !important; color: var(--ax-faint) !important; }
+html.aurum .sidebar-logout { border-color: transparent !important; background: var(--ax-surface-2) !important; border-radius: 14px !important; font-weight: 600 !important; }
+html.aurum .ax-rail-btn { border-color: transparent; background: var(--ax-surface-2); border-radius: 10px; }
+
+/* ── topbar ── */
+html.aurum .topbar { border-bottom-color: transparent !important; background: color-mix(in srgb, var(--ax-bg) 88%, transparent) !important; }
+html.aurum .icon-btn { border-color: transparent !important; background: var(--ax-surface) !important; border-radius: 12px !important; box-shadow: var(--ax-shadow) !important; color: var(--ax-text) !important; }
+html.aurum .icon-btn:hover { background: var(--ax-surface-2) !important; }
+html.aurum .search-box { background: var(--ax-surface) !important; border-radius: 14px !important; }
+html.aurum .search-box:focus-within { box-shadow: 0 0 0 2px var(--ax-ink) !important; border-color: transparent !important; }
+html.aurum .paper-counter, html.aurum .reciter-inline { border-color: transparent !important; box-shadow: var(--ax-shadow) !important; color: var(--ax-text) !important; }
+html.aurum .paper-counter svg { color: var(--ax-text); }
+
+/* mobile: the black rounded header of My Life */
+@media (max-width: 768px) {
+  html.aurum .topbar {
+    background: var(--ax-deep) !important; color: var(--ax-on-deep) !important;
+    border-radius: 0 0 var(--ax-radius-lg) var(--ax-radius-lg) !important;
+    padding: 10px 14px 14px !important; padding-top: max(12px, calc(env(safe-area-inset-top, 0px) + 8px)) !important;
+    min-height: 64px !important; backdrop-filter: none !important;
+  }
+  html.aurum .topbar-title { color: var(--ax-on-deep) !important; font-size: 23px !important; }
+  html.aurum .topbar .icon-btn {
+    background: rgba(255, 255, 255, .09) !important; color: #fff !important; box-shadow: none !important;
+  }
+  html.aurum .topbar .icon-btn:active { background: rgba(255, 255, 255, .2) !important; }
+  html.aurum .icon-btn .notif-dot { box-shadow: 0 0 0 2px var(--ax-deep) !important; }
+  html.aurum #sync-status-dot { box-shadow: none; }
+}
+
+/* ── buttons: black pills (white in dark), soft grey secondary ── */
+html.aurum .btn { border-radius: 14px !important; font-weight: 700 !important; min-height: 42px; }
+html.aurum .btn-sm { border-radius: 11px !important; min-height: 34px; }
+html.aurum .btn-primary, html.aurum button.btn-primary { background: var(--ax-ink) !important; color: var(--ax-on-ink) !important; }
+html.aurum .btn-primary:hover { background: var(--ax-primary-hover) !important; }
+html.aurum .btn-secondary { background: var(--ax-surface-3) !important; border-color: transparent !important; color: var(--ax-text) !important; }
+html.aurum .btn-secondary:hover { background: var(--ax-line) !important; }
+html.aurum .btn:active { transform: scale(.96) !important; transition-timing-function: var(--ax-spring) !important; }
+
+/* ── inputs: filled grey, no border, ink ring on focus ── */
+html.aurum input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]),
+html.aurum select, html.aurum textarea, html.aurum .form-control {
+  background: var(--ax-input) !important; border: 1.5px solid transparent !important; border-radius: 12px !important;
+}
+html.aurum .modal input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]),
+html.aurum .modal select, html.aurum .modal textarea, html.aurum .modal .form-control,
+html.aurum .filter-bar input, html.aurum .filter-bar select { background: var(--ax-input) !important; }
+html.aurum .search-box input { background: transparent !important; border: 0 !important; }
+html.aurum input:focus, html.aurum select:focus, html.aurum textarea:focus, html.aurum .form-control:focus {
+  border-color: var(--ax-ink) !important; box-shadow: none !important;
+}
+html.aurum .form-group label, html.aurum label { font-weight: 700 !important; font-size: 13px; }
+html.aurum input[type="checkbox"], html.aurum input[type="radio"] { accent-color: var(--ax-ink); }
+
+/* ── segmented tabs: selected = ink pill ── */
+html.aurum .sup-tabs { background: var(--ax-surface) !important; border-radius: 16px !important; }
+html.aurum .sup-tab { border-radius: 12px !important; font-weight: 700 !important; }
+html.aurum .sup-tab.active { background: var(--ax-ink) !important; color: var(--ax-on-ink) !important; box-shadow: none !important; }
+html.aurum .rep-tab { border-radius: 14px !important; font-weight: 600 !important; }
+html.aurum .rep-tab.active { background: var(--ax-ink) !important; color: var(--ax-on-ink) !important; box-shadow: none !important; }
+
+/* ── tables ── */
+html.aurum .data-table thead th, html.aurum table thead th { background: var(--ax-surface) !important; color: var(--ax-muted) !important; font-weight: 700 !important; border-bottom-color: var(--ax-line) !important; }
+html.aurum .badge-status { border-radius: 99px !important; font-weight: 700 !important; }
+
+/* ── modals: sheet-like, generous radius ── */
+html.aurum .modal { border: 0 !important; border-radius: var(--ax-radius-lg) !important; }
+html.aurum .modal-header { border-bottom-color: var(--ax-line) !important; }
+html.aurum .modal-footer { background: var(--ax-surface) !important; border-top-color: var(--ax-line) !important; }
+html.aurum .modal .icon-btn { box-shadow: none !important; background: var(--ax-surface-3) !important; }
+html.aurum .modal-overlay { background: rgba(0, 0, 0, .45) !important; backdrop-filter: blur(3px) !important; }
+@media (max-width: 768px) { html.aurum .modal { border-radius: var(--ax-radius-lg) var(--ax-radius-lg) 0 0 !important; } }
+
+/* ── toast ── */
+html.aurum .toast { border: 0 !important; border-radius: 16px !important; box-shadow: var(--ax-shadow-lg) !important; }
+html.aurum .toast::before { content: ''; position: absolute; inset-block: 12px; inset-inline-start: 0; width: 4px; border-radius: 0 4px 4px 0; background: var(--ax-t, var(--ax-ink)); }
+html.aurum .toast { position: relative; border-inline-start: 0 !important; }
+
+/* ── dashboard hero = My Life's deep header card ── */
+html.aurum .ax-hero {
+  background: var(--ax-deep) !important; border: 0 !important; border-radius: var(--ax-radius-lg) !important;
+  box-shadow: var(--ax-shadow-lift) !important;
+}
+html.aurum .ax-hero::after, html.aurum .ax-hero-arcs { display: none !important; }
+html.aurum .ax-eyebrow { color: var(--ax-deep-muted) !important; font-weight: 600 !important; }
+html.aurum .ax-hero-title { font-size: 36px !important; font-weight: 900 !important; }
+html.aurum .ax-hero-date i { background: var(--ax-deep-muted); }
+html.aurum .ax-fig b { font-size: 30px !important; font-weight: 800 !important; }
+html.aurum .ax-today { border-color: rgba(255, 255, 255, .1); }
+html.aurum .ax-act { border-radius: 14px; background: rgba(255, 255, 255, .09); border-color: transparent; font-weight: 700; }
+html.aurum .ax-act:hover { background: rgba(255, 255, 255, .16); border-color: transparent; }
+html.aurum .ax-act-main { background: #FFFFFF !important; color: #000 !important; }
+html.aurum .ax-act-main:hover { background: #E8E8E8 !important; }
+html.aurum .ax-act-ghost { background: transparent; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .16); }
+html.aurum .ax-target { background: rgba(255, 255, 255, .06) !important; border: 0 !important; border-radius: 20px !important; backdrop-filter: none !important; }
+html.aurum .ax-link { color: #FFFFFF; }
+html.aurum .ax-ring-bar { stroke: #FFFFFF; filter: none; }
+html.aurum .ax-ring-track { stroke: rgba(255, 255, 255, .12); }
+html.aurum .ax-ring-center b { font-size: 34px !important; }
+html.aurum .ax-target-hint b { color: #FFFFFF !important; }
+html.aurum .ax-target-empty b { font-size: 19px; font-weight: 800; }
+html.aurum .ax-chip { border: 0; background: rgba(255, 107, 107, .16); color: #FF9A9A; }
+
+/* ── day closing / calendar pick up ink instead of gold ── */
+html.aurum .ax-dc-tile { border: 0 !important; border-radius: 16px !important; background: var(--ax-surface-2) !important; border-top: 0 !important; }
+html.aurum .ax-dc-tile span::before { content: ''; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--ax-dt, var(--ax-blue)); margin-inline-end: 6px; }
+html.aurum .ax-dc-tile.ax-t-gold { --ax-dt: var(--ax-ink); background: var(--ax-ink) !important; }
+html.aurum .ax-dc-tile.ax-t-gold span, html.aurum .ax-dc-tile.ax-t-gold b, html.aurum .ax-dc-tile.ax-t-gold em { color: var(--ax-on-ink) !important; }
+html.aurum .ax-dc-tile.ax-t-gold span::before { background: var(--ax-on-ink); }
+html.aurum .ax-dc-tile b { font-size: 26px !important; }
+html.aurum .ax-dc-box { border: 0 !important; background: var(--ax-surface-2) !important; border-radius: 16px !important; }
+html.aurum .ax-dc-box h4, html.aurum .ax-cal-detail h4, html.aurum .ax-cal-nav b { font-family: var(--ax-display) !important; font-weight: 800 !important; font-size: 18px !important; }
+html.aurum .ax-cal-cell { border: 0 !important; border-radius: 12px !important; }
+html.aurum .ax-cal-cell.ax-today { box-shadow: inset 0 0 0 2px var(--ax-ink) !important; }
+html.aurum .ax-cal-cell.ax-today .ax-cal-d { color: var(--ax-ink) !important; }
+html.aurum .ax-cal-cell.ax-sel { background: var(--ax-surface-3) !important; }
+html.aurum .ax-cal-d { font-family: var(--ax-display); font-size: 15px !important; font-weight: 800 !important; }
+
+/* ── floating + mobile nav ── */
+html.aurum #ai-fab { background: var(--ax-ink) !important; color: var(--ax-on-ink) !important; box-shadow: var(--ax-shadow-lift) !important; }
+html.aurum #ai-fab::before { display: none !important; }
+html.aurum #home-fab { border: 0 !important; border-radius: 16px !important; }
+html.aurum #bottom-nav { background: var(--ax-surface) !important; border-top: 0 !important; box-shadow: 0 -1px 0 var(--ax-line), 0 -10px 30px -18px rgba(0, 0, 0, .25) !important; backdrop-filter: none !important; }
+html.aurum .bn-item { color: var(--ax-faint) !important; font-weight: 600 !important; }
+html.aurum .bn-item.active { color: var(--ax-text) !important; font-weight: 700 !important; }
+html.aurum .bn-item.active svg { color: var(--ax-text) !important; stroke-width: 2.4; }
+html.aurum .bn-item.active::after { display: none !important; }
+html.aurum .bn-create {
+  background: var(--ax-ink) !important; color: var(--ax-on-ink) !important;
+  border-radius: 18px !important; box-shadow: var(--ax-shadow-lift) !important;
+}
+#ax-sheet .ax-sheet-btn { border: 0 !important; background: var(--ax-surface) !important; box-shadow: var(--ax-shadow); border-radius: 18px !important; font-weight: 700 !important; }
+#ax-sheet .ax-sheet-btn svg { border-radius: 12px; }
+#ax-sheet .ax-sheet-panel { border-top: 0 !important; background: var(--ax-bg) !important; border-radius: 28px 28px 0 0 !important; }
+#ax-sheet .ax-sheet-title { font-size: 21px; font-weight: 800; }
+#ax-sheet .ax-c-gold { --ax-sc: var(--ax-text); --ax-sc-soft: var(--ax-surface-3); }
+#ax-sheet .ax-c-violet { --ax-sc: var(--ax-violet); --ax-sc-soft: var(--ax-violet-soft); }
+
+/* ── login = My Life auth screen: plain paper, black button ── */
+html.aurum .lgn-wrap { background: var(--ax-bg) !important; }
+html.aurum .lgn-aurora, html.aurum .lgn-ring { display: none !important; }
+html.aurum .lgn-card { background: var(--ax-surface) !important; box-shadow: var(--ax-shadow-lift) !important; border-radius: var(--ax-radius-lg) !important; }
+html.aurum .lgn-orb img { border-radius: 18px !important; box-shadow: var(--ax-shadow-lift) !important; }
+html.aurum .lgn-title { color: var(--ax-text) !important; font-family: var(--ax-display) !important; font-weight: 900 !important; font-size: 32px !important; }
+html.aurum .lgn-sub { color: var(--ax-muted) !important; }
+html.aurum #login-page .lgn-input {
+  background: var(--ax-input) !important; border: 1.5px solid transparent !important; color: var(--ax-text) !important; border-radius: 12px !important;
+}
+html.aurum[data-theme="dark"] #login-page .lgn-input { background: #000 !important; }
+html.aurum #login-page .lgn-input:focus { border-color: var(--ax-ink) !important; box-shadow: none !important; background: var(--ax-input) !important; }
+html.aurum #login-page .lgn-input::placeholder { color: var(--ax-faint) !important; }
+html.aurum .lgn-fico, html.aurum .lgn-eye { color: var(--ax-faint) !important; }
+html.aurum .lgn-field:focus-within .lgn-fico { color: var(--ax-text) !important; }
+html.aurum .lgn-btn {
+  background: var(--ax-ink) !important; color: var(--ax-on-ink) !important; border-radius: 14px !important;
+  font-family: var(--ax-font) !important; font-weight: 700 !important; box-shadow: none !important;
+}
+html.aurum .lgn-btn:hover { background: var(--ax-primary-hover) !important; }
+html.aurum .lgn-btn-shine { display: none !important; }
+html.aurum .lgn-chip { background: var(--ax-surface-2) !important; border: 0 !important; color: var(--ax-muted) !important; }
+html.aurum .lgn-foot { color: var(--ax-faint) !important; }
+html.aurum .topbar-home-btn, html.aurum .topbar-home-btn svg { color: var(--ax-text) !important; opacity: 1 !important; }
+html.aurum .topbar-home-btn svg { stroke: currentColor !important; }
+@media (max-width: 768px) {
+  html.aurum .topbar-home-btn svg { color: #fff !important; }
+  /* on the dashboard the black header flows straight into the hero, like My Life */
+  html.aurum body:has(#ax-hero) .topbar { border-radius: 0 !important; }
+  html.aurum .ax-hero {
+    margin: -14px -14px 18px !important; border-radius: 0 0 var(--ax-radius-lg) var(--ax-radius-lg) !important;
+    padding: 18px 18px 22px !important; box-shadow: none !important;
+  }
+}
+@media (max-width: 768px) {
+  html.aurum .stat-card .stat-value, html.aurum .stat-card .value { font-size: 24px !important; overflow-wrap: anywhere; }
+  html.aurum .kpi-v3 .kpi-value { font-size: 27px !important; }
+  html.aurum .pg-value, html.aurum .dash-bigcard-value, html.aurum .rep-stat-value { font-size: 23px !important; }
+  html.aurum .page-title { font-size: 26px !important; }
+}

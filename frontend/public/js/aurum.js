@@ -79,7 +79,7 @@
     root.setAttribute('data-theme', t);
     try { localStorage.setItem('theme', t); } catch (e) {}
     var meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.setAttribute('content', t === 'light' ? '#F2F4F9' : '#081226');
+    if (meta) meta.setAttribute('content', t === 'light' ? '#F2F4F9' : '#000000');
     if (typeof updateThemeIcon === 'function') { try { updateThemeIcon(t); } catch (e) {} }
     if (typeof currentPage !== 'undefined' && currentPage === 'dashboard' && typeof renderDashboard === 'function') {
       try { renderDashboard(); } catch (e) {}
@@ -363,15 +363,15 @@
     var dateLabel = fmtLong(new Date(r.date + 'T12:00:00'));
     var html = '<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>تقفيل ' + r.date + '</title>' +
       '<link rel="stylesheet" href="' + new URL('fonts/fonts.css', location.href).href + '">' +
-      '<style>*{box-sizing:border-box}body{font-family:"IBM Plex Sans Arabic","Cairo",sans-serif;color:#0D1B3D;margin:0;padding:28px}' +
-      '.frame{border:3px solid #0F2250;outline:1.5px solid #C58E1A;outline-offset:-9px;padding:28px 30px;min-height:96vh}' +
-      'header{text-align:center;border-bottom:2px solid #C58E1A;padding-bottom:14px;margin-bottom:18px}header img{width:74px;height:74px;border-radius:50%}' +
-      'h1{font-family:"Readex Pro","Cairo",sans-serif;font-weight:600;margin:6px 0 2px;font-size:22px}h2{margin:10px 0 0;background:#0F2250;color:#fff;font-size:16px;padding:8px;font-weight:600}' +
-      '.d{color:#56647F;font-size:13px}.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:14px 0}' +
-      '.t{border:1px solid #d9dfeb;border-top:3px solid #0F2250;padding:10px}.t span{display:block;font-size:12px;color:#56647F}.t b{font-size:17px}.t.g{border-top-color:#C58E1A}' +
-      '.cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}h3{font-size:14px;margin:14px 0 6px;color:#0F2250}' +
-      'table{width:100%;border-collapse:collapse;font-size:13px}td,th{border:1px solid #e1e6f0;padding:6px 8px;text-align:right}th{background:#F2F4F9;font-weight:600}.n{text-align:left;font-variant-numeric:tabular-nums;white-space:nowrap}.e{color:#8793AB;text-align:center}' +
-      '.sig{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:44px;text-align:center;font-size:13px}.sig div{border-top:1.5px solid #0D1B3D;padding-top:6px}' +
+      '<style>*{box-sizing:border-box}body{font-family:"IBM Plex Sans Arabic","Cairo",sans-serif;color:#000;margin:0;padding:28px}' +
+      '.frame{border:3px solid #000;outline:1.5px solid #bdbdbd;outline-offset:-9px;padding:28px 30px;min-height:96vh}' +
+      'header{text-align:center;border-bottom:2px solid #bdbdbd;padding-bottom:14px;margin-bottom:18px}header img{width:74px;height:74px;border-radius:50%}' +
+      'h1{font-family:"Zain","Cairo",sans-serif;font-weight:800;margin:6px 0 2px;font-size:26px}h2{margin:10px 0 0;background:#000;color:#fff;font-size:16px;padding:8px;font-weight:600}' +
+      '.d{color:#6b6b6b;font-size:13px}.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:14px 0}' +
+      '.t{border:1px solid #e0e0e0;border-top:3px solid #000;padding:10px}.t span{display:block;font-size:12px;color:#6b6b6b}.t b{font-family:"Zain","Cairo",sans-serif;font-size:22px;font-weight:800}.t.g{border-top-color:#bdbdbd}' +
+      '.cols{display:grid;grid-template-columns:1fr 1fr;gap:16px}h3{font-size:14px;margin:14px 0 6px;color:#000}' +
+      'table{width:100%;border-collapse:collapse;font-size:13px}td,th{border:1px solid #e6e6e6;padding:6px 8px;text-align:right}th{background:#f2f2f2;font-weight:600}.n{text-align:left;font-variant-numeric:tabular-nums;white-space:nowrap}.e{color:#9a9a9a;text-align:center}' +
+      '.sig{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:44px;text-align:center;font-size:13px}.sig div{border-top:1.5px solid #000;padding-top:6px}' +
       '@media print{body{padding:0}@page{margin:12mm}}</style></head><body><div class="frame">' +
       '<header><img src="' + logo + '" alt=""><h1>' + esc(s.companyName || 'إمداد إكس للتوريدات العمومية') + '</h1><div class="d">' + esc(dateLabel) + '</div><h2>تقرير تقفيل اليومية</h2></header>' +
       '<div class="tiles"><div class="t"><span>المبيعات</span><b>' + money(r.sales) + '</b></div><div class="t"><span>المحصّل</span><b>' + money(r.collected) + '</b></div>' +

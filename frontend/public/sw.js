@@ -1,6 +1,6 @@
 'use strict';
 
-const CACHE      = 'emdadx-v4-aurum';
+const CACHE      = 'emdadx-v4.1-mylife';
 // relative to the SW scope, so it also works when the app lives under APP_PATH
 const APP_SHELL  = ['./', './index.html', './manifest.json', './css/aurum.css', './js/aurum.js',
                     './fonts/fonts.css', './vendor/chart.umd.js', './vendor/modern-screenshot.js',
