@@ -156,30 +156,68 @@
     };
   }
 
+  /* target ring colour: red → orange → yellow → green as the target fills */
+  function ringColor(pct) {
+    var p = Math.max(0, Math.min(100, pct));
+    var h = p >= 100 ? 145 : 4 + 124 * Math.pow(p / 100, 1.5);   // red → orange → yellow (~60%) → lime → green at 100%
+    return 'hsl(' + h.toFixed(0) + ', 88%, ' + (p >= 100 ? 52 : 56) + '%)';
+  }
+  function targetState(pct, pace) {
+    if (pct >= 100) return { tone: 'done', label: 'حققت الهدف' };
+    if (pct >= pace) return { tone: 'ahead', label: 'ماشي أسرع من المطلوب' };
+    if (pct >= pace * 0.8) return { tone: 'near', label: 'قريب من المعدل' };
+    return { tone: 'behind', label: 'متأخر عن المعدل' };
+  }
+  /* fill the ring from 0 and let its colour travel with the number */
+  function animateRing(ring) {
+    var target = Number(ring.getAttribute('data-pct')) || 0;
+    var bars = ring.querySelectorAll('.ax-ring-bar, .ax-ring-glow'), num = ring.querySelector('.ax-ring-center b');
+    var C = 2 * Math.PI * 52, t0 = performance.now(), dur = 1400;
+    (function step(t) {
+      var k = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - k, 3), v = target * e;
+      ring.style.setProperty('--ring', ringColor(v));
+      bars.forEach(function (b) { b.style.strokeDashoffset = (C * (1 - Math.min(100, v) / 100)).toFixed(1); });
+      if (num) num.textContent = Math.round(v) + '%';
+      if (k < 1) requestAnimationFrame(step);
+      else if (target >= 100) ring.classList.add('ax-ring-done');
+    })(t0);
+  }
+
   function heroHTML() {
     var m = heroMetrics();
     var now = new Date();
     var h = now.getHours();
     var greet = h < 12 ? 'صباح الخير' : 'مساء الخير';
     var who = (typeof currentUser !== 'undefined' && currentUser && currentUser.name) ? currentUser.name : '';
-    var pct = m.target > 0 ? Math.min(100, Math.round(m.monthSales / m.target * 100)) : 0;
+    var pctReal = m.target > 0 ? Math.round(m.monthSales / m.target * 100) : 0;
+    var pct = Math.min(100, pctReal);
     var C = 2 * Math.PI * 52;
-    var dash = m.target > 0 ? C * (1 - pct / 100) : C;
     var needPerDay = m.target > 0 ? Math.max(0, (m.target - m.monthSales) / m.daysLeft) : 0;
+    var dim = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    var pace = Math.round(now.getDate() / dim * 100);                 // where you "should" be today
+    var st = targetState(pctReal, pace);
+    var pa = pace / 100 * 2 * Math.PI;
+    var tick = '<line class="ax-ring-pace" x1="' + (60 + 43 * Math.cos(pa)).toFixed(1) + '" y1="' + (60 + 43 * Math.sin(pa)).toFixed(1) +
+               '" x2="' + (60 + 61 * Math.cos(pa)).toFixed(1) + '" y2="' + (60 + 61 * Math.sin(pa)).toFixed(1) + '"/>';
 
     var ring = m.target > 0
-      ? '<div class="ax-ring" role="img" aria-label="تحقيق ' + pct + '% من هدف الشهر">' +
+      ? '<div class="ax-ring ax-ring-live" id="ax-ring" data-pct="' + pctReal + '" style="--ring:' + ringColor(pctReal) + '" role="img" aria-label="تحقيق ' + pctReal + '% من هدف الشهر — ' + st.label + '">' +
           '<svg viewBox="0 0 120 120"><circle class="ax-ring-track" cx="60" cy="60" r="52"/>' +
-          '<circle class="ax-ring-bar" cx="60" cy="60" r="52" style="stroke-dasharray:' + C.toFixed(1) + ';stroke-dashoffset:' + dash.toFixed(1) + ';--ax-len:' + C.toFixed(1) + '"/></svg>' +
-          '<div class="ax-ring-center"><b class="ax-num">' + pct + '%</b><span>من الهدف</span></div>' +
+          '<circle class="ax-ring-glow" cx="60" cy="60" r="52" style="stroke-dasharray:' + C.toFixed(1) + ';stroke-dashoffset:' + (C * (1 - pct / 100)).toFixed(1) + '"/>' +
+          '<circle class="ax-ring-bar" cx="60" cy="60" r="52" style="stroke-dasharray:' + C.toFixed(1) + ';stroke-dashoffset:' + (C * (1 - pct / 100)).toFixed(1) + '"/>' +
+          tick + '</svg>' +
+          '<div class="ax-ring-center"><b class="ax-num">' + pctReal + '%</b><span>من الهدف</span></div>' +
         '</div>' +
+        '<div class="ax-target-state ax-ts-' + st.tone + '"><i></i>' + st.label + '</div>' +
         '<div class="ax-target-meta">' +
           '<div><span>تم بيع</span><b class="ax-num">' + money(m.monthSales) + '</b></div>' +
           '<div><span>الهدف</span><b class="ax-num">' + money(m.target) + '</b></div>' +
-          (pct < 100
+          '<div><span>المفروض النهارده</span><b class="ax-num">' + pace + '%</b></div>' +
+          (pctReal < 100
             ? '<div class="ax-target-hint">محتاج <b class="ax-num">' + money(needPerDay) + '</b> يومياً لآخر الشهر</div>'
-            : '<div class="ax-target-hint ax-ok">حققت هدف الشهر</div>') +
-        '</div>'
+            : '<div class="ax-target-hint ax-ok">حققت هدف الشهر' + (pctReal > 100 ? ' وزيادة ' + (pctReal - 100) + '%' : '') + '</div>') +
+        '</div>' +
+        '<div class="ax-ring-scale" aria-hidden="true"><i></i><span>0%</span><span>50%</span><span>100%</span></div>'
       : '<div class="ax-target-empty"><b>هدف مبيعات الشهر</b><span>حدد رقم تستهدفه، والبرنامج يتابع تقدمك يوم بيوم.</span></div>';
 
     var chips = [];
@@ -228,13 +266,20 @@
     var old = document.getElementById('ax-hero');
     if (old) old.remove();
     pc.insertAdjacentHTML('afterbegin', heroHTML());
+    var hero = document.getElementById('ax-hero');
+    // cash flow first, then "ملخص يومك"
+    var cf = document.getElementById('cashflow-container');
+    var cfRow = cf && (cf.closest('.dash-row') || cf.closest('.dash-card'));
+    if (cfRow && hero) { cfRow.classList.add('ax-cf-top'); pc.insertBefore(cfRow, hero); }
+    var ringEl = document.getElementById('ax-ring');
     var nowTs = Date.now();
     if (nowTs - AX._lastHeroAnim > 15000 && typeof countUpEl === 'function') {
       AX._lastHeroAnim = nowTs;
       document.querySelectorAll('#ax-hero .ax-count').forEach(function (el) { try { countUpEl(el); } catch (e) {} });
+      if (ringEl) animateRing(ringEl);
     } else {
-      var hero = document.getElementById('ax-hero');
       if (hero) hero.classList.add('ax-still');
+      if (ringEl && Number(ringEl.getAttribute('data-pct')) >= 100) ringEl.classList.add('ax-ring-done');
     }
   }
 

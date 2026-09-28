@@ -1628,3 +1628,32 @@ html.aurum .skh-mini li b { font-family: var(--ax-display); font-size: 15px; whi
 @media (prefers-reduced-motion: reduce) {
   html.aurum .skh-item, html.aurum .skh-bar i, html.aurum .skh-hbar i { animation: none; }
 }
+
+/* ════════════════════════════════════════════════════════════════════
+   20. Dashboard order (cash flow → ملخص يومك) + colour-coded target ring
+════════════════════════════════════════════════════════════════════ */
+html.aurum .ax-cf-top { margin-bottom: 16px !important; }
+@media (max-width: 768px) {
+  /* hero is no longer the first block → keep it a normal rounded card */
+  html.aurum body:has(#ax-hero) .topbar { border-radius: 0 0 var(--ax-radius-lg) var(--ax-radius-lg) !important; }
+  html.aurum .ax-hero { margin: 0 0 18px !important; border-radius: var(--ax-radius-lg) !important; box-shadow: var(--ax-shadow-lift) !important; }
+}
+html.aurum .ax-ring-live { --ring: #fff; width: 148px; height: 148px; }
+html.aurum .ax-ring-live .ax-ring-bar { stroke: var(--ring) !important; stroke-width: 10; animation: none !important; filter: none !important; transition: stroke .3s; }
+html.aurum .ax-ring-live .ax-ring-glow { fill: none; stroke: var(--ring); stroke-width: 14; stroke-linecap: round; opacity: .55; filter: blur(6px); }
+html.aurum .ax-ring-live .ax-ring-track { stroke-width: 10; }
+html.aurum .ax-ring-live .ax-ring-center b { color: var(--ring) !important; text-shadow: 0 0 18px var(--ring); }
+html.aurum .ax-ring-pace { stroke: rgba(255, 255, 255, .85); stroke-width: 2.5; stroke-linecap: round; }
+html.aurum .ax-ring-done { animation: axRingDone 2.4s ease-in-out infinite; }
+@keyframes axRingDone { 50% { filter: drop-shadow(0 0 14px var(--ring)); } }
+html.aurum .ax-target-state { display: inline-flex; align-items: center; gap: 7px; font-size: 12.5px; font-weight: 700; padding: 5px 12px; border-radius: 999px; background: rgba(255, 255, 255, .08); color: #fff; }
+html.aurum .ax-target-state i { width: 8px; height: 8px; border-radius: 50%; background: currentColor; box-shadow: 0 0 8px currentColor; }
+html.aurum .ax-ts-done { color: #5CE89A; } html.aurum .ax-ts-ahead { color: #7FE3BD; }
+html.aurum .ax-ts-near { color: #FFC24D; } html.aurum .ax-ts-behind { color: #FF7A6B; }
+html.aurum .ax-ring-scale { width: 100%; display: grid; grid-template-columns: 1fr 1fr 1fr; font-size: 10.5px; color: var(--ax-deep-muted); position: relative; padding-top: 10px; }
+html.aurum .ax-ring-scale i { position: absolute; top: 0; inset-inline: 0; height: 5px; border-radius: 999px;
+  background: linear-gradient(to left, hsl(4,88%,56%), hsl(35,88%,56%), hsl(66,88%,56%), hsl(100,88%,56%), hsl(145,88%,52%)); opacity: .9; }
+html.aurum .ax-ring-scale span:nth-child(2) { text-align: start; } html.aurum .ax-ring-scale span:nth-child(3) { text-align: center; } html.aurum .ax-ring-scale span:nth-child(4) { text-align: end; }
+@media (max-width: 768px) { html.aurum .ax-ring-live { width: 124px; height: 124px; } }
+@media (prefers-reduced-motion: reduce) { html.aurum .ax-ring-done { animation: none; } }
+html.aurum .ax-ring-live svg { overflow: visible; }
