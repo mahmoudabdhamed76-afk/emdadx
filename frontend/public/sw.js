@@ -1,8 +1,8 @@
 'use strict';
 
-const CACHE      = 'emdadx-v4.1-mylife';
+const CACHE      = 'emdadx-v4.2-stock';
 // relative to the SW scope, so it also works when the app lives under APP_PATH
-const APP_SHELL  = ['./', './index.html', './manifest.json', './css/aurum.css', './js/aurum.js',
+const APP_SHELL  = ['./', './index.html', './manifest.json', './css/aurum.css', './js/aurum.js', './js/glowchart.js', './js/stockhub.js',
                     './fonts/fonts.css', './vendor/chart.umd.js', './vendor/modern-screenshot.js',
                     './icons/logo-square.png'];
 const DB_NAME    = 'emdadx-offline';

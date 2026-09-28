@@ -514,6 +514,122 @@
     if (btn) btn.classList.toggle('open', open);
   };
 
+  /* ─────────────── cash flow · glowing line ─────────────── */
+  function lds(d) { return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); }
+  function parseD(s) { var p = String(s).split('-'); return new Date(+p[0], +p[1] - 1, +p[2]); }
+  var CF_MODES = [['net', 'الصافي'], ['cum', 'الرصيد التراكمي'], ['split', 'داخل وخارج']];
+  function cfMode() { try { return localStorage.getItem('ax_cf_mode') || 'net'; } catch (e) { return 'net'; } }
+  AX.cfMode = function (m) { try { localStorage.setItem('ax_cf_mode', m); } catch (e) {} AX.renderCashFlow(); };
+
+  AX.renderCashFlow = function (periodDays) {
+    var box = document.getElementById('cashflow-container');
+    var sel = document.getElementById('cashflow-period');
+    if (!box) return;
+    var days = parseInt(periodDays || (sel && sel.value) || 30, 10) || 30;
+    var weekly = days >= 60;
+    var now = new Date(); now.setHours(0, 0, 0, 0);
+    var start = new Date(now); start.setDate(now.getDate() - days + 1);
+    var startStr = lds(start);
+
+    function key(ds) {
+      if (!weekly) return ds;
+      var d = parseD(ds); d.setDate(d.getDate() - ((d.getDay() + 1) % 7));   // week starts Saturday
+      return lds(d);
+    }
+    var B = {}, order = [];
+    for (var i = 0; i < days; i++) {
+      var d = new Date(start); d.setDate(start.getDate() + i);
+      var k = key(lds(d));
+      if (!B[k]) { B[k] = { key: k, inn: 0, out: 0, nIn: 0, nOut: 0 }; order.push(k); }
+    }
+    function add(ds, field, amt) {
+      if (!ds || ds < startStr) return;
+      var b = B[key(String(ds).slice(0, 10))]; if (!b) return;
+      b[field] += Number(amt || 0); if (field === 'inn') b.nIn++; else b.nOut++;
+    }
+    arr('payments').forEach(function (p) { add(p.date, 'inn', p.amount); });
+    arr('bankTransfers').forEach(function (t) {
+      if (t.type === 'out' || t.type === 'withdrawal') add(t.date, 'out', t.amount);
+      else add(t.date, 'inn', t.amount);
+    });
+    arr('expenses').forEach(function (e) { if (e.kind === 'purchase' && e.paymentMethod === 'credit') return; add(e.date, 'out', e.amount); });
+    arr('supplierPayments').forEach(function (p) { add(p.date, 'out', p.amount); });
+
+    var list = order.map(function (k) { return B[k]; });
+    var labels = list.map(function (b) {
+      var d = parseD(b.key);
+      if (!weekly) return d.getDate() + '/' + (d.getMonth() + 1);
+      return 'أسبوع ' + d.getDate() + '/' + (d.getMonth() + 1);
+    });
+    var tIn = sum(list, function (b) { return b.inn; }), tOut = sum(list, function (b) { return b.out; });
+    var net = tIn - tOut, avg = net / days;
+    var nPay = arr('payments').filter(function (p) { return p.date >= startStr; }).length;
+    var mode = cfMode();
+    var run = 0, cum = list.map(function (b) { run += b.inn - b.out; return run; });
+    var netV = list.map(function (b) { return b.inn - b.out; });
+    var posDays = netV.filter(function (v) { return v > 0; }).length, negDays = netV.filter(function (v) { return v < 0; }).length;
+    var best = 0; netV.forEach(function (v, i) { if (v > netV[best]) best = i; });
+    var sign = function (v) { return '\u200E' + (v > 0 ? '+' : v < 0 ? '−' : '') + num(Math.abs(v)); };
+    var unit = weekly ? 'أسبوع' : 'يوم';
+
+    var fc = '';
+    if (avg !== 0) {
+      var p30 = avg * 30;
+      fc = p30 > 0
+        ? '<div class="ax-cf-fc ok"><b>على نفس المعدل</b> هيدخلك صافي <strong>' + money(p30) + '</strong> في الـ30 يوم الجايين.</div>'
+        : '<div class="ax-cf-fc bad"><b>تنبيه</b> على نفس المعدل الكاش هينقص <strong>' + money(Math.abs(p30)) + '</strong> خلال 30 يوم — راجع المصروفات.</div>';
+    }
+
+    var legend = mode === 'split'
+      ? '<span class="ax-cf-key"><i style="background:var(--ax-ok)"></i>داخل</span><span class="ax-cf-key"><i style="background:var(--ax-bad)"></i>خارج</span>'
+      : '<span class="ax-cf-key"><i style="background:var(--ax-ok)"></i>إضاءة خضرا = ' + (mode === 'cum' ? 'رصيد موجب' : 'داخل أكتر من الخارج') + '</span>' +
+        '<span class="ax-cf-key"><i style="background:var(--ax-bad)"></i>إضاءة حمرا = ' + (mode === 'cum' ? 'رصيد سالب' : 'خارج أكتر') + '</span>';
+
+    box.innerHTML =
+      '<div class="ax-cf-stats">' +
+        '<div class="ax-cf-stat"><span>إجمالي الداخل</span><b class="ok">' + money(tIn) + '</b><small>' + nPay + ' عملية تحصيل</small></div>' +
+        '<div class="ax-cf-stat"><span>إجمالي الخارج</span><b class="bad">' + money(tOut) + '</b><small>مصروفات + سداد موردين</small></div>' +
+        '<div class="ax-cf-stat ax-cf-net ' + (net >= 0 ? 'pos' : 'neg') + '"><span>صافي التدفق</span><b>' + sign(net) + ' <em>' + esc(curSym()) + '</em></b><small>متوسط يومي ' + sign(avg) + '</small></div>' +
+      '</div>' +
+      '<div class="ax-cf-bar">' +
+        '<div class="ax-seg" role="tablist" aria-label="طريقة العرض">' + CF_MODES.map(function (m) {
+          return '<button role="tab" aria-selected="' + (m[0] === mode) + '" class="' + (m[0] === mode ? 'on' : '') + '" onclick="AX.cfMode(\'' + m[0] + '\')">' + m[1] + '</button>';
+        }).join('') + '</div>' +
+        '<div class="ax-cf-legend">' + legend + '</div>' +
+      '</div>' +
+      '<div id="ax-cf-chart" class="ax-cf-chart"></div>' +
+      '<div class="ax-cf-foot">' +
+        '<span class="ax-cf-chip ok">' + posDays + ' ' + unit + ' موجب</span>' +
+        '<span class="ax-cf-chip bad">' + negDays + ' ' + unit + ' سالب</span>' +
+        (netV[best] > 0 ? '<span class="ax-cf-chip">أحسن ' + unit + ': ' + labels[best].replace('أسبوع ', '') + ' (' + sign(netV[best]) + ')</span>' : '') +
+      '</div>' + fc +
+      (window.AXChart ? AXChart.table(labels, [
+        { name: 'داخل', values: list.map(function (b) { return b.inn; }) },
+        { name: 'خارج', values: list.map(function (b) { return b.out; }) },
+        { name: 'الصافي', values: netV },
+        { name: 'التراكمي', values: cum }], num) : '');
+
+    if (!window.AXChart) return;
+    var detail = function (i) {
+      var b = list[i];
+      return [['داخل', money(b.inn), 'var(--ax-ok)'], ['خارج', money(b.out), 'var(--ax-bad)']].concat(
+        mode === 'split' ? [['الصافي', sign(b.inn - b.out), null]] : mode === 'cum' ? [['صافي ال' + unit, sign(b.inn - b.out), null]] : [['الرصيد التراكمي', sign(cum[i]), null]]);
+    };
+    var cfg = { labels: labels, height: window.innerWidth < 700 ? 210 : 260, fmt: sign, title: 'التدفق النقدي' };
+    if (mode === 'split') {
+      cfg.series = [{ name: 'داخل', values: list.map(function (b) { return b.inn; }), color: 'var(--ax-ok)' },
+                    { name: 'خارج', values: list.map(function (b) { return b.out; }), color: 'var(--ax-bad)' }];
+      cfg.fmt = num;
+      cfg.detail = function (i) { return [['الصافي', sign(list[i].inn - list[i].out), null]]; };
+    } else {
+      cfg.diverging = true;
+      cfg.series = [{ name: mode === 'cum' ? 'الرصيد التراكمي' : 'صافي ال' + unit, values: mode === 'cum' ? cum : netV }];
+      cfg.detail = detail;
+    }
+    AXChart.line(document.getElementById('ax-cf-chart'), cfg);
+  };
+  window.renderCashFlow = AX.renderCashFlow;
+
   /* ─────────────── boot ─────────────── */
   function boot() {
     wrapDashboard();
