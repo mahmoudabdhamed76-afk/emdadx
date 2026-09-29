@@ -97,6 +97,27 @@
     var r = mx - mn;
     return raw.map(function (v) { return r ? 6 + (v - mn) / r * 88 : 50; });
   }
+  /* inverse of toPct: a y-level (0–100) back to the real value, for the axis labels */
+  function fromPct(key, raw, p) {
+    if (key === 'invoices') return p;
+    var mx = Math.max.apply(null, raw), mn = Math.min.apply(null, raw);
+    if (key === 'collect' || mn >= 0) mn = 0;
+    var r = mx - mn;
+    return r ? mn + (p - 6) / 88 * r : mx;
+  }
+  function compact(v) {
+    var a = Math.abs(v);
+    if (a >= 1e6) return (v / 1e6).toFixed(a >= 1e7 ? 0 : 1).replace(/\.0$/, '') + 'M';
+    if (a >= 1e4) return (v / 1e3).toFixed(0) + 'K';
+    if (a >= 1e3) return (v / 1e3).toFixed(1).replace(/\.0$/, '') + 'K';
+    return String(Math.round(v));
+  }
+  function dayLabel(ds, long) {
+    var p = ds.split('-'), d = new Date(+p[0], +p[1] - 1, +p[2]);
+    if (!long) return d.getDate() + '/' + (d.getMonth() + 1);
+    try { return new Intl.DateTimeFormat('ar-EG-u-nu-latn', { weekday: 'long', day: 'numeric', month: 'long' }).format(d); }
+    catch (e) { return d.getDate() + '/' + (d.getMonth() + 1); }
+  }
 
   /* ── read the app's own cards ── */
   function readCards(grid) {
@@ -179,7 +200,6 @@
           '<div class="pxs-gh"><div class="pxs-gt"><span class="pxs-gname"></span><b class="pxs-gval"></b></div><span class="pxs-gdelta"></span></div>' +
           '<div class="pxs-plot"></div>' +
         '</div>' +
-        '<div class="pxs-ticker"></div>' +
       '</div>' +
       '<div class="pxs-tiles" role="tablist" aria-label="اختار المؤشر">' + ORDER.map(function (k) {
         var c = cards[k] || {}, L = LEVEL[c.level] || LEVEL.info;
@@ -210,15 +230,16 @@
     return { wall: wall, cols: cols, rows: rows, cells: wall.querySelectorAll('.pxs-c'), cursor: wall.querySelector('.pxs-cursor'), cell: cell, gap: gap };
   }
 
-  /* ── graph ── */
+  /* ── graph: glowing line that answers back — hover / touch / arrows show the real number of each day ── */
   function Graph(sec) {
     var plot = sec.querySelector('.pxs-plot');
-    var g = { plot: plot, vals: new Array(DAYS).fill(0), run: { p: 0 } };
+    var g = { plot: plot, vals: new Array(DAYS).fill(0), raw: new Array(DAYS).fill(0), days: days(), run: { p: 0 }, hover: -1 };
     g.draw = function () {
       var W = Math.max(280, plot.clientWidth), H = plot.clientHeight || 190;
       g.W = W; g.H = H;
       plot.innerHTML = '';
       var svg = svgEl('svg', { viewBox: '0 0 ' + W + ' ' + H, width: W, height: H, direction: 'ltr' }, plot);
+      g.svg = svg;
       var defs = svgEl('defs', {}, svg);
       var f = svgEl('filter', { id: 'pxs-blur', x: '-20%', y: '-60%', width: '140%', height: '220%' }, defs);
       svgEl('feGaussianBlur', { stdDeviation: 7 }, f);
@@ -226,12 +247,11 @@
       g.s1 = svgEl('stop', { offset: 0, 'stop-opacity': 0.34 }, lg); g.s2 = svgEl('stop', { offset: 1, 'stop-opacity': 0 }, lg);
       var cp = svgEl('clipPath', { id: 'pxs-clip' }, defs);
       g.clip = svgEl('rect', { x: 0, y: -20, width: W, height: H + 40 }, cp);
-      g.pl = 12; g.pr = 48; g.pt = 12; g.pb = 14;
-      [0, 25, 50, 75, 100].forEach(function (v) {
-        var y = g.y(v);
-        svgEl('line', { x1: g.pl, x2: W - g.pr, y1: y, y2: y, class: 'pxs-hair' }, svg);
-        if (v) { var t = svgEl('text', { x: W - g.pr + 10, y: y + 4, class: 'pxs-ax' }, svg); t.textContent = v + '%'; }
-      });
+      g.pl = 12; g.pr = 58; g.pt = 12; g.pb = 26;
+      g.levels = [0, 25, 50, 75, 100];
+      g.axis = svgEl('g', {}, svg);
+      g.levels.forEach(function (v) { var y = g.y(v); svgEl('line', { x1: g.pl, x2: W - g.pr, y1: y, y2: y, class: 'pxs-hair' }, g.axis); });
+      g.ticks = svgEl('g', {}, svg);
       var grp = svgEl('g', { 'clip-path': 'url(#pxs-clip)' }, svg);
       g.area = svgEl('path', { class: 'pxs-area', fill: 'url(#pxs-area)' }, grp);
       g.glow = svgEl('path', { class: 'pxs-lglow', filter: 'url(#pxs-blur)' }, grp);
@@ -240,10 +260,33 @@
       g.head = svgEl('circle', { r: 4.5, class: 'pxs-head' }, svg);
       g.headGlow = svgEl('circle', { r: 14, class: 'pxs-headglow' }, svg);
       g.now = svgEl('circle', { r: 5, class: 'pxs-now' }, svg);
+      g.cross = svgEl('line', { x1: 0, x2: 0, y1: g.pt, y2: H - g.pb, class: 'pxs-cross' }, svg);
+      g.focus = svgEl('circle', { r: 6, class: 'pxs-focus' }, svg);
+      g.hit = svgEl('rect', { x: g.pl - 6, y: 0, width: W - g.pr - g.pl + 12, height: H, class: 'pxs-hit' }, svg);
+      g.tip = document.createElement('div'); g.tip.className = 'pxs-tip'; plot.appendChild(g.tip);
+      plot.tabIndex = 0;
+      plot.setAttribute('role', 'img');
+      g.bind();
+      g.labels();
       g.paint();
     };
     g.x = function (i) { return (g.W - g.pr) - i * ((g.W - g.pr - g.pl) / (DAYS - 1)); };   // oldest on the right
     g.y = function (v) { return (g.H - g.pb) - v / 100 * (g.H - g.pb - g.pt); };
+    /* value labels on the right (real units, not %) + dates along the bottom */
+    g.labels = function () {
+      if (!g.ticks) return;
+      g.ticks.textContent = '';
+      g.levels.forEach(function (lv) {
+        if (!lv) return;
+        var t = svgEl('text', { x: g.W - g.pr + 10, y: g.y(lv) + 4, class: 'pxs-ax' }, g.ticks);
+        t.textContent = g.key === 'invoices' ? lv + '%' : compact(fromPct(g.key, g.raw, lv));
+      });
+      [DAYS - 1, 22, 15, 8, 0].forEach(function (i) {
+        var t = svgEl('text', { x: g.x(i), y: g.H - 6, class: 'pxs-ax pxs-axd', 'text-anchor': i === DAYS - 1 ? 'start' : i === 0 ? 'end' : 'middle' }, g.ticks);
+        t.textContent = i === DAYS - 1 ? 'النهارده' : dayLabel(g.days[i]);
+      });
+      g.plot.setAttribute('aria-label', (g.name || '') + ' — آخر ' + DAYS + ' يوم. استخدم الأسهم للتنقل بين الأيام');
+    };
     g.paint = function () {
       if (!g.line) return;
       var pts = g.vals.map(function (v, i) { return [g.x(i), g.y(Math.max(0, Math.min(100, v)))]; }).reverse();
@@ -254,6 +297,7 @@
       g.runner.style.strokeDasharray = '70 ' + (g.len + 80);
       var n = pts[0]; g.now.setAttribute('cx', n[0]); g.now.setAttribute('cy', n[1]);
       g.moveHead();
+      if (g.hover >= 0) g.show(g.hover, true);
     };
     g.moveHead = function () {
       if (!g.len) return;
@@ -264,6 +308,57 @@
       g.runner.style.strokeDashoffset = -(at - 70);
     };
     g.color = function (c) { g.plot.style.setProperty('--gc', c); [g.s1, g.s2].forEach(function (s) { s.setAttribute('stop-color', c); }); };
+    /* the numbers behind the line */
+    g.setData = function (key, raw, fmt, name) { g.key = key; g.raw = raw.slice(); g.fmt = fmt; g.name = name; g.labels(); };
+    g.show = function (i, quiet) {
+      i = Math.max(0, Math.min(DAYS - 1, i)); g.hover = i;
+      var x = g.x(i), y = g.y(Math.max(0, Math.min(100, g.vals[i])));
+      g.cross.setAttribute('x1', x); g.cross.setAttribute('x2', x);
+      g.focus.setAttribute('cx', x); g.focus.setAttribute('cy', y);
+      g.svg.classList.add('pxs-hovering');
+      var v = g.raw[i], pv = i > 0 ? g.raw[i - 1] : null, diff = pv == null ? 0 : v - pv;
+      var good = (diff > 0) === (g.key === 'invoices' ? true : !!UP_GOOD[g.key]);   // invoices graph = % collected
+      g.tip.textContent = '';
+      var h = document.createElement('div'); h.className = 'pxs-tip-d'; h.textContent = i === DAYS - 1 ? 'النهارده' : dayLabel(g.days[i], true);
+      var b = document.createElement('b'); b.textContent = g.fmt(v);
+      g.tip.appendChild(h); g.tip.appendChild(b);
+      if (pv != null && Math.abs(diff) >= .5) {
+        var c = document.createElement('span'); c.className = 'pxs-tip-c ' + (good ? 'good' : 'bad');
+        c.textContent = (diff > 0 ? '▲ ' : '▼ ') + g.fmt(Math.abs(diff)) + ' عن اليوم اللي قبله';
+        g.tip.appendChild(c);
+      } else if (pv != null) {
+        var c2 = document.createElement('span'); c2.className = 'pxs-tip-c'; c2.textContent = 'زي اليوم اللي قبله'; g.tip.appendChild(c2);
+      }
+      g.tip.classList.add('on');
+      var tw = g.tip.offsetWidth, left = x - tw / 2;
+      left = Math.max(4, Math.min(g.W - tw - 4, left));
+      g.tip.style.left = left + 'px';
+      g.tip.style.top = Math.max(0, y - g.tip.offsetHeight - 16) + 'px';
+      if (!quiet && g.onHover) g.onHover(i);
+    };
+    g.hide = function () {
+      g.hover = -1; if (!g.svg) return;
+      g.svg.classList.remove('pxs-hovering'); g.tip.classList.remove('on');
+      if (g.onHover) g.onHover(-1);
+    };
+    g.bind = function () {
+      function idx(e) {
+        var r = g.svg.getBoundingClientRect(), px = (e.clientX - r.left) * (g.W / r.width);
+        return Math.round(((g.W - g.pr) - px) / ((g.W - g.pr - g.pl) / (DAYS - 1)));
+      }
+      g.hit.addEventListener('pointermove', function (e) { g.show(idx(e)); });
+      g.hit.addEventListener('pointerdown', function (e) { g.show(idx(e)); });
+      g.hit.addEventListener('pointerleave', function (e) { if (e.pointerType === 'mouse') g.hide(); });
+      g.hit.addEventListener('pointerup', function (e) { if (e.pointerType !== 'mouse') { clearTimeout(g.ht); g.ht = setTimeout(g.hide, 2600); } });
+      plot.onkeydown = function (e) {
+        var i = g.hover < 0 ? DAYS - 1 : g.hover;
+        if (e.key === 'ArrowLeft') { g.show(i + 1); e.preventDefault(); }       // RTL: left = newer
+        else if (e.key === 'ArrowRight') { g.show(i - 1); e.preventDefault(); }
+        else if (e.key === 'Escape') g.hide();
+      };
+      plot.onfocus = function () { g.show(g.hover < 0 ? DAYS - 1 : g.hover); };
+      plot.onblur = g.hide;
+    };
     return g;
   }
 
@@ -348,6 +443,18 @@
         else if (k === 'invoices') { dl.textContent = 'اتحصّل ' + Math.round(b) + '% من فواتير آخر أسبوعين'; dl.className = 'pxs-gdelta'; }
         else if (a) { var ch = (b - a) / Math.abs(a) * 100; dl.textContent = '‎' + (ch >= 0 ? '+' : '') + ch.toFixed(0) + '% من ' + DAYS + ' يوم'; dl.className = 'pxs-gdelta ' + (ch >= 0 ? 'up' : 'down'); }
         else { dl.textContent = ''; }
+        var unit = k === 'invoices' ? '%' : String(c.value || '').replace(/[-\d.,\s]+/, '').trim();
+        if (unit === '—') unit = '';
+        var fmt = function (v) { return k === 'invoices' ? Math.round(v) + '%' : fmtN(v) + (unit ? ' ' + unit : ''); };
+        G.setData(k, raw, fmt, m.graph);
+        G.onHover = function (i) {
+          var gv = tip.querySelector('.pxs-gval'), gn = tip.querySelector('.pxs-gname');
+          if (i < 0) { gv.textContent = c.value || '—'; gn.textContent = m.graph + ' · آخر ' + DAYS + ' يوم'; tip.classList.remove('is-hover'); return; }
+          gv.textContent = fmt(raw[i]);
+          gn.textContent = m.graph + ' · ' + (i === DAYS - 1 ? 'النهارده' : dayLabel(G.days[i], true));
+          tip.classList.add('is-hover');
+        };
+        if (G.hover >= 0) G.hide();
         if (animate && !reduce) {
           gsap.to(G.vals, { endArray: pct, duration: 1.1, ease: 'expo.inOut', onUpdate: G.paint });
           gsap.fromTo('.pxs-gt', { y: 10, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: .6, ease: 'power3.out' });
@@ -365,15 +472,21 @@
         loops.push(gsap.to(G.area, { opacity: .7, duration: 2.6, ease: 'sine.inOut', yoyo: true, repeat: -1 }));
       } else { gsap.set([G.head, G.headGlow, G.runner], { autoAlpha: 0 }); }
 
-      /* 4 · شريط النبض (js/ticker.js): metrics with ▲▼ vs yesterday + latest activity */
-      if (window.AXTicker) AXTicker.create(sec.querySelector('.pxs-ticker'), { id: 'dash', variant: 'embed', label: 'شريط النبض: كل الأرقام وآخر الحركات', items: tickerItems() });
+      /* 4 · شريط النبض (js/ticker.js) — first thing on the dashboard */
+      if (window.AXTicker) {
+        var pc = document.getElementById('page-content');
+        var host = document.createElement('div'); host.id = 'axtk-dash'; host.className = 'axtk-host axtk-host--dash';
+        pc.insertBefore(host, pc.firstChild);
+        AXTicker.create(host, { id: 'dash', variant: 'bar', label: 'شريط النبض: كل الأرقام وآخر الحركات', items: tickerItems() });
+        // the hero / cash-flow blocks are inserted after us in the same render → keep the strip on top
+        Promise.resolve().then(function () { if (host.parentNode === pc && pc.firstChild !== host) pc.insertBefore(host, pc.firstChild); });
+      }
 
       /* intro */
       if (intro) {
         gsap.from('.pxs-wall-wrap', { rotationX: 70, y: -60, autoAlpha: 0, duration: 1.4, ease: 'expo.out' });
         gsap.from('.pxs-c', { scale: 0, autoAlpha: 0, duration: .5, ease: 'back.out(2)', stagger: { amount: .9, grid: [W.rows, W.cols], from: 'end' } });
         gsap.from('.pxs-cap, .pxs-gh', { y: 16, autoAlpha: 0, duration: .8, ease: 'power3.out', delay: .5, stagger: .1 });
-        gsap.from('.pxs-ticker', { autoAlpha: 0, duration: 1, delay: 1 });
         gsap.from('.pxs-tile', { y: 24, autoAlpha: 0, duration: .7, ease: 'power3.out', stagger: .07, delay: .3 });
         sec.querySelectorAll('.pxs-tv').forEach(function (b) {
           var txt = b.dataset.v, n = numOf(txt); if (!n || !/\d/.test(txt)) return;

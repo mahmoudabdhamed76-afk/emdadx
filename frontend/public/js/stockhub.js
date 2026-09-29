@@ -12,7 +12,7 @@
   'use strict';
 
   var WIN = 30;                     // consumption window (days)
-  var st = { cat: 'all', q: '', sort: 'cover' };
+  var st = { cat: 'all', q: '', sort: 'cover', tab: 'stock' };
 
   /* ── helpers ── */
   function D() { return (typeof DB !== 'undefined' && DB && DB.data) || {}; }
@@ -24,6 +24,7 @@
   function esc(s) { return (typeof escapeHtml === 'function') ? escapeHtml(s) : String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return '&#' + c.charCodeAt(0) + ';'; }); }
   function lds(d) { return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); }
   function parseD(s) { var p = String(s).slice(0, 10).split('-'); return new Date(+p[0], +p[1] - 1, +p[2]); }
+  function isAdj(m) { return /^تسوية جرد/.test(String(m.reference || m.note || '')); }   // stocktake corrections are not consumption
   function today0() { var d = new Date(); d.setHours(0, 0, 0, 0); return d; }
   function addDays(d, n) { var x = new Date(d); x.setDate(x.getDate() + n); return x; }
   function daysSince(s) { return Math.round((today0() - parseD(s)) / 864e5); }
@@ -88,7 +89,7 @@
       if (!m || !m.productId) return;
       var d = String(m.date || '').slice(0, 10);
       if (!lastMove[m.productId] || d > lastMove[m.productId]) lastMove[m.productId] = d;
-      if (m.type !== 'out' || d < from) return;
+      if (m.type !== 'out' || d < from || isAdj(m)) return;
       outs[m.productId] = (outs[m.productId] || 0) + Number(m.quantity || 0);
     });
     var items = A('products').map(function (p) {
@@ -147,15 +148,30 @@
       : soon ? '<span>أقرب صنف هيخلص</span><b>' + esc(soon.name) + '</b><em>' + (soon.cover < 1 ? 'النهارده' : weekday(soon.until) + ' ' + dayMonth(soon.until) + ' · بعد ' + Math.floor(soon.cover) + ' يوم') + '</em>'
       : '<span>المخزون مستقر</span><b>مفيش صنف قرب يخلص</b><em>على معدل السحب آخر ' + WIN + ' يوم</em>';
 
-    root.innerHTML =
-      '<div class="page-header skh-head"><div><h2 class="page-title">مخزوني</h2>' +
-        '<p class="page-subtitle">رصيد كل صنف، بيكفي لإمتى، ومين بيسحب منه</p></div>' +
+    var due = window.AXCount ? AXCount.dueCount() : 0;
+    var head =
+      '<div class="page-header skh-head"><div><h2 class="page-title">مخزوني وجرد</h2>' +
+        '<p class="page-subtitle">رصيد كل صنف، بيكفي لإمتى، مين بيسحب منه — وجرد ذكي يقولك تعدّ إيه الأول</p></div>' +
         '<div class="page-actions">' +
           '<button class="btn btn-secondary" onclick="openStockMoveForm(null,\'in\')">' + I.in + ' وارد</button>' +
           '<button class="btn btn-primary" onclick="openIssuanceForm()">' + I.send + ' صرف لمركز</button>' +
         '</div></div>' +
-
       '<div id="skh-ticker" class="axtk-host"></div>' +
+      '<div class="skh-tabs" role="tablist" aria-label="أقسام الصفحة">' +
+        '<button role="tab" aria-selected="' + (st.tab !== 'count') + '" class="' + (st.tab !== 'count' ? 'on' : '') + '" onclick="AXStock.tab(\'stock\')">' + icon('misc') + '<span>المخزون</span></button>' +
+        '<button role="tab" aria-selected="' + (st.tab === 'count') + '" class="' + (st.tab === 'count' ? 'on' : '') + '" onclick="AXStock.tab(\'count\')">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="m9 14 2 2 4-4"/></svg>' +
+          '<span>الجرد الذكي</span>' + (due ? '<em>' + due + '</em>' : '') + '</button>' +
+      '</div>';
+    if (st.tab === 'count' && window.AXCount) {
+      root.innerHTML = head + '<div id="skc-root"></div>';
+      st._items = items;
+      ticker(items);
+      AXCount.render(document.getElementById('skc-root'));
+      return;
+    }
+
+    root.innerHTML = head +
       '<section class="skh-hero">' +
         '<div class="skh-hero-ring">' + ring(pct) +
           '<div class="skh-ring-c"><b>' + Math.round(pct) + '%</b><span>أصناف مستقرة</span></div></div>' +
@@ -285,7 +301,7 @@
     var cnt = vals.map(function () { return 0; });
     A('stockMoves').forEach(function (m) {
       var k = String(m.date || '').slice(0, 10);
-      if (m.type === 'out' && idx[k] != null) { vals[idx[k]] += Number(m.quantity || 0) * (price[m.productId] || 0); cnt[idx[k]]++; }
+      if (m.type === 'out' && !isAdj(m) && idx[k] != null) { vals[idx[k]] += Number(m.quantity || 0) * (price[m.productId] || 0); cnt[idx[k]]++; }
     });
     AXChart.line(host, {
       labels: labels, height: window.innerWidth < 700 ? 190 : 220, title: 'قيمة المسحوب يومياً',
@@ -347,7 +363,7 @@
     var labels = [], vals = [], idx = {};
     for (var i = WIN - 1; i >= 0; i--) { var d = addDays(t0, -i); idx[lds(d)] = labels.length; labels.push(d.getDate() + '/' + (d.getMonth() + 1)); vals.push(0); }
     var moves = A('stockMoves').filter(function (m) { return m.productId === id; });
-    moves.forEach(function (m) { var k = String(m.date || '').slice(0, 10); if (m.type === 'out' && idx[k] != null) vals[idx[k]] += Number(m.quantity || 0); });
+    moves.forEach(function (m) { var k = String(m.date || '').slice(0, 10); if (m.type === 'out' && !isAdj(m) && idx[k] != null) vals[idx[k]] += Number(m.quantity || 0); });
     var who = {};
     A('issuances').forEach(function (s) {
       if (s.productId !== id || String(s.date || '') < lds(addDays(t0, -89))) return;
@@ -389,6 +405,8 @@
 
   window.AXStock = {
     detail: detail,
+    tab: function (t) { st.tab = t; renderStockHub(); var pc = document.getElementById('page-content'); if (pc) pc.scrollTop = 0; },
+    model: model, classify: classify, CATS: CATS, CAT: CAT, icon: icon, qty: qty, money: money, num: num,
     cat: function (k) { st.cat = k; document.querySelectorAll('.skh-chip').forEach(function (b) {
       var on = b.getAttribute('onclick').indexOf("'" + k + "'") > 0; b.classList.toggle('on', on); b.setAttribute('aria-selected', on); }); grid(); },
     sort: function (k) { st.sort = k; document.querySelectorAll('.skh-sort button').forEach(function (b) {

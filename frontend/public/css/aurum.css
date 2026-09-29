@@ -1884,3 +1884,338 @@ html.aurum .axtk--bar .axtk-view {
 }
 html.aurum .axtk--bar .axtk-live { width: 86px; justify-content: center; padding: 0 !important; background: none !important; box-shadow: inset 1px 0 0 rgba(255, 255, 255, .08); }
 @media (max-width: 600px) { html.aurum .axtk--bar .axtk-view { margin-right: 74px; } html.aurum .axtk--bar .axtk-live { width: 74px; } }
+
+/* ════════════════════════════════════════════════════════════════════
+   23. Pulse graph is interactive + the ticker leads the dashboard
+════════════════════════════════════════════════════════════════════ */
+html.aurum .axtk-host--dash { margin: 0 0 16px; }
+html.aurum .pxs-stage { height: 450px; }
+html.aurum .pxs-graph { bottom: 0; }
+html.aurum .pxs-plot { outline: none; }
+html.aurum .pxs-plot:focus-visible { box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .5); border-radius: 12px; }
+html.aurum .pxs-axd { font-size: 11.5px; fill: rgba(255, 255, 255, .45); }
+html.aurum .pxs-hit { fill: transparent; cursor: crosshair; touch-action: pan-y; }
+html.aurum .pxs-cross { stroke: rgba(255, 255, 255, .45); stroke-width: 1; stroke-dasharray: 3 4; opacity: 0; transition: opacity .15s; }
+html.aurum .pxs-focus { fill: var(--gc); stroke: #fff; stroke-width: 2.5; opacity: 0; filter: drop-shadow(0 0 8px var(--gc)); transition: opacity .15s; }
+html.aurum .pxs-hovering .pxs-cross, html.aurum .pxs-hovering .pxs-focus { opacity: 1; }
+html.aurum .pxs-hovering .pxs-runner, html.aurum .pxs-hovering .pxs-head, html.aurum .pxs-hovering .pxs-headglow { opacity: 0; transition: opacity .2s; }
+html.aurum .pxs-tip {
+  position: absolute; left: 0; top: 0; z-index: 5; pointer-events: none; min-width: 150px;
+  padding: 9px 12px; border-radius: 14px; color: #fff; text-align: start;
+  background: rgba(16, 14, 28, .88); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, .12), 0 12px 30px -8px rgba(0, 0, 0, .6), 0 0 24px -6px var(--gc);
+  opacity: 0; transform: translateY(6px); transition: opacity .15s, transform .15s var(--ax-ease);
+}
+html.aurum .pxs-tip.on { opacity: 1; transform: none; }
+html.aurum .pxs-tip-d { font-size: 11.5px; color: rgba(255, 255, 255, .6); }
+html.aurum .pxs-tip b { display: block; font: 800 21px/1.25 var(--ax-display); font-variant-numeric: tabular-nums; }
+html.aurum .pxs-tip-c { display: inline-block; margin-top: 3px; font-size: 11.5px; font-weight: 700; color: rgba(255, 255, 255, .55); }
+html.aurum .pxs-tip-c.good { color: #5CE89A; } html.aurum .pxs-tip-c.bad { color: #FF8A7A; }
+html.aurum .pxs-graph.is-hover .pxs-gval { color: var(--gc); }
+@media (max-width: 600px) { html.aurum .pxs-stage { height: 400px; } }
+
+/* ════════════════════════════════════════════════════════════════════
+   24. مخزوني وجرد — tabs + الجرد الذكي (js/stockcount.js)
+════════════════════════════════════════════════════════════════════ */
+html.aurum .skh-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 5px; margin: 0 0 14px; border-radius: 18px; background: var(--ax-surface); box-shadow: var(--ax-shadow); }
+html.aurum .skh-tabs button {
+  display: flex; align-items: center; justify-content: center; gap: 8px; border: 0; cursor: pointer; padding: 11px 10px; border-radius: 14px;
+  background: transparent; color: var(--ax-muted); font: 700 14px var(--ax-font); transition: background .2s, color .2s;
+}
+html.aurum .skh-tabs button svg { width: 19px; height: 19px; }
+html.aurum .skh-tabs button.on { background: var(--ax-ink); color: var(--ax-on-ink); }
+html.aurum .skh-tabs button em { font-style: normal; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 999px; display: grid; place-items: center; font-size: 12px; background: var(--ax-bad); color: #fff; }
+
+/* home */
+html.aurum .skc-hero { display: grid; grid-template-columns: auto 1fr; gap: 22px; align-items: center; background: var(--ax-deep); color: var(--ax-on-deep); border-radius: var(--ax-radius-lg); padding: 22px 24px; margin-bottom: 14px; box-shadow: var(--ax-shadow); }
+html.aurum[data-theme="dark"] .skc-hero { box-shadow: 0 0 0 1px var(--ax-line); }
+html.aurum .skc-hero-acc { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 136px; height: 136px; border-radius: 34px; background: rgba(255, 255, 255, .07); text-align: center; }
+html.aurum .skc-hero-acc span, html.aurum .skc-hero-acc small { font-size: 11.5px; color: var(--ax-deep-muted); }
+html.aurum .skc-hero-acc b { font: 800 38px/1.1 var(--ax-display); color: #5CE89A; text-shadow: 0 0 20px rgba(92, 232, 154, .4); }
+html.aurum .skc-hero-t { display: flex; flex-direction: column; gap: 4px; margin-bottom: 14px; }
+html.aurum .skc-hero-t b { font: 800 26px/1.2 var(--ax-display); }
+html.aurum .skc-hero-t span { font-size: 13px; color: var(--ax-deep-muted); }
+html.aurum .skc-abc { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+html.aurum .skc-abc > div { background: rgba(255, 255, 255, .07); border-radius: 14px; padding: 9px 12px; display: grid; grid-template-columns: auto 1fr; align-items: center; column-gap: 8px; }
+html.aurum .skc-abc i { grid-row: span 2; width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; font: 800 15px var(--ax-display); font-style: normal; }
+html.aurum .skc-abc i.a, html.aurum .skc-cls.a { background: rgba(255, 122, 107, .18); color: #FF8A7A; }
+html.aurum .skc-abc i.b, html.aurum .skc-cls.b { background: rgba(255, 194, 77, .18); color: #FFC24D; }
+html.aurum .skc-abc i.c, html.aurum .skc-cls.c { background: rgba(143, 184, 255, .18); color: #8FB8FF; }
+html.aurum .skc-abc b { font: 800 20px/1 var(--ax-display); }
+html.aurum .skc-abc span { font-size: 11px; color: var(--ax-deep-muted); }
+html.aurum .skc-cls { display: inline-grid; place-items: center; width: 20px; height: 20px; border-radius: 6px; font: 800 11.5px var(--ax-display); font-style: normal; vertical-align: 1px; margin-inline-start: 4px; }
+html.aurum[data-theme="light"] .skc-cls.a { background: var(--ax-bad-soft); color: var(--ax-bad); }
+html.aurum[data-theme="light"] .skc-cls.b { background: var(--ax-warn-soft); color: var(--ax-warn); }
+html.aurum[data-theme="light"] .skc-cls.c { background: var(--ax-blue-soft); color: var(--ax-blue); }
+
+html.aurum .skc-starts { display: grid; grid-template-columns: 1fr 1fr 1.4fr; gap: 12px; margin-bottom: 12px; }
+html.aurum .skc-start {
+  position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; text-align: start; border: 0; cursor: pointer;
+  background: var(--ax-surface); color: var(--ax-text); border-radius: var(--ax-radius); padding: 16px; box-shadow: var(--ax-shadow);
+  font-family: var(--ax-font); transition: transform .2s var(--ax-spring), box-shadow .2s;
+}
+html.aurum button.skc-start:hover { transform: translateY(-2px); box-shadow: var(--ax-shadow-lift); }
+html.aurum button.skc-start:disabled { opacity: .55; cursor: default; transform: none; }
+html.aurum .skc-start b { font: 800 19px var(--ax-display); }
+html.aurum .skc-start > span:not(.skc-si) { font-size: 12.5px; color: var(--ax-muted); }
+html.aurum .skc-si { width: 42px; height: 42px; border-radius: 13px; display: grid; place-items: center; background: var(--ax-surface-2); margin-bottom: 6px; }
+html.aurum .skc-si svg { width: 22px; height: 22px; }
+html.aurum .skc-start.is-rec { background: var(--ax-ink); color: var(--ax-on-ink); }
+html.aurum .skc-start.is-rec > span:not(.skc-si) { color: inherit; opacity: .7; }
+html.aurum .skc-start.is-rec .skc-si { background: rgba(127, 127, 127, .22); }
+html.aurum .skc-start em { position: absolute; top: 14px; left: 14px; font-style: normal; font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 999px; background: #5CE89A; color: #06301A; }
+html.aurum .skc-catbtns { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+html.aurum .skc-catbtns button { border: 0; cursor: pointer; border-radius: 999px; padding: 6px 11px; font: 700 12.5px var(--ax-font); background: var(--ts); color: var(--t); }
+html.aurum .skc-catbtns small { opacity: .7; }
+html.aurum .skc-opts { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+html.aurum .skc-opts .btn svg, html.aurum .skc-actions .btn svg { width: 16px; height: 16px; vertical-align: -3px; }
+html.aurum .skc-blind { display: flex; align-items: center; gap: 10px; cursor: pointer; margin: 0; }
+html.aurum .skc-blind input { width: 20px !important; height: 20px !important; min-height: 0 !important; accent-color: var(--ax-ink); margin: 0; flex: none; }
+html.aurum .skc-blind span { display: flex; flex-direction: column; }
+html.aurum .skc-blind b { font-size: 14px; } html.aurum .skc-blind small { font-size: 12px; color: var(--ax-muted); }
+html.aurum .skc-card { margin-bottom: 14px; }
+html.aurum .skc-prio, html.aurum .skc-hist { list-style: none; margin: 0; padding: 0; }
+html.aurum .skc-prio li { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--ax-line); }
+html.aurum .skc-prio li:last-child, html.aurum .skc-hist li:last-child button { border-bottom: 0; }
+html.aurum .skc-prio li:not(.due) { opacity: .6; }
+html.aurum .skc-pt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; }
+html.aurum .skc-pt b { font-size: 14px; }
+html.aurum .skc-why { display: flex; flex-wrap: wrap; gap: 5px; }
+html.aurum .skc-why span { font-size: 11.5px; font-weight: 600; padding: 3px 8px; border-radius: 999px; background: var(--ax-surface-2); color: var(--ax-muted); }
+html.aurum .skc-why .tone-bad, html.aurum .skc-var .tone-bad { color: var(--ax-bad); background: var(--ax-bad-soft); }
+html.aurum .skc-why .tone-warn, html.aurum .skc-var .tone-warn { color: var(--ax-warn); background: var(--ax-warn-soft); }
+html.aurum .skc-why .tone-ok, html.aurum .skc-var .tone-ok { color: var(--ax-ok); background: var(--ax-ok-soft); }
+html.aurum[data-theme="dark"] :is(.skc-why, .skc-var) .tone-bad { background: rgba(255, 107, 107, .12); }
+html.aurum[data-theme="dark"] :is(.skc-why, .skc-var) .tone-warn { background: rgba(255, 194, 77, .12); }
+html.aurum[data-theme="dark"] :is(.skc-why, .skc-var) .tone-ok { background: rgba(92, 232, 154, .1); }
+html.aurum .skc-pl { font-size: 12px; color: var(--ax-faint); white-space: nowrap; }
+html.aurum .skc-hist button { width: 100%; display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 12px 0; border: 0; border-bottom: 1px solid var(--ax-line); background: none; cursor: pointer; color: var(--ax-text); font-family: var(--ax-font); text-align: start; }
+html.aurum .skc-hist button > div { display: flex; flex-direction: column; }
+html.aurum .skc-hist b { font-size: 14px; } html.aurum .skc-hist span { font-size: 12px; color: var(--ax-faint); }
+html.aurum .skc-hv { align-items: flex-end; }
+html.aurum .skc-hv b { font: 800 20px var(--ax-display); }
+html.aurum :is(.skc-hv, .skc-appr, .skc-sum) b.ok { color: var(--ax-ok); } html.aurum :is(.skc-hv, .skc-appr, .skc-sum) b.warn { color: var(--ax-warn); } html.aurum :is(.skc-hv, .skc-appr, .skc-sum) b.bad { color: var(--ax-bad); }
+html.aurum #skc-trend { margin-bottom: 8px; }
+
+/* counting */
+html.aurum .skc-bar { background: var(--ax-deep); color: var(--ax-on-deep); border-radius: var(--ax-radius-lg); padding: 18px 20px; margin-bottom: 12px; box-shadow: var(--ax-shadow); position: sticky; top: 72px; z-index: 5; }
+html.aurum .skc-bar-t { display: flex; flex-direction: column; gap: 2px; }
+html.aurum .skc-bar-t span { font-size: 12px; color: var(--ax-deep-muted); }
+html.aurum .skc-bar-t b { font: 800 24px/1.2 var(--ax-display); }
+html.aurum .skc-prog { display: flex; align-items: center; gap: 10px; margin: 12px 0; }
+html.aurum .skc-prog-bar { flex: 1; height: 8px; border-radius: 999px; background: rgba(255, 255, 255, .12); overflow: hidden; }
+html.aurum .skc-prog-bar i { display: block; height: 100%; width: 0; border-radius: inherit; background: #5CE89A; box-shadow: 0 0 12px #5CE89A; transition: width .4s var(--ax-ease); }
+html.aurum .skc-prog span { font-size: 12.5px; font-weight: 700; white-space: nowrap; }
+html.aurum .skc-sum { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+html.aurum .skc-sum > div { background: rgba(255, 255, 255, .07); border-radius: 12px; padding: 8px 10px; }
+html.aurum .skc-sum span { display: block; font-size: 11px; color: var(--ax-deep-muted); }
+html.aurum .skc-sum b { font: 800 18px/1.2 var(--ax-display); font-variant-numeric: tabular-nums; }
+html.aurum .skc-bar .skc-sum b.ok { color: #5CE89A; } html.aurum .skc-bar .skc-sum b.warn { color: #FFC24D; } html.aurum .skc-bar .skc-sum b.bad { color: #FF8A7A; }
+html.aurum .skc-tools { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+html.aurum .skc-tools .skh-search { flex: 1 1 200px; }
+html.aurum .skc-blind.sm { background: var(--ax-surface); padding: 9px 12px; border-radius: 14px; box-shadow: var(--ax-shadow); }
+html.aurum .skc-lines { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 10px; margin-bottom: 14px; }
+html.aurum .skc-line { background: var(--ax-surface); border-radius: var(--ax-radius); padding: 14px; box-shadow: var(--ax-shadow); display: flex; flex-direction: column; gap: 10px; border-inline-start: 4px solid transparent; transition: border-color .25s; }
+html.aurum .skc-line.is-match { border-inline-start-color: var(--ax-ok); }
+html.aurum .skc-line.is-diff { border-inline-start-color: var(--ax-warn); }
+html.aurum .skc-line header { display: flex; align-items: center; gap: 10px; }
+html.aurum .skc-lt { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+html.aurum .skc-lt b { font-size: 14.5px; font-weight: 700; } html.aurum .skc-lt span { font-size: 11.5px; color: var(--ax-faint); }
+html.aurum .skc-state { font-size: 11.5px; font-weight: 700; padding: 4px 10px; border-radius: 999px; background: var(--ax-surface-2); color: var(--ax-faint); }
+html.aurum .is-match .skc-state { background: var(--ax-ok-soft); color: var(--ax-ok); }
+html.aurum .is-diff .skc-state { background: var(--ax-warn-soft); color: var(--ax-warn); }
+html.aurum[data-theme="dark"] .is-match .skc-state { background: rgba(92, 232, 154, .1); }
+html.aurum[data-theme="dark"] .is-diff .skc-state { background: rgba(255, 194, 77, .12); }
+html.aurum .skc-lb { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; }
+html.aurum .skc-exp { display: flex; flex-direction: column; min-width: 74px; }
+html.aurum .skc-exp span { font-size: 11px; color: var(--ax-faint); }
+html.aurum .skc-exp b { font: 800 20px/1.1 var(--ax-display); font-variant-numeric: tabular-nums; }
+html.aurum .skc-exp small { font-size: 10.5px; color: var(--ax-blue); }
+html.aurum .skc-in { display: flex; align-items: center; background: var(--ax-input); border-radius: 14px; overflow: hidden; }
+html.aurum .skc-in button { width: 40px; height: 46px; border: 0; background: transparent; color: var(--ax-text); font: 700 20px var(--ax-font); cursor: pointer; flex: none; }
+html.aurum .skc-in button:active { background: var(--ax-active); }
+html.aurum .skc-in input { flex: 1; min-width: 0 !important; width: 100% !important; text-align: center; border: 0 !important; background: transparent !important; box-shadow: none !important; font: 800 20px var(--ax-display) !important; color: var(--ax-text) !important; padding: 0 !important; height: 46px; -moz-appearance: textfield; }
+html.aurum .skc-in input::-webkit-outer-spin-button, html.aurum .skc-in input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+html.aurum .skc-in:focus-within { box-shadow: 0 0 0 2px var(--ax-ink); }
+html.aurum .skc-match { display: inline-flex; align-items: center; gap: 5px; height: 46px; padding: 0 12px; border: 0; border-radius: 14px; cursor: pointer; background: var(--ax-ok-soft); color: var(--ax-ok); font: 700 13px var(--ax-font); }
+html.aurum[data-theme="dark"] .skc-match { background: rgba(92, 232, 154, .1); }
+html.aurum .skc-match svg { width: 15px; height: 15px; }
+html.aurum .skc-var:empty { display: none; }
+html.aurum .skc-var { display: flex; flex-direction: column; gap: 6px; }
+html.aurum .skc-var b { font: 800 16px var(--ax-display); font-variant-numeric: tabular-nums; }
+html.aurum .skc-var b.plus { color: var(--ax-ok); } html.aurum .skc-var b.minus { color: var(--ax-bad); }
+html.aurum .skc-var span { font-size: 12px; font-weight: 600; padding: 6px 10px; border-radius: 10px; line-height: 1.6; }
+html.aurum .skc-actions { display: flex; gap: 10px; flex-wrap: wrap; position: sticky; bottom: 12px; z-index: 5; padding: 10px; border-radius: 20px; background: var(--ax-surface); box-shadow: var(--ax-shadow-lift); }
+html.aurum .skc-actions .btn-primary { flex: 1 1 200px; }
+html.aurum .skc-cancel { color: var(--ax-bad) !important; }
+html.aurum .skc-appr { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 12px; }
+html.aurum .skc-appr > div { background: var(--ax-surface-2); border-radius: 14px; padding: 10px 12px; }
+html.aurum .skc-appr span { display: block; font-size: 11.5px; color: var(--ax-muted); }
+html.aurum .skc-appr b { font: 800 18px/1.3 var(--ax-display); }
+html.aurum .skc-tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
+html.aurum .skc-tbl th { text-align: start; font-size: 12px; color: var(--ax-muted); font-weight: 600; padding: 8px; border-bottom: 1px solid var(--ax-line); }
+html.aurum .skc-tbl td { padding: 9px 8px; border-bottom: 1px solid var(--ax-line); font-variant-numeric: tabular-nums; }
+html.aurum .skc-tbl td.plus { color: var(--ax-ok); font-weight: 700; } html.aurum .skc-tbl td.minus { color: var(--ax-bad); font-weight: 700; }
+
+@media (max-width: 900px) { html.aurum .skc-starts { grid-template-columns: 1fr 1fr; } html.aurum .skc-start-cat { grid-column: 1 / -1; } }
+@media (max-width: 600px) {
+  html.aurum .skc-hero { grid-template-columns: 1fr; padding: 18px; }
+  html.aurum .skc-hero-acc { width: 100%; height: auto; flex-direction: row; gap: 10px; padding: 12px; border-radius: 18px; justify-content: flex-start; }
+  html.aurum .skc-hero-acc b { font-size: 30px; }
+  html.aurum .skc-hero-t b { font-size: 21px; }
+  html.aurum .skc-starts { grid-template-columns: 1fr; }
+  html.aurum .skc-lines { grid-template-columns: 1fr; }
+  html.aurum .skc-sum, html.aurum .skc-appr { grid-template-columns: 1fr 1fr; }
+  html.aurum .skc-bar { position: static; padding: 14px; }
+  html.aurum .skc-bar .skc-sum { grid-template-columns: repeat(4, 1fr); gap: 5px; }
+  html.aurum .skc-bar .skc-sum > div { padding: 6px 7px; }
+  html.aurum .skc-bar .skc-sum b { font-size: 15px; }
+  html.aurum .skc-actions { bottom: calc(84px + env(safe-area-inset-bottom, 0px)); }
+}
+@media (max-width: 600px) {
+  html.aurum .skc-actions { flex-wrap: nowrap; padding: 8px; gap: 6px; }
+  html.aurum .skc-actions .btn-primary { flex: 1 1 auto; }
+  html.aurum .skc-print span, html.aurum .skc-cancel span { display: none; }
+  html.aurum .skc-print { width: 46px; padding: 0 !important; justify-content: center; }
+}
+html.aurum .skc-var bdi { unicode-bidi: isolate; }
+html.aurum .skc-hero-acc b.warn { color: #FFC24D; text-shadow: 0 0 20px rgba(255, 194, 77, .4); }
+html.aurum .skc-hero-acc b.bad { color: #FF8A7A; text-shadow: 0 0 20px rgba(255, 107, 107, .4); }
+
+/* ════════════════════════════════════════════════════════════════════
+   25. سداد المديونية (js/debts.js)
+════════════════════════════════════════════════════════════════════ */
+html.aurum .dbt-empty { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px; padding: 40px 22px; border-radius: var(--ax-radius-lg); background: var(--ax-surface); box-shadow: var(--ax-shadow); }
+html.aurum .dbt-empty-ic { width: 72px; height: 72px; border-radius: 22px; display: grid; place-items: center; background: var(--ax-warn-soft); color: var(--ax-warn); }
+html.aurum .dbt-empty-ic svg { width: 38px; height: 38px; }
+html.aurum .dbt-empty b { font: 800 24px var(--ax-display); }
+html.aurum .dbt-empty span { max-width: 560px; color: var(--ax-muted); font-size: 14px; line-height: 1.9; }
+html.aurum .dbt-empty-act { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 6px; }
+
+html.aurum .dbt-hero { display: grid; grid-template-columns: auto 1fr; gap: 26px; align-items: center; background: var(--ax-deep); color: var(--ax-on-deep); border-radius: var(--ax-radius-lg); padding: 24px 26px; margin-bottom: 14px; box-shadow: var(--ax-shadow); }
+html.aurum[data-theme="dark"] .dbt-hero { box-shadow: 0 0 0 1px var(--ax-line); }
+html.aurum .dbt-ring { position: relative; width: 140px; height: 140px; }
+html.aurum .dbt-ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+html.aurum .dbt-ring-t { fill: none; stroke: rgba(255, 255, 255, .1); stroke-width: 10; }
+html.aurum .dbt-ring-b { fill: none; stroke: #FFC24D; stroke-width: 10; stroke-linecap: round; filter: drop-shadow(0 0 8px rgba(255, 194, 77, .6)); transition: stroke-dashoffset 1s var(--ax-ease); }
+html.aurum .dbt-ring-c { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; }
+html.aurum .dbt-ring-c b { font: 800 32px/1 var(--ax-display); } html.aurum .dbt-ring-c span { font-size: 11.5px; color: var(--ax-deep-muted); margin-top: 3px; }
+html.aurum .dbt-eyebrow { font-size: 12.5px; color: var(--ax-deep-muted); }
+html.aurum .dbt-total { display: block; font: 800 40px/1.15 var(--ax-display); font-variant-numeric: tabular-nums; }
+html.aurum .dbt-free { display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px 10px; margin: 6px 0 14px; font-size: 13.5px; color: var(--ax-deep-muted); }
+html.aurum .dbt-free b { font: 800 22px var(--ax-display); color: #5CE89A; }
+html.aurum .dbt-free b.bad { color: #FF8A7A; font-size: 18px; } html.aurum .dbt-free b.ok { color: #5CE89A; }
+html.aurum .dbt-free em { font-style: normal; font-size: 12px; padding: 3px 9px; border-radius: 999px; background: rgba(92, 232, 154, .14); color: #5CE89A; }
+html.aurum .dbt-hero-figs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+html.aurum .dbt-hero-figs > div { background: rgba(255, 255, 255, .07); border-radius: 14px; padding: 9px 12px; min-width: 0; }
+html.aurum .dbt-hero-figs span { display: block; font-size: 11.5px; color: var(--ax-deep-muted); }
+html.aurum .dbt-hero-figs b { font: 800 19px/1.25 var(--ax-display); font-variant-numeric: tabular-nums; }
+html.aurum .dbt-hero-figs small { font: 600 11px var(--ax-font); color: var(--ax-deep-muted); }
+
+html.aurum .dbt-plan { margin-bottom: 14px; }
+html.aurum .dbt-link { border: 0; background: none; cursor: pointer; color: var(--ax-muted); font: 600 12.5px var(--ax-font); display: inline-flex; align-items: center; gap: 5px; }
+html.aurum .dbt-link svg { width: 16px; height: 16px; }
+html.aurum .dbt-budget label { display: block; font-size: 13px; font-weight: 700; color: var(--ax-muted); margin-bottom: 8px; }
+html.aurum .dbt-bin { display: flex; align-items: center; gap: 10px; background: var(--ax-input); border-radius: 16px; padding: 4px 16px; }
+html.aurum .dbt-bin input { flex: 1; min-width: 0 !important; border: 0 !important; background: transparent !important; box-shadow: none !important; padding: 8px 0 !important; font: 800 30px var(--ax-display) !important; color: var(--ax-text) !important; -moz-appearance: textfield; }
+html.aurum .dbt-bin input::-webkit-outer-spin-button, html.aurum .dbt-bin input::-webkit-inner-spin-button { -webkit-appearance: none; }
+html.aurum .dbt-bin span { font-size: 13px; color: var(--ax-muted); white-space: nowrap; }
+html.aurum .dbt-bin:focus-within { box-shadow: 0 0 0 2px var(--ax-ink); }
+html.aurum .dbt-range { width: 100%; margin: 14px 0 4px; accent-color: var(--ax-warn); height: 28px; }
+html.aurum .dbt-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+html.aurum .dbt-chips button { display: flex; flex-direction: column; align-items: flex-start; border: 0; cursor: pointer; padding: 8px 14px; border-radius: 14px; background: var(--ax-surface-2); color: var(--ax-text); font-family: var(--ax-font); text-align: start; transition: background .2s; }
+html.aurum .dbt-chips button:hover { background: var(--ax-surface-3); }
+html.aurum .dbt-chips b { font: 800 16px var(--ax-display); } html.aurum .dbt-chips span { font-size: 11.5px; color: var(--ax-muted); }
+html.aurum .dbt-cf { font-size: 12.5px; color: var(--ax-muted); margin: 12px 0 0; line-height: 1.8; }
+html.aurum .dbt-cf b { color: var(--ax-text); }
+html.aurum .dbt-strat { margin: 16px 0 6px; padding-top: 14px; border-top: 1px solid var(--ax-line); }
+html.aurum .dbt-strat > span { display: block; font-size: 13px; font-weight: 700; color: var(--ax-muted); margin-bottom: 8px; }
+html.aurum .dbt-strat p { font-size: 12.5px; color: var(--ax-muted); margin: 8px 0 0; }
+html.aurum .dbt-res { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 14px 0 10px; }
+html.aurum .dbt-res > div { background: var(--ax-surface-2); border-radius: 14px; padding: 10px 12px; min-width: 0; }
+html.aurum .dbt-res span { display: block; font-size: 11.5px; color: var(--ax-muted); }
+html.aurum .dbt-res b { font: 800 18px/1.3 var(--ax-display); }
+html.aurum .dbt-res b.ok { color: var(--ax-ok); } html.aurum .dbt-res b.warn { color: var(--ax-warn); }
+html.aurum .dbt-whatif, html.aurum .dbt-warn { display: flex; align-items: center; gap: 10px; padding: 11px 14px; border-radius: 14px; margin-bottom: 8px; font-size: 13px; line-height: 1.7; }
+html.aurum .dbt-whatif { background: var(--ax-ok-soft); color: var(--ax-text); }
+html.aurum .dbt-whatif svg { width: 20px; height: 20px; color: var(--ax-ok); flex: none; }
+html.aurum .dbt-whatif span { flex: 1; } html.aurum .dbt-whatif b { color: var(--ax-ok); }
+html.aurum .dbt-whatif button { border: 0; cursor: pointer; padding: 7px 14px; border-radius: 999px; background: var(--ax-ok); color: #fff; font: 700 12.5px var(--ax-font); flex: none; }
+html.aurum .dbt-warn { background: var(--ax-bad-soft); color: var(--ax-text); }
+html.aurum .dbt-warn svg { width: 20px; height: 20px; color: var(--ax-bad); flex: none; }
+html.aurum[data-theme="dark"] .dbt-whatif { background: rgba(92, 232, 154, .1); }
+html.aurum[data-theme="dark"] .dbt-warn { background: rgba(255, 107, 107, .1); }
+html.aurum .dbt-chart { margin-top: 8px; }
+
+html.aurum .dbt-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; margin-bottom: 14px; }
+html.aurum .dbt-card { background: var(--ax-surface); border-radius: var(--ax-radius); padding: 16px; box-shadow: var(--ax-shadow); display: flex; flex-direction: column; gap: 12px; }
+html.aurum .dbt-card.is-done { opacity: .75; }
+html.aurum .dbt-card header { display: flex; align-items: center; gap: 10px; }
+html.aurum .dbt-ic { width: 42px; height: 42px; border-radius: 13px; display: grid; place-items: center; flex: none; background: var(--ax-surface-2); color: var(--ax-text); }
+html.aurum .dbt-ic svg { width: 21px; height: 21px; }
+html.aurum .dbt-ic.k-supplier { background: var(--ax-violet-soft); color: var(--ax-violet); }
+html.aurum .dbt-ic.k-bank { background: var(--ax-blue-soft); color: var(--ax-blue); }
+html.aurum .dbt-ic.k-person { background: var(--ax-pink-soft); color: var(--ax-pink); }
+html.aurum .dbt-ic.k-rent { background: var(--ax-teal-soft); color: var(--ax-teal); }
+html.aurum .dbt-ic.k-other { background: var(--ax-warn-soft); color: var(--ax-warn); }
+html.aurum .dbt-ct { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+html.aurum .dbt-ct b { font-size: 15px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+html.aurum .dbt-ct span { font-size: 11.5px; color: var(--ax-faint); }
+html.aurum .dbt-st { flex: none; font-size: 11.5px; font-weight: 700; padding: 4px 10px; border-radius: 999px; background: var(--ax-surface-2); color: var(--ax-muted); }
+html.aurum .dbt-st.ok { background: var(--ax-ok-soft); color: var(--ax-ok); }
+html.aurum .dbt-st.warn { background: var(--ax-warn-soft); color: var(--ax-warn); }
+html.aurum .dbt-st.bad { background: var(--ax-bad-soft); color: var(--ax-bad); }
+html.aurum[data-theme="dark"] .dbt-st.ok { background: rgba(92, 232, 154, .1); } html.aurum[data-theme="dark"] .dbt-st.warn { background: rgba(255, 194, 77, .12); } html.aurum[data-theme="dark"] .dbt-st.bad { background: rgba(255, 107, 107, .12); }
+html.aurum .dbt-amt { display: grid; grid-template-columns: 1.3fr 1fr 1fr; gap: 8px; }
+html.aurum .dbt-amt span { display: block; font-size: 11px; color: var(--ax-faint); }
+html.aurum .dbt-amt b { font: 800 20px/1.2 var(--ax-display); font-variant-numeric: tabular-nums; white-space: nowrap; }
+html.aurum .dbt-amt b.mut { font-size: 15px; color: var(--ax-muted); }
+html.aurum .dbt-bar { height: 8px; border-radius: 999px; background: var(--ax-surface-2); overflow: hidden; }
+html.aurum .dbt-bar i { display: block; height: 100%; border-radius: inherit; background: var(--ax-warn); box-shadow: 0 0 10px var(--ax-warn); transform-origin: right; animation: skh-grow .9s var(--ax-ease) both; }
+html.aurum .is-done .dbt-bar i { background: var(--ax-ok); box-shadow: 0 0 10px var(--ax-ok); }
+html.aurum .dbt-bar-l { display: flex; justify-content: space-between; font-size: 11.5px; color: var(--ax-faint); margin-top: -6px; }
+html.aurum .dbt-card footer { display: flex; gap: 6px; }
+html.aurum .dbt-card footer button { border: 0; cursor: pointer; border-radius: 12px; padding: 9px 12px; background: var(--ax-surface-2); color: var(--ax-text); font: 600 12.5px var(--ax-font); display: inline-flex; align-items: center; gap: 6px; }
+html.aurum .dbt-card footer button:hover { background: var(--ax-surface-3); }
+html.aurum .dbt-card footer .dbt-pay { flex: 1; justify-content: center; background: var(--ax-ink); color: var(--ax-on-ink); }
+html.aurum .dbt-card footer .del { color: var(--ax-bad); margin-inline-start: auto; }
+html.aurum .dbt-card footer svg { width: 15px; height: 15px; }
+
+html.aurum .dbt-tw { overflow-x: auto; overscroll-behavior-x: contain; }
+html.aurum .dbt-tbl { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+html.aurum .dbt-tbl th { text-align: start; font-size: 12px; font-weight: 600; color: var(--ax-muted); padding: 9px 10px; border-bottom: 1px solid var(--ax-line); white-space: nowrap; position: sticky; top: 0; background: var(--ax-surface); }
+html.aurum .dbt-tbl td { padding: 9px 10px; border-bottom: 1px solid var(--ax-line); white-space: nowrap; }
+html.aurum .dbt-tbl tr.now td { background: var(--ax-warn-soft); }
+html.aurum[data-theme="dark"] .dbt-tbl tr.now td { background: rgba(255, 194, 77, .08); }
+html.aurum .dbt-tbl .z { color: var(--ax-faint); }
+html.aurum .dbt-tbl .fin { font-style: normal; color: var(--ax-ok); font-weight: 800; }
+
+html.aurum .dbt-hint { font-size: 12.5px; color: var(--ax-muted); background: var(--ax-surface-2); padding: 9px 12px; border-radius: 12px; margin: 0 0 12px; line-height: 1.7; }
+html.aurum .dbt-check { display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 13.5px; }
+html.aurum .dbt-check input, html.aurum .dbt-imp input { width: 20px !important; height: 20px !important; min-height: 0 !important; accent-color: var(--ax-ink); margin: 0; flex: none; }
+html.aurum .dbt-imp { display: flex; flex-direction: column; gap: 6px; }
+html.aurum .dbt-imp label { display: flex; align-items: center; gap: 10px; padding: 11px 12px; border-radius: 14px; background: var(--ax-surface-2); cursor: pointer; }
+html.aurum .dbt-imp span { flex: 1; font-weight: 600; } html.aurum .dbt-imp b { font-family: var(--ax-display); font-size: 16px; }
+html.aurum .dbt-payhead { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+html.aurum .dbt-payhead > div { background: var(--ax-surface-2); border-radius: 14px; padding: 10px 12px; }
+html.aurum .dbt-payhead span { display: block; font-size: 11.5px; color: var(--ax-muted); } html.aurum .dbt-payhead b { font: 800 19px var(--ax-display); }
+html.aurum .dbt-quick { display: flex; flex-wrap: wrap; gap: 6px; margin: -6px 0 12px; }
+html.aurum .dbt-quick button { border: 0; cursor: pointer; border-radius: 999px; padding: 6px 12px; background: var(--ax-surface-2); color: var(--ax-text); font: 600 12.5px var(--ax-font); }
+html.aurum .dbt-hist { list-style: none; margin: 0; padding: 0; }
+html.aurum .dbt-hist li { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 11px 0; border-bottom: 1px solid var(--ax-line); }
+html.aurum .dbt-hist li > div { display: flex; flex-direction: column; } html.aurum .dbt-hist b { font: 800 18px var(--ax-display); } html.aurum .dbt-hist span { font-size: 12px; color: var(--ax-faint); }
+html.aurum .dbt-hist button { border: 0; background: var(--ax-bad-soft); color: var(--ax-bad); width: 36px; height: 36px; border-radius: 10px; cursor: pointer; display: grid; place-items: center; }
+html.aurum .dbt-hist button svg { width: 16px; height: 16px; }
+html.aurum .dbt-head .page-actions .btn { white-space: nowrap; }
+
+@media (max-width: 900px) { html.aurum .dbt-res { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 600px) {
+  html.aurum .dbt-hero { grid-template-columns: 1fr; padding: 18px; gap: 14px; }
+  html.aurum .dbt-ring { width: 110px; height: 110px; }
+  html.aurum .dbt-total { font-size: 32px; }
+  html.aurum .dbt-hero-figs { grid-template-columns: 1fr 1fr; }
+  html.aurum .dbt-hero-figs > div:last-child { grid-column: 1 / -1; }
+  html.aurum .dbt-list { grid-template-columns: 1fr; }
+  html.aurum .dbt-bin input { font-size: 26px !important; }
+  html.aurum .dbt-whatif { flex-wrap: wrap; }
+}

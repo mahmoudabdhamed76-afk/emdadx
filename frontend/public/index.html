@@ -9655,7 +9655,7 @@ audio::-webkit-media-controls-panel { background: rgba(15,23,42,.9); }
 
     <footer class="app-footer">
       <div>جميع الحقوق محفوظة © 2026 إمداد إكس</div>
-      <div class="version">الإصدار 4.4</div>
+      <div class="version">الإصدار 4.5</div>
     </footer>
   </div>
 </div>
@@ -10058,6 +10058,7 @@ const SyncEngine = (() => {
       payments:  typeof renderPayments  === 'function' ? renderPayments  : null,
       inventory: typeof renderInventory === 'function' ? renderInventory : null,
       stock:     typeof renderStockHub  === 'function' ? renderStockHub  : null,
+      debts:     typeof renderDebts     === 'function' ? renderDebts     : null,
       suppliers: typeof renderSuppliers === 'function' ? renderSuppliers : null,
       issuances: typeof renderIssuances === 'function' ? renderIssuances : null,
       expenses:  typeof renderExpenses  === 'function' ? renderExpenses  : null,
@@ -10327,8 +10328,8 @@ function normalizeArabic(s) {
 let currentUser = null;
 const ROLE_LABELS = { admin: 'مدير النظام', accountant: 'محاسب', sales: 'موظف مبيعات' };
 const PERMISSIONS = {
-  admin: ['dashboard','customers','issuances','invoices','payments','transfers','suppliers','inventory','stock','expenses','reports','aiassistant','users','audit','settings'],
-  accountant: ['dashboard','customers','issuances','invoices','payments','transfers','suppliers','expenses','reports','aiassistant'],
+  admin: ['dashboard','customers','issuances','invoices','payments','transfers','debts','suppliers','inventory','stock','expenses','reports','aiassistant','users','audit','settings'],
+  accountant: ['dashboard','customers','issuances','invoices','payments','transfers','debts','suppliers','expenses','reports','aiassistant'],
   sales: ['dashboard','customers','issuances','invoices','payments','inventory','stock','aiassistant']
 };
 function can(page) { return currentUser && PERMISSIONS[currentUser.role].includes(page); }
@@ -10856,9 +10857,10 @@ const NAV_ITEMS = [
   { key: 'invoices', label: 'الفواتير', color: '#06b6d4', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>', section: 'main' },
   { key: 'payments', label: 'التحصيل والمديونيات', color: '#f59e0b', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>', section: 'main' },
   { key: 'transfers', label: 'التحويلات البنكية', color: '#ec4899', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 10h18"/><path d="M3 14h18"/><path d="M5 21V3"/><path d="M19 21V3"/><circle cx="12" cy="12" r="3"/></svg>', section: 'main' },
+  { key: 'debts', label: 'سداد المديونية', color: '#F59E0B', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/></svg>', section: 'main' },
   { key: 'suppliers', label: 'الموردين', color: '#f97316', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M16 3h5v5"/><path d="M8 3H3v5"/><path d="M3 16v5h5"/><path d="M16 21h5v-5"/><circle cx="12" cy="12" r="3"/><path d="M12 1v4"/><path d="M12 19v4"/></svg>', section: 'main' },
   { key: 'inventory', label: 'المخازن', color: '#84cc16', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>', section: 'ops' },
-  { key: 'stock', label: 'مخزوني', color: '#00A9A0', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="5"/><path d="M8 16v-3M12 16V8M16 16v-6"/></svg>', section: 'ops' },
+  { key: 'stock', label: 'مخزوني وجرد', color: '#00A9A0', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="5"/><path d="M8 16v-3M12 16V8M16 16v-6"/></svg>', section: 'ops' },
   { key: 'expenses', label: 'المصروفات', color: '#ef4444', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>', section: 'ops' },
   { key: 'reports', label: 'التقارير', color: '#a855f7', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>', section: 'ops' },
   { key: 'aiassistant', label: 'المساعد الذكي', color: '#34d399', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" y1="16" x2="8" y2="16"/><line x1="16" y1="16" x2="16" y2="16"/></svg>', section: 'ops' },
@@ -10964,7 +10966,7 @@ function navigate(page, isBack) {
   currentPage = page;
   renderSidebar();
   toggleSidebar(false);
-  const titles = { dashboard:'لوحة التحكم', customers:'العملاء والمراكز', issuances:'صرف الورق للمراكز', invoices:'الفواتير', payments:'التحصيل والمديونيات', transfers:'التحويلات البنكية', suppliers:'الموردين', inventory:'إدارة المخازن', stock:'مخزوني', expenses:'المصروفات', reports:'التقارير', aiassistant:'المساعد الذكي', users:'إدارة المستخدمين', audit:'سجل التعديلات الذكي', settings:'الإعدادات' };
+  const titles = { dashboard:'لوحة التحكم', customers:'العملاء والمراكز', issuances:'صرف الورق للمراكز', invoices:'الفواتير', payments:'التحصيل والمديونيات', transfers:'التحويلات البنكية', debts:'سداد المديونية', suppliers:'الموردين', inventory:'إدارة المخازن', stock:'مخزوني وجرد', expenses:'المصروفات', reports:'التقارير', aiassistant:'المساعد الذكي', users:'إدارة المستخدمين', audit:'سجل التعديلات الذكي', settings:'الإعدادات' };
   document.getElementById('topbar-title').innerText = titles[page] || '';
 
   const pc = document.getElementById('page-content');
@@ -10977,7 +10979,7 @@ function navigate(page, isBack) {
   }
 
   const doRender = () => {
-    const renderers = { dashboard: renderDashboard, customers: renderCustomers, issuances: renderIssuances, invoices: renderInvoices, payments: renderPayments, transfers: renderTransfersPage, suppliers: renderSuppliers, inventory: renderInventory, stock: (typeof renderStockHub === 'function' ? renderStockHub : renderDashboard), expenses: renderExpenses, reports: renderReports, aiassistant: renderAIAssistant, users: renderUsers, audit: renderAuditLog, settings: renderSettings };
+    const renderers = { dashboard: renderDashboard, customers: renderCustomers, issuances: renderIssuances, invoices: renderInvoices, payments: renderPayments, transfers: renderTransfersPage, debts: (typeof renderDebts === 'function' ? renderDebts : renderDashboard), suppliers: renderSuppliers, inventory: renderInventory, stock: (typeof renderStockHub === 'function' ? renderStockHub : renderDashboard), expenses: renderExpenses, reports: renderReports, aiassistant: renderAIAssistant, users: renderUsers, audit: renderAuditLog, settings: renderSettings };
     (renderers[page] || renderDashboard)();
     updateBackButton();
     updateHomeFab();
@@ -26140,6 +26142,8 @@ function exportSuppliersCSV() {
 <script src="js/aurum.js"></script>
 <script src="js/ticker.js"></script>
 <script src="js/stockhub.js"></script>
+<script src="js/stockcount.js"></script>
+<script src="js/debts.js"></script>
 <script src="vendor/gsap.min.js"></script>
 <script src="js/pulsescene.js"></script>
 </body>
