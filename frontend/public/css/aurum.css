@@ -1888,29 +1888,4 @@ html.aurum .pxs-tile.on .pxs-go { display: inline-flex; }
   }
   html.aurum .modal label:has(> input:is([type="checkbox"], [type="radio"])) { flex: 1 1 auto; min-width: 0; }
 }
-html.aurum .skh-search #skh-q, html.aurum .skh-search input[type="search"] { background: transparent !important; border: 0 !important; box-shadow: none !important; border-radius: 0 !important; }
-
-/* ════════════════════════════════════════════════════════════════════
-   23. MOBILE: no side gutters — cards, tables and panels run edge to edge;
-   only plain text blocks (titles, action rows, tabs) keep an inner inset
-════════════════════════════════════════════════════════════════════ */
-@media (max-width: 768px) {
-  html.aurum .page-content, html.aurum #page-content { padding-left: 0 !important; padding-right: 0 !important; }
-  html.aurum #page-content > :is(.page-header, .section-action-bar, .tabs, .skh-controls, .qa-section, .sup-tabs, .smart-alerts-bar) {
-    padding-inline: 14px !important; margin-inline: 0 !important;
-  }
-  html.aurum #page-content > :is(.page-header, .section-action-bar) { box-sizing: border-box; width: 100%; }
-  /* full-bleed surfaces */
-  html.aurum #page-content > *, html.aurum #page-content :is(.dash-row, .kpi-grid-v3, .kpi-bar, .stats-grid, .dash-bigcards, .skh-grid, .skh-row) {
-    margin-left: 0 !important; margin-right: 0 !important; max-width: 100% !important;
-  }
-  html.aurum #page-content :is(.dash-row, .kpi-grid-v3, .kpi-bar, .stats-grid, .dash-bigcards, .skh-grid, .skh-row) { padding-left: 0 !important; padding-right: 0 !important; }
-  html.aurum #page-content :is(.filter-bar, .table-wrap, .backup-reminder-banner) { border-left-width: 0 !important; border-right-width: 0 !important; }
-  /* inner insets so text inside the edge-to-edge panels never touches the glass */
-  html.aurum #page-content :is(.dash-card, .card, .table-wrap, .filter-bar, .settings-card) { padding-inline: max(16px, var(--pad-x, 0px)); }
-  html.aurum #page-content .table-wrap { padding-inline: 0; }
-  html.aurum #page-content .table-wrap table th:first-child, html.aurum #page-content .table-wrap table td:first-child { padding-inline-start: 16px !important; }
-  html.aurum #page-content .table-wrap table th:last-child, html.aurum #page-content .table-wrap table td:last-child { padding-inline-end: 16px !important; }
-  /* the dashboard hero no longer needs its own negative margins */
-  html.aurum .ax-hero, html.aurum .pxs, html.aurum .skh-hero { margin-left: 0 !important; margin-right: 0 !important; }
-}
+html.aurum .skh-search input[type="search"] { background: transparent !important; border: 0 !important; box-shadow: none !important; border-radius: 0 !important; }
