@@ -155,6 +155,7 @@
           '<button class="btn btn-primary" onclick="openIssuanceForm()">' + I.send + ' صرف لمركز</button>' +
         '</div></div>' +
 
+      '<div id="skh-ticker" class="axtk-host"></div>' +
       '<section class="skh-hero">' +
         '<div class="skh-hero-ring">' + ring(pct) +
           '<div class="skh-ring-c"><b>' + Math.round(pct) + '%</b><span>أصناف مستقرة</span></div></div>' +
@@ -203,6 +204,33 @@
     st._items = items;
     grid();
     trend(M.from);
+    ticker(items);
+  }
+
+  /* شريط النبض on top of the page: every item (most urgent first) + today's in/out, plus the latest stock activity */
+  function ticker(items) {
+    var host = document.getElementById('skh-ticker');
+    if (!host || !window.AXTicker) return;
+    var S = D().settings || {};
+    if (S.tickerPages === false) { host.remove(); return; }
+    var today = lds(today0()), net = {};
+    A('stockMoves').forEach(function (m) {
+      if (String(m.date || '').slice(0, 10) === today) net[m.productId] = (net[m.productId] || 0) + (m.type === 'in' ? 1 : -1) * Number(m.quantity || 0);
+    });
+    var list = items.slice().sort(function (a, b) { return STATE[a.state].rank - STATE[b.state].rank || a.cover - b.cover; }).map(function (x) {
+      var n = net[x.id] || 0, tone = STATE[x.state].tone;
+      return {
+        key: 'sk-' + x.id, label: x.name, value: qty(x.bal) + ' ' + x.unit,
+        level: tone === 'idle' ? 'info' : tone, go: 'stock', sub: coverText(x),
+        delta: n ? { dir: n > 0 ? 'up' : 'down', text: qty(Math.abs(n)), good: n > 0, hint: 'حركة النهارده' } : null
+      };
+    });
+    if (S.tickerEvents !== false) {
+      var ev = AXTicker.events(8).filter(function (e) { return e.icon === 'in' || e.icon === 'iss'; });
+      list = list.concat(ev);
+    }
+    AXTicker.create(host, { id: 'stock', variant: 'bar', label: 'شريط المخزون المتحرك', items: list,
+      onItem: function (k) { if (k.indexOf('sk-') === 0) { detail(k.slice(3)); return true; } } });
   }
 
   function chip(k, label, n, tint) {

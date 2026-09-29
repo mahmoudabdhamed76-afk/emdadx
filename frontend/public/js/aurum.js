@@ -79,7 +79,7 @@
     root.setAttribute('data-theme', t);
     try { localStorage.setItem('theme', t); } catch (e) {}
     var meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.setAttribute('content', t === 'light' ? '#000000' : '#161616');   // = mobile header colour
+    if (meta) meta.setAttribute('content', t === 'light' ? '#F2F4F9' : '#000000');
     if (typeof updateThemeIcon === 'function') { try { updateThemeIcon(t); } catch (e) {} }
     if (typeof currentPage !== 'undefined' && currentPage === 'dashboard' && typeof renderDashboard === 'function') {
       try { renderDashboard(); } catch (e) {}
@@ -117,14 +117,6 @@
       tb.innerHTML = ICON.moon + ICON.sun;
       tb.onclick = AX.toggleTheme;
       notif.parentNode.insertBefore(tb, notif);
-    }
-    // solid strip behind the status bar / notch so the header colour runs to the top edge
-    // (Safari 26 also samples a fixed full-width element at the top edge to tint its status bar)
-    var app = document.getElementById('app');
-    if (app && !document.getElementById('ax-safe-top')) {
-      var st = document.createElement('div');
-      st.id = 'ax-safe-top'; st.setAttribute('aria-hidden', 'true');
-      app.insertBefore(st, app.firstChild);
     }
     var bn = document.getElementById('bottom-nav');
     if (bn && !bn.querySelector('.bn-create')) {
