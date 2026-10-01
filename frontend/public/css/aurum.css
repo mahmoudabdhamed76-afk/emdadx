@@ -2434,3 +2434,93 @@ html.aurum .apr-rules li.ok { color: var(--ax-ok); font-weight: 600; }
   html.aurum .apr-hero .cus-hero-figs { grid-template-columns: repeat(3, 1fr); }
   html.aurum .apr-tbl { font-size: 11.5px; }
 }
+/* 28b · صلاحيات المستخدمين */
+html.aurum .apr-perms { background: var(--ax-surface); border-radius: var(--ax-radius); box-shadow: var(--ax-shadow); padding: 18px; margin-bottom: 14px; display: flex; flex-direction: column; gap: 14px; }
+html.aurum .apr-perms > header { display: flex; gap: 12px; align-items: flex-start; }
+html.aurum .apr-perms > header .apr-ic { background: var(--ax-violet-soft); color: var(--ax-violet); }
+html.aurum[data-theme="dark"] .apr-perms > header .apr-ic { background: rgba(167, 139, 250, .14); }
+html.aurum .apr-perms > header b { display: block; font-size: 16px; }
+html.aurum .apr-perms > header span:not(.apr-ic) { display: block; font-size: 12.5px; color: var(--ax-muted); line-height: 1.7; }
+html.aurum .apr-role { border-radius: 16px; background: var(--ax-surface-2); padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+html.aurum .apr-role-h { display: flex; align-items: baseline; gap: 10px; }
+html.aurum .apr-role-h b { font-size: 15px; }
+html.aurum .apr-role-h em { font-style: normal; font-size: 12px; color: var(--ax-faint); }
+html.aurum .apr-lvl { background: var(--ax-surface); align-self: flex-start; }
+html.aurum .apr-role-note { margin: 0; font-size: 12.5px; line-height: 1.7; color: var(--ax-muted); }
+html.aurum .apr-pages-l { font-size: 12px; font-weight: 700; color: var(--ax-faint); }
+html.aurum .apr-pages { display: flex; flex-wrap: wrap; gap: 6px; }
+html.aurum .apr-pages button { border: 0; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px 7px 11px; border-radius: 999px; background: var(--ax-surface); color: var(--ax-muted); font: 600 12.5px var(--ax-font); box-shadow: inset 0 0 0 1px var(--ax-line); transition: background .15s, color .15s; }
+html.aurum .apr-pages button i { width: 16px; height: 16px; border-radius: 50%; display: grid; place-items: center; font-style: normal; font-size: 10px; font-weight: 900; box-shadow: inset 0 0 0 1.5px var(--ax-line-2); }
+html.aurum .apr-pages button.on { color: var(--ax-text); box-shadow: inset 0 0 0 1.5px var(--c, var(--ax-ink)); }
+html.aurum .apr-pages button.on i { background: var(--c, var(--ax-ink)); color: #fff; box-shadow: none; }
+html.aurum .apr-pages button.lock { opacity: .6; cursor: default; }
+html.aurum .apr-rules li.me { color: var(--ax-text); }
+
+/* ════════════════════════════════════════════════════════════════════
+   29. الأمان والنسخ الاحتياطي (js/security.js) + closed-period sheet
+════════════════════════════════════════════════════════════════════ */
+html.aurum .sec-hero { grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr); align-items: start; }
+html.aurum .sec-hero .cus-hero-t b i { font-style: normal; font-size: 18px; color: var(--ax-deep-muted); }
+html.aurum .sec-hero .cus-hero-t small { line-height: 1.7; margin-top: 4px; max-width: 34ch; }
+html.aurum .sec-checks { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+html.aurum .sec-checks li { display: flex; gap: 10px; align-items: flex-start; background: rgba(255, 255, 255, .07); border-radius: 14px; padding: 10px 12px; }
+html.aurum .sec-checks i { flex: none; width: 24px; height: 24px; border-radius: 8px; display: grid; place-items: center; }
+html.aurum .sec-checks i svg { width: 14px; height: 14px; }
+html.aurum .sec-checks li.ok i { background: rgba(92, 232, 154, .18); color: #5CE89A; }
+html.aurum .sec-checks li.bad i { background: rgba(255, 176, 32, .2); color: #FFB020; }
+html.aurum .sec-checks b { display: block; font-size: 13px; }
+html.aurum .sec-checks span { display: block; font-size: 11.5px; color: var(--ax-deep-muted); line-height: 1.5; }
+html.aurum .sec-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-bottom: 14px; }
+html.aurum .sec-card { background: var(--ax-surface); border-radius: var(--ax-radius); box-shadow: var(--ax-shadow); padding: 18px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+html.aurum .sec-card.sec-wide { grid-column: 1 / -1; }
+html.aurum .sec-card > header { display: flex; gap: 12px; align-items: flex-start; }
+html.aurum .sec-card > header b { display: block; font-size: 16px; }
+html.aurum .sec-card > header span:not(.sec-ic) { display: block; font-size: 12.5px; color: var(--ax-muted); line-height: 1.7; }
+html.aurum .sec-ic { width: 42px; height: 42px; border-radius: 13px; display: grid; place-items: center; flex: none; }
+html.aurum .sec-ic svg { width: 21px; height: 21px; }
+html.aurum .sec-ic.k-key { background: var(--ax-violet-soft); color: var(--ax-violet); }
+html.aurum .sec-ic.k-lock { background: var(--ax-warn-soft); color: var(--ax-warn); }
+html.aurum .sec-ic.k-box { background: var(--ax-teal-soft); color: var(--ax-teal); }
+html.aurum .sec-ic.k-dev { background: var(--ax-blue-soft); color: var(--ax-blue); }
+html.aurum[data-theme="dark"] .sec-ic.k-key { background: rgba(167, 139, 250, .14); }
+html.aurum[data-theme="dark"] .sec-ic.k-lock { background: rgba(255, 176, 32, .12); }
+html.aurum[data-theme="dark"] .sec-ic.k-box { background: rgba(0, 169, 160, .14); }
+html.aurum[data-theme="dark"] .sec-ic.k-dev { background: rgba(29, 111, 242, .16); }
+html.aurum .sec-card form .btn svg, html.aurum .sec-btns .btn svg { width: 16px; height: 16px; vertical-align: -3px; }
+html.aurum .sec-btns { display: flex; flex-wrap: wrap; gap: 8px; }
+html.aurum .sec-btns a.btn { text-decoration: none; }
+html.aurum .sec-close-now { display: flex; align-items: baseline; justify-content: space-between; padding: 12px 14px; border-radius: 14px; background: var(--ax-surface-2); }
+html.aurum .sec-close-now span { font-size: 12.5px; color: var(--ax-muted); }
+html.aurum .sec-close-now b { font: 800 22px var(--ax-display); }
+html.aurum .sec-files, html.aurum .sec-dev { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; max-height: 340px; overflow: auto; }
+html.aurum .sec-files li, html.aurum .sec-dev li { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 12px; background: var(--ax-surface-2); font-size: 13px; }
+html.aurum .sec-files li span { font-weight: 700; min-width: 86px; }
+html.aurum .sec-files li em, html.aurum .sec-dev li em { flex: 1; font-style: normal; font-size: 12px; color: var(--ax-faint); }
+html.aurum .sec-files li a { display: inline-flex; align-items: center; gap: 5px; color: var(--ax-text); text-decoration: none; font-weight: 700; font-size: 12.5px; padding: 6px 10px; border-radius: 10px; background: var(--ax-surface); }
+html.aurum .sec-files li a svg { width: 14px; height: 14px; }
+html.aurum .sec-dev li div { display: flex; flex-direction: column; min-width: 0; flex: 1.2; }
+html.aurum .sec-dev li div span { font-size: 11.5px; color: var(--ax-faint); }
+html.aurum .sec-dev li.me { box-shadow: inset 0 0 0 1.5px var(--ax-ok); }
+html.aurum .sec-dev .tag { font-style: normal; font-size: 11.5px; font-weight: 700; color: var(--ax-ok); padding: 4px 10px; border-radius: 999px; background: var(--ax-ok-soft); }
+html.aurum[data-theme="dark"] .sec-dev .tag { background: rgba(92, 232, 154, .1); }
+html.aurum .sec-dev button { border: 0; cursor: pointer; padding: 7px 12px; border-radius: 10px; background: var(--ax-bad-soft); color: var(--ax-bad); font: 700 12.5px var(--ax-font); }
+html.aurum[data-theme="dark"] .sec-dev button { background: rgba(255, 107, 107, .12); }
+html.aurum .sec-empty { padding: 18px; text-align: center; color: var(--ax-faint); font-size: 13px; background: var(--ax-surface-2); border-radius: 12px; }
+html.aurum .sec-tg { border-radius: 14px; background: var(--ax-surface-2); padding: 12px 14px; }
+html.aurum .sec-tg summary { cursor: pointer; font-weight: 700; font-size: 13.5px; display: flex; align-items: center; gap: 8px; list-style: none; }
+html.aurum .sec-tg summary::-webkit-details-marker { display: none; }
+html.aurum .sec-tg summary svg { width: 16px; height: 16px; color: var(--ax-blue); }
+html.aurum .sec-tg ol { margin: 10px 0 6px; padding-inline-start: 20px; display: flex; flex-direction: column; gap: 6px; font-size: 13px; line-height: 1.7; color: var(--ax-muted); }
+html.aurum .sec-tg p { margin: 0; font-size: 12px; color: var(--ax-faint); }
+html.aurum .sec-tg code { font-family: ui-monospace, monospace; font-size: 12px; padding: 1px 6px; border-radius: 6px; background: var(--ax-surface); color: var(--ax-text); direction: ltr; unicode-bidi: isolate; }
+html.aurum .sec-note { margin: 0; font-size: 12.5px; color: var(--ax-muted); }
+html.aurum .sec-note a { color: var(--ax-blue); font-weight: 700; }
+@media (max-width: 900px) {
+  html.aurum .sec-hero { grid-template-columns: 1fr; }
+  html.aurum .sec-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 600px) {
+  html.aurum .sec-checks { grid-template-columns: 1fr; }
+  html.aurum .sec-files li { flex-wrap: wrap; }
+  html.aurum .sec-dev li { flex-wrap: wrap; }
+}

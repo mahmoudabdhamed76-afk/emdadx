@@ -99,7 +99,7 @@
 
   function card(c) {
     var rem = remaining(c), tin = totalIn(c), used = Math.max(0, tin - rem), pct = tin ? used / tin * 100 : 0, late = daysLate(c);
-    var unit = c.type === 'cash' ? cur() : (c.unit || 'وحدة');
+    var unit = c.type === 'cash' ? cur() : (c.unit || 'قطعة');
     var fmtV = function (v) { return c.type === 'cash' ? money(v) : num(v) + ' ' + esc(unit); };
     var st = c.status === 'closed' ? '<span class="cus-st ok">اتقفلت ✓</span>' : late ? '<span class="cus-st bad">متأخرة ' + late + ' يوم</span>' : c.due ? '<span class="cus-st">التسوية ' + dmy(c.due) + '</span>' : '<span class="cus-st">مفتوحة</span>';
     var moves = (c.moves || []).slice().sort(function (a, b) { return (b.at || 0) - (a.at || 0); }).slice(0, 4);

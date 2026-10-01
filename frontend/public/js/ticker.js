@@ -274,7 +274,7 @@
   function mountPreview() {
     var h = document.getElementById('axtk-preview'); if (!h) return;
     create(h, { id: 'preview', variant: 'bar', label: 'معاينة الشريط', items: [
-      { key: 'p1', label: 'الورق', value: '4,665 وحدة', level: 'ok', delta: { dir: 'up', text: '500', good: true } },
+      { key: 'p1', label: 'الورق', value: '4,665 ورقة', level: 'ok', delta: { dir: 'up', text: '500', good: true } },
       { key: 'p2', label: 'تحصيل اليوم', value: '3,600 ' + cur(), level: 'info', delta: { dir: 'down', text: '1,200', good: false } }
     ].concat(S().tickerEvents === false ? [] : events(2)) });
   }

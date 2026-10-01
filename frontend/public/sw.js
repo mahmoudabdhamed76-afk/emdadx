@@ -1,8 +1,8 @@
 'use strict';
 
-const CACHE      = 'emdadx-v4.6-approvals';
+const CACHE      = 'emdadx-v4.7-secure';
 // relative to the SW scope, so it also works when the app lives under APP_PATH
-const APP_SHELL  = ['./', './index.html', './manifest.json', './css/aurum.css', './js/aurum.js', './js/glowchart.js', './js/stockhub.js', './js/stockcount.js', './js/debts.js', './js/business.js', './js/custody.js', './js/approvals.js', './js/ticker.js', './js/pulsescene.js', './vendor/gsap.min.js',
+const APP_SHELL  = ['./', './index.html', './manifest.json', './css/aurum.css', './js/aurum.js', './js/glowchart.js', './js/stockhub.js', './js/stockcount.js', './js/debts.js', './js/business.js', './js/custody.js', './js/axcore.js', './js/approvals.js', './js/security.js', './js/ticker.js', './js/pulsescene.js', './vendor/gsap.min.js',
                     './fonts/fonts.css', './vendor/chart.umd.js', './vendor/modern-screenshot.js',
                     './icons/logo-square.png'];
 const DB_NAME    = 'emdadx-offline';
@@ -132,27 +132,44 @@ async function clearQueue() {
   });
 }
 
+/* 4.7 · each queued item is ONE change (record-level), sent in order to
+   /api/ops with the session cookie. The server skips an item it already has
+   (opId), so the page and this worker can't apply the same change twice. */
+async function removeItem(key) {
+  const db = await openDB();
+  return new Promise((res, rej) => {
+    const tx = db.transaction(QUEUE_STORE, 'readwrite');
+    tx.objectStore(QUEUE_STORE).delete(key);
+    tx.oncomplete = res;
+    tx.onerror = () => rej(tx.error);
+  });
+}
+let _flushing = false;
 async function flushQueue() {
-  const items = await getQueue();
-  if (!items.length) return { flushed: 0 };
-
-  // Take the LATEST snapshot only (no need to send all intermediate states)
-  const latest = items[items.length - 1];
+  if (_flushing) return { flushed: 0, busy: true };
+  _flushing = true;
+  let sent = 0; const codes = [];
   try {
-    const res = await fetch('/api/data', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-Offline-Sync': '1' },
-      body: JSON.stringify(latest.payload)
-    });
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    await clearQueue();
-
-    // Notify all open windows
-    const clients = await self.clients.matchAll({ type: 'window' });
-    clients.forEach(c => c.postMessage({ type: 'SYNC_COMPLETE', ts: Date.now() }));
-
-    return { flushed: items.length, ok: true };
+    const items = await getQueue();
+    for (const it of items) {
+      if (!it.ops) { await removeItem(it.id); continue; }       // old full-copy item (before 4.7)
+      const res = await fetch(new URL('./api/ops', self.registration.scope).href, {
+        method: 'POST', credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json', 'X-Offline-Sync': '1' },
+        body: JSON.stringify({ ops: it.ops, opId: it.opId })
+      });
+      codes.push(res.status);
+      if (res.status === 401) break;                             // needs login — the page will retry
+      if (!res.ok && res.status !== 403) break;                  // server problem — try later
+      await removeItem(it.id);                                   // done (or refused by the rules)
+      sent++;
+    }
+    if (sent) {
+      const clients = await self.clients.matchAll({ type: 'window' });
+      clients.forEach(c => c.postMessage({ type: 'SYNC_COMPLETE', ts: Date.now(), sent, codes }));
+    }
+    return { flushed: sent, ok: true };
   } catch (e) {
-    return { flushed: 0, error: e.message };
-  }
+    return { flushed: sent, error: e.message };
+  } finally { _flushing = false; }
 }

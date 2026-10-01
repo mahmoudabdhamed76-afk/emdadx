@@ -122,14 +122,20 @@
   /* old builds made the issuance invoice without sourceIssuanceId → sales counted twice */
   var migrated = false;
   function migrate() {
-    if (migrated || !A('invoices').length) return;
+    /* data fixes are written by the admin only (the server refuses them from other roles) */
+    if (migrated || typeof currentUser === 'undefined' || !currentUser || currentUser.role !== 'admin') return;
     migrated = true;
     var changed = 0, byInv = {};
+    /* «وحدة» → «ورقة» for paper / film items (ink keeps its own unit) */
+    A('products').forEach(function (p) {
+      var n = String((p.name || '') + ' ' + (p.type || '')).toLowerCase();
+      if (p.unit === 'وحدة' && !/حبر|ink|toner|خرطوش/.test(n)) { p.unit = 'ورقة'; changed++; }
+    });
     A('issuances').forEach(function (i) { if (i.invoiceId && !byInv[i.invoiceId]) byInv[i.invoiceId] = i.id; });
     A('invoices').forEach(function (inv) {
       if (!inv.sourceIssuanceId && byInv[inv.id]) { inv.sourceIssuanceId = byInv[inv.id]; inv.fromIssuance = true; changed++; }
     });
-    if (changed) { saveNoGuard(); console.info('[biz] linked', changed, 'issuance invoices (no double sales)'); }
+    if (changed) { saveNoGuard(); console.info('[biz] data fixes:', changed); }
   }
 
   /* ─────────── 2 · center prices in invoices ─────────── */

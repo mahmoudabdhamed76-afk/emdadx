@@ -25,22 +25,22 @@
 (function () {
   'use strict';
   if (typeof DB === 'undefined' || !DB || typeof DB.save !== 'function' || DB.save._apr) return;
+  var X = window.AXCore;
+  if (!X) { console.error('[approvals] js/axcore.js is missing'); return; }
 
-  var FIN = ['invoices', 'issuances', 'payments', 'expenses', 'supplierPayments', 'bankTransfers'];
-  var GUARD_RM = FIN.concat(['customers', 'suppliers', 'products', 'stockMoves']);
+  var FIN = X.FIN;
   var ORDER = FIN.concat(['customers', 'suppliers', 'products', 'stockMoves']);
-  var SKIP = { auditLog: 1 };
-  var BAL = ['balance', 'openingBalance', 'creditLimit'];
+  var SNAP = { skip: { auditLog: 1 }, skipSet: { _approvals: 1 } };
+  var BAL = X.BAL;
   var BAL_L = { balance: 'رصيد ', openingBalance: 'الرصيد الافتتاحي لـ', creditLimit: 'حد ائتمان ' };
-  var IGN = {};
-  ['printed', 'printedAt', 'printCount', 'lastPrintedAt', 'sentAt', 'whatsappAt', 'whatsappSentAt', 'reminderAt', 'remindedAt',
-    'lastReminder', 'seen', 'viewedAt', 'updatedAt', 'pinned', 'archived', 'isArchived', 'dueDate', 'sharedAt', 'lastSharedAt']
-    .forEach(function (f) { IGN[f] = 1; });
+  var same = X.same, clone = X.clone, blank = X.blank, isNum = X.isNum, keyOf = X.keyOf, idx = X.idx,
+    fieldsChanged = X.fieldsChanged, realField = X.realField;
   var NAMES = {
     invoices: ['فاتورة', 'فواتير'], issuances: ['صرف', 'عمليات صرف'], payments: ['تحصيل', 'تحصيلات'], expenses: ['مصروف', 'مصروفات'],
     supplierPayments: ['سداد مورد', 'سدادات موردين'], bankTransfers: ['تحويل بنكي', 'تحويلات بنكية'], customers: ['عميل', 'عملاء'],
     suppliers: ['مورد', 'موردين'], products: ['صنف', 'أصناف'], stockMoves: ['حركة مخزن', 'حركات مخزن'], employees: ['موظف', 'موظفين'],
-    notes: ['ملاحظة', 'ملاحظات'], salaryRuns: ['مسير رواتب', 'مسيرات رواتب'], users: ['مستخدم', 'مستخدمين']
+    notes: ['ملاحظة', 'ملاحظات'], salaryRuns: ['مسير رواتب', 'مسيرات رواتب'], users: ['مستخدم', 'مستخدمين'],
+    _custody: ['عهدة', 'عهد'], _debts: ['مديونية', 'مديونيات'], _stockCounts: ['جرد', 'عمليات جرد'], _cheques: ['شيك', 'شيكات']
   };
   var FL = { items: 'الأصناف', customPrices: 'الأسعار الخاصة', invoiceId: 'الفاتورة', lines: 'سطور الجرد', payments: 'الدفعات',
     result: 'نتيجة الجرد', finishedAt: 'وقت الاعتماد', creditLimit: 'حد الائتمان', note: 'ملاحظة', depositor: 'المودِع',
@@ -59,6 +59,8 @@
     check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>',
     x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>',
     undo: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-1"/></svg>',
+    key: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="4.5"/><path d="m10.7 12.3 9.8-9.8M17 6l3 3M14.5 8.5l2 2"/></svg>',
+    lock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>',
     warn: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0zM12 9v4M12 17h.01"/></svg>'
   };
 
@@ -74,19 +76,6 @@
   function role() { var u = user(); return (u && u.role) || ''; }
   function isAdmin() { return role() === 'admin'; }
   function me() { var u = user(); return (u && u.name) || ''; }
-  function clone(v) { return v === undefined ? undefined : JSON.parse(JSON.stringify(v)); }
-  function str(v) { return JSON.stringify(v === undefined ? null : v); }
-  function blank(v) { return v === undefined || v === null || v === ''; }
-  function isNum(v) { return typeof v === 'number' && isFinite(v); }
-  function numLike(v) { return isNum(v) || (typeof v === 'string' && v.trim() !== '' && isFinite(Number(v))); }
-  function same(x, y) {
-    if (x === y) return true;
-    if (blank(x) && blank(y)) return true;
-    if (numLike(x) && numLike(y)) return Math.abs(Number(x) - Number(y)) < 1e-9;
-    if ((x && typeof x === 'object') || (y && typeof y === 'object')) return JSON.stringify(x) === JSON.stringify(y);
-    return false;
-  }
-  function rnd(v) { return Math.round(v * 1e6) / 1e6; }
   function newId() { return (typeof uid === 'function') ? uid() : Math.random().toString(36).slice(2, 10); }
   function ls(k, v) { try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, String(v)); } catch (e) { return null; } }
   function ss(k, v) { try { if (v === undefined) return sessionStorage.getItem(k); sessionStorage.setItem(k, String(v)); } catch (e) { return null; } }
@@ -136,95 +125,41 @@
   var base = null, lastAct = 0, held = null, pending = null, applying = false;
 
   function topId() { var a = D().auditLog; return Array.isArray(a) && a.length ? a[0].id : null; }
-  function snapNow() {
-    var d = D(), b = { cols: {}, set: {}, counters: str(d.counters || {}), top: topId() };
-    Object.keys(d).forEach(function (k) { if (!SKIP[k] && Array.isArray(d[k])) b.cols[k] = JSON.stringify(d[k]); });
-    var s = d.settings || {};
-    Object.keys(s).forEach(function (k) { if (k !== '_approvals' && s[k] !== undefined) b.set[k] = str(s[k]); });
-    return b;
-  }
+  function snapNow() { var b = X.snapshot(D(), SNAP); b.top = topId(); return b; }
   function snap() { try { base = snapNow(); } catch (e) { base = null; } }
+  function computeDiff() { var r = X.diff(base, D(), SNAP); r.cur.top = topId(); return r; }
 
-  function keyOf(r) { return r && typeof r === 'object' && r.id != null ? 'i:' + r.id : 'j:' + JSON.stringify(r); }
-  function idx(arr) { var m = {}; (arr || []).forEach(function (r) { m[keyOf(r)] = r; }); return m; }
-  function fieldsChanged(b, a) {
-    var out = [], seen = {};
-    Object.keys(b || {}).concat(Object.keys(a || {})).forEach(function (k) {
-      if (seen[k]) return; seen[k] = 1;
-      if (!same((b || {})[k], (a || {})[k])) out.push(k);
-    });
-    return out;
+  /* ════════ 2 · what needs the admin — roles + rules (js/axcore.js) ════════ */
+  var ADMIN_ONLY = X.ADMIN_ONLY_PAGES, ALWAYS = ['dashboard', 'approvals'];
+  var ROLES = [['accountant', 'المحاسب'], ['sales', 'موظف المبيعات']];
+  var ORIG_PAGES = {};
+  try { ['accountant', 'sales'].forEach(function (r) { ORIG_PAGES[r] = (PERMISSIONS[r] || []).slice(); }); } catch (e) {}
+  function allPages() {
+    try { return NAV_ITEMS.map(function (n) { return n.key; }).filter(function (k) { return ADMIN_ONLY.indexOf(k) < 0; }); } catch (e) { return []; }
   }
-  function colDiff(bArr, aArr) {
-    var bm = idx(bArr), am = idx(aArr), out = { added: [], removed: [], modified: [] };
-    Object.keys(am).forEach(function (k) { if (!(k in bm)) out.added.push(clone(am[k])); });
-    Object.keys(bm).forEach(function (k) {
-      if (!(k in am)) { out.removed.push(bm[k]); return; }
-      var b = bm[k], a = am[k];
-      if (JSON.stringify(b) === JSON.stringify(a)) return;
-      var f = fieldsChanged(b, a); if (!f.length) return;
-      var bb = {}, aa = {};
-      f.forEach(function (x) { bb[x] = clone(b[x]); aa[x] = clone(a[x]); });
-      out.modified.push({ k: k, f: f, b: bb, a: aa, rb: b, ra: clone(a) });
-    });
-    return out;
+  var DEFAULT_PERMS = {
+    accountant: function () { return { level: 'edits', pages: allPages() }; },
+    sales: function () { return { level: 'sensitive', pages: (ORIG_PAGES.sales || []).slice() }; }
+  };
+  function permOf(r) {
+    var p = (S()._perms || {})[r], d = DEFAULT_PERMS[r] ? DEFAULT_PERMS[r]() : { level: 'sensitive', pages: (ORIG_PAGES[r] || []).slice() };
+    if (!p) return d;
+    return { level: X.levelOf(S(), r) || 'sensitive', pages: Array.isArray(p.pages) ? p.pages.slice() : d.pages };
   }
-  function has(cd) { return cd && (cd.added.length || cd.removed.length || cd.modified.length); }
-  function isIdArr(v) { return Array.isArray(v) && v.every(function (o) { return o && typeof o === 'object' && o.id != null; }); }
-
-  function computeDiff() {
-    var d = D(), cur = { cols: {}, set: {}, counters: str(d.counters || {}), top: topId() };
-    var df = { cols: {}, sets: {}, keys: {}, counters: null, n: 0 }, keys = {};
-    Object.keys(d).forEach(function (k) { if (!SKIP[k] && Array.isArray(d[k])) keys[k] = 1; });
-    Object.keys(base.cols).forEach(function (k) { keys[k] = 1; });
-    Object.keys(keys).forEach(function (k) {
-      var s = JSON.stringify(Array.isArray(d[k]) ? d[k] : []);
-      cur.cols[k] = s;
-      if (s === (base.cols[k] || '[]')) return;
-      var cd = colDiff(JSON.parse(base.cols[k] || '[]'), Array.isArray(d[k]) ? d[k] : []);
-      if (has(cd)) { df.cols[k] = cd; df.n++; }
+  function levelFor(r) { return X.levelOf(S(), r); }
+  var lastPermsSig = '';
+  function applyPerms() {
+    if (typeof PERMISSIONS === 'undefined') return false;
+    var sig = JSON.stringify(S()._perms || null);
+    ROLES.forEach(function (rr) {
+      var r = rr[0], pages = permOf(r).pages.filter(function (k) { return ADMIN_ONLY.indexOf(k) < 0; });
+      ALWAYS.slice().reverse().forEach(function (k) { if (pages.indexOf(k) < 0) pages.unshift(k); });
+      PERMISSIONS[r] = pages;
     });
-    var st = d.settings || {}, sk = {};
-    Object.keys(st).forEach(function (k) { sk[k] = 1; });
-    Object.keys(base.set).forEach(function (k) { sk[k] = 1; });
-    delete sk._approvals;
-    Object.keys(sk).forEach(function (k) {
-      var s = st[k] === undefined ? undefined : str(st[k]);
-      if (s !== undefined) cur.set[k] = s;
-      if (s === base.set[k]) return;
-      var bv = base.set[k] === undefined ? undefined : JSON.parse(base.set[k]), av = st[k];
-      if ((bv === undefined || isIdArr(bv)) && (av === undefined || isIdArr(av)) && (isIdArr(bv) || isIdArr(av))) {
-        var cd = colDiff(bv || [], av || []);
-        if (has(cd)) { df.sets[k] = cd; df.n++; }
-      } else { df.keys[k] = { b: bv, a: clone(av) }; df.n++; }
-    });
-    if (cur.counters !== base.counters) { df.counters = { b: JSON.parse(base.counters), a: clone(d.counters || {}) }; df.n++; }
-    return { df: df, cur: cur };
+    var changed = sig !== lastPermsSig; lastPermsSig = sig;
+    return changed;
   }
-
-  /* ════════ 2 · what is sensitive ════════ */
-  function realField(f) { return !IGN[f]; }
-  function classify(df) {
-    var c = df.cols, why = [];
-    var finAdd = FIN.some(function (k) { return c[k] && c[k].added.length; });
-    var smReal = !!(c.stockMoves && c.stockMoves.added.some(function (m) { return !/^تسوية جرد/.test(String(m.note || m.reference || '')); }));
-    GUARD_RM.forEach(function (k) { if (c[k] && c[k].removed.length) why.push({ t: 'rm', k: k }); });
-    if (!finAdd) FIN.forEach(function (k) {
-      if (c[k] && c[k].modified.some(function (x) { return x.f.some(realField); })) why.push({ t: 'mod', k: k });
-    });
-    if (!finAdd) ['customers', 'suppliers'].forEach(function (k) {
-      if (c[k] && c[k].modified.some(function (x) { return x.f.some(function (f) { return BAL.indexOf(f) >= 0; }); })) why.push({ t: 'bal', k: k });
-    });
-    if (!finAdd && !smReal && c.products && c.products.modified.some(function (x) { return x.f.indexOf('quantity') >= 0; })) why.push({ t: 'qty', k: 'products' });
-    var dd = df.sets._debts;
-    if (dd && (dd.removed.length || dd.modified.some(function (x) {
-      if (x.f.indexOf('amount') >= 0) return true;
-      if (x.f.indexOf('payments') < 0) return false;
-      var ids = {}; (x.a.payments || []).forEach(function (p) { ids[p.id] = 1; });
-      return (x.b.payments || []).some(function (p) { return !ids[p.id]; });
-    }))) why.push({ t: 'debt', k: '_debts' });
-    return why.length ? why : null;
-  }
+  function classify(df) { return X.classify(df, levelFor(role()) || 'sensitive', { closedUntil: S().closedUntil || '' }); }
 
   /* ════════ 3 · human words for a change ════════ */
   function shortLab(k, r) {
@@ -302,7 +237,9 @@
     ORDER.forEach(function (k) { walk(k, df.cols[k]); });
     Object.keys(df.cols).forEach(function (k) { if (ORDER.indexOf(k) < 0) walk(k, df.cols[k]); });
     Object.keys(df.sets).forEach(function (k) { walk(k, df.sets[k]); });
-    Object.keys(df.keys).forEach(function (k) { lines.push({ t: 'mod', s: 'تعديل إعداد «' + k + '»' }); });
+    Object.keys(df.keys).forEach(function (k) {
+      if (X.EDIT_KEYS[k]) { lines.push({ t: 'mod', s: X.EDIT_KEYS[k] + ': من ' + fv(k, df.keys[k].b) + ' إلى ' + fv(k, df.keys[k].a) }); rows.push([X.EDIT_KEYS[k], 'القيمة', fv(k, df.keys[k].b), fv(k, df.keys[k].a)]); }
+    });
     return { lines: lines, rows: rows };
   }
 
@@ -324,8 +261,18 @@
         }
       }
     }
-    var w = why[0], cd = df.cols[w.k] || df.sets[w.k], kind = 'edit', title = '';
-    if (w.t === 'rm') {
+    var w = why[0], cd = df.cols[w.k] || df.sets[w.k] || { added: [], removed: [], modified: [] }, kind = 'edit', title = '';
+    if (w.t === 'closed') {
+      var cr = cd.removed[0], cm = cd.modified.find(function (x) { return x.f.some(realField); }), ca = cd.added[0];
+      kind = cr ? 'delete' : 'edit';
+      title = (cr ? 'حذف ' + shortLab(w.k, cr) : cm ? 'تعديل ' + shortLab(w.k, cm.rb) : ca ? 'إضافة ' + shortLab(w.k, ca) : 'تعديل') + ' في فترة مقفولة';
+    } else if (w.t === 'ed') {
+      if (w.key) title = 'تعديل ' + (X.EDIT_KEYS[w.k] || w.k);
+      else {
+        var me2 = cd.modified.filter(function (x) { return x.f.some(realField); });
+        title = me2.length === 1 ? 'تعديل ' + shortLab(w.k, me2[0].rb) : 'تعديل ' + me2.length + ' ' + (NAMES[w.k] ? NAMES[w.k][1] : w.k);
+      }
+    } else if (w.t === 'rm') {
       kind = 'delete';
       var real = cd.removed;
       title = real.length === 1 ? 'حذف ' + shortLab(w.k, real[0]) : 'حذف ' + real.length + ' ' + (NAMES[w.k] ? NAMES[w.k][1] : w.k);
@@ -419,9 +366,24 @@
   }
 
   /* ════════ 5 · the guard on DB.save ════════ */
-  function guardOn() {
+  /* 'full'         a non-admin: requests to the admin
+     'closed-only'  a non-admin while approvals are off: the closed period still counts
+     'admin-closed' the admin while a period is closed: a confirmation sheet */
+  function guardMode() {
     var r = role();
-    return !!r && r !== 'admin' && !applying && !window.__axNoGuard && !S().approvalsOff;
+    if (!r || applying || window.__axNoGuard) return null;
+    var closed = !!S().closedUntil;
+    if (r === 'admin') return closed ? 'admin-closed' : null;
+    if (S().approvalsOff) return closed ? 'closed-only' : null;
+    return 'full';
+  }
+  function guardOn() { return !!guardMode(); }
+  function classifyFor(df) {
+    var m = guardMode();
+    if (m === 'full') return classify(df);
+    if (!m) return null;
+    var w = (X.classify(df, 'sensitive', { closedUntil: S().closedUntil || '' }) || []).filter(function (x) { return x.t === 'closed'; });
+    return w.length ? w : null;
   }
   function quiet() { return !!(held && Date.now() < held.until); }
 
@@ -437,7 +399,7 @@
       if (df.n) { mergeDiff(held.df, df); held.req.audit = held.req.audit.concat(restore(df)); finishReq(held.req, held.df); }
       return true;
     }
-    var why = df.n ? classify(df) : null;
+    var why = df.n ? classifyFor(df) : null;
     if (!why || Date.now() - lastAct > 8000) {
       var r = rawSave.apply(null, arguments);
       base = res.cur;
@@ -445,6 +407,7 @@
     }
     var req = { id: 'apr_' + newId(), status: 'draft', by: { id: (user() || {}).id, name: me(), role: role() }, page: (typeof currentPage !== 'undefined' ? currentPage : ''), audit: [] };
     req.why = why;
+    req.adminConfirm = guardMode() === 'admin-closed';
     req.audit = restore(df);
     held = { req: req, df: df, until: Date.now() + 900 };
     pending = req;
@@ -461,7 +424,7 @@
   DB.save = guardedSave;
 
   function finishReq(req, df) {
-    var why = classify(df) || req.why || [{ t: 'mod', k: Object.keys(df.cols)[0] || 'invoices' }];
+    var why = classifyFor(df) || req.why || [{ t: 'mod', k: Object.keys(df.cols)[0] || 'invoices' }];
     var t = titleOf(why, df, req.audit), d = describe(df);
     req.title = t.title; req.kind = t.kind; req.table = t.table;
     req.lines = d.lines; req.rows = d.rows;
@@ -515,6 +478,14 @@
   function ask(req) {
     if (pending !== req) return;
     req._asked = 1;
+    if (req.adminConfirm) {
+      openModal('<span class="apr-mt">' + ICON.lock + ' الفترة دي مقفولة</span>',
+        '<div class="apr-ask" id="apr-ask"><div class="apr-ask-head k-' + req.kind + '"><span class="apr-ic">' + (KIND[req.kind] || KIND.edit).ic + '</span><div><b>' + esc(req.title) + '</b>' +
+          '<span>الفترة مقفولة لحد ' + dmyStr(S().closedUntil) + '. ولا حاجة اتغيرت لسه — أكّد لو عايز التعديل ده يتنفذ.</span></div></div>' +
+          '<div class="apr-sec">اللي هيحصل</div>' + linesHtml(req.lines, 7) + '</div>',
+        '<button class="btn btn-danger" onclick="AXApprovals.confirmClosed()">' + ICON.check + ' تنفيذ التعديل</button><button class="btn btn-ghost" onclick="AXApprovals.discard()">إلغاء</button>');
+      return;
+    }
     var dup = list().find(function (r) { return r.status === 'pending' && r.sig && r.sig === req.sig; });
     if (dup) {
       pending = null; held = null;
@@ -543,7 +514,7 @@
   }
   function nextNo() { return list().reduce(function (m, r) { return Math.max(m, r.no || 0); }, 0) + 1; }
   function trim() {
-    var l = list(); if (l.length <= 400) return;
+    var l = list(); if (l.length <= 400 || !isAdmin()) return;
     var keep = l.filter(function (r) { return r.status === 'pending'; }), done = l.filter(function (r) { return r.status !== 'pending'; })
       .sort(function (a, b) { return (b.decidedAt || b.at) - (a.decidedAt || a.at); }).slice(0, 400 - keep.length);
     S()._approvals = keep.concat(done);
@@ -563,6 +534,22 @@
     T('اتبعت طلب #' + req.no + ' للمدير — هيتنفذ أول ما يوافق، وهتلاقيه في «طلبات الموافقة»', 'info', 5000);
     refresh();
   }
+  function confirmClosed() {
+    var req = pending; if (!req || !req.adminConfirm) { closeModal(); return; }
+    pending = null; held = null;
+    applying = true;
+    try {
+      X.applyDiff(D(), req.diff || {}, 'all');
+      (req.audit || []).forEach(function (a) {
+        try { _log({ operation: a.operation, table: a.table, recordId: a.recordId, recordLabel: a.recordLabel, before: a.before, after: a.after, reason: (a.reason || '') + ' (في فترة مقفولة — بتأكيد المدير)' }); } catch (e) {}
+      });
+      rawSave();
+    } finally { applying = false; }
+    snap();
+    closeModal();
+    T('اتنفذ التعديل');
+    refresh(true);
+  }
   function discard() {
     pending = null; held = null;
     closeModal();
@@ -570,32 +557,7 @@
   }
 
   /* ════════ 7 · apply / decide (checker side) ════════ */
-  function applyCol(arr, cd) {
-    var m = idx(arr), rm = {};
-    cd.removed.forEach(function (r) { rm[keyOf(r)] = 1; });
-    cd.modified.forEach(function (x) {
-      var c = m[x.k]; if (!c || rm[x.k]) return;
-      x.f.forEach(function (f) {
-        var b = x.b[f], a = x.a[f], v = c[f];
-        if (isNum(a) && isNum(b) && (isNum(v) || blank(v))) c[f] = rnd(Number(v || 0) + (a - b));
-        else if (a === undefined) delete c[f];
-        else c[f] = clone(a);
-      });
-    });
-    var out = arr.filter(function (r) { return !rm[keyOf(r)]; });
-    cd.added.forEach(function (r) { if (!m[keyOf(r)]) out.push(clone(r)); });
-    return out;
-  }
-  function applyDiff(df) {
-    var d = D(), st = S();
-    Object.keys(df.cols || {}).forEach(function (k) { d[k] = applyCol(Array.isArray(d[k]) ? d[k] : [], df.cols[k]); });
-    Object.keys(df.sets || {}).forEach(function (k) { st[k] = applyCol(Array.isArray(st[k]) ? st[k] : [], df.sets[k]); });
-    Object.keys(df.keys || {}).forEach(function (k) { var v = df.keys[k].a; if (v === undefined) delete st[k]; else st[k] = clone(v); });
-    if (df.counters && df.counters.a) {
-      var c = d.counters || (d.counters = {});
-      Object.keys(df.counters.a).forEach(function (k) { c[k] = Math.max(Number(c[k] || 0), Number(df.counters.a[k] || 0)); });
-    }
-  }
+  function applyDiff(df) { X.applyDiff(D(), df, 'all'); }
   /* records that changed after the request was sent */
   function conflicts(df) {
     var out = [];
@@ -764,15 +726,67 @@
       '</div>' +
       (shown.length ? '<div class="apr-grid">' + shown.map(card).join('') + '</div>'
         : '<div class="skh-empty"><b>' + (ui.f === 'pending' ? (admin ? 'مفيش طلبات مستنية' : 'مفيش طلبات مستنية منك') : 'مفيش طلبات هنا') + '</b><span>' +
-          (ui.f === 'pending' ? (admin ? 'أول ما محاسب يحاول يعدّل أو يحذف حاجة حساسة، الطلب هيظهر هنا ويوصلك تنبيه.' : 'لو حاولت تعدّل أو تحذف حاجة حساسة هيطلعلك زرار «إرسال الطلب للمدير».') : 'غيّر الفلتر') + '</span></div>') +
-      '<details class="apr-rules"><summary>' + ICON.shield + ' إيه اللي بيحتاج موافقة؟</summary><ul>' +
+          (ui.f === 'pending' ? (admin ? 'أول ما محاسب يحاول يعدّل أو يحذف حاجة، الطلب هيظهر هنا ويوصلك تنبيه.' : 'لو حاولت تعدّل أو تحذف حاجة هيطلعلك زرار «إرسال الطلب للمدير».') : 'غيّر الفلتر') + '</span></div>') +
+      (admin ? permsCard() : '') +
+      '<details class="apr-rules"' + (admin ? '' : ' open') + '><summary>' + ICON.shield + ' إيه اللي بيحتاج موافقة؟</summary><ul>' +
+        (admin ? '' : '<li class="me"><b>صلاحيتك:</b> ' + LEVEL_NOTE[levelFor(role()) || 'sensitive'] + '</li>') +
+        (S().closedUntil ? '<li>أي حاجة تاريخها ' + dmyStr(S().closedUntil) + ' أو قبله (الفترة مقفولة)</li>' : '') +
         '<li>حذف فاتورة أو صرف أو تحصيل أو مصروف أو فاتورة شراء أو سداد مورد أو تحويل بنكي</li>' +
         '<li>تعديل أي فاتورة أو فلوس اتسجلت (المبلغ، الخصم، الضريبة، التاريخ…)</li>' +
         '<li>تعديل رصيد عميل أو مورد (الرصيد، الرصيد الافتتاحي، حد الائتمان)</li>' +
         '<li>حذف عميل أو مورد أو صنف، وتعديل كميات المخزن من غير حركة، واعتماد الجرد</li>' +
         '<li>حذف مديونية أو تغيير المبلغ المدين بيه في «سداد المديونية»</li>' +
-        '<li class="ok">الشغل العادي (فاتورة جديدة، صرف، تحصيل، مصروف، عهدة…) بيتسجل على طول من غير موافقة. والمدير نفسه مش محتاج موافقة.</li>' +
+        '<li>ولو الصلاحية «أي تعديل أو حذف»: كمان تعديل أي بيانات (عميل، مورد، صنف، موظف، عهدة، هدف الشهر…) وحذف أي حاجة</li>' +
+        '<li class="ok">الإضافة الجديدة (فاتورة، صرف، تحصيل، مصروف، عهدة…) بتتسجل على طول من غير موافقة. والمدير نفسه مش محتاج موافقة.</li>' +
       '</ul></details>';
+  }
+
+  var LEVEL_NOTE = {
+    edits: 'أي تعديل أو حذف في أي حاجة بيروح للمدير الأول. الإضافة الجديدة (فاتورة، صرف، تحصيل، مصروف…) بتتسجل على طول.',
+    sensitive: 'الحذف وتعديل الفواتير والفلوس والأرصدة وكميات المخزن بس اللي بيروح للمدير. تعديل البيانات العادية (اسم، تليفون، سعر…) بيتنفذ على طول.'
+  };
+  function dmyStr(ds) { var p = String(ds).split('-'); return (+p[2]) + '/' + (+p[1]) + '/' + p[0]; }
+  function navList() { try { return NAV_ITEMS.filter(function (n) { return ADMIN_ONLY.indexOf(n.key) < 0; }); } catch (e) { return []; } }
+  function permsCard() {
+    var navs = navList(), users = A('users');
+    return '<section class="apr-perms" id="apr-perms">' +
+      '<header><span class="apr-ic">' + ICON.key + '</span><div><b>صلاحيات المستخدمين</b>' +
+        '<span>كل دور يدخل أنهي أقسام، وإيه اللي يحتاج موافقتك. المستخدمين وسجل التعديلات والإعدادات للمدير بس.</span></div></header>' +
+      ROLES.map(function (rr, ri) {
+        var r = rr[0], p = permOf(r), n = users.filter(function (u) { return u.role === r; }).length;
+        return '<div class="apr-role">' +
+          '<div class="apr-role-h"><b>' + rr[1] + '</b><em>' + (n ? n + ' مستخدم' : 'مفيش مستخدمين بالدور ده') + '</em></div>' +
+          '<div class="ax-seg apr-lvl">' + [['edits', 'أي تعديل أو حذف بموافقتك'], ['sensitive', 'الحساس بس بموافقتك']].map(function (o) {
+            return '<button class="' + (p.level === o[0] ? 'on' : '') + '" onclick="AXApprovals.setLevel(' + ri + ',\'' + o[0] + '\')">' + o[1] + '</button>'; }).join('') + '</div>' +
+          '<p class="apr-role-note">' + LEVEL_NOTE[p.level] + '</p>' +
+          '<div class="apr-pages-l">الأقسام اللي يدخلها</div>' +
+          '<div class="apr-pages">' + navs.map(function (nv, i) {
+            var locked = ALWAYS.indexOf(nv.key) >= 0, on = locked || p.pages.indexOf(nv.key) >= 0;
+            return '<button class="' + (on ? 'on' : '') + (locked ? ' lock' : '') + '" style="--c:' + nv.color + '"' + (locked ? ' disabled title="دايماً متاح"' : ' onclick="AXApprovals.togglePage(' + ri + ',' + i + ')"') + '>' +
+              '<i>' + (on ? '✓' : '') + '</i>' + esc(nv.label) + '</button>';
+          }).join('') + '</div></div>';
+      }).join('') + '</section>';
+  }
+  function savePerms(r, p) {
+    if (!isAdmin()) return;
+    var all = S()._perms && typeof S()._perms === 'object' ? clone(S()._perms) : {};
+    all[r] = { level: p.level, pages: p.pages };
+    S()._perms = all;
+    rawSave();
+    applyPerms();
+    try { renderSidebar(); } catch (e) {}
+    draw();
+  }
+  function setLevel(ri, lvl) {
+    var r = ROLES[ri][0], p = permOf(r); if (p.level === lvl) return;
+    p.level = lvl; savePerms(r, p);
+    T(ROLES[ri][1] + ': ' + (lvl === 'edits' ? 'أي تعديل أو حذف هيحتاج موافقتك' : 'الحساس بس هيحتاج موافقتك'), 'info', 4000);
+  }
+  function togglePage(ri, i) {
+    var r = ROLES[ri][0], p = permOf(r), nv = navList()[i]; if (!nv) return;
+    var at = p.pages.indexOf(nv.key);
+    if (at >= 0) p.pages.splice(at, 1); else p.pages.push(nv.key);
+    savePerms(r, p);
   }
 
   window.renderApprovals = function () {
@@ -826,7 +840,16 @@
 
   var _rs = window.renderSidebar;
   if (typeof _rs === 'function' && !_rs._apr) {
-    var wrs = function () { var r = _rs.apply(this, arguments); try { if (!base && guardOn()) snap(); badge(); } catch (e) {} return r; };
+    var wrs = function () {
+      try { applyPerms(); } catch (e) {}
+      var r = _rs.apply(this, arguments);
+      try {
+        if (!base && guardOn()) snap();
+        badge();
+        if (user() && typeof currentPage !== 'undefined' && currentPage && typeof can === 'function' && !can(currentPage)) setTimeout(function () { try { navigate('dashboard'); } catch (e) {} }, 0);
+      } catch (e) {}
+      return r;
+    };
     wrs._apr = 1; window.renderSidebar = wrs;
   }
   /* A sync from the server (another device saved) hands DB._bootstrapData the
@@ -846,7 +869,11 @@
     var wnb = function () {
       var r = _unb.apply(this, arguments);
       try {
-        if (merged) { merged = false; if (guardOn() && !quiet()) snap(); }
+        if (merged) {
+          merged = false;
+          if (guardOn() && !quiet()) snap();
+          if (applyPerms() && typeof renderSidebar === 'function') renderSidebar();
+        }
         checkEvents();
       } catch (e) {}
       return r;
@@ -854,9 +881,11 @@
     wnb._apr = 1; window.updateNotifBadge = wnb;
   }
 
+  try { applyPerms(); } catch (e) {}
   window.AXApprovals = {
-    submit: submit, discard: discard, approve: approve, reject: reject, doReject: doReject, withdraw: withdraw, toggle: toggleOn,
+    submit: submit, discard: discard, confirmClosed: confirmClosed, approve: approve, reject: reject, doReject: doReject, withdraw: withdraw, toggle: toggleOn,
     filter: function (f) { ui.f = f; draw(); },
+    setLevel: setLevel, togglePage: togglePage, permOf: permOf, applyPerms: applyPerms,
     who: function (i) { var n = ui.whoList[i] || ''; ui.who = ui.who === n ? '' : n; draw(); },
     pendingCount: pendingCount, render: window.renderApprovals,
     /* internals (kept public for tests / other modules) */

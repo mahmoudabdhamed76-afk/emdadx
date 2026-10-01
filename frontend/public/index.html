@@ -9655,7 +9655,7 @@ audio::-webkit-media-controls-panel { background: rgba(15,23,42,.9); }
 
     <footer class="app-footer">
       <div>جميع الحقوق محفوظة © 2026 إمداد إكس</div>
-      <div class="version">الإصدار 4.6</div>
+      <div class="version">الإصدار 4.7</div>
     </footer>
   </div>
 </div>
@@ -9745,6 +9745,103 @@ function detectApiBase() {
   return origin + prefix;
 }
 const API_BASE = detectApiBase();
+
+/* ═══════════════════════════════════════════════════════
+   4.7 · LOGIN ON THE SERVER
+   The server checks the password (scrypt hash) and gives this browser
+   an HttpOnly session cookie; every /api call needs it. For working
+   offline, a salted SHA-256 verifier of the last successful login is
+   kept on this device (never the password itself).
+═══════════════════════════════════════════════════════ */
+function sha256hex(str) {
+  const K = [0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,
+    0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,
+    0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,
+    0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,
+    0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,
+    0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2];
+  const bytes = new TextEncoder().encode(String(str)), l = bytes.length;
+  const buf = new Uint8Array(((l + 9 + 63) >> 6) << 6); buf.set(bytes); buf[l] = 0x80;
+  const dv = new DataView(buf.buffer); const bits = l * 8;
+  dv.setUint32(buf.length - 4, bits >>> 0); dv.setUint32(buf.length - 8, Math.floor(bits / 4294967296));
+  const H = [0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19], W = new Int32Array(64);
+  for (let i = 0; i < buf.length; i += 64) {
+    for (let t = 0; t < 16; t++) W[t] = dv.getInt32(i + t * 4);
+    for (let t = 16; t < 64; t++) {
+      const x = W[t - 15], y = W[t - 2];
+      const s0 = ((x >>> 7) | (x << 25)) ^ ((x >>> 18) | (x << 14)) ^ (x >>> 3);
+      const s1 = ((y >>> 17) | (y << 15)) ^ ((y >>> 19) | (y << 13)) ^ (y >>> 10);
+      W[t] = (W[t - 16] + s0 + W[t - 7] + s1) | 0;
+    }
+    let a = H[0], b = H[1], c = H[2], d = H[3], e = H[4], f = H[5], g = H[6], h = H[7];
+    for (let t = 0; t < 64; t++) {
+      const S1 = ((e >>> 6) | (e << 26)) ^ ((e >>> 11) | (e << 21)) ^ ((e >>> 25) | (e << 7));
+      const t1 = (h + S1 + ((e & f) ^ (~e & g)) + K[t] + W[t]) | 0;
+      const S0 = ((a >>> 2) | (a << 30)) ^ ((a >>> 13) | (a << 19)) ^ ((a >>> 22) | (a << 10));
+      const t2 = (S0 + ((a & b) ^ (a & c) ^ (b & c))) | 0;
+      h = g; g = f; f = e; e = (d + t1) | 0; d = c; c = b; b = a; a = (t1 + t2) | 0;
+    }
+    H[0] = (H[0] + a) | 0; H[1] = (H[1] + b) | 0; H[2] = (H[2] + c) | 0; H[3] = (H[3] + d) | 0;
+    H[4] = (H[4] + e) | 0; H[5] = (H[5] + f) | 0; H[6] = (H[6] + g) | 0; H[7] = (H[7] + h) | 0;
+  }
+  return H.map(x => (x >>> 0).toString(16).padStart(8, '0')).join('');
+}
+const OfflineAuth = {
+  KEY: 'emx_offline_auth', LAST: 'emx_last_user',
+  _all() { try { return JSON.parse(localStorage.getItem(this.KEY) || '{}') || {}; } catch (_) { return {}; } },
+  _hash(salt, u, p) { let h = sha256hex(salt + ':' + String(u).toLowerCase() + ':' + p); for (let i = 0; i < 2000; i++) h = sha256hex(h + salt); return h; },
+  save(username, password, user) {
+    try {
+      const all = this._all(), salt = Math.random().toString(36).slice(2) + Date.now().toString(36);
+      all[String(username).toLowerCase()] = { salt, h: this._hash(salt, username, password), user, at: Date.now() };
+      localStorage.setItem(this.KEY, JSON.stringify(all));
+      localStorage.setItem(this.LAST, user.id);
+    } catch (_) {}
+  },
+  check(username, password) {
+    const r = this._all()[String(username).toLowerCase()];
+    if (!r || this._hash(r.salt, username, password) !== r.h) return null;
+    try { localStorage.setItem(this.LAST, r.user.id); } catch (_) {}
+    return r.user;
+  },
+  lastUser() { try { return localStorage.getItem(this.LAST); } catch (_) { return null; } },
+  forgetLast() { try { localStorage.removeItem(this.LAST); } catch (_) {} }
+};
+const Auth = {
+  /* → user | null (not logged in) | 'offline' (server unreachable) */
+  async me() {
+    let r;
+    try { r = await fetch(API_BASE + '/api/me', { cache: 'no-store', credentials: 'same-origin', signal: AbortSignal.timeout(6000) }); }
+    catch (_) { return 'offline'; }
+    if (r.status === 401) return null;
+    if (!r.ok) return 'offline';
+    const ct = r.headers.get('content-type') || '';
+    if (!ct.includes('application/json')) return 'offline';
+    return (await r.json()).user || null;
+  },
+  async login(username, password) {
+    const r = await fetch(API_BASE + '/api/login', {
+      method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password }), signal: AbortSignal.timeout(10000)
+    });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) { const e = new Error(j.message || ('HTTP ' + r.status)); e.status = r.status; throw e; }
+    return j;
+  },
+  async logout() {
+    try { await fetch(API_BASE + '/api/logout', { method: 'POST', credentials: 'same-origin' }); } catch (_) {}
+    OfflineAuth.forgetLast();
+  },
+  _expired: false,
+  expired() {
+    if (this._expired || !currentUser) return;
+    this._expired = true;
+    try {
+      openModal('🔐 الجلسة انتهت', '<p class="ax-modal-lead">لازم تسجّل دخول تاني. أي تعديل عملته متحفظ على الجهاز وهيترفع أول ما تدخل.</p>',
+        '<button class="btn btn-primary" onclick="location.reload()">تسجيل الدخول</button>');
+    } catch (_) { location.reload(); }
+  }
+};
 
 const DB = {
   data: {
@@ -9859,15 +9956,23 @@ const OfflineManager = (() => {
     });
   }
 
-  async function enqueue(data) {
+  /* ── 4.7 · record-level sync ──────────────────────────────────────
+     _base = what the server has, as far as this device knows. Every save
+     sends only the difference (AXCore.wire): new records, removed ids,
+     edited fields. Offline, each difference is queued in order and sent
+     when the connection is back (the server skips one it already has). */
+  let _base = null;
+  function setBase(d) { try { _base = AXCore.snapshot(d || DB.data, {}); } catch (_) { _base = null; } }
+  function opId() { return Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10); }
+
+  async function enqueue(item) {
     const db = await openDB();
     await new Promise((res, rej) => {
       const tx = db.transaction(QUEUE_STORE, 'readwrite');
-      tx.objectStore(QUEUE_STORE).clear();
-      tx.objectStore(QUEUE_STORE).add({ payload: data, ts: Date.now() });
+      tx.objectStore(QUEUE_STORE).add(Object.assign({ ts: Date.now() }, item));
       tx.oncomplete = res; tx.onerror = () => rej(tx.error);
     });
-    _pending = 1; updateUI();
+    _pending = (await dequeue()).length; updateUI();
   }
 
   async function dequeue() {
@@ -9876,6 +9981,14 @@ const OfflineManager = (() => {
       const req = db.transaction(QUEUE_STORE).objectStore(QUEUE_STORE).getAll();
       req.onsuccess = () => res(req.result || []);
       req.onerror = () => rej(req.error);
+    });
+  }
+  async function removeItem(key) {
+    const db = await openDB();
+    await new Promise((res, rej) => {
+      const tx = db.transaction(QUEUE_STORE, 'readwrite');
+      tx.objectStore(QUEUE_STORE).delete(key);
+      tx.oncomplete = res; tx.onerror = () => rej(tx.error);
     });
   }
 
@@ -9896,51 +10009,78 @@ const OfflineManager = (() => {
     try { const raw = localStorage.getItem(LS_SNAP); return raw ? JSON.parse(raw) : null; } catch(_) { return null; }
   }
 
-  async function postToServer(data) {
+  /* → 'ok' | 'refused' | 'login' (throws on network errors) */
+  async function postOps(item) {
     _lastSaveAt = Date.now();
-    const body = JSON.stringify(data);
-    const res = await fetch(API_BASE + '/api/data', {
-      method: 'POST',
+    const res = await fetch(API_BASE + '/api/ops', {
+      method: 'POST', credentials: 'same-origin',
       headers: { 'Content-Type': 'application/json', 'X-Client-Id': _CLIENT_ID },
-      body,
-      signal: AbortSignal.timeout(8000)
+      body: JSON.stringify({ ops: item.ops, opId: item.opId, cid: _CLIENT_ID }),
+      signal: AbortSignal.timeout(15000)
     });
+    if (res.status === 401) return 'login';
+    if (res.status === 403) {
+      const j = await res.json().catch(() => ({}));
+      console.warn('[Sync] refused by server:', j);
+      if (typeof toast === 'function') toast((j.message || 'السيرفر رفض التعديل') + ' — رجعت البيانات زي ما هي على السيرفر', 'warning', 6000);
+      return 'refused';
+    }
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const json = await res.json().catch(() => ({}));
+    // another device changed something since our last pull → fetch it (our own change is already in)
+    const missed = json.prev && DB._serverVersion && json.prev !== DB._serverVersion;
     if (json.version) DB._serverVersion = json.version;
-    DB._syncedJSON = body;
     SyncEngine.onSelfSaved(json.version);
-    return json;
+    if (missed) setTimeout(() => SyncEngine.pullLatest('missed', true), 250);
+    return 'ok';
   }
 
   async function trySave(data) {
     saveSnap(data); // always snapshot first
-    if (_online) {
+    if (!_base || typeof AXCore === 'undefined') { setBase(data); return; }
+    const r = AXCore.diff(_base, data, {});
+    if (!r.df.n) return;
+    const item = { ops: AXCore.wire(r.df), opId: opId() };
+    _base = r.cur;
+    /* plain passwords never stay on this device (the server keeps a hash) */
+    if (r.df.cols.users && Array.isArray(data.users) && data.users.some(u => u && u.password)) {
+      data.users.forEach(u => { if (u) delete u.password; });
+      setBase(data); saveSnap(data);
+    }
+    if (_online && !_pending) {
       try {
-        await postToServer(data);
-        if (_pending > 0) await clearQueue();
-        return;
+        const st = await postOps(item);
+        if (st === 'ok') return;
+        if (st === 'refused') { SyncEngine.pullLatest('refused', true); return; }
+        if (st === 'login') { await enqueue(item); Auth.expired(); return; }
       } catch (e) {
         console.warn('[Offline] live POST failed, queuing:', e.message);
       }
     }
-    await enqueue(data);
+    await enqueue(item);
     if (_sw && 'sync' in _sw) { try { await _sw.sync.register('emdadx-sync'); } catch(_) {} }
+    if (_online) setTimeout(flushQueue, 3000);
   }
 
   async function flushQueue() {
     if (_flushing || !_online) return;
     const items = await dequeue();
-    if (!items.length) return;
+    if (!items.length) { _pending = 0; updateUI(); return; }
     _flushing = true;
     SyncEngine.setStatus('syncing');
+    let sent = 0, refused = 0;
     try {
-      const latest = items[items.length - 1];
-      await postToServer(latest.payload);
-      await clearQueue();
-      if (typeof toast === 'function') toast('✓ تم رفع البيانات المحفوظة أوف لاين');
+      for (const it of items) {
+        if (!it.ops) { await removeItem(it.id); continue; }       // a full copy from before 4.7 — replaced by record-level sync
+        const st = await postOps(it);
+        if (st === 'login') { Auth.expired(); break; }
+        await removeItem(it.id);
+        if (st === 'refused') refused++; else sent++;
+      }
+      _pending = (await dequeue()).length; updateUI();
+      if (sent && typeof toast === 'function') toast('✓ اترفع ' + sent + ' تعديل اتعمل أوف لاين');
       SyncEngine.setStatus('connected');
-      setTimeout(() => SyncEngine.pullLatest('back-online'), 500);
+      setTimeout(() => SyncEngine.pullLatest('back-online', true), 400);
     } catch (e) {
       console.error('[Offline] flush failed:', e);
       SyncEngine.setStatus('error');
@@ -9965,7 +10105,8 @@ const OfflineManager = (() => {
       _sw = reg;
       navigator.serviceWorker.addEventListener('message', e => {
         if (e.data?.type === 'SYNC_COMPLETE') {
-          _pending = 0; updateUI();
+          console.info('[SW] background sync', e.data.sent, e.data.codes);
+          dequeue().then(q => { _pending = q.length; updateUI(); });
           if (typeof toast === 'function') toast('✓ تمت المزامنة في الخلفية');
           SyncEngine.pullLatest('sw-sync');
         }
@@ -9987,7 +10128,7 @@ const OfflineManager = (() => {
     });
     try {
       const items = await dequeue();
-      if (items.length > 0) { _pending = 1; updateUI(); if (_online) flushQueue(); }
+      if (items.length > 0) { _pending = items.length; updateUI(); if (_online) flushQueue(); }
     } catch(_) {}
     updateUI();
   }
@@ -9995,7 +10136,8 @@ const OfflineManager = (() => {
   function getCachedData() { const s = loadSnap(); return s ? s.data : null; }
   function getLastSaveAt() { return _lastSaveAt; }
 
-  return { init, trySave, flushQueue, getCachedData, getLastSaveAt, get isOnline(){ return _online; } };
+  return { init, trySave, flushQueue, getCachedData, getLastSaveAt, setBase, get pending(){ return _pending; }, get isOnline(){ return _online; },
+    _debug() { try { return { base: !!_base, diff: _base ? AXCore.diff(_base, DB.data, {}).df.n : null, pending: _pending, online: _online }; } catch (e) { return { err: e.message }; } } };
 })();
 
 /* ═══════════════════════════════════════════════════════
@@ -10023,7 +10165,8 @@ const SyncEngine = (() => {
     for (const key of Object.keys(fresh)) {
       if (skip.has(key)) continue;
       if (Array.isArray(fresh[key])) DB.data[key] = fresh[key];
-      else if (fresh[key] && typeof fresh[key] === 'object') DB.data[key] = Object.assign({}, DB.data[key] || {}, fresh[key]);
+      // the server is the source of truth (every local change was already sent as its own record)
+      else if (fresh[key] && typeof fresh[key] === 'object') DB.data[key] = Object.assign({}, fresh[key]);
       else if (fresh[key] !== undefined) DB.data[key] = fresh[key];
     }
     const arrays = ['users','customers','products','invoices','payments','expenses','stockMoves','issuances','bankTransfers','suppliers','supplierPayments','notes','auditLog','employees','salaryRuns'];
@@ -10063,6 +10206,7 @@ const SyncEngine = (() => {
       stock:     typeof renderStockHub  === 'function' ? renderStockHub  : null,
       debts:     typeof renderDebts     === 'function' ? renderDebts     : null,
       approvals: typeof renderApprovals === 'function' ? renderApprovals : null,
+      security:  typeof renderSecurity  === 'function' ? renderSecurity  : null,
       suppliers: typeof renderSuppliers === 'function' ? renderSuppliers : null,
       issuances: typeof renderIssuances === 'function' ? renderIssuances : null,
       expenses:  typeof renderExpenses  === 'function' ? renderExpenses  : null,
@@ -10074,25 +10218,26 @@ const SyncEngine = (() => {
     console.log('[Sync] page updated:', page, '(' + reason + ')');
   }
 
-  async function pullLatest(reason = '') {
+  async function pullLatest(reason = '', force) {
     // A local save is still queued / in flight: merging now would overwrite
     // what the user just did before it reaches the server. Try again after it.
-    if (DB._saveTimer || DB._saveInflight) { setTimeout(() => pullLatest(reason), 400); return; }
+    if (DB._saveTimer || DB._saveInflight) { setTimeout(() => pullLatest(reason, force), 400); return; }
     if (_isSyncing) return;
     _isSyncing = true; setStatus('syncing');
     try {
       const res = await fetch(API_BASE + '/api/data', {
         headers: { 'Accept': 'application/json', 'X-Client-Id': _CLIENT_ID },
-        cache: 'no-store'
+        cache: 'no-store', credentials: 'same-origin'
       });
+      if (res.status === 401) { setStatus('error'); Auth.expired(); return; }
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const fresh = await res.json();
       const newVer = fresh.__version || 0;
-      if (newVer && newVer <= DB._serverVersion) { setStatus('connected'); return; }
+      if (!force && newVer && newVer <= DB._serverVersion) { setStatus('connected'); return; }
       DB._bootstrapData = fresh;
       DB._serverVersion = newVer;
       silentMerge(fresh);
-      try { DB._syncedJSON = JSON.stringify(DB.data); } catch(_) {}
+      OfflineManager.setBase(DB.data);
       smartPageUpdate(reason);
       setStatus('connected');
     } catch (e) {
@@ -10124,7 +10269,7 @@ const SyncEngine = (() => {
         if (msg.event === 'connected') { DB._serverVersion = msg.version || 0; return; }
         if (msg.event === 'data_changed') {
           const isSelf = msg.source === _CLIENT_ID;
-          if (isSelf) { DB._serverVersion = msg.version; return; }
+          if (isSelf) return;   // our own save — its HTTP reply already updated the version
           throttledPull('data_changed');
         }
       } catch(_) {}
@@ -10229,14 +10374,15 @@ async function bootstrapFromServer() {
   try {
     const res = await fetch(API_BASE + '/api/data', {
       headers: { 'Accept': 'application/json' },
-      cache: 'no-store',
-      signal: AbortSignal.timeout(6000)
+      cache: 'no-store', credentials: 'same-origin',
+      signal: AbortSignal.timeout(15000)
     });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const ct = res.headers.get('content-type') || '';
     if (!ct.includes('application/json')) throw new Error('ليس JSON');
     DB._bootstrapData = await res.json();
     DB._bootstrapped = true;
+    DB._serverVersion = DB._bootstrapData.__version || 0;
     DB._bootOnline = true;
     return; // online
   } catch (e) {
@@ -10336,19 +10482,14 @@ function normalizeArabic(s) {
 let currentUser = null;
 const ROLE_LABELS = { admin: 'مدير النظام', accountant: 'محاسب', sales: 'موظف مبيعات' };
 const PERMISSIONS = {
-  admin: ['dashboard','customers','issuances','invoices','payments','transfers','debts','suppliers','inventory','stock','expenses','reports','aiassistant','approvals','users','audit','settings'],
+  admin: ['dashboard','customers','issuances','invoices','payments','transfers','debts','suppliers','inventory','stock','expenses','reports','aiassistant','approvals','users','audit','security','settings'],
   accountant: ['dashboard','customers','issuances','invoices','payments','transfers','debts','suppliers','expenses','reports','aiassistant','approvals'],
   sales: ['dashboard','customers','issuances','invoices','payments','inventory','stock','aiassistant','approvals']
 };
 function can(page) { return currentUser && PERMISSIONS[currentUser.role].includes(page); }
 
-function login(username, password) {
-  const u = DB.data.users.find(x => x.username === username && x.password === password);
-  if (!u) return false;
-  currentUser = u;
-  sessionStorage.setItem(SESSION_KEY, u.id);
-  return true;
-}
+/* 4.7: the password is checked by the server (Auth.login) — never in the browser */
+function login() { return false; }
 
 /* Opens a small user menu modal */
 function openUserMenu() {
@@ -10369,6 +10510,9 @@ function openUserMenu() {
       ${can('users') ? `<button class="btn btn-secondary" onclick="closeModal();navigate('users')" style="justify-content:flex-start;width:100%">
         👥 إدارة المستخدمين
       </button>` : ''}
+      <button class="btn btn-secondary" onclick="closeModal();AXSec.pwModal()" style="justify-content:flex-start;width:100%">
+        🔑 تغيير كلمة السر
+      </button>
       <button class="btn btn-secondary" onclick="closeModal();toggleTheme()" style="justify-content:flex-start;width:100%">
         🌓 تبديل الوضع
       </button>
@@ -10379,7 +10523,7 @@ function openUserMenu() {
   `);
 }
 
-function logout() {
+async function logout() {
   pauseReciter();
   if (_autoSaveInterval) clearInterval(_autoSaveInterval);
   if (_snapshotInterval) clearInterval(_snapshotInterval);
@@ -10396,6 +10540,10 @@ function logout() {
   const bar = document.getElementById('reciter-bar'); if (bar) bar.style.display = 'none';
   const homeBtn = document.getElementById('topbar-home-btn'); if (homeBtn) homeBtn.style.display = 'none';
   const reciterInline = document.getElementById('reciter-inline'); if (reciterInline) reciterInline.style.display = 'none';
+  // end the session on the server too, then start clean (no data left in memory)
+  try { if (DB._saveTimer || DB._saveInflight) await new Promise(r => setTimeout(r, 900)); } catch (_) {}
+  await Auth.logout();
+  location.reload();
 }
 function restoreSession() {
   const uid = sessionStorage.getItem(SESSION_KEY);
@@ -10875,6 +11023,7 @@ const NAV_ITEMS = [
   { key: 'approvals', label: 'طلبات الموافقة', color: '#6366F1', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3 8-8"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg>', section: 'ops' },
   { key: 'users', label: 'المستخدمين', color: '#14b8a6', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>', section: 'admin' },
   { key: 'audit', label: 'سجل التعديلات', color: '#dc2626', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>', section: 'admin' },
+  { key: 'security', label: 'الأمان والنسخ', color: '#0EA5E9', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><rect x="9" y="10" width="6" height="5" rx="1"/><path d="M10.5 10V8.5a1.5 1.5 0 0 1 3 0V10"/></svg>', section: 'admin' },
   { key: 'settings', label: 'الإعدادات', color: '#64748b', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>', section: 'admin' }
 ];
 const SECTIONS = { main: 'الإدارة اليومية', ops: 'العمليات والتقارير', admin: 'إعدادات النظام' };
@@ -10975,7 +11124,7 @@ function navigate(page, isBack) {
   currentPage = page;
   renderSidebar();
   toggleSidebar(false);
-  const titles = { dashboard:'لوحة التحكم', customers:'العملاء والمراكز', issuances:'صرف الورق للمراكز', invoices:'الفواتير', payments:'التحصيل والمديونيات', transfers:'التحويلات البنكية', debts:'سداد المديونية', suppliers:'الموردين', inventory:'إدارة المخازن', stock:'مخزوني وجرد', expenses:'المصروفات', reports:'التقارير', aiassistant:'المساعد الذكي', approvals:'طلبات الموافقة', users:'إدارة المستخدمين', audit:'سجل التعديلات الذكي', settings:'الإعدادات' };
+  const titles = { dashboard:'لوحة التحكم', customers:'العملاء والمراكز', issuances:'صرف الورق للمراكز', invoices:'الفواتير', payments:'التحصيل والمديونيات', transfers:'التحويلات البنكية', debts:'سداد المديونية', suppliers:'الموردين', inventory:'إدارة المخازن', stock:'مخزوني وجرد', expenses:'المصروفات', reports:'التقارير', aiassistant:'المساعد الذكي', approvals:'طلبات الموافقة', users:'إدارة المستخدمين', security:'الأمان والنسخ الاحتياطي', audit:'سجل التعديلات الذكي', settings:'الإعدادات' };
   document.getElementById('topbar-title').innerText = titles[page] || '';
 
   const pc = document.getElementById('page-content');
@@ -10988,7 +11137,7 @@ function navigate(page, isBack) {
   }
 
   const doRender = () => {
-    const renderers = { dashboard: renderDashboard, customers: renderCustomers, issuances: renderIssuances, invoices: renderInvoices, payments: renderPayments, transfers: renderTransfersPage, debts: (typeof renderDebts === 'function' ? renderDebts : renderDashboard), suppliers: renderSuppliers, inventory: renderInventory, stock: (typeof renderStockHub === 'function' ? renderStockHub : renderDashboard), expenses: renderExpenses, reports: renderReports, aiassistant: renderAIAssistant, approvals: (typeof renderApprovals === 'function' ? renderApprovals : renderDashboard), users: renderUsers, audit: renderAuditLog, settings: renderSettings };
+    const renderers = { dashboard: renderDashboard, customers: renderCustomers, issuances: renderIssuances, invoices: renderInvoices, payments: renderPayments, transfers: renderTransfersPage, debts: (typeof renderDebts === 'function' ? renderDebts : renderDashboard), suppliers: renderSuppliers, inventory: renderInventory, stock: (typeof renderStockHub === 'function' ? renderStockHub : renderDashboard), expenses: renderExpenses, reports: renderReports, aiassistant: renderAIAssistant, approvals: (typeof renderApprovals === 'function' ? renderApprovals : renderDashboard), users: renderUsers, security: (typeof renderSecurity === 'function' ? renderSecurity : renderDashboard), audit: renderAuditLog, settings: renderSettings };
     (renderers[page] || renderDashboard)();
     updateBackButton();
     updateHomeFab();
@@ -11142,8 +11291,7 @@ function startAutoSave() {
   _autoSaveInterval = setInterval(() => {
     try {
       if (DB._saveTimer || DB._saveInflight) return;
-      if (DB._syncedJSON && JSON.stringify(DB.data) === DB._syncedJSON) return;
-      DB.save();
+      DB.save();   // sends nothing when nothing changed (record-level sync)
       _lastSaveStamp = Date.now();
     } catch(e) { console.error('autosave failed', e); }
   }, 5000);
@@ -11359,29 +11507,51 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.addEventListener('pointerdown', () => {
     document.querySelectorAll('.notify-overlay:not(.show)').forEach(o => o.remove());
   }, true);
-  try {
-    await bootstrapFromServer();
-  } catch (e) {
-    const _b = document.getElementById('boot-overlay');
-    if (_b) { _b.classList.add('hide'); setTimeout(() => _b.remove(), 400); }
-    console.error('Failed to reach server:', e);
-    alert('فشل الاتصال بالسيرفر. تأكد إن السيرفر شغال ثم أعد تحميل الصفحة.\n\nالخطأ: ' + e.message);
-    return;
+  /* 4.7 · who is this browser? (server session cookie) */
+  const dismissBoot = () => { const _b = document.getElementById('boot-overlay'); if (_b) { _b.classList.add('hide'); setTimeout(() => _b.remove(), 400); } };
+  const prepareData = () => {
+    if (!DB.load()) seedData();
+    OfflineManager.setBase(DB.data);      // what the server has → every save sends only the difference
+    // Ensure latest schema bits exist
+    if (!DB.data.settings) DB.data.settings = { companyName:'إمداد إكس', taxRate:0, currency:'جنيه', soundEnabled: true };
+    if (DB.data.settings.soundEnabled === undefined) DB.data.settings.soundEnabled = true;
+    if (!DB.data.counters) DB.data.counters = { invoice: 1000, issuance: 1000, purchase: 1000 };
+    if (!DB.data.counters.issuance) DB.data.counters.issuance = 1000;
+    if (!DB.data.counters.purchase) DB.data.counters.purchase = 1000;
+    if (!DB.data.stockMoves) DB.data.stockMoves = [];
+    if (!DB.data.issuances) DB.data.issuances = [];
+    if (!DB.data.suppliers) DB.data.suppliers = [];
+    if (!DB.data.supplierPayments) DB.data.supplierPayments = [];
+  };
+  const showOfflineBanner = () => {
+    const banner = document.getElementById('offline-banner');
+    if (banner) { const m = banner.querySelector('.ob-msg'); if (m) m.textContent = 'أوف لاين — شغال على البيانات المحفوظة على الجهاز'; banner.classList.add('show'); }
+  };
+  const launch = (u) => {
+    currentUser = (DB.data.users || []).find(x => x.id === u.id) || u;
+    startApp(); SyncEngine.init(); OfflineManager.init();
+    DB.save();
+  };
+  const loadOffline = () => {
+    const snap = OfflineManager.getCachedData();
+    if (!snap) return false;
+    DB._bootstrapData = snap; DB._bootstrapped = true;
+    prepareData(); showOfflineBanner();
+    return true;
+  };
+
+  let me = await Auth.me();
+  if (me && me !== 'offline') {
+    try { await bootstrapFromServer(); prepareData(); launch(me); }
+    catch (e) { console.error(e); if (loadOffline()) launch(me); else alert('فشل تحميل البيانات من السيرفر: ' + e.message); }
+  } else if (me === 'offline') {
+    const lastId = OfflineAuth.lastUser();
+    if (loadOffline() && lastId) {
+      const u = (DB.data.users || []).find(x => x.id === lastId);
+      if (u) launch(u);
+    }
   }
-  if (!DB.load()) seedData();
-  // Ensure latest schema bits exist
-  if (!DB.data.settings) DB.data.settings = { companyName:'إمداد إكس', taxRate:0, currency:'جنيه', soundEnabled: true };
-  if (DB.data.settings.soundEnabled === undefined) DB.data.settings.soundEnabled = true;
-  if (!DB.data.counters) DB.data.counters = { invoice: 1000, issuance: 1000, purchase: 1000 };
-  if (!DB.data.counters.issuance) DB.data.counters.issuance = 1000;
-  if (!DB.data.counters.purchase) DB.data.counters.purchase = 1000;
-  // what the server already has — the auto-save only uploads real changes
-  if (DB._bootOnline) { try { DB._syncedJSON = JSON.stringify(DB.data); } catch(_) {} }
-  if (!DB.data.stockMoves) DB.data.stockMoves = [];
-  if (!DB.data.issuances) DB.data.issuances = [];
-  if (!DB.data.suppliers) DB.data.suppliers = [];
-  if (!DB.data.supplierPayments) DB.data.supplierPayments = [];
-  DB.save();
+  dismissBoot();
 
   // Resume audio context on first user interaction (required by browsers)
   const audioResume = () => {
@@ -11393,17 +11563,30 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.addEventListener('click', audioResume);
   document.addEventListener('keydown', audioResume);
 
-  if (restoreSession()) { startApp(); SyncEngine.init(); OfflineManager.init(); }
-  // Dismiss boot overlay (smooth fade)
-  const _boot = document.getElementById('boot-overlay');
-  if (_boot) { _boot.classList.add('hide'); setTimeout(() => _boot.remove(), 400); }
-
-  document.getElementById('login-form').addEventListener('submit', e => {
+  document.getElementById('login-form').addEventListener('submit', async e => {
     e.preventDefault();
     const u = document.getElementById('login-username').value.trim();
     const p = document.getElementById('login-password').value;
-    if (login(u, p)) { toast('مرحباً بك ' + currentUser.name); startApp(); SyncEngine.init(); OfflineManager.init(); }
-    else toast('بيانات الدخول غير صحيحة', 'error');
+    const btn = document.querySelector('#login-form button[type=submit], #login-form .lgn-btn');
+    if (btn) btn.disabled = true;
+    try {
+      const j = await Auth.login(u, p);
+      OfflineAuth.save(u, p, j.user);
+      await bootstrapFromServer();
+      prepareData();
+      launch(j.user);
+      toast('مرحباً بك ' + currentUser.name);
+      try { if (j.weak) sessionStorage.setItem('emx_weak', '1'); else sessionStorage.removeItem('emx_weak'); } catch (_) {}
+      if (j.weak) setTimeout(() => toast('كلمة السر بتاعتك سهلة التخمين — غيّرها' + (currentUser.role === 'admin' ? ' من «الأمان والنسخ»' : ' من القايمة اللي على اسمك'), 'warning', 8000), 1800);
+    } catch (err) {
+      if (err.status === 401 || err.status === 429) toast(err.message || 'بيانات الدخول غير صحيحة', 'error');
+      else {
+        // server unreachable → offline login with the verifier saved on this device
+        const ou = OfflineAuth.check(u, p);
+        if (ou && loadOffline()) { launch(ou); toast('دخلت أوف لاين — التعديلات هتترفع أول ما النت يرجع', 'warning', 6000); }
+        else toast('مفيش اتصال بالسيرفر' + (ou ? '' : ' — ولازم تكون دخلت مرة من الجهاز ده وإنت أونلاين'), 'error', 6000);
+      }
+    } finally { if (btn) btn.disabled = false; }
   });
 
   // Global Search with results dropdown
@@ -12019,6 +12202,8 @@ function renderDashboard() {
 
   // 2) INK
   const inkTotalQty = inkList.reduce((s, p) => s + (p.quantity || 0), 0);
+  // ink isn't counted in sheets: show its own unit (خرطوشة / عبوة…)
+  const inkUnitLabel = (() => { const u = {}; inkList.forEach(p => { const k = (p.unit || '').trim(); if (k && k !== 'وحدة') u[k] = (u[k] || 0) + 1; }); const top = Object.keys(u).sort((a, b) => u[b] - u[a])[0]; return top || 'عبوة'; })();
   // Ink thresholds are smaller-scale: cartridges/units
   const inkPulseInfo = pulseFromQty(inkTotalQty, 5, 15);
   const inkUnit = inkList[0]?.unit || 'خرطوشة';
@@ -12169,7 +12354,7 @@ function renderDashboard() {
           </div>
           <div class="pg-titles">
             <div class="pg-title">الورق</div>
-            <div class="pg-value">${fmt(paperTotalQty).split('.')[0]} وحدة</div>
+            <div class="pg-value">${fmt(paperTotalQty).split('.')[0]} ورقة</div>
           </div>
         </div>
         <div class="pg-status">${paperPulseInfo.label}</div>
@@ -12184,7 +12369,7 @@ function renderDashboard() {
           </div>
           <div class="pg-titles">
             <div class="pg-title">الحبر</div>
-            <div class="pg-value">${fmt(inkTotalQty).split('.')[0]} وحدة</div>
+            <div class="pg-value">${fmt(inkTotalQty).split('.')[0]} ${inkUnitLabel}</div>
           </div>
         </div>
         <div class="pg-status">${inkPulseInfo.label}</div>
@@ -12612,7 +12797,7 @@ function buildCentersWidget() {
                   </div>
                   <div class="table-scroll" style="max-height:240px;overflow-y:auto;background:var(--surface);border-radius:8px">
                     <table>
-                      <thead><tr><th>التاريخ</th><th>نوع الورق</th><th>الكمية</th><th>سعر الوحدة</th><th>الإجمالي</th><th>الحالة</th></tr></thead>
+                      <thead><tr><th>التاريخ</th><th>نوع الورق</th><th>الكمية</th><th>سعر الورقة</th><th>الإجمالي</th><th>الحالة</th></tr></thead>
                       <tbody>
                         ${c.items.slice().sort((a,b)=>b.createdAt-a.createdAt).map(i => `
                           <tr style="cursor:pointer" onclick="event.stopPropagation();viewIssuance('${i.id}')">
@@ -13422,7 +13607,7 @@ function renderMonthlyBreakdown(monthKey) {
       byProduct[pid] = {
         productId: pid,
         name: iss.productName || (prod ? prod.name : 'منتج محذوف'),
-        unit: prod ? prod.unit : 'وحدة',
+        unit: prod ? prod.unit : 'ورقة',
         type: prod ? (prod.type || '') : '',
         qty: 0,
         total: 0,
@@ -13506,7 +13691,7 @@ function renderMonthlyBreakdown(monthKey) {
               </div>
               <div class="mb-bar-qty">
                 <b>${r.qty.toLocaleString('ar-EG')}</b>
-                <small>${escapeHtml(r.unit || 'وحدة')}</small>
+                <small>${escapeHtml(r.unit || 'ورقة')}</small>
               </div>
             </div>`;
         }).join('')}
@@ -14712,7 +14897,7 @@ function viewCustomerStatement(id) {
       <h4 style="margin:0 0 8px;font-size:14px">📄 سجل صرف الورق (${isss.length} عملية - إجمالي ${fmt(totalSheets)} ورقة)</h4>
       <div class="table-scroll" style="max-height:200px;overflow-y:auto">
         <table class="data-table">
-          <thead><tr><th>التاريخ</th><th>نوع الورق</th><th>الكمية</th><th>سعر الوحدة</th><th>الإجمالي</th></tr></thead>
+          <thead><tr><th>التاريخ</th><th>نوع الورق</th><th>الكمية</th><th>سعر الورقة</th><th>الإجمالي</th></tr></thead>
           <tbody>
             ${isss.slice().reverse().map(i => `<tr>
               <td>${i.date}</td>
@@ -17557,7 +17742,7 @@ function renderConsumptionModal() {
 }
 
 function openProductForm(id) {
-  const p = id ? DB.data.products.find(x=>x.id===id) : { name:'', type:'', unit:'وحدة', quantity:0, minQuantity:0, price:0, cost:0 };
+  const p = id ? DB.data.products.find(x=>x.id===id) : { name:'', type:'', unit:'ورقة', quantity:0, minQuantity:0, price:0, cost:0 };
   if (!p) return;
   openModal(id ? 'تعديل منتج' : 'إضافة منتج جديد', `
     <form id="prod-form">
@@ -17573,7 +17758,7 @@ function openProductForm(id) {
         <div class="form-group">
           <label>وحدة القياس *</label>
           <select class="form-control" name="unit" required>
-            ${['ريم','فرخ','علبة','طقم','كيلو','متر','وحدة','كرتونة','قطعة','لفة','رول','خرطوشة','فيلم','عبوة'].concat(p.unit && !['ريم','فرخ','علبة','طقم','كيلو','متر','وحدة','كرتونة','قطعة','لفة','رول','خرطوشة','فيلم','عبوة'].includes(p.unit) ? [p.unit] : []).map(u => `<option value="${u}" ${u===p.unit?'selected':''}>${u}</option>`).join('')}
+            ${['ريم','فرخ','علبة','طقم','كيلو','متر','ورقة','كرتونة','قطعة','لفة','رول','خرطوشة','فيلم','عبوة'].concat(p.unit && !['ريم','فرخ','علبة','طقم','كيلو','متر','ورقة','كرتونة','قطعة','لفة','رول','خرطوشة','فيلم','عبوة'].includes(p.unit) ? [p.unit] : []).map(u => `<option value="${u}" ${u===p.unit?'selected':''}>${u}</option>`).join('')}
           </select>
         </div>
       </div>
@@ -21132,10 +21317,10 @@ function aiAnswer(qRaw) {
       .map(([name, qty]) => '&nbsp;&nbsp;\u2022 ' + name + ': <b>' + fmt(qty).split('.')[0] + '</b>')
       .join('<br>');
     let ans = '\u{1F4E6} <b>اللي طلع من المخزن الشهر ده</b> (من ' + mStartLabel + ' إلى ' + mEndLabel + '):<br>';
-    ans += '\u{1F9FB} ورق: <b>' + fmt(paperQty).split('.')[0] + '</b> وحدة<br>';
-    ans += '\u{1F6CD}\uFE0F بلاستك: <b>' + fmt(plasticQty).split('.')[0] + '</b> وحدة<br>';
-    if (otherQty) ans += '\u{1F4CB} أصناف أخرى: <b>' + fmt(otherQty).split('.')[0] + '</b> وحدة<br>';
-    ans += '\u{1F4CA} الإجمالي: <b>' + fmt(total).split('.')[0] + '</b> وحدة من ' + moves.length + ' حركة صرف<br><br>';
+    ans += '\u{1F9FB} ورق: <b>' + fmt(paperQty).split('.')[0] + '</b> ورقة<br>';
+    ans += '\u{1F6CD}\uFE0F بلاستك: <b>' + fmt(plasticQty).split('.')[0] + '</b> ورقة<br>';
+    if (otherQty) ans += '\u{1F4CB} أصناف أخرى: <b>' + fmt(otherQty).split('.')[0] + '</b> قطعة<br>';
+    ans += '\u{1F4CA} الإجمالي: <b>' + fmt(total).split('.')[0] + '</b> من ' + moves.length + ' حركة صرف<br><br>';
     ans += '<b>التصنيف بالتفصيل:</b><br>' + breakdown;
     return ans;
   }
@@ -21217,7 +21402,7 @@ function aiAnswer(qRaw) {
     const lowNote = lowItems.length > 0
       ? `<br><br>⚠️ <b>قرب يخلص (${lowItems.length}):</b> ${lowItems.map(p=>escapeHtml(p.name)).join('، ')}`
       : '<br><br>✅ كل الأصناف فوق الحد الأدنى.';
-    return `📦 <b>المخزن (${products.length} صنف — إجمالي ${fmt(Math.round(totalQty))} وحدة):</b><br>${list}${lowNote}`;
+    return `📦 <b>المخزن (${products.length} صنف — إجمالي ${fmt(Math.round(totalQty))} ورقة):</b><br>${list}${lowNote}`;
   }
 
   // ---- CUSTOMERS count (كام عميل) ----
@@ -22321,7 +22506,7 @@ function exportCSV(type) {
   }
   else if (type === 'issuances') {
     filename = 'issuances';
-    rows.push(['رقم','التاريخ','المركز','نوع الورق','الوحدة','الكمية','سعر الوحدة','الإجمالي','المدفوع','المتبقي','طريقة الدفع','الحالة','ملاحظات']);
+    rows.push(['رقم','التاريخ','المركز','نوع الورق','الوحدة','الكمية','سعر الورقة','الإجمالي','المدفوع','المتبقي','طريقة الدفع','الحالة','ملاحظات']);
     (DB.data.issuances||[]).forEach(i => {
       const statusLbl = { paid:'مدفوعة', partial:'جزئي', unpaid:'آجل' }[i.status] || i.status;
       const methodLbl = { credit:'آجل', cash:'كاش', transfer:'تحويل', check:'شيك' }[i.paymentMethod] || i.paymentMethod;
@@ -22430,7 +22615,7 @@ function renderIssuances() {
               <th>المركز / العميل</th>
               <th>نوع الورق</th>
               <th>الكمية</th>
-              <th>سعر الوحدة</th>
+              <th>سعر الورقة</th>
               <th>الإجمالي</th>
               <th>المدفوع</th>
               <th>المتبقي</th>
@@ -22770,8 +22955,8 @@ function openIssuanceForm(customerId, productId) {
           <input class="form-control" type="number" name="quantity" id="iss-qty" value="" step="any" min="0.01" oninput="calcIssuanceTotal()" placeholder="مثال: 2000">
         </div>
         <div class="form-group">
-          <label>سعر الوحدة *</label>
-          <input class="form-control" type="number" name="unitPrice" id="iss-price" value="" step="0.01" min="0" oninput="calcIssuanceTotal()" placeholder="سعر الوحدة">
+          <label>سعر الورقة *</label>
+          <input class="form-control" type="number" name="unitPrice" id="iss-price" value="" step="0.01" min="0" oninput="calcIssuanceTotal()" placeholder="سعر الورقة">
         </div>
       </div>
 
@@ -23481,7 +23666,7 @@ function viewIssuance(id) {
         <div><b>نوع الورق:</b> ${escapeHtml(i.productName)}</div>
         <div><b>الوحدة:</b> ${escapeHtml(i.productUnit||product?.unit||'-')}</div>
         <div><b>الكمية:</b> ${fmt(i.quantity)}</div>
-        <div><b>سعر الوحدة:</b> ${fmtCurrency(i.unitPrice)}</div>
+        <div><b>سعر الورقة:</b> ${fmtCurrency(i.unitPrice)}</div>
         <div><b>طريقة الدفع:</b> ${({credit:'آجل', cash:'كاش', transfer:'تحويل بنكي', check:'شيك'})[i.paymentMethod]||i.paymentMethod}</div>
       </div>
       ${i.notes ? `<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border)"><b>ملاحظات:</b> ${escapeHtml(i.notes)}</div>` : ''}
@@ -23556,7 +23741,7 @@ function printIssuance(id) {
 
   <table>
     <thead>
-      <tr><th>نوع الورق</th><th>الوحدة</th><th>الكمية</th><th>سعر الوحدة</th><th>الإجمالي</th></tr>
+      <tr><th>نوع الورق</th><th>الوحدة</th><th>الكمية</th><th>سعر الورقة</th><th>الإجمالي</th></tr>
     </thead>
     <tbody>
       <tr>
@@ -23652,7 +23837,7 @@ function _showEditIssuanceModal(i) {
           <small style="color:var(--text-muted);font-size:11px">الحد الأقصى: ${fmt(availableStock)}</small>
         </div>
         <div class="form-group">
-          <label>السعر للوحدة *</label>
+          <label>السعر للورقة *</label>
           <input class="form-control" type="number" step="0.01" min="0" name="unitPrice" id="ei2-price" value="${i.unitPrice||0}" required oninput="recalcEditIssuanceTotal()">
         </div>
       </div>
@@ -24702,7 +24887,7 @@ function openSupplierForm(id) {
           <input class="form-control" id="sup-pl-name" placeholder="اسم الصنف (مثال: A3 80 جرام)" style="flex:2;min-width:180px">
           <input class="form-control" id="sup-pl-price" type="number" step="0.01" min="0" placeholder="السعر" style="flex:1;min-width:100px">
           <select class="form-control" id="sup-pl-unit" style="flex:0 0 110px">
-            ${['ريم','فرخ','علبة','طقم','كيلو','متر','وحدة','كرتونة','لتر','قطعة'].map(u => `<option value="${u}">${u}</option>`).join('')}
+            ${['ريم','فرخ','علبة','طقم','كيلو','متر','ورقة','كرتونة','لتر','قطعة'].map(u => `<option value="${u}">${u}</option>`).join('')}
           </select>
           <button type="button" class="btn btn-primary btn-sm" onclick="addSupPriceItem()" style="flex:0 0 auto">➕ إضافة</button>
         </div>
@@ -24794,7 +24979,7 @@ function renderSupPriceItems() {
           ${its.map(it => `
             <div class="sup-pl-row">
               <span class="sup-pl-row-name">${escapeHtml(it.name)}</span>
-              <span class="sup-pl-row-price">${fmt(it.price).split('.')[0]} <small>${curShort}/${escapeHtml(it.unit||'وحدة')}</small></span>
+              <span class="sup-pl-row-price">${fmt(it.price).split('.')[0]} <small>${curShort}/${escapeHtml(it.unit||'ورقة')}</small></span>
               <button type="button" class="sup-pl-row-rm" onclick="removeSupPriceItem(${it._idx})" title="حذف">✕</button>
             </div>
           `).join('')}
@@ -24934,7 +25119,7 @@ function openSupplierPriceList(supplierId) {
           <div class="form-group">
             <label>الوحدة</label>
             <select class="form-control" id="pl-new-unit">
-              ${['ريم','فرخ','علبة','طقم','كيلو','متر','وحدة','كرتونة','لتر','جالون','قطعة'].map(u => `<option value="${u}">${u}</option>`).join('')}
+              ${['ريم','فرخ','علبة','طقم','كيلو','متر','ورقة','كرتونة','لتر','جالون','قطعة'].map(u => `<option value="${u}">${u}</option>`).join('')}
             </select>
           </div>
           <div class="form-group">
@@ -24980,7 +25165,7 @@ function openSupplierPriceList(supplierId) {
                     </div>
                     <div class="pl-item-price">
                       <span class="pl-price-val">${fmt(it.price).split('.')[0]}</span>
-                      <span class="pl-price-unit">${curShort} / ${escapeHtml(it.unit || 'وحدة')}</span>
+                      <span class="pl-price-unit">${curShort} / ${escapeHtml(it.unit || 'ورقة')}</span>
                     </div>
                     <div class="pl-item-actions">
                       <button class="btn-icon btn-icon-sm" title="تعديل السعر" onclick="editPriceListItem('${s.id}', ${it._idx})">
@@ -25047,7 +25232,7 @@ function editPriceListItem(supplierId, idx) {
         <div class="form-group">
           <label>الوحدة</label>
           <select class="form-control" name="unit">
-            ${['ريم','فرخ','علبة','طقم','كيلو','متر','وحدة','كرتونة','لتر','جالون','قطعة'].map(u => `<option value="${u}" ${u===item.unit?'selected':''}>${u}</option>`).join('')}
+            ${['ريم','فرخ','علبة','طقم','كيلو','متر','ورقة','كرتونة','لتر','جالون','قطعة'].map(u => `<option value="${u}" ${u===item.unit?'selected':''}>${u}</option>`).join('')}
           </select>
         </div>
       </div>
@@ -25313,7 +25498,7 @@ function onPurchaseSupplierChange() {
       const cat = getPriceCategory(k);
       return `<optgroup label="${cat.icon} ${cat.l}">` +
         groups[k].map(it =>
-          `<option value="${it._idx}" data-price="${it.price}" data-name="${escapeHtml(it.name)}" data-unit="${escapeHtml(it.unit||'وحدة')}" data-cat="${k}">${escapeHtml(it.name)} — ${fmt(it.price).split('.')[0]} ${curShort}/${escapeHtml(it.unit||'وحدة')}</option>`
+          `<option value="${it._idx}" data-price="${it.price}" data-name="${escapeHtml(it.name)}" data-unit="${escapeHtml(it.unit||'ورقة')}" data-cat="${k}">${escapeHtml(it.name)} — ${fmt(it.price).split('.')[0]} ${curShort}/${escapeHtml(it.unit||'ورقة')}</option>`
         ).join('') +
       `</optgroup>`;
     }).join('');
@@ -25398,7 +25583,7 @@ function renderPurchaseItemsTable() {
               <td>
                 <span class="pur-it-cat-dot" style="background:${cat.c}"></span>
                 <b>${escapeHtml(it.name)}</b>
-                <small style="color:var(--text-muted)">${escapeHtml(it.unit||'وحدة')}</small>
+                <small style="color:var(--text-muted)">${escapeHtml(it.unit||'ورقة')}</small>
               </td>
               <td>${fmt(it.qty)}</td>
               <td>${fmt(it.price).split('.')[0]} ${curShort}</td>
@@ -25432,7 +25617,7 @@ function recalcPurchaseTotal() {
   }
   if (hint) hint.style.display = 'block';
   // Auto-generate description from items
-  const desc = items.map(it => `${it.name} (${fmt(it.qty)} ${it.unit||'وحدة'} × ${fmt(it.price).split('.')[0]})`).join(' • ');
+  const desc = items.map(it => `${it.name} (${fmt(it.qty)} ${it.unit||'ورقة'} × ${fmt(it.price).split('.')[0]})`).join(' • ');
   const descField = document.querySelector('#pur-form textarea[name="description"]');
   if (descField && !descField.dataset.userEdited) {
     descField.value = desc;
@@ -26174,7 +26359,9 @@ function exportSuppliersCSV() {
 <script src="js/stockcount.js"></script>
 <script src="js/custody.js"></script>
 <script src="js/debts.js"></script>
+<script src="js/axcore.js"></script>
 <script src="js/approvals.js"></script>
+<script src="js/security.js"></script>
 <script src="vendor/gsap.min.js"></script>
 <script src="js/pulsescene.js"></script>
 </body>

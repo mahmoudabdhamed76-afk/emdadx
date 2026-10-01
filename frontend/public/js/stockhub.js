@@ -100,7 +100,7 @@
       var s = bal <= 0 ? 'empty' : avg <= 0 ? 'idle' : cover < 7 ? 'crit' : cover < 21 ? 'low' : 'ok';
       var min = Number(p.minQuantity || 0);
       return {
-        p: p, id: p.id, name: p.name || '—', unit: p.unit || 'وحدة', cat: classify(p),
+        p: p, id: p.id, name: p.name || '—', unit: p.unit || 'ورقة', cat: classify(p),
         bal: bal, pulled: pulled, avg: avg, cover: cover, state: s,
         until: isFinite(cover) ? addDays(t0, Math.floor(cover)) : null,
         belowMin: min > 0 && bal <= min, min: min,
@@ -345,7 +345,7 @@
       var w = Math.max(3, (o.total || o.qty) / max * 100);
       return '<li><div class="skh-c-top"><b>' + esc(o.name || '—') + '</b><strong>' + num(o.total) + ' <small>' + esc(cur()) + '</small></strong></div>' +
         '<div class="skh-hbar"><i style="width:' + w.toFixed(0) + '%"></i></div>' +
-        '<div class="skh-c-sub"><span>' + o.n + ' مرة صرف · ' + qty(o.qty) + ' وحدة</span>' +
+        '<div class="skh-c-sub"><span>' + o.n + ' مرة صرف · ' + qty(o.qty) + ' ورقة</span>' +
         (ago == null ? '' : '<span class="' + (ago > 20 ? 'late' : '') + '">' + (ago === 0 ? 'سحب النهارده' : ago === 1 ? 'سحب امبارح' : 'بقاله ' + ago + ' يوم') + '</span>') +
         '</div></li>';
     }).join('') + '</ol>';
