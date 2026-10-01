@@ -299,11 +299,12 @@
       var ch = (a - b) / Math.abs(b) * 100; if (Math.abs(ch) < .5) return null;
       return { dir: ch >= 0 ? 'up' : 'down', text: Math.abs(ch).toFixed(0) + '%', good: (ch >= 0) === upGood, hint: 'مقارنة بنفس الفترة من الشهر اللي فات' };
     }
-    var sales = inMonth(A('invoices'), function (i) { return i.total; });
+    var s1 = inMonth(A('issuances'), function (i) { return i.total; }), s2 = inMonth(A('invoices').filter(function (i) { return !i.sourceIssuanceId; }), function (i) { return i.total; });
+    var sales = [s1[0] + s2[0], s1[1] + s2[1]];
     var coll = inMonth(A('payments'), function (p) { return p.amount; });
     var exp = inMonth(A('expenses').filter(function (e) { return e.kind !== 'purchase'; }), function (e) { return e.amount; });
     var iss = inMonth(A('issuances'), function (i) { return i.quantity; });
-    var debt = A('invoices').reduce(function (s, i) { return s + Math.max(0, Number(i.total || 0) - Number(i.paid || 0)); }, 0);
+    var debt = A('customers').reduce(function (s, c) { return s + Math.max(0, Number(c.balance || 0)); }, 0);
     var top = {}; A('issuances').forEach(function (i) { if (String(i.date || '').slice(0, 7) === mNow) top[i.customerName || i.customerId] = (top[i.customerName || i.customerId] || 0) + Number(i.total || 0); });
     var best = Object.keys(top).sort(function (a, b) { return top[b] - top[a]; })[0];
     var net = sales[0] - exp[0];

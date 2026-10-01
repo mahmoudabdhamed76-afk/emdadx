@@ -9655,7 +9655,7 @@ audio::-webkit-media-controls-panel { background: rgba(15,23,42,.9); }
 
     <footer class="app-footer">
       <div>جميع الحقوق محفوظة © 2026 إمداد إكس</div>
-      <div class="version">الإصدار 4.5</div>
+      <div class="version">الإصدار 4.6</div>
     </footer>
   </div>
 </div>
@@ -9785,6 +9785,7 @@ const DB = {
   },
 
   async _flush() {
+    this._saveTimer = null;
     if (this._saveInflight) { this._savePending = true; return; }
     this._saveInflight = true;
     try {
@@ -9897,15 +9898,17 @@ const OfflineManager = (() => {
 
   async function postToServer(data) {
     _lastSaveAt = Date.now();
+    const body = JSON.stringify(data);
     const res = await fetch(API_BASE + '/api/data', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-Client-Id': _CLIENT_ID },
-      body: JSON.stringify(data),
+      body,
       signal: AbortSignal.timeout(8000)
     });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const json = await res.json().catch(() => ({}));
     if (json.version) DB._serverVersion = json.version;
+    DB._syncedJSON = body;
     SyncEngine.onSelfSaved(json.version);
     return json;
   }
@@ -10059,6 +10062,7 @@ const SyncEngine = (() => {
       inventory: typeof renderInventory === 'function' ? renderInventory : null,
       stock:     typeof renderStockHub  === 'function' ? renderStockHub  : null,
       debts:     typeof renderDebts     === 'function' ? renderDebts     : null,
+      approvals: typeof renderApprovals === 'function' ? renderApprovals : null,
       suppliers: typeof renderSuppliers === 'function' ? renderSuppliers : null,
       issuances: typeof renderIssuances === 'function' ? renderIssuances : null,
       expenses:  typeof renderExpenses  === 'function' ? renderExpenses  : null,
@@ -10071,6 +10075,9 @@ const SyncEngine = (() => {
   }
 
   async function pullLatest(reason = '') {
+    // A local save is still queued / in flight: merging now would overwrite
+    // what the user just did before it reaches the server. Try again after it.
+    if (DB._saveTimer || DB._saveInflight) { setTimeout(() => pullLatest(reason), 400); return; }
     if (_isSyncing) return;
     _isSyncing = true; setStatus('syncing');
     try {
@@ -10085,6 +10092,7 @@ const SyncEngine = (() => {
       DB._bootstrapData = fresh;
       DB._serverVersion = newVer;
       silentMerge(fresh);
+      try { DB._syncedJSON = JSON.stringify(DB.data); } catch(_) {}
       smartPageUpdate(reason);
       setStatus('connected');
     } catch (e) {
@@ -10116,8 +10124,7 @@ const SyncEngine = (() => {
         if (msg.event === 'connected') { DB._serverVersion = msg.version || 0; return; }
         if (msg.event === 'data_changed') {
           const isSelf = msg.source === _CLIENT_ID;
-          const recentSave = (Date.now() - (OfflineManager.getLastSaveAt() || 0)) < 2000;
-          if (isSelf || recentSave) { DB._serverVersion = msg.version; return; }
+          if (isSelf) { DB._serverVersion = msg.version; return; }
           throttledPull('data_changed');
         }
       } catch(_) {}
@@ -10230,6 +10237,7 @@ async function bootstrapFromServer() {
     if (!ct.includes('application/json')) throw new Error('ليس JSON');
     DB._bootstrapData = await res.json();
     DB._bootstrapped = true;
+    DB._bootOnline = true;
     return; // online
   } catch (e) {
     console.warn('[Bootstrap] server unreachable, trying offline snapshot:', e.message);
@@ -10328,9 +10336,9 @@ function normalizeArabic(s) {
 let currentUser = null;
 const ROLE_LABELS = { admin: 'مدير النظام', accountant: 'محاسب', sales: 'موظف مبيعات' };
 const PERMISSIONS = {
-  admin: ['dashboard','customers','issuances','invoices','payments','transfers','debts','suppliers','inventory','stock','expenses','reports','aiassistant','users','audit','settings'],
-  accountant: ['dashboard','customers','issuances','invoices','payments','transfers','debts','suppliers','expenses','reports','aiassistant'],
-  sales: ['dashboard','customers','issuances','invoices','payments','inventory','stock','aiassistant']
+  admin: ['dashboard','customers','issuances','invoices','payments','transfers','debts','suppliers','inventory','stock','expenses','reports','aiassistant','approvals','users','audit','settings'],
+  accountant: ['dashboard','customers','issuances','invoices','payments','transfers','debts','suppliers','expenses','reports','aiassistant','approvals'],
+  sales: ['dashboard','customers','issuances','invoices','payments','inventory','stock','aiassistant','approvals']
 };
 function can(page) { return currentUser && PERMISSIONS[currentUser.role].includes(page); }
 
@@ -10864,6 +10872,7 @@ const NAV_ITEMS = [
   { key: 'expenses', label: 'المصروفات', color: '#ef4444', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>', section: 'ops' },
   { key: 'reports', label: 'التقارير', color: '#a855f7', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>', section: 'ops' },
   { key: 'aiassistant', label: 'المساعد الذكي', color: '#34d399', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" y1="16" x2="8" y2="16"/><line x1="16" y1="16" x2="16" y2="16"/></svg>', section: 'ops' },
+  { key: 'approvals', label: 'طلبات الموافقة', color: '#6366F1', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3 8-8"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg>', section: 'ops' },
   { key: 'users', label: 'المستخدمين', color: '#14b8a6', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>', section: 'admin' },
   { key: 'audit', label: 'سجل التعديلات', color: '#dc2626', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>', section: 'admin' },
   { key: 'settings', label: 'الإعدادات', color: '#64748b', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>', section: 'admin' }
@@ -10966,7 +10975,7 @@ function navigate(page, isBack) {
   currentPage = page;
   renderSidebar();
   toggleSidebar(false);
-  const titles = { dashboard:'لوحة التحكم', customers:'العملاء والمراكز', issuances:'صرف الورق للمراكز', invoices:'الفواتير', payments:'التحصيل والمديونيات', transfers:'التحويلات البنكية', debts:'سداد المديونية', suppliers:'الموردين', inventory:'إدارة المخازن', stock:'مخزوني وجرد', expenses:'المصروفات', reports:'التقارير', aiassistant:'المساعد الذكي', users:'إدارة المستخدمين', audit:'سجل التعديلات الذكي', settings:'الإعدادات' };
+  const titles = { dashboard:'لوحة التحكم', customers:'العملاء والمراكز', issuances:'صرف الورق للمراكز', invoices:'الفواتير', payments:'التحصيل والمديونيات', transfers:'التحويلات البنكية', debts:'سداد المديونية', suppliers:'الموردين', inventory:'إدارة المخازن', stock:'مخزوني وجرد', expenses:'المصروفات', reports:'التقارير', aiassistant:'المساعد الذكي', approvals:'طلبات الموافقة', users:'إدارة المستخدمين', audit:'سجل التعديلات الذكي', settings:'الإعدادات' };
   document.getElementById('topbar-title').innerText = titles[page] || '';
 
   const pc = document.getElementById('page-content');
@@ -10979,7 +10988,7 @@ function navigate(page, isBack) {
   }
 
   const doRender = () => {
-    const renderers = { dashboard: renderDashboard, customers: renderCustomers, issuances: renderIssuances, invoices: renderInvoices, payments: renderPayments, transfers: renderTransfersPage, debts: (typeof renderDebts === 'function' ? renderDebts : renderDashboard), suppliers: renderSuppliers, inventory: renderInventory, stock: (typeof renderStockHub === 'function' ? renderStockHub : renderDashboard), expenses: renderExpenses, reports: renderReports, aiassistant: renderAIAssistant, users: renderUsers, audit: renderAuditLog, settings: renderSettings };
+    const renderers = { dashboard: renderDashboard, customers: renderCustomers, issuances: renderIssuances, invoices: renderInvoices, payments: renderPayments, transfers: renderTransfersPage, debts: (typeof renderDebts === 'function' ? renderDebts : renderDashboard), suppliers: renderSuppliers, inventory: renderInventory, stock: (typeof renderStockHub === 'function' ? renderStockHub : renderDashboard), expenses: renderExpenses, reports: renderReports, aiassistant: renderAIAssistant, approvals: (typeof renderApprovals === 'function' ? renderApprovals : renderDashboard), users: renderUsers, audit: renderAuditLog, settings: renderSettings };
     (renderers[page] || renderDashboard)();
     updateBackButton();
     updateHomeFab();
@@ -11132,7 +11141,8 @@ function startAutoSave() {
   // Quick save every 5 seconds
   _autoSaveInterval = setInterval(() => {
     try {
-      const stamp = JSON.stringify(DB.data).length + ':' + Date.now();
+      if (DB._saveTimer || DB._saveInflight) return;
+      if (DB._syncedJSON && JSON.stringify(DB.data) === DB._syncedJSON) return;
       DB.save();
       _lastSaveStamp = Date.now();
     } catch(e) { console.error('autosave failed', e); }
@@ -11365,6 +11375,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (!DB.data.counters) DB.data.counters = { invoice: 1000, issuance: 1000, purchase: 1000 };
   if (!DB.data.counters.issuance) DB.data.counters.issuance = 1000;
   if (!DB.data.counters.purchase) DB.data.counters.purchase = 1000;
+  // what the server already has — the auto-save only uploads real changes
+  if (DB._bootOnline) { try { DB._syncedJSON = JSON.stringify(DB.data); } catch(_) {} }
   if (!DB.data.stockMoves) DB.data.stockMoves = [];
   if (!DB.data.issuances) DB.data.issuances = [];
   if (!DB.data.suppliers) DB.data.suppliers = [];
@@ -14796,6 +14808,7 @@ function renderInvoices() {
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M3 3h18v4H3z"/><path d="M5 10h14v4H5z"/><path d="M8 17h8v4H8z"/></svg>
         🧾 فاتورة مجمعة
       </button>
+      <button class="btn btn-secondary iss-toinv-btn" onclick="openInvoiceFromIssuances()">🧾 فاتورة من الصرف${typeof issUninvoicedCount === 'function' && issUninvoicedCount() ? ' <span class="iss-uninv-badge">' + issUninvoicedCount() + '</span>' : ''}</button>
       <button class="btn btn-secondary" onclick="exportCSV('invoices')">📥 تصدير Excel</button>
     </div>
 
@@ -15309,7 +15322,7 @@ function openNewInvoice() {
   if (DB.data.customers.length === 0) { toast('أضف عميلاً أولاً', 'error'); return; }
   if (DB.data.products.length === 0) { toast('أضف منتجات أولاً', 'error'); return; }
 
-  const taxRate = DB.data.settings.taxRate || 14;
+  const taxRate = Number(DB.data.settings.taxRate) || 0;   // الضريبة صفر إلا لو اتحددت في الإعدادات
   openModal('فاتورة جديدة', `
     <form id="invoice-form">
       <div class="form-row">
@@ -17560,7 +17573,7 @@ function openProductForm(id) {
         <div class="form-group">
           <label>وحدة القياس *</label>
           <select class="form-control" name="unit" required>
-            ${['ريم','فرخ','علبة','طقم','كيلو','متر','وحدة','كرتونة'].map(u => `<option value="${u}" ${u===p.unit?'selected':''}>${u}</option>`).join('')}
+            ${['ريم','فرخ','علبة','طقم','كيلو','متر','وحدة','كرتونة','قطعة','لفة','رول','خرطوشة','فيلم','عبوة'].concat(p.unit && !['ريم','فرخ','علبة','طقم','كيلو','متر','وحدة','كرتونة','قطعة','لفة','رول','خرطوشة','فيلم','عبوة'].includes(p.unit) ? [p.unit] : []).map(u => `<option value="${u}" ${u===p.unit?'selected':''}>${u}</option>`).join('')}
           </select>
         </div>
       </div>
@@ -22381,6 +22394,7 @@ function renderIssuances() {
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         صرف ورق جديد
       </button>
+      <button class="btn btn-secondary iss-toinv-btn" onclick="openInvoiceFromIssuances()">🧾 فاتورة من الصرف${typeof issUninvoicedCount === 'function' && issUninvoicedCount() ? ' <span class="iss-uninv-badge">' + issUninvoicedCount() + '</span>' : ''}</button>
       <button class="btn btn-secondary" onclick="exportCSV('issuances')">📥 تصدير Excel</button>
     </div>
 
@@ -22767,12 +22781,12 @@ function openIssuanceForm(customerId, productId) {
       </div>
 
       <button type="button" class="btn btn-add-item" onclick="addIssuanceItem()" style="width:100%;margin-bottom:14px">
-        ➕ أضف الصنف للفاتورة
+        ➕ أضف الصنف
       </button>
 
       <!-- CART: items added to this invoice -->
       <div id="iss-cart-wrap" style="display:none;margin-bottom:14px">
-        <div style="font-weight:800;margin-bottom:8px;color:var(--text)">🧾 أصناف الفاتورة</div>
+        <div style="font-weight:800;margin-bottom:8px;color:var(--text)">🧾 أصناف الصرف</div>
         <div style="overflow-x:auto">
           <table class="data-table" id="iss-cart-table" style="width:100%;font-size:13px">
             <thead><tr>
@@ -22860,12 +22874,19 @@ function openIssuanceForm(customerId, productId) {
         </div>
       </div>
 
+      <label class="iss-inv-toggle" for="iss-make-invoice">
+        <input type="checkbox" id="iss-make-invoice" onchange="onIssMakeInvoiceChange(this.checked)">
+        <span class="iss-inv-t"><b>🧾 إصدار فاتورة مع الصرف</b>
+          <small id="iss-inv-hint">مقفول: الصرف يتسجل على حساب المركز من غير فاتورة — وتقدر تعمل له فاتورة بعدين من «فاتورة من الصرف».</small></span>
+        <span class="iss-inv-tax">ضريبة 0%</span>
+      </label>
+
       <div class="form-group">
         <label>ملاحظات</label>
         <textarea class="form-control" name="notes" rows="2" placeholder="ملاحظات إضافية..."></textarea>
       </div>
     </form>
-  `, `<button class="btn btn-primary" onclick="saveIssuance()">💾 حفظ وإصدار الفاتورة</button>
+  `, `<button class="btn btn-primary" onclick="saveIssuance()" id="iss-save-btn">💾 حفظ الصرف</button>
       <button class="btn btn-secondary" onclick="closeModal()">إلغاء</button>`, 'large');
 
   // Trigger product change if pre-selected
@@ -23118,7 +23139,7 @@ function saveIssuance(keepOpen) {
     addIssuanceItem();
   }
 
-  if (_issuanceCart.length === 0) { toast('أضف صنف واحد على الأقل للفاتورة', 'error'); return; }
+  if (_issuanceCart.length === 0) { toast('أضف صنف واحد على الأقل', 'error'); return; }
 
   const customer = DB.data.customers.find(c => c.id === d.customerId);
   if (!customer) { toast('خطأ في بيانات العميل', 'error'); return; }
@@ -23136,12 +23157,14 @@ function saveIssuance(keepOpen) {
   }
 
   const status = d.paid >= grandTotal ? 'paid' : d.paid > 0 ? 'partial' : 'unpaid';
-  const invoiceId = 'inv_' + uid();
-  const invoiceNumber = ++DB.data.counters.invoice;
+  // صرف الورق منفصل عن الفواتير: الفاتورة بتتعمل بس لو اخترت «إصدار فاتورة مع الصرف» (وبضريبة 0%)
+  const makeInvoice = !!(document.getElementById('iss-make-invoice') || {}).checked;
+  const invoiceId = makeInvoice ? 'inv_' + uid() : null;
+  const invoiceNumber = makeInvoice ? ++DB.data.counters.invoice : null;
   const methodMap = { credit:'آجل', cash:'كاش', transfer:'تحويل', check:'شيك' };
 
-  // ----- Create ONE merged INVOICE with all items -----
-  const invoice = {
+  // ----- Create ONE merged INVOICE with all items (only when asked) -----
+  const invoice = !makeInvoice ? null : {
     id: invoiceId,
     number: invoiceNumber,
     customerId: d.customerId,
@@ -23160,9 +23183,10 @@ function saveIssuance(keepOpen) {
     paymentMethod: methodMap[d.paymentMethod] || 'آجل',
     status: status,
     notes: d.notes || '',
+    fromIssuance: true,
     createdAt: Date.now()
   };
-  DB.data.invoices.push(invoice);
+  if (invoice) DB.data.invoices.push(invoice);
 
   // ----- For each item: create an issuance record + stock move (all linked to same invoice) -----
   if (!DB.data.issuances) DB.data.issuances = [];
@@ -23209,10 +23233,13 @@ function saveIssuance(keepOpen) {
       type: 'out',
       quantity: it.quantity,
       date: d.date,
-      reference: `صرف #${issuanceNumber} - ${customer.name} (فاتورة #${invoiceNumber})`,
+      reference: invoice ? `صرف #${issuanceNumber} - ${customer.name} (فاتورة #${invoiceNumber})` : `صرف #${issuanceNumber} - ${customer.name}`,
       createdAt: Date.now()
     });
   });
+
+  // the invoice belongs to these issuances → never counted twice in sales
+  if (invoice) invoice.sourceIssuanceId = createdIssuanceIds[0] || null;
 
   // Update customer balance (add unpaid amount of whole invoice)
   const owed = grandTotal - d.paid;
@@ -23226,22 +23253,22 @@ function saveIssuance(keepOpen) {
       customerId: customer.id,
       customerName: customer.name,
       issuanceId: createdIssuanceIds[0] || null,
-      invoiceId: invoice.id,
+      invoiceId: invoice ? invoice.id : null,
       amount: d.paid,
       date: d.date,
       method: d.paymentMethod === 'credit' ? 'cash' : d.paymentMethod,
-      note: 'دفعة مع فاتورة الصرف #' + invoiceNumber,
+      note: invoice ? 'دفعة مع فاتورة الصرف #' + invoiceNumber : 'دفعة مع صرف #' + issuanceNumber,
       createdAt: Date.now()
     });
   }
 
   DB.save();
   logAudit({
-    operation: 'add', table: 'invoices',
-    recordId: invoice.id,
-    recordLabel: `فاتورة صرف #${invoiceNumber} - ${customer.name} (${_issuanceCart.length} صنف)`,
+    operation: 'add', table: invoice ? 'invoices' : 'issuances',
+    recordId: invoice ? invoice.id : createdIssuanceIds[0],
+    recordLabel: invoice ? `فاتورة صرف #${invoiceNumber} - ${customer.name} (${_issuanceCart.length} صنف)` : `صرف #${issuanceNumber} - ${customer.name} (${_issuanceCart.length} صنف) — بدون فاتورة`,
     before: null,
-    after: JSON.parse(JSON.stringify(invoice)),
+    after: JSON.parse(JSON.stringify(invoice || DB.data.issuances.find(x => x.id === createdIssuanceIds[0]))),
     reason: window._pendingAuditReason || ''
   });
   delete window._pendingAuditReason;
@@ -23255,7 +23282,8 @@ function saveIssuance(keepOpen) {
   updateNotifBadge();
   closeModal();
   celebrate();
-  notify({ type:'success', title:'تم إصدار الفاتورة', message:`تم إصدار فاتورة الصرف رقم <b>#${invoiceNumber}</b> للعميل <b>"${escapeHtml(customer.name)}"</b> وتشمل <b>${itemCount}</b> صنف بنجاح` });
+  if (invoice) notify({ type:'success', title:'تم الصرف وإصدار الفاتورة', message:`تم صرف <b>${itemCount}</b> صنف للمركز <b>"${escapeHtml(customer.name)}"</b> وإصدار فاتورة رقم <b>#${invoiceNumber}</b> (ضريبة 0%)` });
+  else notify({ type:'success', title:'تم الصرف', message:`تم صرف <b>${itemCount}</b> صنف للمركز <b>"${escapeHtml(customer.name)}"</b> (صرف #${issuanceNumber}) على الحساب — من غير فاتورة` });
 }
 
 function _saveIssuanceOLD(keepOpen) {
@@ -23478,7 +23506,7 @@ function viewIssuance(id) {
   `, `
     ${remaining > 0 ? `<button class="btn btn-success" onclick="closeModal();openPaymentForm('${i.customerId}')">💰 تسجيل تحصيل</button>` : ''}
     <button class="btn btn-secondary" onclick="printIssuance('${i.id}')">🖨️ طباعة</button>
-    ${i.invoiceId ? `<button class="btn btn-warning" onclick="closeModal();navigate('invoices');setTimeout(()=>viewInvoice('${i.invoiceId}'),100)">📝 فتح الفاتورة المرتبطة</button>` : ''}
+    ${i.invoiceId ? `<button class="btn btn-warning" onclick="closeModal();navigate('invoices');setTimeout(()=>viewInvoice('${i.invoiceId}'),100)">📝 فتح الفاتورة المرتبطة</button>` : `<button class="btn btn-secondary" onclick="closeModal();openInvoiceFromIssuances('${i.customerId}')">🧾 اعمل فاتورة للصرف ده</button>`}
     <button class="btn btn-secondary" onclick="closeModal()">إغلاق</button>
   `, 'large');
 }
@@ -26140,10 +26168,13 @@ function exportSuppliersCSV() {
 
 <script src="js/glowchart.js"></script>
 <script src="js/aurum.js"></script>
+<script src="js/business.js"></script>
 <script src="js/ticker.js"></script>
 <script src="js/stockhub.js"></script>
 <script src="js/stockcount.js"></script>
+<script src="js/custody.js"></script>
 <script src="js/debts.js"></script>
+<script src="js/approvals.js"></script>
 <script src="vendor/gsap.min.js"></script>
 <script src="js/pulsescene.js"></script>
 </body>

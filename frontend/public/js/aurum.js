@@ -136,12 +136,16 @@
     var inv = arr('invoices'), pay = arr('payments'), iss = arr('issuances');
     var exp = arr('expenses').filter(function (e) { return e.kind !== 'purchase'; });
     var sp = arr('supplierPayments');
-    var todaySales = sum(inv.filter(function (i) { return i.date === t; }), function (i) { return i.total; });
+    // sales = paper issuances + invoices that are NOT made from an issuance (no double counting)
+    var standalone = inv.filter(function (i) { return !i.sourceIssuanceId; });
+    var todaySales = sum(iss.filter(function (i) { return i.date === t; }), function (i) { return i.total; })
+                   + sum(standalone.filter(function (i) { return i.date === t; }), function (i) { return i.total; });
     var todayCollect = sum(pay.filter(function (p) { return p.date === t; }), function (p) { return p.amount; });
     var todayIss = iss.filter(function (i) { return i.date === t; });
     var todayOut = sum(exp.filter(function (e) { return e.date === t; }), function (e) { return e.amount; })
                  + sum(sp.filter(function (p) { return p.date === t; }), function (p) { return p.amount; });
-    var monthSales = sum(inv.filter(function (i) { return (i.date || '') >= m0 && (i.date || '') <= t; }), function (i) { return i.total; });
+    var inMonth = function (i) { return (i.date || '') >= m0 && (i.date || '') <= t; };
+    var monthSales = sum(iss.filter(inMonth), function (i) { return i.total; }) + sum(standalone.filter(inMonth), function (i) { return i.total; });
     var now = new Date();
     var daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
     var daysLeft = Math.max(1, daysInMonth - now.getDate() + 1);
@@ -339,13 +343,14 @@
       byCustomer[k].qty += Number(i.quantity || 0); byCustomer[k].total += Number(i.total || 0);
     });
 
-    var sales = sum(inv, function (i) { return i.total; });
-    var paidAtSale = sum(inv, function (i) { return i.paid; });
+    var soloInv = inv.filter(function (i) { return !i.sourceIssuanceId; });
+    var sales = sum(iss, function (i) { return i.total; }) + sum(soloInv, function (i) { return i.total; });
+    var paidAtSale = sum(iss, function (i) { return i.paid; }) + sum(soloInv, function (i) { return i.paid; });
     var collected = sum(pay, function (p) { return p.amount; });
     var spent = sum(exp, function (e) { return e.amount; });
     var toSuppliers = sum(sp, function (p) { return p.amount; });
     return {
-      date: d, invCount: inv.length, sales: sales, credit: Math.max(0, sales - paidAtSale),
+      date: d, invCount: Object.keys(iss.reduce(function (m, i) { m[i.number || i.id] = 1; return m; }, {})).length + soloInv.length, sales: sales, credit: Math.max(0, sales - paidAtSale),
       collected: collected, byMethod: byMethod,
       issOps: iss.length, byClass: byClass, byCustomer: byCustomer,
       spent: spent, byCat: byCat, purchases: sum(pur, function (e) { return e.amount; }),
@@ -369,7 +374,7 @@
       '<div class="ax-dc-bar"><label for="ax-dc-date">اليوم</label>' +
         '<input class="form-control" type="date" id="ax-dc-date" value="' + r.date + '" max="' + today() + '" onchange="AX.dayClose(this.value)"></div>' +
       '<div class="ax-dc-tiles">' +
-        '<div class="ax-dc-tile"><span>المبيعات</span><b class="ax-num">' + money(r.sales) + '</b><em>' + r.invCount + ' فاتورة · آجل ' + money(r.credit) + '</em></div>' +
+        '<div class="ax-dc-tile"><span>المبيعات</span><b class="ax-num">' + money(r.sales) + '</b><em>' + r.invCount + ' عملية بيع · آجل ' + money(r.credit) + '</em></div>' +
         '<div class="ax-dc-tile ax-t-ok"><span>المحصّل</span><b class="ax-num">' + money(r.collected) + '</b><em>' + Object.keys(r.byMethod).length + ' طريقة دفع</em></div>' +
         '<div class="ax-dc-tile ax-t-bad"><span>المصروف والسداد</span><b class="ax-num">' + money(r.spent + r.toSuppliers) + '</b><em>مصروفات ' + money(r.spent) + ' · موردين ' + money(r.toSuppliers) + '</em></div>' +
         '<div class="ax-dc-tile ax-t-gold"><span>صافي الخزنة</span><b class="ax-num">' + money(r.net) + '</b><em>المحصّل ناقص المصروف</em></div>' +

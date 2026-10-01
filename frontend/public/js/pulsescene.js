@@ -182,20 +182,28 @@
     var cards = readCards(grid);
     state.cards = cards;
     state.values = { suppliers: numOf((cards.suppliers || {}).value), treasury: numOf((cards.treasury || {}).value) };
-    var inv = A('invoices'), m0 = lds(new Date()).slice(0, 7) + '-01';
-    var monthInv = inv.filter(function (i) { return (i.date || '') >= m0; });
-    if (!monthInv.length) monthInv = inv.slice(-40);
-    var paid = monthInv.filter(function (i) { return i.status === 'paid' || Number(i.paid || 0) >= Number(i.total || 0); }).length;
-    state.inv = { total: monthInv.length, paid: paid };
+    // sales documents = each paper-issuance batch + every invoice that is NOT made from an issuance
+    var m0 = lds(new Date()).slice(0, 7) + '-01', docs = {};
+    A('issuances').forEach(function (i) {
+      var k = 'i' + (i.number || i.id), d = docs[k] || (docs[k] = { date: i.date || '', total: 0, paid: 0 });
+      d.total += Number(i.total || 0); d.paid += Number(i.paid || 0);
+    });
+    A('invoices').forEach(function (i) { if (!i.sourceIssuanceId) docs['v' + i.id] = { date: i.date || '', total: Number(i.total || 0), paid: Number(i.paid || 0) }; });
+    var all = Object.keys(docs).map(function (k) { return docs[k]; }).sort(function (a, b) { return String(a.date).localeCompare(String(b.date)); });
+    var monthDocs = all.filter(function (d) { return d.date >= m0; });
+    if (monthDocs.length < 5) monthDocs = all.slice(-40);
+    var paid = monthDocs.filter(function (d) { return d.paid >= d.total - .005; }).length;
+    state.inv = { total: monthDocs.length, paid: paid, recent: !!(monthDocs.length && monthDocs[0].date < m0) };
 
     var sec = document.createElement('section');
     sec.className = 'pxs'; sec.id = 'pxs';
     sec.setAttribute('aria-label', 'نبض الشركة: الورق والحبر والفواتير والتحصيل والموردين والخزنة');
     sec.innerHTML =
+      '<div class="pxs-tkhost"></div>' +
       '<div class="pxs-stage">' +
         '<div class="pxs-glow pxs-g1"></div><div class="pxs-glow pxs-g2"></div><div class="pxs-glow pxs-g3"></div>' +
         '<div class="pxs-wall-wrap"><div class="pxs-wall" aria-hidden="true"></div></div>' +
-        '<div class="pxs-cap"><span class="pxs-cap-dot"></span><b class="pxs-cap-n">0</b><span>من ' + state.inv.total + ' فاتورة اتحصّلت الشهر ده</span></div>' +
+        '<div class="pxs-cap"><span class="pxs-cap-dot"></span><b class="pxs-cap-n">0</b><span>من ' + state.inv.total + ' عملية بيع اتحصّلت ' + (state.inv.recent ? 'مؤخراً' : 'الشهر ده') + '</span></div>' +
         '<div class="pxs-graph">' +
           '<div class="pxs-gh"><div class="pxs-gt"><span class="pxs-gname"></span><b class="pxs-gval"></b></div><span class="pxs-gdelta"></span></div>' +
           '<div class="pxs-plot"></div>' +
@@ -472,15 +480,19 @@
         loops.push(gsap.to(G.area, { opacity: .7, duration: 2.6, ease: 'sine.inOut', yoyo: true, repeat: -1 }));
       } else { gsap.set([G.head, G.headGlow, G.runner], { autoAlpha: 0 }); }
 
-      /* 4 · شريط النبض (js/ticker.js) — first thing on the dashboard */
+      /* 4 · شريط النبض (js/ticker.js) — the strip on top of this panel */
       if (window.AXTicker) {
-        var pc = document.getElementById('page-content');
-        var host = document.createElement('div'); host.id = 'axtk-dash'; host.className = 'axtk-host axtk-host--dash';
-        pc.insertBefore(host, pc.firstChild);
-        AXTicker.create(host, { id: 'dash', variant: 'bar', label: 'شريط النبض: كل الأرقام وآخر الحركات', items: tickerItems() });
-        // the hero / cash-flow blocks are inserted after us in the same render → keep the strip on top
-        Promise.resolve().then(function () { if (host.parentNode === pc && pc.firstChild !== host) pc.insertBefore(host, pc.firstChild); });
+        AXTicker.create(sec.querySelector('.pxs-tkhost'), { id: 'dash', variant: 'bar', label: 'شريط النبض: كل الأرقام وآخر الحركات', items: tickerItems() });
       }
+      /* the panel is the first thing on the dashboard, the cash flow follows (hero after it) —
+         aurum.js moves the cash flow in the same render, so settle the order right after */
+      Promise.resolve().then(function () {
+        var pc = document.getElementById('page-content');
+        if (!pc || sec.parentNode !== pc) return;
+        pc.insertBefore(sec, pc.firstChild);
+        var cf = document.getElementById('cashflow-container'), cfRow = cf && (cf.closest('.dash-row') || cf.closest('.dash-card'));
+        if (cfRow && cfRow.parentNode === pc) pc.insertBefore(cfRow, sec.nextSibling);
+      });
 
       /* intro */
       if (intro) {

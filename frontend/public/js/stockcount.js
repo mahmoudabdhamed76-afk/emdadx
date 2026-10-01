@@ -187,7 +187,7 @@
         '<button class="skc-start is-rec" onclick="AXCount.start(\'smart\')"' + (due.length ? '' : ' disabled') + '>' +
           '<span class="skc-si">' + SVG.brain + '</span><b>جرد ذكي</b><span>' + (due.length ? due.length + ' صنف مستحق بس — أسرع وأدق' : 'مفيش أصناف مستحقة') + '</span>' +
           (due.length ? '<em>المقترح</em>' : '') + '</button>' +
-        '<button class="skc-start" onclick="AXCount.start(\'all\')"><span class="skc-si">' + SVG.all + '</span><b>جرد شامل</b><span>كل الأصناف (' + an.length + ')</span></button>' +
+        '<button class="skc-start" onclick="AXCount.start(\'all\')"><span class="skc-si">' + SVG.all + '</span><b>جرد شامل</b><span>كل أصناف المخزن (' + an.length + ') — ورق، حبر، قطع غيار وغيرهم</span></button>' +
         '<div class="skc-start skc-start-cat"><span class="skc-si">' + ico('paper') + '</span><b>جرد قسم</b><div class="skc-catbtns">' +
           Object.keys(cats).map(function (k) { return '<button class="t-' + catInfo(k).tint + '" onclick="AXCount.start(\'cat\',\'' + k + '\')">' + catInfo(k).label + ' <small>' + cats[k] + '</small></button>'; }).join('') +
         '</div></div>' +
@@ -195,7 +195,8 @@
       '<div class="skc-opts">' +
         '<label class="skc-blind"><input type="checkbox" ' + (S().countBlind ? 'checked' : '') + ' onchange="AXCount.setBlind(this.checked)">' +
           '<span><b>جرد أعمى</b><small>الرصيد المسجّل يستخبى وإنت بتعدّ — عشان العدّ يبقى من غير تأثير</small></span></label>' +
-        '<button class="btn btn-secondary" onclick="AXCount.printSheet()">' + SVG.print + ' ورقة جرد فاضية للطباعة</button>' +
+        '<div class="skc-opt-btns"><button class="btn btn-secondary" onclick="openProductForm()">+ صنف جديد للمخزن</button>' +
+        '<button class="btn btn-secondary" onclick="AXCount.printSheet()">' + SVG.print + ' ورقة جرد فاضية للطباعة</button></div>' +
       '</div>' +
 
       '<div class="dash-card skc-card"><div class="dash-card-header"><div class="dash-card-title">أولوية الجرد</div><div class="skh-note">الأهم فوق</div></div>' +

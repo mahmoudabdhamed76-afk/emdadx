@@ -24,7 +24,7 @@
   function esc(s) { return (typeof escapeHtml === 'function') ? escapeHtml(s) : String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return '&#' + c.charCodeAt(0) + ';'; }); }
   function lds(d) { return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); }
   function parseD(s) { var p = String(s).slice(0, 10).split('-'); return new Date(+p[0], +p[1] - 1, +p[2]); }
-  function isAdj(m) { return /^تسوية جرد/.test(String(m.reference || m.note || '')); }   // stocktake corrections are not consumption
+  function isAdj(m) { return /^(تسوية جرد|عهدة|رد عهدة)/.test(String(m.reference || m.note || '')); }   // stocktake corrections are not consumption
   function today0() { var d = new Date(); d.setHours(0, 0, 0, 0); return d; }
   function addDays(d, n) { var x = new Date(d); x.setDate(x.getDate() + n); return x; }
   function daysSince(s) { return Math.round((today0() - parseD(s)) / 864e5); }
@@ -40,6 +40,7 @@
   var CATS = [
     { k: 'ink',     label: 'حبر',       tint: 'ink',    re: /حبر|تونر|تنر|ink|toner|خرطوش/ },
     { k: 'chem',    label: 'كيماويات',  tint: 'ok',     re: /كيماو|مظهر|مثبت|محلول|developer|fixer|chem/ },
+    { k: 'spare',   label: 'قطع غيار',  tint: 'misc',   re: /قطع غيار|قطعة غيار|spare|part|درام|drum|فيوزر|fuser|ترس|موتور|بلية|سنسور|sensor|رأس طباعة|هيد|لمبة|فلتر|filter|صيانة|بكرة/ },
     { k: 'thermal', label: 'حراري',     tint: 'warn',   re: /حرار|thermal|كاشير|رول/ },
     { k: 'photo',   label: 'فوتو',      tint: 'pink',   re: /فوتو|photo|لامع|glossy|مط/ },
     { k: 'plastic', label: 'بلاستك',    tint: 'violet', re: /بلاستك|بلاستيك|plastic|تغليف|جراب|سلوفان|لامينيشن|laminat/ },
@@ -61,6 +62,7 @@
     film:    '<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 3v18M16 3v18M4 8h4M4 13h4M4 18h4M16 8h4M16 13h4M16 18h4"/>',
     chem:    '<path d="M9 3h6M10 3v6L4.5 18.5A2 2 0 0 0 6.2 21h11.6a2 2 0 0 0 1.7-2.5L14 9V3"/><path d="M7 15h10"/>',
     ink:     '<path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/>',
+    spare:   '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
     misc:    '<path d="M21 16V8a2 2 0 0 0-1-1.7l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.7l7 4a2 2 0 0 0 2 0l7-4a2 2 0 0 0 1-1.7z"/><path d="M3.3 7 12 12l8.7-5M12 22V12"/>'
   };
   function icon(k, cls) { return '<svg class="' + (cls || '') + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">' + (ICO[k] || ICO.misc) + '</svg>'; }
@@ -158,11 +160,21 @@
         '</div></div>' +
       '<div id="skh-ticker" class="axtk-host"></div>' +
       '<div class="skh-tabs" role="tablist" aria-label="أقسام الصفحة">' +
-        '<button role="tab" aria-selected="' + (st.tab !== 'count') + '" class="' + (st.tab !== 'count' ? 'on' : '') + '" onclick="AXStock.tab(\'stock\')">' + icon('misc') + '<span>المخزون</span></button>' +
+        '<button role="tab" aria-selected="' + (st.tab !== 'count' && st.tab !== 'custody') + '" class="' + (st.tab !== 'count' && st.tab !== 'custody' ? 'on' : '') + '" onclick="AXStock.tab(\'stock\')">' + icon('misc') + '<span>المخزون</span></button>' +
         '<button role="tab" aria-selected="' + (st.tab === 'count') + '" class="' + (st.tab === 'count' ? 'on' : '') + '" onclick="AXStock.tab(\'count\')">' +
           '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="m9 14 2 2 4-4"/></svg>' +
           '<span>الجرد الذكي</span>' + (due ? '<em>' + due + '</em>' : '') + '</button>' +
+        '<button role="tab" aria-selected="' + (st.tab === 'custody') + '" class="' + (st.tab === 'custody' ? 'on' : '') + '" onclick="AXStock.tab(\'custody\')">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-4V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2H4a1 1 0 0 0-1 1v11a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8a1 1 0 0 0-1-1zM10 5h4v2h-4z"/><path d="M3 13h18"/></svg>' +
+          '<span>عهدتي</span>' + (window.AXCustody && AXCustody.openCount() ? '<em class="n">' + AXCustody.openCount() + '</em>' : '') + '</button>' +
       '</div>';
+    if (st.tab === 'custody' && window.AXCustody) {
+      root.innerHTML = head + '<div id="cus-root"></div>';
+      st._items = items;
+      ticker(items);
+      AXCustody.render(document.getElementById('cus-root'));
+      return;
+    }
     if (st.tab === 'count' && window.AXCount) {
       root.innerHTML = head + '<div id="skc-root"></div>';
       st._items = items;

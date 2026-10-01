@@ -12,7 +12,34 @@ const path = require('node:path');
 const url  = require('node:url');
 
 const { db, DB_FILE } = require('./db');
-const { exportBlob, importBlob, defaultBlob } = require('./src/bridge');
+const { exportBlob, importBlob, defaultBlob, getSetting } = require('./src/bridge');
+
+/* «طلبات الموافقة» are written from several devices (the one who asks and
+   the admin who decides). A device that hasn't synced yet must never drop a
+   request or undo a decision, so the server keeps the union of both copies
+   and, per request, the most advanced state (pending → decided). */
+const APR_RANK = { draft: 0, pending: 1, withdrawn: 2, rejected: 2, approved: 2 };
+function mergeApprovals(body) {
+  let cur;
+  try { cur = getSetting('_approvals'); } catch (_) { return; }
+  if (!Array.isArray(cur) || !cur.length) return;
+  if (!body.settings || typeof body.settings !== 'object') body.settings = {};
+  const incoming = Array.isArray(body.settings._approvals) ? body.settings._approvals : [];
+  const map = new Map();
+  for (const r of cur) if (r && r.id) map.set(r.id, r);
+  for (const r of incoming) {
+    if (!r || !r.id) continue;
+    const o = map.get(r.id);
+    const a = APR_RANK[r.status] || 0, b = o ? (APR_RANK[o.status] || 0) : -1;
+    if (!o || a > b || (a === b && (r.decidedAt || 0) >= (o.decidedAt || 0))) map.set(r.id, r);
+  }
+  const all = [...map.values()];
+  const pending = all.filter(r => r.status === 'pending');
+  const done = all.filter(r => r.status !== 'pending')
+    .sort((x, y) => (y.decidedAt || y.at || 0) - (x.decidedAt || x.at || 0))
+    .slice(0, Math.max(0, 400 - pending.length));
+  body.settings._approvals = pending.concat(done).sort((x, y) => (y.at || 0) - (x.at || 0));
+}
 
 const PORT     = Number(process.env.PORT) || 8787;
 const HOST     = process.env.HOST || '0.0.0.0';
@@ -224,6 +251,7 @@ const server = http.createServer(async (req, res) => {
       // Extract metadata for broadcast (don't persist __version from client)
       const { __version: _clientVer, ...cleanBody } = body;
 
+      mergeApprovals(cleanBody);
       importBlob(cleanBody);
       const at = takeBackup();
 

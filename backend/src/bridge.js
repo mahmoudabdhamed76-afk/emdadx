@@ -347,4 +347,11 @@ function defaultBlob() {
   };
 }
 
-module.exports = { exportBlob, importBlob, defaultBlob };
+/* Read one settings value without exporting the whole database. */
+function getSetting(key) {
+  const r = db.prepare(`SELECT value FROM settings WHERE key = ?`).get(key);
+  if (!r) return undefined;
+  try { return JSON.parse(r.value); } catch (_) { return r.value; }
+}
+
+module.exports = { exportBlob, importBlob, defaultBlob, getSetting };
