@@ -1,6 +1,6 @@
 {
   "name": "emdadx-erp",
-  "version": "4.11.0",
+  "version": "4.12.0",
   "description": "إمداد إكس — نظام إدارة التوريدات والمحاسبة (تصميم My Life)",
   "private": true,
   "main": "backend/server.js",

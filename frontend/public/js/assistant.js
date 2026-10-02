@@ -589,7 +589,7 @@
     advice: W(['نصيحه', 'نصيحتك', 'انصحني', 'تنصحني', 'اعمل ايه', 'أعمل إيه', 'اولويات', 'أولويات', 'مهام', 'ابدا بايه', 'اقتراح']),
     prospects: W(['مستهدف', 'مستهدفين', 'فرص', 'فرصه', 'تعاقد', 'عملاء جداد']),
     cheques: W(['شيك', 'شيكات']),
-    overdue: W(['متاخر', 'متأخر', 'متاخرين', 'متأخرين', 'فات ميعاد', 'عدى ميعاد']),
+    overdue: W(['متاخر', 'متأخر', 'متاخرين', 'متأخرين', 'فات ميعاد', 'عدى ميعاد', 'فات معاد', 'عدى معاد']),
     suppliers: W(['مورد', 'موردين', 'للموردين', 'مورّد']),
     expenses: W(['مصروف', 'مصاريف', 'مصروفات', 'صرفنا فلوس', 'نفقات']),
     profit: W(['ربح', 'ارباح', 'أرباح', 'مكسب', 'كسبنا', 'كسبت', 'هامش', 'صافي']),
@@ -602,8 +602,30 @@
     sales: W(['مبيعات', 'مبيعاتي', 'بعنا', 'بعت', 'بيع', 'البيع', 'ايراد', 'إيراد', 'ايرادات', 'دخلنا', 'شغلنا']),
     customers: W(['كام مركز', 'كام عميل', 'عدد العملاء', 'عدد المراكز', 'المراكز', 'العملاء', 'عملائي', 'وقفت سحب', 'وقفوا', 'بطلت', 'مسحبتش', 'نايمه', 'نايمين']),
     invoices: W(['فاتوره', 'فواتير', 'متوسط الفاتوره']),
-    cust: W(['حساب', 'كشف', 'اخبار', 'بيسحب', 'سحب'])
+    cust: W(['حساب', 'كشف', 'اخبار', 'بيسحب', 'سحب']),
+    fc: W(['هيسحب', 'هيسحبوا', 'هتسحب', 'معاده', 'معادهم', 'ميعاده', 'ميعاد السحب', 'مواعيد السحب', 'معاد السحب', 'اكلم مين', 'أكلم مين', 'هكلم مين', 'نكلم مين', 'السحب الجاي', 'السحبه الجايه'])
   };
+
+  /* 4.12 · expected withdrawals (js/forecast.js) */
+  function forecastAns(c) {
+    if (!window.AXFc) return null;
+    var m = AXFc.model(), dd = function (n) { return n === 1 ? 'يوم' : n === 2 ? 'يومين' : n <= 10 ? n + ' أيام' : n + ' يوم'; };
+    var go = { t: 'افتح مواعيد السحب', pri: true, on: fn(function () { navigate('forecast'); }) };
+    if (c) {
+      var x = AXFc.forCustomer(c.id);
+      if (!x) return { icon: 'clock', title: c.name, sub: 'لسه مفيش تاريخ كفاية', note: 'محتاجين المركز ده يكون سحب مرتين على الأقل عشان نعرف عادته.', acts: [go] };
+      return { icon: 'clock', title: c.name + ' — ' + AXFc.label(x), sub: 'بيسحب كل ~' + dd(x.gap) + ' · آخر سحب ' + x.last,
+        ledger: [{ l: 'السحبة الجاية المتوقعة', v: x.next, big: true, tone: x.st === 'late' ? 'bad' : x.st === 'due' ? 'warn' : '' }, { l: 'قيمتها التقريبية', v: money(x.value) }],
+        rows: x.basket.map(function (b) { return { l: b.name, sub: 'الكمية المعتادة', v: num(b.qty) + ' ' + (b.unit || '') }; }),
+        acts: [{ t: 'واتساب', pri: true, on: fn(function () { AXFc.wa(x.cid); }) }, go] };
+    }
+    var l = m.list.filter(function (x) { return x.st === 'late' || x.st === 'due' || x.st === 'week'; });
+    if (!l.length) return { icon: 'clock', title: 'مفيش حد معاده قريب', tone: 'ok', note: 'محدش متأخر عن عادته ومحدش معاده الأسبوع ده.', acts: [go] };
+    var late = l.filter(function (x) { return x.st === 'late'; }).length, due = l.filter(function (x) { return x.st === 'due'; }).length;
+    return { icon: 'clock', title: 'مين معاده في السحب', sub: late + ' متأخر عن عادته · ' + due + ' النهارده وبكرة · ' + (l.length - late - due) + ' باقي الأسبوع',
+      rows: l.slice(0, 8).map(function (x) { return { l: x.name, sub: AXFc.label(x) + ' · كل ~' + dd(x.gap), v: '≈ ' + money(x.value), tone: x.st === 'late' ? 'bad' : x.st === 'due' ? 'warn' : '' }; }),
+      acts: [go], follow: ['مين متأخر في الدفع؟', 'مراكز وقفت سحب'] };
+  }
 
   function understand(raw, force) {
     var q = N(raw);
@@ -624,6 +646,7 @@
     if (has(q, I.advice)) return adviceAns();
     if (has(q, I.prospects)) return prospectsAns();
     if (has(q, I.cheques)) return chequesAns();
+    if (has(q, I.fc) && window.AXFc && (has(q, W(['سحب', 'يسحب', 'هيسحب', 'هيسحبوا', 'السحب'])) || !(has(q, I.overdue) || has(q, I.debts) || has(q, I.collect) || has(q, W(['دفع', 'الدفع', 'يدفع', 'سداد', 'فلوس']))))) { var fa = forecastAns(findCustomer(q)); if (fa) return fa; }
     var sup = findSupplier(q);
     if (sup && (has(q, I.suppliers) || !findCustomer(q))) return suppliersAns(sup);
     if (has(q, I.suppliers)) return suppliersAns();
@@ -851,7 +874,7 @@
   /* the quick questions, pinned at the top of the chat — each topic has its own color */
   var CATS = [
     { k: 'money', name: 'الفلوس', icon: 'cash', qs: function () { return ['مبيعات الشهر ده', 'اتحصّل كام الأسبوع ده؟', 'مين أكتر مركز عليه فلوس؟'].concat(allowed('profit') ? ['الأرباح الشهر ده'] : []); } },
-    { k: 'centers', name: 'المراكز', icon: 'building', qs: function () { return ['مين متأخر في الدفع؟', 'أكتر المراكز شراءً الشهر ده', 'مراكز وقفت سحب']; } },
+    { k: 'centers', name: 'المراكز', icon: 'building', qs: function () { return ['مين متأخر في الدفع؟', 'مين هيسحب الأسبوع ده؟', 'أكتر المراكز شراءً الشهر ده', 'مراكز وقفت سحب']; } },
     { k: 'stock', name: 'المخزن', icon: 'box', qs: function () { return ['إيه اللي قرب يخلص؟', 'طلعنا قد إيه ورق الشهر ده؟', 'أكتر صنف بيتباع']; } },
     { k: 'decide', name: 'قرارات', icon: 'scale', qs: function () { return ['أعمل إيه النهارده؟', 'قارن الشهر ده بالشهر اللي فات'].concat(allowed('suppliers') ? ['عليا كام للموردين؟'] : []); } }
   ];
