@@ -30,16 +30,16 @@ html.aurum {
 html.aurum[data-theme="light"] {
   /* 4.10 · day theme in the logo's own colors: white paper, navy ink, gold accent */
   color-scheme: light;
-  --ax-bg: #EDF1F7;
+  --ax-bg: #E7ECF3;
   --ax-side: #FFFFFF;
   --ax-surface: #FFFFFF;
-  --ax-surface-2: #F2F5FA;
-  --ax-surface-3: #E6EBF3;
-  --ax-line: #E0E6EF;
-  --ax-line-2: #C5CFDE;
+  --ax-surface-2: #F1F4F9;
+  --ax-surface-3: #E3E9F2;
+  --ax-line: #D5DDE8;
+  --ax-line-2: #B5C1D3;
   --ax-text: #0B1630;
-  --ax-muted: #536079;
-  --ax-faint: #8590A6;
+  --ax-muted: #47536B;
+  --ax-faint: #737E95;
   --ax-ink: #002055;          /* the logo navy */
   --ax-on-ink: #FFFFFF;
   --ax-deep: #002055;         /* header / hero panel */
@@ -64,7 +64,7 @@ html.aurum[data-theme="light"] {
   --ax-shadow-lg: 0 24px 60px -12px rgba(0, 32, 85, .32);
   --ax-hover: rgba(0, 32, 85, .045);
   --ax-active: rgba(0, 32, 85, .07);
-  --ax-input: #F2F5FA;
+  --ax-input: #FFFFFF;
   --ax-ripple: rgba(0, 32, 85, .1);
 }
 
@@ -2737,153 +2737,6 @@ html.aurum .ag-legend li span { white-space: nowrap; }
 }
 
 /* ════════════════════════════════════════════════════════════════════
-   32. 4.10 · صرف الورق — القايمة (js/isslist.js)
-   one quiet line per صرف: status dot · center and item · amount and state.
-   no buttons in the list — tapping a line opens the صرف sheet.
-════════════════════════════════════════════════════════════════════ */
-html.aurum .isl-page { max-width: 980px; margin: 0 auto; }
-html.aurum .isl-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
-html.aurum .isl-head .page-subtitle { margin-top: 2px; }
-html.aurum .isl-head-a { display: flex; gap: 8px; flex-wrap: wrap; }
-html.aurum .isl-head-a .btn svg { width: 17px; height: 17px; }
-html.aurum .isl-sum { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); background: var(--ax-surface); border-radius: var(--ax-radius); box-shadow: var(--ax-shadow); margin-bottom: 14px; }
-html.aurum .isl-sum > div { display: flex; flex-direction: column; gap: 2px; padding: 14px 18px; min-width: 0; }
-html.aurum .isl-sum > div + div { box-shadow: inset -1px 0 0 var(--ax-line); }
-html.aurum .isl-sum span { font-size: 12.5px; font-weight: 600; color: var(--ax-muted); }
-html.aurum .isl-sum b { font: 800 22px/1.25 var(--ax-display); color: var(--ax-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
-html.aurum .isl-sum small { font-size: 11.5px; color: var(--ax-faint); }
-html.aurum .isl-sum .warn b { color: var(--ax-warn); }
-
-html.aurum .isl-tools { display: flex; gap: 8px; }
-html.aurum .isl-search { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; height: 46px; padding: 0 16px; border-radius: 14px; background: var(--ax-surface); box-shadow: var(--ax-shadow); margin: 0; cursor: text; }
-html.aurum .isl-search svg { width: 18px; height: 18px; color: var(--ax-faint); flex: none; }
-html.aurum .isl-search input#iss-search { flex: 1; min-width: 0; height: 100%; border: 0 !important; outline: 0; background: transparent !important; box-shadow: none !important; color: var(--ax-text); font: 500 14.5px var(--ax-font); padding: 0 !important; }
-html.aurum .isl-search:focus-within { box-shadow: var(--ax-shadow), 0 0 0 1.5px var(--ax-ink); }
-html.aurum .isl-ftoggle { height: 46px; border: 0; cursor: pointer; border-radius: 14px; padding: 0 16px; background: var(--ax-surface); box-shadow: var(--ax-shadow); color: var(--ax-text); font: 700 13.5px var(--ax-font); display: inline-flex; align-items: center; gap: 7px; }
-html.aurum .isl-ftoggle svg { width: 18px; height: 18px; }
-html.aurum .isl-ftoggle.on { box-shadow: var(--ax-shadow), inset 0 0 0 1.5px var(--ax-ink); }
-html.aurum .isl-ftoggle em { font-style: normal; font-size: 11px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; display: grid; place-items: center; background: var(--ax-ink); color: var(--ax-on-ink); }
-html.aurum .isl-ftoggle em[hidden] { display: none; }
-html.aurum .isl-filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 8px; align-items: end; margin-top: 8px; padding: 12px; border-radius: 16px; background: var(--ax-surface); box-shadow: var(--ax-shadow); }
-html.aurum .isl-filters[hidden] { display: none; }
-html.aurum .isl-filters > * { min-width: 0; }
-html.aurum .isl-filters .form-control { width: 100% !important; min-width: 0 !important; height: 42px; }
-html.aurum .isl-seg { grid-column: 1 / -1; display: flex; align-items: center; gap: 4px; }
-html.aurum .isl-seg span { font-size: 12.5px; font-weight: 600; color: var(--ax-muted); margin-inline-end: 6px; }
-html.aurum .isl-seg button { border: 0; cursor: pointer; border-radius: 999px; padding: 7px 14px; background: var(--ax-surface-2); color: var(--ax-text); font: 600 13px var(--ax-font); }
-html.aurum .isl-seg button.on { background: var(--ax-ink); color: var(--ax-on-ink); }
-html.aurum .isl-date { display: flex; flex-direction: column; gap: 3px; margin: 0; min-width: 0; }
-html.aurum .isl-date span { font-size: 11px; font-weight: 700; color: var(--ax-faint); padding-inline-start: 4px; }
-html.aurum .isl-reset { height: 42px; border: 0; cursor: pointer; border-radius: 12px; background: transparent; color: var(--ax-bad); font: 700 13px var(--ax-font); }
-html.aurum .isl-chips { display: flex; gap: 6px; margin: 12px 0; overflow-x: auto; scrollbar-width: none; }
-html.aurum .isl-chips::-webkit-scrollbar { display: none; }
-html.aurum .isl-chips button { flex: none; cursor: pointer; border-radius: 999px; padding: 7px 14px; border: 1px solid var(--ax-line-2); background: transparent; color: var(--ax-muted); font: 600 13px var(--ax-font); display: inline-flex; align-items: center; gap: 6px; }
-html.aurum .isl-chips button em { font-style: normal; font-size: 11.5px; font-weight: 700; color: var(--ax-faint); font-variant-numeric: tabular-nums; }
-html.aurum .isl-chips button.late em { color: var(--ax-bad); }
-html.aurum .isl-chips button.on { background: var(--ax-ink); border-color: var(--ax-ink); color: var(--ax-on-ink); }
-html.aurum .isl-chips button.on em { color: inherit; opacity: .75; }
-html.aurum .isl-found { font-size: 12.5px; color: var(--ax-muted); margin: 0 6px 8px; font-variant-numeric: tabular-nums; }
-
-/* the list */
-html.aurum .isl { background: var(--ax-surface); border-radius: var(--ax-radius); box-shadow: var(--ax-shadow); overflow: hidden; margin-bottom: 14px; }
-html.aurum .isl-day { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding: 9px 18px; background: var(--ax-surface-2); }
-html.aurum .isl-day b { font-size: 13.5px; font-weight: 700; color: var(--ax-text); }
-html.aurum .isl-day span { font-size: 12.5px; color: var(--ax-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
-html.aurum .isl-row { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto 16px; gap: 14px; align-items: center; width: 100%; padding: 13px 18px; margin: 0; border: 0; border-top: 1px solid var(--ax-line); background: transparent; color: inherit; font: inherit; text-align: start; cursor: pointer; transition: background .15s ease; }
-html.aurum .isl-day + .isl-row { border-top: 0; }
-html.aurum .isl-row:hover { background: var(--ax-hover); }
-html.aurum .isl-row:focus-visible { outline: 2px solid var(--ax-blue); outline-offset: -2px; }
-html.aurum .isl-dot { width: 10px; height: 10px; border-radius: 50%; box-sizing: border-box; }
-html.aurum .t-paid .isl-dot { background: var(--ax-ok); }
-html.aurum .t-part .isl-dot { background: var(--ax-warn); }
-html.aurum .t-open .isl-dot { border: 2px solid var(--ax-warn); }
-html.aurum .t-late .isl-dot { background: var(--ax-bad); box-shadow: 0 0 0 3px var(--ax-bad-soft); }
-html.aurum .isl-main { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-html.aurum .isl-main b { font-size: 15px; font-weight: 700; color: var(--ax-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-html.aurum .isl-main span { font-size: 13px; color: var(--ax-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
-html.aurum .isl-amt { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
-html.aurum .isl-amt b { font: 800 17px/1.25 var(--ax-display); color: var(--ax-text); white-space: nowrap; font-variant-numeric: tabular-nums; }
-html.aurum .isl-amt span { font-size: 12.5px; font-weight: 600; white-space: nowrap; font-variant-numeric: tabular-nums; }
-html.aurum .t-paid .isl-amt span { color: var(--ax-ok); }
-html.aurum .t-part .isl-amt span, html.aurum .t-open .isl-amt span { color: var(--ax-warn); }
-html.aurum .t-late .isl-amt span { color: var(--ax-bad); }
-html.aurum .isl-chev { color: var(--ax-line-2); display: grid; place-items: center; }
-html.aurum .isl-chev svg { width: 16px; height: 16px; }
-html.aurum .isl-row:hover .isl-chev { color: var(--ax-muted); }
-html.aurum .isl-more { border: 0; cursor: pointer; width: 100%; padding: 14px; border-radius: 16px; background: var(--ax-surface); box-shadow: var(--ax-shadow); color: var(--ax-text); font: 700 14px var(--ax-font); margin-bottom: 18px; }
-html.aurum .isl-empty { background: var(--ax-surface); border-radius: var(--ax-radius); box-shadow: var(--ax-shadow); padding: 40px 16px; display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; }
-html.aurum .isl-empty b { font-size: 16px; }
-html.aurum .isl-empty span { font-size: 13px; color: var(--ax-muted); margin-bottom: 8px; }
-html.aurum .isl-empty button { border: 0; cursor: pointer; border-radius: 12px; padding: 10px 18px; background: var(--ax-surface-2); color: var(--ax-text); font: 700 13.5px var(--ax-font); }
-html.aurum .isl-empty button.pri { background: var(--ax-ink); color: var(--ax-on-ink); }
-
-/* the صرف sheet */
-html.aurum .isl-sh-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
-html.aurum .isl-sh-top > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-html.aurum .isl-sh-top b { font: 800 22px/1.3 var(--ax-display); }
-html.aurum .isl-sh-top span { font-size: 13px; color: var(--ax-muted); }
-html.aurum .isl-sh-st { font-style: normal; flex: none; font-size: 12.5px; font-weight: 700; padding: 5px 12px; border-radius: 999px; background: var(--ax-warn-soft); color: var(--ax-warn); }
-html.aurum .t-paid .isl-sh-st { background: var(--ax-ok-soft); color: var(--ax-ok); }
-html.aurum .t-late .isl-sh-st { background: var(--ax-bad); color: #fff; }
-html.aurum .isl-sh-money { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 16px; }
-html.aurum .isl-sh-money > div { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border-radius: 14px; background: var(--ax-surface-2); min-width: 0; }
-html.aurum .isl-sh-money span { font-size: 12px; color: var(--ax-muted); }
-html.aurum .isl-sh-money b { font: 800 17px var(--ax-display); white-space: nowrap; font-variant-numeric: tabular-nums; }
-html.aurum .t-paid .isl-sh-money .rem b { color: var(--ax-ok); }
-html.aurum .t-part .isl-sh-money .rem b, html.aurum .t-open .isl-sh-money .rem b { color: var(--ax-warn); }
-html.aurum .t-late .isl-sh-money .rem b { color: var(--ax-bad); }
-html.aurum .isl-sh-bar { height: 6px; border-radius: 999px; background: var(--ax-surface-3); overflow: hidden; margin-top: 10px; }
-html.aurum .isl-sh-bar i { display: block; height: 100%; border-radius: inherit; background: var(--ax-ok); }
-html.aurum .isl-sh-due { margin: 10px 0 0; font-size: 13px; font-weight: 600; color: var(--ax-warn); }
-html.aurum .t-late .isl-sh-due { color: var(--ax-bad); }
-html.aurum .isl-sh-items { list-style: none; margin: 16px 0 0; padding: 0; border-top: 1px solid var(--ax-line); }
-html.aurum .isl-sh-items li { display: flex; align-items: center; gap: 12px; padding: 12px 2px; border-bottom: 1px solid var(--ax-line); }
-html.aurum .isl-sh-items li > div:first-child { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
-html.aurum .isl-sh-items li b { font-size: 14.5px; font-weight: 700; }
-html.aurum .isl-sh-items li span { font-size: 12.5px; color: var(--ax-muted); font-variant-numeric: tabular-nums; }
-html.aurum .isl-sh-items li strong { font: 800 15.5px var(--ax-display); white-space: nowrap; font-variant-numeric: tabular-nums; }
-html.aurum .isl-sh-ia { display: flex; gap: 4px; }
-html.aurum .isl-sh-ia button { width: 36px; height: 36px; border: 0; cursor: pointer; border-radius: 10px; background: var(--ax-surface-2); color: var(--ax-text); display: grid; place-items: center; }
-html.aurum .isl-sh-ia button svg { width: 16px; height: 16px; }
-html.aurum .isl-sh-ia button.del { color: var(--ax-bad); }
-html.aurum .isl-sh-note { margin: 12px 0 0; padding: 10px 12px; border-radius: 12px; background: var(--ax-surface-2); font-size: 13.5px; line-height: 1.7; color: var(--ax-text); }
-html.aurum .isl-sh-acts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
-html.aurum .isl-sh-acts button { flex: 1 1 120px; height: 48px; border: 0; cursor: pointer; border-radius: 14px; background: var(--ax-surface-2); color: var(--ax-text); font: 700 14px var(--ax-font); }
-html.aurum .isl-sh-acts button:hover { background: var(--ax-surface-3); }
-html.aurum .isl-sh-acts button.pri { background: var(--ax-ink); color: var(--ax-on-ink); }
-html.aurum .isl-sh-acts button.del { flex: 0 1 96px; background: var(--ax-bad-soft); color: var(--ax-bad); }
-
-@media (max-width: 700px) {
-  html.aurum .isl-head { flex-direction: column; align-items: stretch; gap: 10px; margin-bottom: 12px; }
-  html.aurum .isl-head .page-subtitle { display: none; }
-  html.aurum .isl-head-a { flex-wrap: nowrap; }
-  html.aurum .isl-head-a .btn { flex: 1 1 auto; justify-content: center; padding-inline: 10px !important; font-size: 13px !important; min-height: 44px; white-space: nowrap; }
-  html.aurum .isl-head-a .btn-primary { order: -1; flex-grow: 1.3; }
-  html.aurum .isl-head-a .isl-xls { flex: 0 0 auto; }
-  html.aurum .isl-head-a .isl-xls span { display: none; }
-  html.aurum .isl-chips button { padding: 7px 12px; }
-  html.aurum .isl-sum { border-radius: 18px; }
-  html.aurum .isl-sum > div { padding: 11px 10px; }
-  html.aurum .isl-sum span { font-size: 11.5px; }
-  html.aurum .isl-sum b { font-size: 16px; }
-  html.aurum .isl-sum small { font-size: 11px; }
-  html.aurum .isl-ftoggle span { display: none; }
-  html.aurum .isl-ftoggle { padding: 0 13px; }
-  html.aurum .isl-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  html.aurum .isl-filters select, html.aurum .isl-reset { grid-column: 1 / -1; }
-  html.aurum .isl { border-radius: 18px; }
-  html.aurum .isl-day { padding: 8px 14px; }
-  html.aurum .isl-row { grid-template-columns: 10px minmax(0, 1fr) auto; gap: 12px; padding: 12px 14px; }
-  html.aurum .isl-chev { display: none; }
-  html.aurum .isl-main b { font-size: 14.5px; }
-  html.aurum .isl-main span { font-size: 12.5px; }
-  html.aurum .isl-amt b { font-size: 16px; }
-  html.aurum .isl-amt span { font-size: 12px; }
-  html.aurum .isl-sh-money b { font-size: 15px; }
-  html.aurum .isl-sh-top b { font-size: 20px; }
-}
-
-/* ════════════════════════════════════════════════════════════════════
    33. 4.9 · المساعد الذكي (js/assistant.js)
    the assistant is a little stack of paper; every answer is a slip with
    a torn receipt edge, its figures written as ledger lines with leaders
@@ -3211,3 +3064,198 @@ html.aurum[data-theme="light"] .btn[style*="#7c3aed"], html.aurum[data-theme="li
 }
 html.aurum[data-theme="light"] .btn[style*="#7c3aed"]:hover, html.aurum[data-theme="light"] .btn-warning:hover { background: #C88A0E !important; }
 html.aurum[data-theme="light"] .btn-primary[style*="#7c3aed"]:disabled { opacity: .5; }
+
+
+/* ════════════════════════════════════════════════════════════════════
+   35. 4.11 · الوضع النهاري: فواصل واضحة
+   every card has a visible edge, every table row a visible line,
+   table heads a tinted band, inputs a real border — nothing floats
+════════════════════════════════════════════════════════════════════ */
+html.aurum[data-theme="light"] .dash-card, html.aurum[data-theme="light"] .card, html.aurum[data-theme="light"] .table-wrap,
+html.aurum[data-theme="light"] .settings-card, html.aurum[data-theme="light"] .panel, html.aurum[data-theme="light"] .data-card,
+html.aurum[data-theme="light"] .centers-widget, html.aurum[data-theme="light"] .churn-section, html.aurum[data-theme="light"] .filter-bar,
+html.aurum[data-theme="light"] .stat-card, html.aurum[data-theme="light"] .kpi-v3, html.aurum[data-theme="light"] .pg-card,
+html.aurum[data-theme="light"] .dash-bigcard, html.aurum[data-theme="light"] .rep-stat-card, html.aurum[data-theme="light"] .rep-panel,
+html.aurum[data-theme="light"] .reports-tabs-sidebar, html.aurum[data-theme="light"] .backup-reminder-banner, html.aurum[data-theme="light"] .sup-tabs,
+html.aurum[data-theme="light"] .po-card, html.aurum[data-theme="light"] .pf-card, html.aurum[data-theme="light"] .usr-card,
+html.aurum[data-theme="light"] .ag-row, html.aurum[data-theme="light"] .chq-card, html.aurum[data-theme="light"] .chq-day,
+html.aurum[data-theme="light"] .pf-alert, html.aurum[data-theme="light"] .axa-slip, html.aurum[data-theme="light"] .axa-start section,
+html.aurum[data-theme="light"] .axa-quick, html.aurum[data-theme="light"] .rq-card, html.aurum[data-theme="light"] .skh-card,
+html.aurum[data-theme="light"] .ax-dc, html.aurum[data-theme="light"] .ax-cal, html.aurum[data-theme="light"] .search-box {
+  border: 1px solid var(--ax-line) !important;
+  box-shadow: 0 1px 2px rgba(0, 32, 85, .05) !important;
+}
+html.aurum[data-theme="light"] .stat-card:hover, html.aurum[data-theme="light"] .kpi-v3:hover, html.aurum[data-theme="light"] .pg-card:hover,
+html.aurum[data-theme="light"] .dash-bigcard:hover, html.aurum[data-theme="light"] .rep-stat-card:hover {
+  border-color: var(--ax-line-2) !important; box-shadow: 0 6px 18px -10px rgba(0, 32, 85, .3) !important;
+}
+/* the table-scroll lives inside table-wrap: one border is enough */
+html.aurum[data-theme="light"] .table-wrap .table-scroll { border: 0 !important; box-shadow: none !important; }
+html.aurum[data-theme="light"] .table-scroll { border: 1px solid var(--ax-line) !important; box-shadow: none !important; }
+
+/* tables: a tinted head, a clear line under every row, every other row lightly shaded */
+html.aurum[data-theme="light"] .data-table thead th, html.aurum[data-theme="light"] table thead th {
+  background: #E6ECF5 !important; color: #23324F !important; font-weight: 700 !important; font-size: 12.5px !important;
+  border-bottom: 2px solid #C3CEDF !important;
+}
+html.aurum[data-theme="light"] .data-table tbody tr, html.aurum[data-theme="light"] table tbody tr { border-bottom: 1px solid #DCE3ED !important; }
+html.aurum[data-theme="light"] .data-table tbody td, html.aurum[data-theme="light"] table tbody td { border-bottom: 1px solid #DCE3ED !important; }
+html.aurum[data-theme="light"] .data-table tbody tr:nth-child(even), html.aurum[data-theme="light"] table.data-table tbody tr:nth-child(even) { background: #F7F9FC !important; }
+html.aurum[data-theme="light"] .data-table tbody tr:hover, html.aurum[data-theme="light"] table tbody tr:hover { background: #EAF0FA !important; }
+html.aurum[data-theme="light"] .data-table tbody tr:last-child td { border-bottom: 0 !important; }
+
+/* inputs and selects: a real edge */
+html.aurum[data-theme="light"] .form-control, html.aurum[data-theme="light"] select.form-control,
+html.aurum[data-theme="light"] input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not(#axa-q):not(.lgn-input),
+html.aurum[data-theme="light"] textarea {
+  border: 1px solid var(--ax-line-2) !important; background-color: #FFFFFF !important;
+}
+html.aurum[data-theme="light"] .form-control:focus, html.aurum[data-theme="light"] input:focus, html.aurum[data-theme="light"] textarea:focus {
+  border-color: var(--ax-ink) !important; box-shadow: 0 0 0 3px rgba(0, 32, 85, .12) !important;
+}
+html.aurum[data-theme="light"] .search-box input, html.aurum[data-theme="light"] .axa-composer input { border: 0 !important; }
+
+/* frame: sidebar and header edges, section heads */
+html.aurum[data-theme="light"] .sidebar { border-inline-end: 1px solid var(--ax-line) !important; }
+@media (min-width: 769px) { html.aurum[data-theme="light"] .topbar { border-bottom: 1px solid var(--ax-line) !important; } }
+html.aurum[data-theme="light"] .dash-card-header, html.aurum[data-theme="light"] .card-header { border-bottom: 1px solid var(--ax-line) !important; }
+html.aurum[data-theme="light"] .modal-header { border-bottom: 1px solid var(--ax-line) !important; }
+html.aurum[data-theme="light"] .modal-footer { border-top: 1px solid var(--ax-line) !important; }
+html.aurum[data-theme="light"] .page-subtitle { color: var(--ax-muted) !important; }
+html.aurum[data-theme="light"] .icon-btn { border: 1px solid var(--ax-line) !important; }
+html.aurum[data-theme="light"] .btn-secondary, html.aurum[data-theme="light"] .btn-ghost { border: 1px solid var(--ax-line-2) !important; }
+html.aurum[data-theme="light"] .badge-status { box-shadow: inset 0 0 0 1px rgba(0, 32, 85, .08); }
+/* lists inside cards keep their dividers visible */
+html.aurum[data-theme="light"] .axa-rows > li + li, html.aurum[data-theme="light"] .pm-items li, html.aurum[data-theme="light"] .po-orders li { border-color: var(--ax-line) !important; }
+
+/* ════════════════════════════════════════════════════════════════════
+   36. 4.11 · المساعد: الأسئلة السريعة مثبتة فوق الشات
+   the chat is one box: quick questions pinned on top, the messages scroll
+   in the middle, the composer sits at the bottom
+════════════════════════════════════════════════════════════════════ */
+html.aurum .axa { --q-money: var(--ax-ok); --q-money-s: var(--ax-ok-soft); --q-centers: var(--ax-blue); --q-centers-s: var(--ax-blue-soft);
+  --q-stock: var(--ax-warn); --q-stock-s: var(--ax-warn-soft); --q-decide: var(--ax-violet); --q-decide-s: var(--ax-violet-soft); }
+html.aurum .axa-chat { display: flex; flex-direction: column; height: calc(100vh - 110px); min-height: 560px; background: var(--ax-surface); border-radius: var(--ax-radius-lg); box-shadow: var(--ax-shadow); overflow: hidden; }
+html.aurum .axa-quick { flex: none; padding: 14px 16px 12px; border-bottom: 1px solid var(--ax-line); background: var(--ax-surface); }
+html.aurum .axa-quick-h { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+html.aurum .axa-quick-h > div { display: flex; flex-direction: column; min-width: 0; }
+html.aurum .axa-quick-h b { font: 700 18px/1.3 var(--ax-display); }
+html.aurum .axa-quick-h span { font-size: 12.5px; color: var(--ax-muted); }
+html.aurum .axa-quick-h button { flex: none; border: 1px solid var(--ax-line-2); cursor: pointer; background: transparent; color: var(--ax-text); font: 700 12.5px var(--ax-font); display: inline-flex; gap: 5px; align-items: center; padding: 7px 12px; border-radius: 999px; }
+html.aurum .axa-quick-h button:hover { background: var(--ax-hover); }
+html.aurum .axa-quick-h button svg { width: 15px; height: 15px; }
+html.aurum .axa-qt { display: none; }
+html.aurum .axa-qg { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+html.aurum .axa-qg section { min-width: 0; border-radius: 14px; padding: 10px; background: color-mix(in srgb, var(--qc-s) 45%, transparent); }
+html.aurum .axa-qg h3 { display: flex; align-items: center; gap: 6px; margin: 0 0 6px; font: 700 15px var(--ax-display); color: var(--qc) !important; }
+html.aurum .axa-qg h3 svg { width: 17px; height: 17px; }
+html.aurum .axa-qc { display: flex; flex-direction: column; gap: 4px; }
+html.aurum .axa-qc button { border: 1px solid transparent; cursor: pointer; text-align: start; padding: 7px 10px; border-radius: 10px; background: var(--ax-surface); color: var(--ax-text); font: 500 13px/1.4 var(--ax-font); transition: border-color .15s ease; }
+html.aurum .axa-qc button:hover { border-color: var(--qc); }
+html.aurum .c-money { --qc: var(--q-money); --qc-s: var(--q-money-s); }
+html.aurum .c-centers { --qc: var(--q-centers); --qc-s: var(--q-centers-s); }
+html.aurum .c-stock { --qc: var(--q-stock); --qc-s: var(--q-stock-s); }
+html.aurum .c-decide { --qc: var(--q-decide); --qc-s: var(--q-decide-s); }
+html.aurum[data-theme="dark"] .axa-qg section { background: color-mix(in srgb, var(--qc-s) 55%, transparent); }
+html.aurum[data-theme="dark"] .axa-qc button { background: rgba(255, 255, 255, .05); }
+html.aurum .axa-chat .axa-msgs { flex: 1; min-height: 0; overflow-y: auto; padding: 16px; overscroll-behavior: contain; scroll-behavior: smooth; }
+html.aurum .axa-empty { display: flex; gap: 12px; align-items: flex-start; color: var(--ax-muted); font-size: 14px; line-height: 1.8; max-width: 60ch; }
+html.aurum .axa-empty p { margin: 0; padding: 10px 14px; border-radius: 16px; background: var(--ax-surface-2); color: var(--ax-text); }
+html.aurum .axa-chat .axa-slip { background: var(--ax-surface-2); }
+html.aurum[data-theme="light"] .axa-chat .axa-slip { background: #F6F8FC; }
+html.aurum .axa-chat .axa-composer { position: static; flex: none; margin: 0; border-radius: 0; box-shadow: none; border-top: 1px solid var(--ax-line); padding: 8px 10px; }
+html.aurum .axa-chat .axa-composer:focus-within { box-shadow: inset 0 2px 0 var(--ax-ink); }
+@media (max-width: 1100px) and (min-width: 769px) { html.aurum .axa-qg { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 768px) {
+  html.aurum .axa-chat { height: calc(100dvh - 170px); min-height: 480px; border-radius: 22px; }
+  html.aurum .axa-quick { padding: 12px 12px 10px; }
+  html.aurum .axa-quick-h { margin-bottom: 8px; }
+  html.aurum .axa-quick-h b { font-size: 16px; }
+  html.aurum .axa-quick-h span { display: none; }
+  html.aurum .axa-quick-h button { padding: 7px; }
+  html.aurum .axa-quick-h button[title], html.aurum .axa-quick-h button { aspect-ratio: 1; justify-content: center; }
+  html.aurum .axa-qt { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; margin-bottom: 8px; }
+  html.aurum .axa-qt::-webkit-scrollbar { display: none; }
+  html.aurum .axa-qt button { flex: none; display: inline-flex; align-items: center; gap: 5px; border: 1px solid color-mix(in srgb, var(--qc) 40%, transparent); cursor: pointer; border-radius: 999px; padding: 6px 12px; background: transparent; color: var(--qc); font: 700 13px var(--ax-font); }
+  html.aurum .axa-qt button svg { width: 15px; height: 15px; }
+  html.aurum .axa-qt button.on { background: var(--qc); border-color: var(--qc); color: #fff; }
+  html.aurum[data-theme="dark"] .axa-qt button.on { color: #000; }
+  html.aurum .axa-qg { display: block; }
+  html.aurum .axa-qg section { display: none; padding: 0; background: none; }
+  html.aurum .axa-qg section.on { display: block; }
+  html.aurum .axa-qg h3 { display: none; }
+  html.aurum .axa-qc { flex-direction: row; overflow-x: auto; scrollbar-width: none; gap: 6px; }
+  html.aurum .axa-qc::-webkit-scrollbar { display: none; }
+  html.aurum .axa-qc button { flex: none; white-space: nowrap; border-color: var(--ax-line-2); border-radius: 999px; padding: 7px 12px; background: var(--ax-surface-2); }
+  html.aurum .axa-chat .axa-msgs { padding: 12px; }
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   37. 4.11 · الطلبات والمقترحات (js/requests.js) + طلب الشراء
+════════════════════════════════════════════════════════════════════ */
+html.aurum .rq .page-header { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+html.aurum .rq-head-a { display: flex; gap: 8px; flex-wrap: wrap; }
+html.aurum .rq-smart { background: var(--ax-surface); border-radius: var(--ax-radius); box-shadow: var(--ax-shadow); padding: 14px 16px; margin-bottom: 14px; border-inline-start: 4px solid var(--ax-gold) !important; }
+html.aurum .rq-smart > header, html.aurum .rq-card > header { display: flex; align-items: center; gap: 12px; }
+html.aurum .rq-smart > header > div, html.aurum .rq-card > header > div { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+html.aurum .rq-smart > header b, html.aurum .rq-card > header b { font: 700 16px/1.35 var(--ax-display); }
+html.aurum .rq-card > header b i { font-style: normal; font-size: 12.5px; color: var(--ax-faint); font-weight: 600; }
+html.aurum .rq-smart > header span, html.aurum .rq-card > header span { font-size: 12.5px; color: var(--ax-muted); }
+html.aurum .rq-ic { width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; flex: none; background: var(--ax-gold-soft); color: var(--ax-gold); }
+html.aurum[data-theme="dark"] .rq-ic { background: rgba(255, 189, 92, .12); color: #FFBD5C; }
+html.aurum .rq-ic svg { width: 20px; height: 20px; }
+html.aurum .t-idea .rq-ic { background: var(--ax-violet-soft); color: var(--ax-violet); }
+html.aurum .rq-smart ul { list-style: none; margin: 12px 0 0; padding: 0; }
+html.aurum .rq-smart li { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 12px; align-items: center; padding: 10px 2px; border-top: 1px solid var(--ax-line); }
+html.aurum .rq-smart li > div { min-width: 0; display: flex; flex-direction: column; }
+html.aurum .rq-smart li b { font-size: 14px; }
+html.aurum .rq-smart li span { font-size: 12px; color: var(--ax-muted); }
+html.aurum .rq-smart li.l-urgent span { color: var(--ax-bad); font-weight: 600; }
+html.aurum .rq-smart li em { font-style: normal; font-size: 12.5px; color: var(--ax-text); white-space: nowrap; }
+html.aurum .rq-smart li button { border: 0; cursor: pointer; border-radius: 10px; padding: 8px 16px; background: var(--ax-ink); color: var(--ax-on-ink); font: 700 13px var(--ax-font); }
+html.aurum .rq-tabs { display: flex; gap: 6px; margin-bottom: 12px; overflow-x: auto; scrollbar-width: none; }
+html.aurum .rq-tabs button { flex: none; cursor: pointer; border-radius: 999px; padding: 8px 15px; border: 1px solid var(--ax-line-2); background: var(--ax-surface); color: var(--ax-muted); font: 700 13px var(--ax-font); display: inline-flex; gap: 6px; align-items: center; }
+html.aurum .rq-tabs button em { font-style: normal; font-size: 11.5px; }
+html.aurum .rq-tabs button.on { background: var(--ax-ink); border-color: var(--ax-ink); color: var(--ax-on-ink); }
+html.aurum .rq-list { display: flex; flex-direction: column; gap: 12px; margin-bottom: 18px; }
+html.aurum .rq-card { background: var(--ax-surface); border-radius: var(--ax-radius); box-shadow: var(--ax-shadow); padding: 14px 16px; border-inline-start: 4px solid var(--ax-warn) !important; }
+html.aurum .rq-card.s-approved { border-inline-start-color: var(--ax-ok) !important; }
+html.aurum .rq-card.s-rejected { border-inline-start-color: var(--ax-bad) !important; }
+html.aurum .rq-card.s-withdrawn { border-inline-start-color: var(--ax-line-2) !important; opacity: .75; }
+html.aurum .rq-st { flex: none; font-style: normal; font-size: 12px; font-weight: 700; padding: 5px 11px; border-radius: 999px; background: var(--ax-warn-soft); color: var(--ax-warn); white-space: nowrap; }
+html.aurum .s-approved .rq-st { background: var(--ax-ok-soft); color: var(--ax-ok); }
+html.aurum .s-rejected .rq-st { background: var(--ax-bad-soft); color: var(--ax-bad); }
+html.aurum .s-withdrawn .rq-st { background: var(--ax-surface-2); color: var(--ax-muted); }
+html.aurum .rq-tw { overflow-x: auto; margin-top: 12px; border: 1px solid var(--ax-line); border-radius: 12px; }
+html.aurum .rq-t { width: 100%; border-collapse: collapse; font-size: 13px; }
+html.aurum .rq-t th { text-align: right; padding: 8px 10px; font-size: 12px; font-weight: 700; color: var(--ax-muted); background: var(--ax-surface-2); white-space: nowrap; border-bottom: 1px solid var(--ax-line); }
+html.aurum .rq-t td { padding: 9px 10px; border-bottom: 1px solid var(--ax-line); vertical-align: middle; white-space: nowrap; }
+html.aurum .rq-t tr:last-child td { border-bottom: 0; }
+html.aurum .rq-t td small { display: block; font-size: 11.5px; color: var(--ax-faint); white-space: normal; }
+html.aurum .rq-q { width: 84px; border: 1px solid var(--ax-line-2); border-radius: 10px; padding: 6px 8px; background: var(--ax-input); color: var(--ax-text); font: 700 13px var(--ax-font); }
+html.aurum .rq-sum { text-align: end; margin-top: 8px; font-size: 13px; color: var(--ax-muted); }
+html.aurum .rq-sum b { font: 800 17px var(--ax-display); color: var(--ax-text); margin-inline-start: 6px; }
+html.aurum .rq-note { margin: 10px 0 0; padding: 10px 12px; border-radius: 12px; background: var(--ax-surface-2); font-size: 13.5px; line-height: 1.7; white-space: pre-wrap; }
+html.aurum .rq-dec { margin: 10px 0 0; font-size: 13px; font-weight: 600; color: var(--ax-muted); }
+html.aurum .rq-dec.ok { color: var(--ax-ok); } html.aurum .rq-dec.bad { color: var(--ax-bad); }
+html.aurum .rq-card > footer { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+html.aurum .rq-card > footer button { border: 0; cursor: pointer; border-radius: 12px; padding: 10px 16px; background: var(--ax-surface-2); color: var(--ax-text); font: 700 13.5px var(--ax-font); }
+html.aurum .rq-card > footer button.pri { background: var(--ax-ink); color: var(--ax-on-ink); }
+html.aurum .rq-card > footer button.no { background: var(--ax-bad-soft); color: var(--ax-bad); }
+html.aurum .rq-empty { background: var(--ax-surface); border-radius: var(--ax-radius); box-shadow: var(--ax-shadow); padding: 34px 16px; text-align: center; display: flex; flex-direction: column; gap: 6px; }
+html.aurum .rq-empty b { font-size: 15px; } html.aurum .rq-empty span { font-size: 13px; color: var(--ax-muted); }
+html.aurum .rq-hint { font-size: 12.5px; color: var(--ax-muted); margin: 4px 0 0; }
+html.aurum .nav-item .badge.rq-badge { background: #D79613 !important; color: #241600 !important; }
+html.aurum .po-asked { display: inline-block; font-style: normal; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: var(--ax-warn-soft); color: var(--ax-warn); margin-inline-start: 6px; }
+html.aurum .po-send { gap: 8px; align-items: center; }
+html.aurum .po-send .form-control { flex: 1; max-width: 360px; }
+html.aurum .po-wait { border-inline-start: 4px solid var(--ax-warn) !important; }
+@media (max-width: 700px) {
+  html.aurum .rq .page-header { flex-direction: column !important; align-items: stretch !important; flex-wrap: nowrap !important; }
+  html.aurum .rq-head-a { width: 100%; } html.aurum .rq-head-a .btn { flex: 1; white-space: nowrap; font-size: 13px !important; }
+  html.aurum .rq-smart li { grid-template-columns: minmax(0, 1fr) auto; }
+  html.aurum .rq-smart li em { grid-column: 1 / -1; grid-row: 2; white-space: normal; }
+  html.aurum .rq-smart li button { grid-row: 1 / span 2; grid-column: 2; }
+  html.aurum .rq-card > footer button { flex: 1; }
+  html.aurum .po-send { flex-direction: column; align-items: stretch; } html.aurum .po-send .form-control { max-width: none; }
+}

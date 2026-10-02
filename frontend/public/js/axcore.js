@@ -34,7 +34,7 @@
   /* settings keys a non-admin may write at all (the server refuses the rest) */
   var USER_KEYS = { monthlyTarget: 1, _debtPlan: 1, countBlind: 1, _approvals: 1, _custody: 1, _debts: 1, _stockCounts: 1, _cheques: 1, _po: 1,
     tickerSpeed: 1, tickerEvents: 1, tickerPages: 1, soundEnabled: 1, reciterVolume: 1, reciterEnabled: 1, dailyBackupReminder: 1,
-    lastBackupReminderDate: 1, _prospects: 1, _portal: 1, _stmtSent: 1, _poLead: 1 };
+    lastBackupReminderDate: 1, _prospects: 1, _portal: 1, _stmtSent: 1, _poLead: 1, _requests: 1 };
   /* how much needs the admin — set PER USER by the admin in «المستخدمين»:
        'sensitive' (default, like 4.6) · 'edits' (any edit / delete) · 'none'
      → null means nothing needs approval (admin, or a user set to 'none') */
@@ -48,7 +48,8 @@
   }
   /* inside these settings records, these fields are part of the normal flow */
   var FLOW_FIELDS = { _custody: { status: 1, closedAt: 1, moves: 1 }, _cheques: { status: 1, statusAt: 1, history: 1, paymentId: 1, spId: 1, revId: 1 },
-    _po: { status: 1, sentAt: 1, receivedAt: 1, purchaseId: 1, received: 1 } };
+    _po: { status: 1, sentAt: 1, receivedAt: 1, purchaseId: 1, received: 1 },
+    _requests: { status: 1, decidedAt: 1 } };
   var ADMIN_ONLY_PAGES = ['users', 'audit', 'settings', 'security'];
 
   function blank(v) { return v === undefined || v === null || v === ''; }

@@ -802,7 +802,8 @@
     if (inp) inp.value = '';
     st.msgs.push({ who: 'me', q: q });
     var old = box && box.querySelector('.axa-follow'); if (old) old.remove();
-    var start = box && box.querySelector('.axa-start'); if (start) start.remove();
+    var start = box && box.querySelector('.axa-empty'); if (start) start.remove();
+    if (st.msgs.length === 1) { var qh = document.querySelector('.axa-quick-h'); if (qh && !qh.querySelector('button')) qh.insertAdjacentHTML('beforeend', '<button type="button" onclick="AXA.clear()" aria-label="محادثة جديدة" title="محادثة جديدة">' + ic('new') + '<span>محادثة جديدة</span></button>'); }
     if (box) {
       box.insertAdjacentHTML('beforeend', msgHtml({ who: 'me', q: q }) + '<div class="axa-msg bot axa-thinking" id="axa-thinking">' + mark('busy') + '<span>بحسبها…</span></div>');
       scrollEnd();
@@ -823,7 +824,10 @@
       var box = document.getElementById('axa-msgs'); if (!box) return;
       var el = toLastBot ? box.querySelectorAll('.axa-msg.me') : null;
       var target = el && el.length ? el[el.length - 1] : box.lastElementChild;
-      if (target && target.scrollIntoView) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      if (!target) return;
+      /* the messages scroll inside the chat box; the quick questions above stay put */
+      var top = target.getBoundingClientRect().top - box.getBoundingClientRect().top + box.scrollTop - 8;
+      try { box.scrollTo({ top: Math.max(0, top), behavior: 'smooth' }); } catch (e) { box.scrollTop = top; }
     });
   }
   function pageNow() { try { return typeof currentPage !== 'undefined' ? currentPage : ''; } catch (e) { return ''; } }
@@ -844,16 +848,26 @@
     else b = 'مفيش متأخرات، والمخزن تمام.';
     return { a: a, b: b, od: od.length, low: low.length };
   }
-  function startHtml() {
-    var cats = [
-      ['الفلوس', 'cash', ['مبيعات الشهر ده', 'اتحصّل كام الأسبوع ده؟', 'مين أكتر مركز عليه فلوس؟'].concat(allowed('profit') ? ['الأرباح الشهر ده'] : [])],
-      ['المراكز', 'building', ['مين متأخر في الدفع؟', 'أكتر المراكز شراءً الشهر ده', 'مراكز وقفت سحب']],
-      ['المخزن', 'box', ['إيه اللي قرب يخلص؟', 'طلعنا قد إيه ورق الشهر ده؟', 'أكتر صنف بيتباع']],
-      ['قرارات', 'scale', ['أعمل إيه النهارده؟', 'قارن الشهر ده بالشهر اللي فات'].concat(allowed('suppliers') ? ['عليا كام للموردين؟'] : [])]
-    ];
-    return '<div class="axa-start">' + cats.map(function (c) {
-      return '<section><h3>' + ic(c[1]) + esc(c[0]) + '</h3>' + c[2].map(function (q) { return '<button type="button" onclick="' + fn(function () { ask(q); }) + '">' + esc(q) + '</button>'; }).join('') + '</section>';
-    }).join('') + '</div>';
+  /* the quick questions, pinned at the top of the chat — each topic has its own color */
+  var CATS = [
+    { k: 'money', name: 'الفلوس', icon: 'cash', qs: function () { return ['مبيعات الشهر ده', 'اتحصّل كام الأسبوع ده؟', 'مين أكتر مركز عليه فلوس؟'].concat(allowed('profit') ? ['الأرباح الشهر ده'] : []); } },
+    { k: 'centers', name: 'المراكز', icon: 'building', qs: function () { return ['مين متأخر في الدفع؟', 'أكتر المراكز شراءً الشهر ده', 'مراكز وقفت سحب']; } },
+    { k: 'stock', name: 'المخزن', icon: 'box', qs: function () { return ['إيه اللي قرب يخلص؟', 'طلعنا قد إيه ورق الشهر ده؟', 'أكتر صنف بيتباع']; } },
+    { k: 'decide', name: 'قرارات', icon: 'scale', qs: function () { return ['أعمل إيه النهارده؟', 'قارن الشهر ده بالشهر اللي فات'].concat(allowed('suppliers') ? ['عليا كام للموردين؟'] : []); } }
+  ];
+  function quickHtml() {
+    if (!st.cat) st.cat = 'money';
+    return '<div class="axa-quick">' +
+      '<div class="axa-quick-h"><div><b>اسألني عن أي حاجة في الشغل</b><span>دوس على سؤال، أو اكتب سؤالك تحت بطريقتك</span></div>' +
+        (st.msgs.length ? '<button type="button" onclick="AXA.clear()" aria-label="محادثة جديدة" title="محادثة جديدة">' + ic('new') + '<span>محادثة جديدة</span></button>' : '') + '</div>' +
+      '<div class="axa-qt" role="tablist">' + CATS.map(function (c) {
+        return '<button type="button" role="tab" class="c-' + c.k + (st.cat === c.k ? ' on' : '') + '" aria-selected="' + (st.cat === c.k) + '" onclick="AXA.cat(\'' + c.k + '\')">' + ic(c.icon) + esc(c.name) + '</button>';
+      }).join('') + '</div>' +
+      '<div class="axa-qg">' + CATS.map(function (c) {
+        return '<section class="c-' + c.k + (st.cat === c.k ? ' on' : '') + '" data-cat="' + c.k + '"><h3>' + ic(c.icon) + esc(c.name) + '</h3><div class="axa-qc">' +
+          c.qs().map(function (q) { return '<button type="button" onclick="' + fn(function () { ask(q); }) + '">' + esc(q) + '</button>'; }).join('') + '</div></section>';
+      }).join('') + '</div>' +
+    '</div>';
   }
   function counts() {
     var ch = 0, pr = 0;
@@ -886,10 +900,8 @@
       /* answers are rebuilt from their questions: fresh numbers and live buttons after coming back */
       var body = st.msgs.map(function (m) { if (m.who === 'bot' && m.q2) { try { var r0 = understand(m.q2.q, m.q2.f); m.html = slip(r0, m.at || clock()); m.follow = r0.follow; } catch (e) {} } return msgHtml(m); }).join('');
       var lastBot = null; for (var i = st.msgs.length - 1; i >= 0; i--) if (st.msgs[i].who === 'bot') { lastBot = st.msgs[i]; break; }
-      html += '<section class="axa-chat">' +
-        '<div class="axa-chat-h"><b>' + (st.msgs.length ? 'المحادثة' : 'اسألني عن أي حاجة في الشغل') + '</b>' +
-          (st.msgs.length ? '<button type="button" onclick="AXA.clear()">' + ic('new') + 'محادثة جديدة</button>' : '<span>بفهم العامية، والفترة، واسم المركز أو الصنف</span>') + '</div>' +
-        '<div class="axa-msgs" id="axa-msgs" aria-live="polite">' + (body || startHtml()) + (lastBot ? followHtml(lastBot.follow) : '') + '</div>' +
+      html += '<section class="axa-chat">' + quickHtml() +
+        '<div class="axa-msgs" id="axa-msgs" aria-live="polite">' + (body || '<div class="axa-empty">' + mark() + '<p>أنا جاهز. اختار سؤال من فوق، أو اكتب سؤالك — بفهم العامية، والفترة («الشهر اللي فات»)، واسم المركز أو الصنف.</p></div>') + (lastBot ? followHtml(lastBot.follow) : '') + '</div>' +
         '<form class="axa-composer" onsubmit="AXA.send(event)">' +
           '<button type="button" class="axa-micb" id="axa-mic" onclick="AXA.mic()" aria-label="اسأل بصوتك" title="اسأل بصوتك"' + (voiceOk() ? '' : ' hidden') + '>' + ic('mic') + '</button>' +
           '<input id="axa-q" type="text" placeholder="مثلاً: حساب مركز النور، أو مبيعات الشهر اللي فات" autocomplete="off" enterkeyhint="send" aria-label="سؤالك">' +
@@ -907,6 +919,7 @@
     if (st.tab === 'churn' && typeof renderChurnRisk === 'function') renderChurnRisk();
     if (st.tab === 'prospects' && typeof renderProspects === 'function') renderProspects();
     if (st.tab === 'chat') {
+      var mb = document.getElementById('axa-msgs'); if (mb && st.msgs.length) mb.scrollTop = mb.scrollHeight;
       if (st.pending) { var p = st.pending; st.pending = null; setTimeout(function () { ask(p.q, p.force); }, 60); }
       else if (window.matchMedia && window.matchMedia('(min-width: 769px)').matches) { var inp = document.getElementById('axa-q'); if (inp) inp.focus({ preventScroll: true }); }
     }
@@ -945,6 +958,7 @@
     run: function (id) { var f = st.fns[id]; if (f) f(); },
     send: function (e) { if (e) e.preventDefault(); var inp = document.getElementById('axa-q'); if (inp) ask(inp.value); },
     tab: tab, mic: mic,
+    cat: function (k) { st.cat = k; document.querySelectorAll('.axa-qt button').forEach(function (b) { var on = b.classList.contains('c-' + k); b.classList.toggle('on', on); b.setAttribute('aria-selected', on); }); document.querySelectorAll('.axa-qg section').forEach(function (x) { x.classList.toggle('on', x.dataset.cat === k); }); },
     clear: function () { st.msgs = []; st.ctx = null; render(); }
   };
 })();

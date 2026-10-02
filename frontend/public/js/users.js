@@ -16,7 +16,7 @@
     ['none', 'من غير موافقة', 'كل تعديلاته بتتنفذ على طول (إلا لو الفترة مقفولة). وكله بيتسجل في سجل التعديلات.']
   ];
   var ROLE = { admin: 'مدير', accountant: 'محاسب', sales: 'موظف مبيعات' };
-  var ALWAYS = ['dashboard', 'approvals'];
+  var ALWAYS = ['dashboard', 'approvals', 'requests'];
   var form = { pages: [] };
 
   function D() { return (typeof DB !== 'undefined' && DB && DB.data) || {}; }

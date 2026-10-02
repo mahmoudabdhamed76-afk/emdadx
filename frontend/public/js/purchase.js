@@ -79,7 +79,8 @@
     if (!host) return;
     var sg = suggestions(), L = lead();
     sg.forEach(function (s) {
-      if (ui.pick[s.it.id] === undefined) ui.pick[s.it.id] = s.lvl !== 'soon';
+      var asked = window.AXReq && AXReq.pendingFor && AXReq.pendingFor(s.it.id);
+      if (ui.pick[s.it.id] === undefined) ui.pick[s.it.id] = s.lvl !== 'soon' && !asked;
       if (ui.qty[s.it.id] === undefined) ui.qty[s.it.id] = s.need;
       if (ui.sup[s.it.id] === undefined) ui.sup[s.it.id] = s.sup.sid || '';
     });
@@ -100,12 +101,13 @@
         '</div>' +
         '<label class="po-lead"><span>فترة التوريد</span><input type="number" min="1" max="90" value="' + L + '" onchange="AXPO.setLead(this.value)"><em>يوم</em></label>' +
       '</section>' +
-      (sg.length ? '<section class="po-card"><header><b>الاقتراحات</b><span>علّم الأصناف وعدّل الكمية أو المورد، وبعدين «اعمل طلب الشراء» — بيتعمل طلب لكل مورد</span></header>' +
+      pendingHtml() +
+      (sg.length ? '<section class="po-card"><header><b>الاقتراحات</b><span>علّم الأصناف وعدّل الكمية أو المورد، وبعدين ابعت الطلب — بيروح للمدير في «الطلبات والمقترحات»، ولما يوافق بيتعمل طلب شراء لكل مورد</span></header>' +
         '<div class="po-tbl-w"><table class="po-tbl"><thead><tr><th></th><th>الصنف</th><th>الرصيد</th><th>بيخلص</th><th>الكمية</th><th>المورد</th><th>السعر</th></tr></thead><tbody>' +
         sg.map(function (s) {
           var it = s.it, cov = !isFinite(it.cover) ? '—' : it.cover < 1 ? 'النهارده' : 'بعد ' + Math.floor(it.cover) + ' يوم';
           return '<tr class="l-' + s.lvl + '"><td><input type="checkbox" ' + (ui.pick[it.id] ? 'checked' : '') + ' onchange="AXPO.pick(\'' + it.id + '\',this.checked)"></td>' +
-            '<td><b>' + esc(it.name) + '</b><small>' + s.why + ' · بيتسحب ' + num(Math.round(it.avg * 10) / 10) + ' ' + esc(it.unit) + '/يوم</small></td>' +
+            '<td><b>' + esc(it.name) + '</b>' + (window.AXReq && AXReq.pendingFor && AXReq.pendingFor(it.id) ? '<em class="po-asked">متطلب ومستني الموافقة</em>' : '') + '<small>' + s.why + ' · بيتسحب ' + num(Math.round(it.avg * 10) / 10) + ' ' + esc(it.unit) + '/يوم</small></td>' +
             '<td class="n">' + num(it.bal) + '</td><td class="n"><em class="po-c ' + s.lvl + '">' + cov + '</em></td>' +
             '<td><input class="po-q" type="number" min="1" value="' + (ui.qty[it.id] || '') + '" onchange="AXPO.qty(\'' + it.id + '\',this.value)"> <small>' + esc(it.unit) + '</small></td>' +
             '<td><select class="po-s" onchange="AXPO.sup(\'' + it.id + '\',this.value)"><option value="">— مورد —</option>' + sups.map(function (x) {
@@ -113,41 +115,71 @@
               (s.sup.from === 'list' ? '<small>الأرخص في قوائم الأسعار</small>' : s.sup.from === 'last' ? '<small>آخر مرة اشترينا منه</small>' : '') + '</td>' +
             '<td class="n">' + (s.sup.price ? money(s.sup.price) : '—') + '</td></tr>';
         }).join('') + '</tbody></table></div>' +
-        '<footer><button class="btn btn-primary" onclick="AXPO.make()"' + (picked.length ? '' : ' disabled') + '>🧾 اعمل طلب الشراء (' + picked.length + ')</button></footer></section>'
+        '<footer class="po-send"><input class="form-control" id="po-note" placeholder="ملاحظة للمدير (اختياري)"><button class="btn btn-primary" onclick="AXPO.make()"' + (picked.length ? '' : ' disabled') + '>ابعت طلب الشراء للمدير (' + picked.length + ')</button></footer></section>'
         : '<div class="skh-empty"><b>مفيش أصناف محتاجة طلب دلوقتي</b><span>كل صنف بيكفي فترة التوريد + أسبوع على الأقل (على معدل السحب)</span></div>') +
       (orders.length ? '<section class="po-card"><header><b>طلبات الشراء</b><span>' + orders.length + ' طلب</span></header><ul class="po-orders">' + orders.slice(0, 30).map(orderRow).join('') + '</ul></section>' : '');
+  }
+  function pendingHtml() {
+    if (!window.AXReq || !AXReq.list) return '';
+    var rs = AXReq.list().filter(function (r) { return r.type === 'po' && r.status === 'pending'; });
+    if (!rs.length) return '';
+    return '<section class="po-card po-wait"><header><b>مستني موافقة المدير</b><span>' + rs.length + ' طلب في «الطلبات والمقترحات»</span></header><ul class="po-orders">' +
+      rs.map(function (r) {
+        var t = (r.items || []).reduce(function (a, x) { return a + (Number(x.qty) || 0) * (Number(x.price) || 0); }, 0);
+        return '<li><div><b>طلب شراء #' + r.no + ' — ' + esc((r.by && r.by.name) || '') + '</b><span>' + (r.items || []).map(function (x) { return esc(x.name) + ' × ' + num(x.qty); }).join('، ') + (t ? ' · ' + money(t) : '') + '</span></div>' +
+          '<em>مستني الموافقة</em><div class="po-o-act"><button class="pri" onclick="navigate(\'requests\')">افتح</button></div></li>';
+      }).join('') + '</ul></section>';
   }
   var STL = { draft: 'مسودة', sent: 'اتبعت للمورد', received: 'اتستلم ✓', cancelled: 'اتلغى' };
   function total(o) { return (o.items || []).reduce(function (t, x) { return t + (Number(x.qty) || 0) * (Number(x.price) || 0); }, 0); }
   function orderRow(o) {
-    return '<li class="st-' + o.status + '"><div><b>طلب #' + o.no + ' — ' + esc(o.supplierName || 'من غير مورد') + '</b><span>' + (o.items || []).length + ' صنف · ' + money(total(o)) + ' · ' + dmy(o.date) + '</span></div>' +
+    return '<li class="st-' + o.status + '"><div><b>طلب #' + o.no + ' — ' + esc(o.supplierName || 'من غير مورد') + '</b><span>' + (o.items || []).length + ' صنف · ' + money(total(o)) + ' · ' + dmy(o.date) + (o.requestNo ? ' · من الطلب #' + o.requestNo : '') + '</span></div>' +
       '<em>' + STL[o.status] + '</em><div class="po-o-act">' +
       '<button onclick="AXPO.print(\'' + o.id + '\')">طباعة</button>' +
       (o.status !== 'received' && o.status !== 'cancelled' ? '<button onclick="AXPO.whatsapp(\'' + o.id + '\')">واتساب</button><button class="pri" onclick="AXPO.receive(\'' + o.id + '\')">اتستلم</button><button onclick="AXPO.cancel(\'' + o.id + '\')">إلغاء</button>' : '') +
       '</div></li>';
   }
 
-  function make() {
-    var sg = suggestions().filter(function (s) { return ui.pick[s.it.id] && Number(ui.qty[s.it.id]) > 0; });
-    if (!sg.length) { T('علّم صنف واحد على الأقل', 'warning'); return; }
-    var groups = {};
-    sg.forEach(function (s) {
-      var sid = ui.sup[s.it.id] || '', g = groups[sid] || (groups[sid] = []);
+  /* 4.11 · the selection goes to the admin as a request («الطلبات والمقترحات»);
+     the purchase orders are made when he approves */
+  function picked() {
+    return suggestions().filter(function (s) { return ui.pick[s.it.id] && Number(ui.qty[s.it.id]) > 0; }).map(function (s) {
+      var sid = ui.sup[s.it.id] || '';
       var sup = A('suppliers').find(function (x) { return x.id === sid; });
       var price = s.sup.sid === sid ? s.sup.price : (function () { var b = null; ((sup && sup.priceList) || []).forEach(function (it) { var m = norm(it.name), n = norm(s.it.name); if (m && (m === n || m.indexOf(n) >= 0 || n.indexOf(m) >= 0)) b = Number(it.price) || b; }); return b || Number(s.it.p.cost) || 0; })();
-      g.push({ productId: s.it.id, name: s.it.name, unit: s.it.unit, qty: Number(ui.qty[s.it.id]), price: price });
+      return { productId: s.it.id, name: s.it.name, unit: s.it.unit, qty: Number(ui.qty[s.it.id]), price: price, supplierId: sid, supplierName: sup ? sup.name : '', bal: s.it.bal, why: s.why };
     });
+  }
+  function make() {
+    var items = picked();
+    if (!items.length) { T('علّم صنف واحد على الأقل', 'warning'); return; }
+    if (window.AXReq && AXReq.create) {
+      var r = AXReq.create({ type: 'po', items: items, note: ((document.getElementById('po-note') || {}).value || '').trim() });
+      ui.pick = {}; ui.qty = {}; ui.sup = {};
+      T('اتبعت طلب الشراء #' + r.no + ' للمدير في «الطلبات والمقترحات»' + ((typeof currentUser !== 'undefined' && currentUser && currentUser.role === 'admin') ? ' — وافق عليه من هناك' : ''), 'success', 6000);
+      render();
+      return;
+    }
+    var made = createPOs(items, {});
+    ui.pick = {}; ui.qty = {}; ui.sup = {};
+    T('اتعمل ' + made.length + ' طلب شراء — اطبعه أو ابعته للمورد واتساب');
+    render();
+  }
+  /* one purchase order per supplier (called when the admin approves a request) */
+  function createPOs(items, meta) {
+    meta = meta || {};
+    var groups = {};
+    items.forEach(function (x) { var sid = x.supplierId || ''; (groups[sid] || (groups[sid] = [])).push({ productId: x.productId, name: x.name, unit: x.unit, qty: Number(x.qty) || 0, price: Number(x.price) || 0 }); });
     var made = [];
     Object.keys(groups).forEach(function (sid) {
       var sup = A('suppliers').find(function (x) { return x.id === sid; });
       var no = list().reduce(function (m, x) { return Math.max(m, x.no || 0); }, 0) + 1;
-      var o = { id: 'po_' + id(), no: no, supplierId: sid, supplierName: sup ? sup.name : '', items: groups[sid], date: today(), status: 'draft', by: me(), createdAt: Date.now() };
+      var o = { id: 'po_' + id(), no: no, supplierId: sid, supplierName: sup ? sup.name : (groups[sid][0] && items.find(function (x) { return (x.supplierId || '') === sid; }) || {}).supplierName || '',
+        items: groups[sid], date: today(), status: 'draft', by: meta.by || me(), approvedBy: me(), requestId: meta.requestId || '', requestNo: meta.requestNo || null, createdAt: Date.now() };
       list().push(o); made.push(o);
     });
     DB.save();
-    ui.pick = {}; ui.qty = {}; ui.sup = {};
-    T('اتعمل ' + made.length + ' طلب شراء — اطبعه أو ابعته للمورد واتساب');
-    render();
+    return made;
   }
   function find(oid) { return list().find(function (x) { return x.id === oid; }); }
   function text(o) {
@@ -220,7 +252,7 @@
   }
 
   window.AXPO = {
-    render: render, suggestions: suggestions, make: make, whatsapp: whatsapp, print: print, receive: receive, doReceive: doReceive, cancel: cancel,
+    render: render, suggestions: suggestions, make: make, createPOs: createPOs, picked: picked, whatsapp: whatsapp, print: print, receive: receive, doReceive: doReceive, cancel: cancel,
     pick: function (k, v) { ui.pick[k] = !!v; render(); }, qty: function (k, v) { ui.qty[k] = Math.max(0, Math.round(Number(v) || 0)); render(); },
     sup: function (k, v) { ui.sup[k] = v; render(); },
     setLead: function (v) { var n = Math.max(1, Math.min(90, Math.round(Number(v) || 7))); S()._poLead = n; DB.save(); render(); },

@@ -82,6 +82,23 @@ function checkApprovals(u, cd) {
   });
 }
 
+/* ── requests & suggestions (4.11): a non-admin may only add his own pending
+      request or withdraw his own pending one — approving / rejecting is the admin's ── */
+function checkRequests(u, cd) {
+  if (!cd) return;
+  const cur = AX.idx(((data().settings || {})._requests) || []);
+  (cd.added || []).forEach(r => {
+    if (!r || r.status !== 'pending' || !r.by || r.by.id !== u.id) throw new Refused('forbidden', 'طلب غير صالح');
+  });
+  if ((cd.removed || []).length) throw new Refused('forbidden', 'مسح الطلبات للمدير بس');
+  (cd.modified || []).forEach(x => {
+    const r = cur[x.k];
+    if (!r || !r.by || r.by.id !== u.id) throw new Refused('forbidden', 'ده مش طلبك');
+    const ok = x.f.every(f => f === 'status' || f === 'decidedAt');
+    if (!ok || r.status !== 'pending' || x.a.status !== 'withdrawn') throw new Refused('forbidden', 'القرار في الطلبات للمدير بس');
+  });
+}
+
 /* ── the main entry: apply a change sent by a device ── */
 function apply(u, w) {
   const d = data();
@@ -98,6 +115,7 @@ function apply(u, w) {
     /* the audit log: a user can only add his own entries */
     if (w.cols.auditLog) w.cols.auditLog = { added: (w.cols.auditLog.added || []).filter(e => e && e.userId === u.id), removed: [], modified: [] };
     checkApprovals(u, w.sets._approvals);
+    checkRequests(u, w.sets._requests);
     const df = AX.enrich(d, w);
     const level = AX.levelOf(s, u);   // per user (set by the admin in «المستخدمين»)
     let why = AX.classify(df, level || 'sensitive', { closedUntil: s.closedUntil || '' });
