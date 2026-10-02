@@ -99,9 +99,9 @@ function apply(u, w) {
     if (w.cols.auditLog) w.cols.auditLog = { added: (w.cols.auditLog.added || []).filter(e => e && e.userId === u.id), removed: [], modified: [] };
     checkApprovals(u, w.sets._approvals);
     const df = AX.enrich(d, w);
-    const level = AX.levelOf(s, u.role);
-    let why = AX.classify(df, level, { closedUntil: s.closedUntil || '' });
-    if (why && s.approvalsOff) why = why.filter(x => x.t === 'closed');
+    const level = AX.levelOf(s, u);   // per user (set by the admin in «المستخدمين»)
+    let why = AX.classify(df, level || 'sensitive', { closedUntil: s.closedUntil || '' });
+    if (why && (s.approvalsOff || !level)) why = why.filter(x => x.t === 'closed');
     if (why && why.length) throw new Refused('needs_approval', 'التعديل ده محتاج موافقة المدير', { why });
   }
 

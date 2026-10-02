@@ -34,16 +34,21 @@
   /* settings keys a non-admin may write at all (the server refuses the rest) */
   var USER_KEYS = { monthlyTarget: 1, _debtPlan: 1, countBlind: 1, _approvals: 1, _custody: 1, _debts: 1, _stockCounts: 1, _cheques: 1, _po: 1,
     tickerSpeed: 1, tickerEvents: 1, tickerPages: 1, soundEnabled: 1, reciterVolume: 1, reciterEnabled: 1, dailyBackupReminder: 1,
-    lastBackupReminderDate: 1, _prospects: 1 };
-  /* how much needs the admin, per role (the admin can change it in «طلبات الموافقة») */
-  var DEFAULT_LEVEL = { accountant: 'edits', sales: 'sensitive' };
-  function levelOf(settings, role) {
-    if (role === 'admin') return null;
-    var p = ((settings || {})._perms || {})[role];
-    return (p && (p.level === 'edits' || p.level === 'sensitive')) ? p.level : (DEFAULT_LEVEL[role] || 'sensitive');
+    lastBackupReminderDate: 1, _prospects: 1, _portal: 1, _stmtSent: 1, _poLead: 1 };
+  /* how much needs the admin — set PER USER by the admin in «المستخدمين»:
+       'sensitive' (default, like 4.6) · 'edits' (any edit / delete) · 'none'
+     → null means nothing needs approval (admin, or a user set to 'none') */
+  var DEFAULT_LEVEL = { accountant: 'sensitive', sales: 'sensitive' };
+  function levelOf(settings, user) {
+    var u = user && typeof user === 'object' ? user : { role: user };
+    if (!u.role || u.role === 'admin') return null;
+    if (u.approval === 'none') return null;
+    if (u.approval === 'edits' || u.approval === 'sensitive') return u.approval;
+    return DEFAULT_LEVEL[u.role] || 'sensitive';
   }
   /* inside these settings records, these fields are part of the normal flow */
-  var FLOW_FIELDS = { _custody: { status: 1, closedAt: 1, moves: 1 }, _cheques: { status: 1, statusAt: 1, history: 1, paymentId: 1, spId: 1 } };
+  var FLOW_FIELDS = { _custody: { status: 1, closedAt: 1, moves: 1 }, _cheques: { status: 1, statusAt: 1, history: 1, paymentId: 1, spId: 1, revId: 1 },
+    _po: { status: 1, sentAt: 1, receivedAt: 1, purchaseId: 1, received: 1 } };
   var ADMIN_ONLY_PAGES = ['users', 'audit', 'settings', 'security'];
 
   function blank(v) { return v === undefined || v === null || v === ''; }
@@ -330,7 +335,69 @@
     return df;
   }
 
+  /* ═════ business numbers shared by the screens and the center's link ═════ */
+  function daysBetween(from, to) {
+    var a = Date.parse(String(from || '').slice(0, 10)), b = Date.parse(String(to || '').slice(0, 10));
+    return isFinite(a) && isFinite(b) ? Math.round((b - a) / 864e5) : 0;
+  }
+  /* sales documents of a center: issuances + invoices that were not made from an issuance */
+  function salesDocs(d, cid) {
+    var out = [];
+    (d.issuances || []).forEach(function (i) {
+      if (i.customerId !== cid) return;
+      out.push({ kind: 'iss', id: i.id, no: i.number, date: i.date, total: Number(i.total) || 0, paid: Number(i.paid) || 0,
+        label: 'صرف #' + i.number + (i.productName ? ' — ' + i.productName : (Array.isArray(i.items) && i.items.length ? ' — ' + i.items.map(function (x) { return x.productName || x.name; }).filter(Boolean).slice(0, 2).join('، ') : '')) });
+    });
+    (d.invoices || []).forEach(function (v) {
+      if (v.customerId !== cid || v.sourceIssuanceId) return;
+      out.push({ kind: 'inv', id: v.id, no: v.number, date: v.date, total: Number(v.total) || 0, paid: Number(v.paid) || 0, label: 'فاتورة #' + v.number });
+    });
+    return out;
+  }
+  /* what a center owes, split by age: 0–30 · 31–60 · 61–90 · +90 days */
+  function aging(d, cid, today) {
+    var c = (d.customers || []).find(function (x) { return x.id === cid; }) || {};
+    var bal = Number(c.balance) || 0, B = [0, 0, 0, 0];
+    var docs = salesDocs(d, cid).map(function (x) { return Object.assign({}, x, { due: Math.max(0, x.total - x.paid) }); })
+      .filter(function (x) { return x.due > 0.005; })
+      .sort(function (a, b) { return String(a.date).localeCompare(String(b.date)); });
+    var sum = docs.reduce(function (t, x) { return t + x.due; }, 0), diff = bal - sum;
+    if (diff < 0) {   // money received but not matched to a document yet → it pays the oldest first
+      var left = -diff;
+      docs.forEach(function (x) { if (left <= 0) return; var t = Math.min(x.due, left); x.due -= t; left -= t; });
+    }
+    docs = docs.filter(function (x) { return x.due > 0.005; });
+    docs.forEach(function (x) { var a = daysBetween(x.date, today); B[a <= 30 ? 0 : a <= 60 ? 1 : a <= 90 ? 2 : 3] += x.due; });
+    if (diff > 0.005) B[3] += diff;   // an older / opening balance that has no document
+    var pays = (d.payments || []).filter(function (p) { return p.customerId === cid && Number(p.amount) > 0; })
+      .sort(function (a, b) { return String(b.date).localeCompare(String(a.date)) || (b.createdAt || 0) - (a.createdAt || 0); });
+    return {
+      balance: bal, buckets: B.map(function (v) { return rnd(v); }), docs: docs,
+      oldestDays: docs.length ? daysBetween(docs[0].date, today) : (diff > 0.005 ? 91 : 0),
+      openingPart: diff > 0.005 ? rnd(diff) : 0,
+      lastPay: pays[0] ? { amount: Number(pays[0].amount) || 0, date: pays[0].date } : null
+    };
+  }
+  /* statement rows (newest first) with a running balance that ends at the current balance */
+  function statement(d, cid, limit) {
+    var c = (d.customers || []).find(function (x) { return x.id === cid; }) || {};
+    var rows = salesDocs(d, cid).map(function (x) { return { date: x.date, label: x.label, debit: x.total, credit: 0, ts: 0 }; });
+    (d.payments || []).forEach(function (p) {
+      if (p.customerId !== cid) return;
+      var a = Number(p.amount) || 0;
+      rows.push({ date: p.date, label: a < 0 ? 'ارتداد ' + (p.note || 'شيك') : 'تحصيل' + (p.method ? ' — ' + p.method : '') + (p.reference ? ' ' + p.reference : ''),
+        debit: a < 0 ? -a : 0, credit: a > 0 ? a : 0, ts: p.createdAt || 0 });
+    });
+    rows.sort(function (a, b) { return String(a.date).localeCompare(String(b.date)) || a.credit - b.credit || a.ts - b.ts; });
+    var net = rows.reduce(function (t, r) { return t + r.debit - r.credit; }, 0), run = (Number(c.balance) || 0) - net;
+    var opening = rnd(run);
+    rows.forEach(function (r) { run += r.debit - r.credit; r.balance = rnd(run); });
+    rows.reverse();
+    return { opening: opening, rows: limit ? rows.slice(0, limit) : rows, count: rows.length };
+  }
+
   return {
+    daysBetween: daysBetween, salesDocs: salesDocs, aging: aging, statement: statement,
     FIN: FIN, GUARD_RM: GUARD_RM, BAL: BAL, IGN: IGN, ACC: ACC, SIDE_FIN: SIDE_FIN, EDIT_KEYS: EDIT_KEYS, USER_KEYS: USER_KEYS,
     ADMIN_ONLY_PAGES: ADMIN_ONLY_PAGES, DEFAULT_LEVEL: DEFAULT_LEVEL, levelOf: levelOf,
     blank: blank, isNum: isNum, same: same, clone: clone, str: str, rnd: rnd, realField: realField, keyOf: keyOf, idx: idx,

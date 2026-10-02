@@ -140,7 +140,7 @@
             '<em>آخر نشاط ' + when(s.lastSeen) + '</em>' +
             (s.me ? '<i class="tag">الجهاز ده</i>' : '<button onclick="AXSec.revoke(\'' + esc(s.id) + '\')">خروج</button>') + '</li>';
         }).join('') + '</ul>' : '<div class="sec-empty">' + (ui.ses ? 'مفيش أجهزة' : 'بيحمّل…') + '</div>') +
-        '<p class="sec-note">الصلاحيات (مين يدخل أنهي قسم وإيه اللي محتاج موافقتك) من <a href="javascript:void(0)" onclick="navigate(\'approvals\');setTimeout(function(){var e=document.getElementById(\'apr-perms\');if(e)e.scrollIntoView({behavior:\'smooth\'})},350)">طلبات الموافقة ← صلاحيات المستخدمين</a>.</p>' +
+        '<p class="sec-note">صلاحيات كل مستخدم (الأقسام اللي يدخلها وإيه اللي يحتاج موافقتك) من <a href="javascript:void(0)" onclick="navigate(\'users\')">«المستخدمين»</a>.</p>' +
       '</section>' +
       '</div>';
   }

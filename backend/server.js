@@ -15,6 +15,7 @@ const { db, DB_FILE } = require('./db');
 const { exportBlob, defaultBlob } = require('./src/bridge');
 const auth  = require('./src/auth');
 const store = require('./src/store');
+const portal = require('./src/portal');
 
 const PORT     = Number(process.env.PORT) || 8787;
 const HOST     = process.env.HOST || '0.0.0.0';
@@ -179,6 +180,8 @@ const server = http.createServer(async (req, res) => {
       }
     }
     if (pathname === '/api/version' && req.method === 'GET') return sendJSON(res, 200, { version: _dataVersion });
+    /* a center's own read-only page (token link) */
+    if (pathname.startsWith('/p/') && portal.handle(req, res, pathname, store.data)) return;
 
     /* ── login / logout / who am I ── */
     if (pathname === '/api/login' && req.method === 'POST') {

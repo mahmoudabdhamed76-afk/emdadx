@@ -2524,3 +2524,549 @@ html.aurum .sec-note a { color: var(--ax-blue); font-weight: 700; }
   html.aurum .sec-files li { flex-wrap: wrap; }
   html.aurum .sec-dev li { flex-wrap: wrap; }
 }
+
+/* ════════════════════════════════════════════════════════════════════
+   30. 4.8 · أعمار الديون (aging.js) · الأرباح (profit.js) · الشيكات
+       (cheques.js) · طلب الشراء (purchase.js)
+════════════════════════════════════════════════════════════════════ */
+html.aurum { --ag-0: #1E9A4C; --ag-1: #D98200; --ag-2: #E8590C; --ag-3: #E01B0F; }
+html.aurum[data-theme="dark"] { --ag-0: #3DD07A; --ag-1: #FFB020; --ag-2: #FF7A3D; --ag-3: #FF5A4E; }
+html.aurum .skh-tabs:has(> button:nth-child(4)) { grid-template-columns: repeat(4, 1fr); }
+/* aging */
+html.aurum .ag-hero { grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); }
+html.aurum .ag-hero-b { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+html.aurum .ag-bar { display: flex; gap: 2px; height: 8px; border-radius: 999px; overflow: hidden; background: var(--ax-surface-2); min-width: 80px; }
+html.aurum .ag-bar.big { height: 14px; background: rgba(255, 255, 255, .12); }
+html.aurum .ag-bar i { display: block; height: 100%; }
+html.aurum .ag-bar .b0, html.aurum .ag-legend .b0 i { background: var(--ag-0); }
+html.aurum .ag-bar .b1, html.aurum .ag-legend .b1 i { background: var(--ag-1); }
+html.aurum .ag-bar .b2, html.aurum .ag-legend .b2 i { background: var(--ag-2); }
+html.aurum .ag-bar .b3, html.aurum .ag-legend .b3 i { background: var(--ag-3); }
+html.aurum .ag-legend { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+html.aurum .ag-legend li { display: flex; align-items: center; gap: 8px; background: rgba(255, 255, 255, .07); border-radius: 12px; padding: 8px 10px; font-size: 12.5px; min-width: 0; }
+html.aurum .ag-legend li i { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+html.aurum .ag-legend li span { color: var(--ax-deep-muted); }
+html.aurum .ag-legend li b { margin-inline-start: auto; font-variant-numeric: tabular-nums; white-space: nowrap; }
+html.aurum .ag-legend li em { font-style: normal; font-size: 11px; color: var(--ax-deep-muted); }
+html.aurum .ag-tools .ag-q { width: auto; flex: 1; min-width: 160px; max-width: 280px; }
+html.aurum .ag-bulk { border: 0; cursor: pointer; border-radius: 999px; padding: 9px 14px; background: #25D366; color: #fff; font: 700 13px var(--ax-font); display: inline-flex; gap: 6px; align-items: center; margin-inline-start: auto; }
+html.aurum .ag-bulk em { font-style: normal; background: rgba(0, 0, 0, .18); border-radius: 999px; padding: 1px 8px; font-size: 11.5px; }
+html.aurum .ag-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+html.aurum .ag-row { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) auto auto; gap: 14px; align-items: center; background: var(--ax-surface); border-radius: 18px; padding: 12px 16px; box-shadow: var(--ax-shadow); }
+html.aurum .ag-who { min-width: 0; display: flex; flex-direction: column; }
+html.aurum .ag-who b { font-size: 14.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+html.aurum .ag-who span { font-size: 11.5px; color: var(--ax-faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+html.aurum .ag-amt { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+html.aurum .ag-amt b { font: 800 18px var(--ax-display); font-variant-numeric: tabular-nums; white-space: nowrap; }
+html.aurum .ag-age { font-size: 11.5px; font-weight: 700; padding: 4px 10px; border-radius: 999px; white-space: nowrap; background: var(--ax-surface-2); }
+html.aurum .ag-age.b0 { color: var(--ag-0); } html.aurum .ag-age.b1 { color: var(--ag-1); } html.aurum .ag-age.b2 { color: var(--ag-2); } html.aurum .ag-age.b3 { color: #fff; background: var(--ag-3); }
+html.aurum .ag-act { display: flex; gap: 6px; }
+html.aurum .ag-act button { border: 0; cursor: pointer; border-radius: 11px; padding: 8px 11px; background: var(--ax-surface-2); color: var(--ax-text); font: 600 12.5px var(--ax-font); white-space: nowrap; }
+html.aurum .ag-act button.wa { background: #25D366; color: #fff; }
+html.aurum .ag-act button.wa.sent { background: rgba(37, 211, 102, .16); color: #16A34A; }
+html.aurum .ag-bulk-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; max-height: 55vh; overflow: auto; }
+html.aurum .ag-bulk-list li { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; background: var(--ax-surface-2); }
+html.aurum .ag-bulk-list li div { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+html.aurum .ag-bulk-list li span { font-size: 12px; color: var(--ax-faint); }
+html.aurum .ag-bulk-list li button { border: 0; cursor: pointer; border-radius: 10px; padding: 8px 14px; background: #25D366; color: #fff; font: 700 12.5px var(--ax-font); }
+html.aurum .ag-bulk-list li.done { opacity: .62; } html.aurum .ag-bulk-list li.done button { background: var(--ax-surface-3); color: var(--ax-text); }
+html.aurum .ag-link { display: flex; gap: 8px; } html.aurum .ag-link input { direction: ltr; font-family: ui-monospace, monospace; font-size: 12px; }
+/* profit */
+html.aurum .pf-tools input[type="date"] { width: auto; }
+html.aurum .pf-hero { grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); }
+html.aurum .pf-hero .cus-hero-t b.neg { color: #FF8A7A; }
+html.aurum .pf-figs { grid-template-columns: repeat(4, minmax(0, 1fr)) !important; }
+html.aurum .pf-figs b { font-size: 17px !important; white-space: nowrap; }
+html.aurum .pf-card, html.aurum .po-card { background: var(--ax-surface); border-radius: var(--ax-radius); box-shadow: var(--ax-shadow); padding: 16px; margin-bottom: 14px; min-width: 0; }
+html.aurum .pf-card > header, html.aurum .po-card > header { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+html.aurum .pf-card > header b, html.aurum .po-card > header b { font-size: 15px; }
+html.aurum .pf-card > header span, html.aurum .po-card > header span { font-size: 12px; color: var(--ax-faint); }
+html.aurum .pf-alerts { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 8px; margin-bottom: 14px; }
+html.aurum .pf-alert { border-radius: 16px; padding: 12px 14px; background: var(--ax-surface); box-shadow: var(--ax-shadow); border-inline-start: 4px solid var(--ax-blue); }
+html.aurum .pf-alert.warn { border-color: var(--ax-warn); } html.aurum .pf-alert.bad { border-color: var(--ax-bad); }
+html.aurum .pf-alert b { display: block; font-size: 13.5px; margin-bottom: 3px; } html.aurum .pf-alert span { font-size: 12.5px; color: var(--ax-muted); line-height: 1.7; }
+html.aurum .pf-tbl-w, html.aurum .po-tbl-w { overflow-x: auto; }
+html.aurum .pf-tbl, html.aurum .po-tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
+html.aurum .pf-tbl th, html.aurum .po-tbl th { text-align: right; font-weight: 700; color: var(--ax-muted); padding: 8px; border-bottom: 1px solid var(--ax-line); white-space: nowrap; font-size: 12px; }
+html.aurum .pf-tbl td, html.aurum .po-tbl td { padding: 9px 8px; border-bottom: 1px solid var(--ax-line); vertical-align: middle; }
+html.aurum .pf-tbl td small, html.aurum .po-tbl td small { display: block; font-size: 11px; color: var(--ax-faint); }
+html.aurum .pf-tbl td.n, html.aurum .po-tbl td.n { white-space: nowrap; font-variant-numeric: tabular-nums; }
+html.aurum .pf-tbl td.mut { color: var(--ax-muted); }
+html.aurum .pf-tbl b.neg { color: var(--ax-bad); }
+html.aurum .pf-b { display: block; height: 4px; border-radius: 999px; background: var(--ax-surface-2); margin-top: 5px; overflow: hidden; min-width: 70px; }
+html.aurum .pf-b i { display: block; height: 100%; background: var(--ag-0); border-radius: inherit; } html.aurum .pf-b i.neg { background: var(--ag-3); }
+html.aurum .pf-m { font-style: normal; font-weight: 700; font-size: 12px; padding: 3px 9px; border-radius: 999px; background: var(--ax-surface-2); }
+html.aurum .pf-m.hi { color: var(--ag-0); } html.aurum .pf-m.mid { color: var(--ag-1); } html.aurum .pf-m.lo { color: var(--ag-3); } html.aurum .pf-m.na { color: var(--ax-faint); }
+html.aurum .pf-note { font-size: 12px; color: var(--ax-faint); margin: 0 4px 14px; }
+/* cheques */
+html.aurum .chq-hero { grid-template-columns: minmax(0, 1fr) auto auto; }
+html.aurum .chq-new { display: flex; flex-direction: column; gap: 8px; }
+html.aurum .chq-new button { border: 0; cursor: pointer; padding: 11px 16px; border-radius: 14px; background: #fff; color: #000; font: 800 13.5px var(--ax-font); display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+html.aurum .chq-new button svg { width: 16px; height: 16px; }
+html.aurum .chq-days { display: flex; gap: 6px; overflow-x: auto; padding: 2px 2px 8px; margin-bottom: 8px; scrollbar-width: thin; }
+html.aurum .chq-day { flex: none; min-width: 74px; border-radius: 14px; background: var(--ax-surface); box-shadow: var(--ax-shadow); padding: 8px 10px; display: flex; flex-direction: column; gap: 2px; }
+html.aurum .chq-day span { font-size: 11.5px; color: var(--ax-faint); font-weight: 700; }
+html.aurum .chq-day em { font-style: normal; font-size: 12.5px; font-weight: 800; font-variant-numeric: tabular-nums; }
+html.aurum .chq-day em.in { color: var(--ag-0); } html.aurum .chq-day em.out { color: var(--ag-3); }
+html.aurum .chq-day.now { box-shadow: inset 0 0 0 1.5px var(--ax-ink); }
+html.aurum .chq-day.empty { opacity: .55; } html.aurum .chq-day.past span { color: var(--ag-2); }
+html.aurum .chq-day.late { background: var(--ag-3); color: #fff; } html.aurum .chq-day.late span, html.aurum .chq-day.late em { color: #fff; }
+html.aurum .chq-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+html.aurum .chq-card { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; gap: 12px; align-items: center; background: var(--ax-surface); border-radius: 18px; padding: 12px 14px; box-shadow: var(--ax-shadow); }
+html.aurum .chq-ic { width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; }
+html.aurum .chq-ic svg { width: 19px; height: 19px; }
+html.aurum .d-in .chq-ic { background: var(--ax-ok-soft); color: var(--ax-ok); } html.aurum .d-out .chq-ic { background: var(--ax-bad-soft); color: var(--ax-bad); }
+html.aurum[data-theme="dark"] .d-in .chq-ic { background: rgba(92, 232, 154, .12); } html.aurum[data-theme="dark"] .d-out .chq-ic { background: rgba(255, 107, 107, .12); }
+html.aurum .chq-main { min-width: 0; display: flex; flex-direction: column; }
+html.aurum .chq-main b { font-size: 14.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+html.aurum .chq-main span { font-size: 11.5px; color: var(--ax-faint); }
+html.aurum .chq-main .chq-rec { color: var(--ag-0); font-weight: 600; } html.aurum .chq-main .chq-rec.no { color: var(--ax-muted); font-weight: 400; }
+html.aurum .chq-amt { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
+html.aurum .chq-amt b { font: 800 17px var(--ax-display); white-space: nowrap; font-variant-numeric: tabular-nums; }
+html.aurum .d-in .chq-amt b { color: var(--ag-0); }
+html.aurum .chq-amt em { font-style: normal; font-size: 11.5px; font-weight: 700; padding: 3px 9px; border-radius: 999px; background: var(--ax-surface-2); color: var(--ax-muted); white-space: nowrap; }
+html.aurum .chq-amt em.s-late { background: var(--ag-3); color: #fff; } html.aurum .chq-amt em.s-soon { color: var(--ag-1); } html.aurum .chq-amt em.s-cleared { color: var(--ag-0); } html.aurum .chq-amt em.s-bounced { color: var(--ag-3); }
+html.aurum .chq-act { display: flex; gap: 6px; }
+html.aurum .chq-act button { border: 0; cursor: pointer; border-radius: 11px; padding: 8px 11px; background: var(--ax-surface-2); color: var(--ax-text); font: 600 12.5px var(--ax-font); white-space: nowrap; }
+html.aurum .chq-act button.ok { background: var(--ax-ok); color: #fff; } html.aurum .chq-act button.no { background: var(--ax-bad-soft); color: var(--ax-bad); }
+html.aurum[data-theme="dark"] .chq-act button.no { background: rgba(255, 107, 107, .12); }
+html.aurum .chq-card.s-cleared, html.aurum .chq-card.s-cancelled { opacity: .72; }
+html.aurum .chq-hist { list-style: none; margin: 12px 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+html.aurum .chq-hist li { padding: 8px 12px; border-radius: 10px; background: var(--ax-surface-2); display: flex; flex-direction: column; font-size: 13px; }
+html.aurum .chq-hist li span { font-size: 11.5px; color: var(--ax-faint); }
+html.aurum .nav-item .badge.chq-badge { background: #0891B2 !important; }
+/* purchase orders */
+html.aurum .po-hero { grid-template-columns: minmax(0, 1fr) auto auto; }
+html.aurum .po-hero .cus-hero-t b i { font-style: normal; font-size: 18px; color: var(--ax-deep-muted); }
+html.aurum .po-hero .cus-hero-t small { line-height: 1.7; max-width: 42ch; }
+html.aurum .po-lead { display: flex; align-items: center; gap: 8px; background: rgba(255, 255, 255, .08); border-radius: 14px; padding: 10px 14px; color: var(--ax-on-deep); font-size: 12.5px; margin: 0; }
+html.aurum .po-lead input { width: 56px; border: 0; border-radius: 10px; padding: 6px 8px; font: 800 15px var(--ax-font); text-align: center; background: rgba(255, 255, 255, .14); color: inherit; }
+html.aurum .po-lead em { font-style: normal; color: var(--ax-deep-muted); }
+html.aurum .po-tbl tr.l-urgent td:first-child { box-shadow: inset -3px 0 0 var(--ag-3); }
+html.aurum .po-tbl tr.l-order td:first-child { box-shadow: inset -3px 0 0 var(--ag-1); }
+html.aurum .po-tbl input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--ax-ink); }
+html.aurum .po-q { width: 84px; border: 1px solid var(--ax-line); border-radius: 10px; padding: 6px 8px; background: var(--ax-input); color: var(--ax-text); font: 700 13px var(--ax-font); }
+html.aurum .po-s { max-width: 160px; border: 1px solid var(--ax-line); border-radius: 10px; padding: 6px 8px; background: var(--ax-input); color: var(--ax-text); font: 600 12.5px var(--ax-font); }
+html.aurum .po-c { font-style: normal; font-weight: 700; font-size: 12px; padding: 3px 9px; border-radius: 999px; background: var(--ax-surface-2); }
+html.aurum .po-c.urgent { background: var(--ag-3); color: #fff; } html.aurum .po-c.order { color: var(--ag-1); } html.aurum .po-c.soon { color: var(--ax-muted); }
+html.aurum .po-card > footer { display: flex; justify-content: flex-end; margin-top: 12px; }
+html.aurum .po-orders { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+html.aurum .po-orders li { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; background: var(--ax-surface-2); flex-wrap: wrap; }
+html.aurum .po-orders li > div:first-child { flex: 1; min-width: 180px; display: flex; flex-direction: column; }
+html.aurum .po-orders li span { font-size: 11.5px; color: var(--ax-faint); }
+html.aurum .po-orders li em { font-style: normal; font-size: 11.5px; font-weight: 700; color: var(--ax-muted); }
+html.aurum .po-orders li.st-received em { color: var(--ag-0); }
+html.aurum .po-o-act { display: flex; gap: 6px; flex-wrap: wrap; }
+html.aurum .po-o-act button { border: 0; cursor: pointer; border-radius: 10px; padding: 7px 11px; background: var(--ax-surface); color: var(--ax-text); font: 600 12px var(--ax-font); }
+html.aurum .po-o-act button.pri { background: var(--ax-ink); color: var(--ax-on-ink); }
+@media (max-width: 900px) {
+  html.aurum .ag-hero, html.aurum .pf-hero, html.aurum .chq-hero, html.aurum .po-hero { grid-template-columns: 1fr; }
+  html.aurum .chq-new { flex-direction: row; } html.aurum .chq-new button { flex: 1; justify-content: center; }
+  html.aurum .pf-figs { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+}
+@media (max-width: 700px) {
+  html.aurum .ag-row { grid-template-columns: minmax(0, 1fr) auto; }
+  html.aurum .ag-row .ag-amt { grid-column: 1 / -1; order: 3; }
+  html.aurum .ag-row .ag-act { grid-column: 1 / -1; order: 4; }
+  html.aurum .ag-row .ag-act button { flex: 1; }
+  html.aurum .chq-card { grid-template-columns: auto minmax(0, 1fr) auto; }
+  html.aurum .chq-card .chq-act { grid-column: 1 / -1; }
+  html.aurum .chq-card .chq-act button { flex: 1; }
+  html.aurum .ag-tools .ag-q { max-width: none; }
+  html.aurum .ag-bulk { margin-inline-start: 0; }
+}
+html.aurum .apr-perm-link { display: flex; align-items: center; gap: 8px; margin: 0 2px 14px; font-size: 13px; color: var(--ax-muted); }
+html.aurum .apr-perm-link svg { width: 16px; height: 16px; color: var(--ax-violet); flex: none; }
+html.aurum .apr-perm-link a { color: var(--ax-blue); font-weight: 700; }
+
+/* ════════════════════════════════════════════════════════════════════
+   31. المستخدمين وصلاحياتهم (js/users.js)
+════════════════════════════════════════════════════════════════════ */
+html.aurum .usr-hero .cus-hero-t small { max-width: 44ch; line-height: 1.7; }
+html.aurum .usr-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; margin-bottom: 14px; }
+html.aurum .usr-card { background: var(--ax-surface); border-radius: var(--ax-radius); box-shadow: var(--ax-shadow); padding: 16px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+html.aurum .usr-card header { display: flex; align-items: center; gap: 10px; }
+html.aurum .usr-av { width: 42px; height: 42px; border-radius: 50%; display: grid; place-items: center; font: 800 18px var(--ax-display); background: var(--ax-ink); color: var(--ax-on-ink); flex: none; }
+html.aurum .usr-card header > div { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+html.aurum .usr-card header b { font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+html.aurum .usr-card header b em { font-style: normal; font-weight: 600; font-size: 12px; color: var(--ax-faint); }
+html.aurum .usr-card header span { font-size: 12px; color: var(--ax-faint); text-align: right; }
+html.aurum .usr-role { font-style: normal; font-size: 11.5px; font-weight: 700; padding: 4px 10px; border-radius: 999px; background: var(--ax-surface-2); color: var(--ax-muted); white-space: nowrap; }
+html.aurum .r-admin .usr-role { background: var(--ax-ink); color: var(--ax-on-ink); }
+html.aurum .usr-lv { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 10px 12px; border-radius: 12px; background: var(--ax-surface-2); }
+html.aurum .usr-lv span { font-size: 12px; color: var(--ax-faint); }
+html.aurum .usr-lv b { font-size: 13px; }
+html.aurum .usr-lv.lv-sensitive b { color: var(--ax-warn); } html.aurum .usr-lv.lv-edits b { color: var(--ax-bad); } html.aurum .usr-lv.lv-none b { color: var(--ax-ok); }
+html.aurum .usr-pg > span { display: block; font-size: 12px; color: var(--ax-faint); margin-bottom: 6px; }
+html.aurum .usr-pg p { margin: 0; font-size: 13px; color: var(--ax-muted); }
+html.aurum .usr-pg ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 5px; }
+html.aurum .usr-pg li { font-size: 12px; padding: 4px 9px; border-radius: 999px; background: var(--ax-surface-2); }
+html.aurum .usr-pg li.none { color: var(--ax-faint); }
+html.aurum .usr-card footer { display: flex; gap: 6px; margin-top: auto; }
+html.aurum .usr-card footer button { border: 0; cursor: pointer; border-radius: 12px; padding: 10px 12px; background: var(--ax-surface-2); color: var(--ax-text); font: 700 13px var(--ax-font); }
+html.aurum .usr-card footer button.pri { flex: 1; background: var(--ax-ink); color: var(--ax-on-ink); }
+html.aurum .usr-card footer button.del { color: var(--ax-bad); }
+html.aurum .usr-sec { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 14px 0 8px; flex-wrap: wrap; }
+html.aurum .usr-sec b { font-size: 14px; }
+html.aurum .usr-sec span { display: flex; gap: 6px; }
+html.aurum .usr-sec span button { border: 0; cursor: pointer; padding: 5px 10px; border-radius: 999px; background: var(--ax-surface-2); color: var(--ax-text); font: 600 12px var(--ax-font); }
+html.aurum .usr-lvs { display: flex; flex-direction: column; gap: 8px; }
+html.aurum .usr-lvopt { display: flex; gap: 10px; align-items: flex-start; padding: 12px; border-radius: 14px; background: var(--ax-surface-2); cursor: pointer; margin: 0; }
+html.aurum .usr-lvopt input { width: 18px !important; height: 18px !important; min-height: 0 !important; margin: 2px 0 0; accent-color: var(--ax-ink); flex: none; }
+html.aurum .usr-lvopt b { display: block; font-size: 13.5px; }
+html.aurum .usr-lvopt em { display: block; font-style: normal; font-size: 12px; color: var(--ax-muted); line-height: 1.6; }
+html.aurum .usr-lvopt:has(input:checked) { box-shadow: inset 0 0 0 1.5px var(--ax-ink); }
+html.aurum .usr-hint, html.aurum .usr-admin-note { font-size: 12px; color: var(--ax-faint); margin: 10px 0 0; }
+html.aurum .usr-admin-note { padding: 10px 12px; border-radius: 12px; background: var(--ax-surface-2); color: var(--ax-muted); }
+@media (max-width: 600px) { html.aurum .usr-grid { grid-template-columns: 1fr; } }
+html.aurum .ag-legend li span { white-space: nowrap; }
+@media (max-width: 600px) {
+  html.aurum .ag-legend { grid-template-columns: 1fr; }
+  html.aurum .chq-hero .cus-hero-figs b { font-size: 17px; white-space: nowrap; }
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   32. 4.9 · صرف الورق — القايمة المنظمة (js/isslist.js)
+════════════════════════════════════════════════════════════════════ */
+html.aurum .isx-stats .stat-value small { font-size: 13px; font-weight: 600; color: var(--ax-faint); }
+html.aurum .isx-stats .stat-sub b { color: var(--ax-bad); }
+html.aurum .isx-tools { background: var(--ax-surface); border-radius: var(--ax-radius); box-shadow: var(--ax-shadow); padding: 12px; margin-bottom: 14px; }
+html.aurum .isx-top { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+html.aurum .isx-search { flex: 1 1 260px; min-width: 0; display: flex; align-items: center; gap: 8px; height: 44px; padding: 0 14px; border-radius: 14px; background: var(--ax-input); margin: 0; cursor: text; }
+html.aurum .isx-search svg { width: 18px; height: 18px; color: var(--ax-faint); flex: none; }
+html.aurum .isx-search input#iss-search { flex: 1; min-width: 0; border: 0 !important; outline: 0; background: transparent !important; box-shadow: none !important; color: var(--ax-text); font: 500 14px var(--ax-font); padding: 0 !important; height: 100%; }
+html.aurum .isx-search input::-webkit-search-cancel-button { filter: grayscale(1); }
+html.aurum .isx-ftoggle { height: 44px; border: 0; cursor: pointer; border-radius: 14px; padding: 0 14px; background: var(--ax-surface-2); color: var(--ax-text); font: 700 13px var(--ax-font); display: inline-flex; align-items: center; gap: 6px; }
+html.aurum .isx-ftoggle svg { width: 16px; height: 16px; }
+html.aurum .isx-ftoggle.on { box-shadow: inset 0 0 0 1.5px var(--ax-ink); }
+html.aurum .isx-ftoggle em { font-style: normal; font-size: 11px; min-width: 18px; height: 18px; border-radius: 999px; display: grid; place-items: center; background: var(--ax-bad); color: #fff; padding: 0 5px; }
+html.aurum .isx-seg { display: inline-flex; gap: 2px; padding: 4px; border-radius: 14px; background: var(--ax-surface-2); height: 44px; box-sizing: border-box; }
+html.aurum .isx-seg button { border: 0; cursor: pointer; border-radius: 10px; padding: 0 14px; background: transparent; color: var(--ax-muted); font: 700 13px var(--ax-font); white-space: nowrap; }
+html.aurum .isx-seg button.on { background: var(--ax-ink); color: var(--ax-on-ink); }
+html.aurum .isx-filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 8px; margin-top: 10px; align-items: end; }
+html.aurum .isx-filters > * { min-width: 0; }
+html.aurum .isx-filters[hidden] { display: none; }
+html.aurum .isx-filters .form-control { width: 100% !important; min-width: 0 !important; height: 42px; }
+html.aurum .isx-date { display: flex; flex-direction: column; gap: 3px; margin: 0; min-width: 0; }
+html.aurum .isx-date span { font-size: 11px; font-weight: 700; color: var(--ax-faint); padding-inline-start: 4px; }
+html.aurum .isx-reset { height: 42px; border: 0; cursor: pointer; border-radius: 12px; background: transparent; color: var(--ax-bad); font: 700 13px var(--ax-font); }
+html.aurum .isx-chips { display: flex; gap: 6px; overflow-x: auto; margin-top: 10px; padding-bottom: 2px; scrollbar-width: none; }
+html.aurum .isx-chips::-webkit-scrollbar { display: none; }
+html.aurum .isx-chips button { flex: none; border: 0; cursor: pointer; border-radius: 999px; padding: 8px 14px; background: var(--ax-surface-2); color: var(--ax-text); font: 700 12.5px var(--ax-font); display: inline-flex; gap: 6px; align-items: center; }
+html.aurum .isx-chips button em { font-style: normal; font-size: 11.5px; color: var(--ax-faint); font-variant-numeric: tabular-nums; }
+html.aurum .isx-chips button.warn em { color: var(--ax-bad); }
+html.aurum .isx-chips button.on { background: var(--ax-ink); color: var(--ax-on-ink); }
+html.aurum .isx-chips button.on em { color: inherit; opacity: .7; }
+
+html.aurum .isx-list { display: flex; flex-direction: column; gap: 14px; margin-bottom: 18px; }
+html.aurum .isx-group { background: var(--ax-surface); border-radius: var(--ax-radius); box-shadow: var(--ax-shadow); overflow: hidden; animation: axRise .4s var(--ax-ease) both; }
+html.aurum .isx-gh { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding: 13px 16px 11px; background: var(--ax-surface-2); flex-wrap: wrap; }
+html.aurum .isx-gh b { font: 700 16px var(--ax-display); }
+html.aurum .isx-gh span { font-size: 12.5px; color: var(--ax-muted); font-variant-numeric: tabular-nums; }
+html.aurum .isx-gh em { font-style: normal; color: var(--ax-bad); font-weight: 700; }
+
+html.aurum .isx-row { display: grid; grid-template-columns: 4px minmax(0, 1fr) 170px 104px 184px; grid-template-areas: "st t money pill acts" "st what money pill acts" "st meta money pill acts"; gap: 4px 14px; align-items: center; padding: 13px 16px; }
+html.aurum .isx-row + .isx-row { border-top: 1px solid var(--ax-line); }
+html.aurum .isx-st { grid-area: st; align-self: stretch; width: 4px; border-radius: 4px; background: var(--ax-line-2); }
+html.aurum .isx-row.s-paid .isx-st { background: var(--ax-ok); }
+html.aurum .isx-row.s-partial .isx-st { background: var(--ax-warn); }
+html.aurum .isx-row.is-late .isx-st { background: var(--ax-bad); }
+html.aurum .isx-t { grid-area: t; min-width: 0; }
+html.aurum .isx-what { grid-area: what; min-width: 0; }
+html.aurum .isx-meta { grid-area: meta; min-width: 0; }
+html.aurum .isx-t b { display: block; font-size: 15px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+html.aurum .isx-one { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; font-size: 13px; }
+html.aurum .isx-one b { font-weight: 600; color: var(--ax-text); }
+html.aurum .isx-one span { color: var(--ax-muted); font-variant-numeric: tabular-nums; }
+html.aurum .isx-items { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 3px; }
+html.aurum .isx-items li { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 10px; font-size: 12.5px; align-items: baseline; padding: 4px 8px; border-radius: 8px; background: var(--ax-surface-2); }
+html.aurum .isx-items li b { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+html.aurum .isx-items li span { color: var(--ax-muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+html.aurum .isx-items li i { font-style: normal; font-weight: 700; white-space: nowrap; font-variant-numeric: tabular-nums; }
+html.aurum .isx-items li.more { display: block; color: var(--ax-faint); background: transparent; padding: 0 8px; }
+html.aurum .isx-meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 2px; }
+html.aurum .isx-no { font-size: 11.5px; font-weight: 700; color: var(--ax-faint); font-variant-numeric: tabular-nums; }
+html.aurum .isx-due { font-style: normal; font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: 999px; background: var(--ax-surface-2); color: var(--ax-muted); white-space: nowrap; }
+html.aurum .isx-due.soon { background: var(--ax-warn-soft); color: var(--ax-warn); }
+html.aurum .isx-due.late { background: var(--ax-bad-soft); color: var(--ax-bad); }
+html.aurum .isx-note { font-size: 11.5px; color: var(--ax-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+html.aurum .isx-money { grid-area: money; display: flex; flex-direction: column; align-items: flex-end; gap: 5px; min-width: 0; }
+html.aurum .isx-total { font: 800 18px var(--ax-display); white-space: nowrap; font-variant-numeric: tabular-nums; }
+html.aurum .isx-bar { display: block; width: 120px; max-width: 100%; height: 5px; border-radius: 999px; background: var(--ax-surface-3); overflow: hidden; }
+html.aurum .isx-bar i { display: block; height: 100%; border-radius: inherit; background: var(--ax-ok); }
+html.aurum .isx-rem { font-size: 11.5px; color: var(--ax-faint); white-space: nowrap; }
+html.aurum .isx-rem b { color: var(--ax-text); font-variant-numeric: tabular-nums; }
+html.aurum .isx-pill { grid-area: pill; justify-self: center; font-style: normal; font-size: 11.5px; font-weight: 700; padding: 4px 10px; border-radius: 999px; white-space: nowrap; background: var(--ax-surface-2); color: var(--ax-muted); }
+html.aurum .s-paid .isx-pill { background: var(--ax-ok-soft); color: var(--ax-ok); }
+html.aurum .s-partial .isx-pill { background: var(--ax-warn-soft); color: var(--ax-warn); }
+html.aurum .is-late .isx-pill { background: var(--ax-bad); color: #fff; }
+html.aurum .isx-acts { grid-area: acts; display: flex; gap: 2px; justify-content: flex-end; }
+html.aurum .isx-acts button { width: 34px; height: 34px; border: 0; cursor: pointer; border-radius: 10px; background: transparent; color: var(--ax-muted); display: inline-flex; align-items: center; justify-content: center; gap: 5px; transition: background .15s ease, color .15s ease; }
+html.aurum .isx-acts button:hover { background: var(--ax-hover); color: var(--ax-text); }
+html.aurum .isx-acts button svg { width: 17px; height: 17px; flex: none; }
+html.aurum .isx-acts button span { display: none; }
+html.aurum .isx-acts button.pay { color: var(--ax-ok); }
+html.aurum .isx-acts button.del { color: var(--ax-bad); }
+html.aurum .isx-acts button.isx-b { color: var(--ax-text); }
+html.aurum .isx-more { border: 0; cursor: pointer; width: 100%; padding: 14px; border-radius: 16px; background: var(--ax-surface); box-shadow: var(--ax-shadow); color: var(--ax-text); font: 700 14px var(--ax-font); }
+html.aurum .isx-more span { color: var(--ax-faint); font-weight: 600; }
+html.aurum .isx-empty { background: var(--ax-surface); border-radius: var(--ax-radius); box-shadow: var(--ax-shadow); padding: 36px 16px; display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; }
+html.aurum .isx-empty div { font-size: 34px; }
+html.aurum .isx-empty b { font-size: 15px; }
+html.aurum .isx-empty button { border: 0; cursor: pointer; border-radius: 12px; padding: 10px 18px; background: var(--ax-surface-2); color: var(--ax-text); font: 700 13px var(--ax-font); }
+html.aurum .isx-empty button.pri { background: var(--ax-ink); color: var(--ax-on-ink); }
+/* the items sheet of a multi-item صرف */
+html.aurum .isx-sheet-h { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; padding: 12px 14px; border-radius: 14px; background: var(--ax-surface-2); margin-bottom: 10px; }
+html.aurum .isx-sheet-h div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+html.aurum .isx-sheet-h span { font-size: 12px; color: var(--ax-faint); }
+html.aurum .isx-sheet-m { align-items: flex-end; }
+html.aurum .isx-sheet-m b { font: 800 18px var(--ax-display); white-space: nowrap; }
+html.aurum .isx-sheet-l { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+html.aurum .isx-sheet-l li { display: flex; align-items: center; gap: 10px; padding: 10px 4px; }
+html.aurum .isx-sheet-l li + li { border-top: 1px solid var(--ax-line); }
+html.aurum .isx-sheet-l li > div:first-child { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+html.aurum .isx-sheet-l li span { font-size: 12.5px; color: var(--ax-muted); font-variant-numeric: tabular-nums; }
+html.aurum .isx-sheet-a { display: flex; gap: 4px; }
+html.aurum .isx-sheet-a button { width: 38px; height: 38px; border: 0; cursor: pointer; border-radius: 11px; background: var(--ax-surface-2); color: var(--ax-text); display: grid; place-items: center; }
+html.aurum .isx-sheet-a button svg { width: 17px; height: 17px; }
+html.aurum .isx-sheet-a button.del { color: var(--ax-bad); }
+
+@media (max-width: 1100px) and (min-width: 701px) {
+  html.aurum .isx-row { grid-template-columns: 4px minmax(0, 1fr) 150px 184px; grid-template-areas: "st t money acts" "st what money acts" "st meta pill acts"; }
+  html.aurum .isx-pill { justify-self: end; }
+}
+@media (max-width: 700px) {
+  html.aurum .isx-tools { padding: 10px; border-radius: 18px; }
+  html.aurum .isx-search { flex-basis: 100%; }
+  html.aurum .isx-ftoggle { flex: 1; justify-content: center; }
+  html.aurum .isx-seg { flex: 1.4; }
+  html.aurum .isx-seg button { flex: 1; padding: 0 8px; }
+  html.aurum .isx-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  html.aurum .isx-filters select { grid-column: 1 / -1; }
+  html.aurum .isx-reset { grid-column: 1 / -1; }
+  html.aurum .isx-list { gap: 12px; }
+  html.aurum .isx-group { border-radius: 18px; }
+  html.aurum .isx-gh { padding: 11px 14px 9px; }
+  html.aurum .isx-gh b { font-size: 15px; }
+  html.aurum .isx-gh span { font-size: 12px; }
+  html.aurum .isx-row { grid-template-columns: 4px minmax(0, 1fr) auto; grid-template-areas: "st t money" "st what what" "st meta pill" "st acts acts"; gap: 6px 12px; padding: 12px 14px; align-items: start; }
+  html.aurum .isx-row.one { grid-template-areas: "st t money" "st what money" "st meta pill" "st acts acts"; }
+  html.aurum .isx-bar { display: none; }
+  html.aurum .isx-meta { align-self: center; }
+  html.aurum .isx-pill { align-self: center !important; }
+  html.aurum .isx-money { gap: 4px; }
+  html.aurum .isx-total { font-size: 17px; }
+  html.aurum .isx-pill { justify-self: end; align-self: start; font-size: 11px; padding: 3px 9px; }
+  html.aurum .isx-t b { font-size: 14.5px; white-space: normal; }
+  html.aurum .isx-items li { gap: 8px; padding: 6px 9px; }
+  html.aurum .isx-acts { margin-top: 6px; gap: 6px; }
+  html.aurum .isx-acts button { flex: 1; width: auto; height: 38px; background: var(--ax-surface-2); color: var(--ax-text); border-radius: 11px; font: 700 12px var(--ax-font); }
+  html.aurum .isx-acts button svg { width: 15px; height: 15px; }
+  html.aurum .isx-acts button span { display: inline; }
+  html.aurum .isx-acts button.pay { background: var(--ax-ok-soft); color: var(--ax-ok); }
+  html.aurum .isx-acts button.del { flex: 0 0 42px; background: var(--ax-bad-soft); }
+  html.aurum .isx-acts button.del span { display: none; }
+}
+@media (max-width: 380px) {
+  html.aurum .isx-acts button span { display: none; }
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   33. 4.9 · المساعد الذكي (js/assistant.js)
+   the assistant is a little stack of paper; every answer is a slip with
+   a torn receipt edge, its figures written as ledger lines with leaders
+════════════════════════════════════════════════════════════════════ */
+html.aurum .axa { max-width: 900px; margin: 0 auto; }
+/* the mark: three sheets, the top one folded at the corner */
+html.aurum .axa-mark { --mk: var(--ax-ink); --mp: var(--ax-surface); position: relative; display: inline-block; width: 30px; height: 34px; flex: none; margin-top: 2px; }
+html.aurum .axa-mark i { position: absolute; inset: 0; border-radius: 6px; border: 1.5px solid var(--mk); background: var(--mp); transition: transform .3s var(--ax-ease); }
+html.aurum .axa-mark i:nth-child(1) { transform: translate(-6px, 5px) rotate(-10deg); opacity: .3; }
+html.aurum .axa-mark i:nth-child(2) { transform: translate(-3px, 2.5px) rotate(-5deg); opacity: .6; }
+html.aurum .axa-mark i:nth-child(3) { background: var(--mk); border: 0; clip-path: polygon(0 0, 62% 0, 100% 30%, 100% 100%, 0 100%); }
+html.aurum .axa-mark::before { content: ''; position: absolute; z-index: 2; top: 0; right: 0; width: 38%; height: 30%; background: var(--mk); opacity: .45; clip-path: polygon(0 0, 0 100%, 100% 100%); border-bottom-left-radius: 3px; }
+html.aurum .axa-mark::after { content: ''; position: absolute; z-index: 2; inset-inline: 20% 20%; top: 44%; height: 30%;
+  background: linear-gradient(var(--mp), var(--mp)) right 0 / 100% 2px no-repeat, linear-gradient(var(--mp), var(--mp)) right 50% / 100% 2px no-repeat, linear-gradient(var(--mp), var(--mp)) right 100% / 55% 2px no-repeat; }
+html.aurum .axa-mark.lg { width: 58px; height: 66px; }
+html.aurum .axa-mark.lg i { border-radius: 11px; border-width: 2px; }
+html.aurum .axa-mark.lg::after { background-size: 100% 3px, 100% 3px, 55% 3px; }
+html.aurum .axa-mark.lg::before { border-bottom-left-radius: 5px; }
+html.aurum .axa-mark.busy i:nth-child(3) { animation: axaLift 1s var(--ax-ease) infinite; }
+html.aurum .axa-mark.busy i:nth-child(1) { animation: axaFan 1s var(--ax-ease) infinite; }
+html.aurum .axa-mark.busy::after { animation: axaLift 1s var(--ax-ease) infinite; }
+@keyframes axaLift { 0%, 100% { transform: translateY(0); } 45% { transform: translateY(-5px) rotate(-3deg); } }
+@keyframes axaFan { 0%, 100% { transform: translate(5px, 4px) rotate(9deg); } 45% { transform: translate(8px, 5px) rotate(16deg); } }
+
+/* hero: the assistant reads out the day */
+html.aurum .axa-hero { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 20px; align-items: start; background: var(--ax-deep); color: var(--ax-on-deep); border-radius: var(--ax-radius-lg); padding: 24px 26px; margin-bottom: 14px; }
+html.aurum .axa-hero .axa-mark { --mk: var(--ax-on-deep); --mp: var(--ax-deep); margin-top: 6px; }
+html.aurum .axa-hero h2 { margin: 0 0 6px; font: 700 30px/1.25 var(--ax-display); color: var(--ax-on-deep) !important; }
+html.aurum .axa-hero p { margin: 0; font: 400 19px/1.6 var(--ax-display); color: var(--ax-deep-muted); max-width: 52ch; }
+html.aurum .axa-hero p b { color: var(--ax-on-deep); font-weight: 700; white-space: nowrap; }
+html.aurum .axa-hero-acts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
+html.aurum .axa-hero-acts button { border: 0; cursor: pointer; border-radius: 999px; padding: 8px 14px; background: rgba(255, 255, 255, .1); color: var(--ax-on-deep); font: 700 13px var(--ax-font); }
+html.aurum .axa-hero-acts button:hover { background: rgba(255, 255, 255, .18); }
+html.aurum .axa-hero-acts button:first-child { background: var(--ax-on-deep); color: var(--ax-deep); }
+
+/* tabs */
+html.aurum .axa-tabs { display: flex; gap: 6px; margin-bottom: 14px; overflow-x: auto; scrollbar-width: none; }
+html.aurum .axa-tabs::-webkit-scrollbar { display: none; }
+html.aurum .axa-tabs button { flex: none; border: 0; cursor: pointer; border-radius: 999px; padding: 9px 16px; background: var(--ax-surface); box-shadow: var(--ax-shadow); color: var(--ax-muted); font: 700 13.5px var(--ax-font); display: inline-flex; align-items: center; gap: 7px; }
+html.aurum .axa-tabs button.on { background: var(--ax-ink); color: var(--ax-on-ink); }
+html.aurum .axa-tabs button em { font-style: normal; font-size: 11px; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px; display: inline-grid; place-items: center; background: var(--ax-bad); color: #fff; }
+html.aurum .axa-panel { margin-top: 0 !important; }
+
+/* chat */
+html.aurum .axa-chat-h { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin: 4px 4px 12px; flex-wrap: wrap; }
+html.aurum .axa-chat-h b { font: 700 18px var(--ax-display); }
+html.aurum .axa-chat-h span { font-size: 12.5px; color: var(--ax-faint); }
+html.aurum .axa-chat-h button { border: 0; cursor: pointer; background: transparent; color: var(--ax-muted); font: 700 12.5px var(--ax-font); display: inline-flex; gap: 5px; align-items: center; padding: 6px 8px; border-radius: 10px; }
+html.aurum .axa-chat-h button:hover { background: var(--ax-hover); color: var(--ax-text); }
+html.aurum .axa-chat-h button svg { width: 15px; height: 15px; }
+html.aurum .axa-msgs { display: flex; flex-direction: column; gap: 14px; min-height: 120px; }
+html.aurum .axa-msg { display: flex; gap: 12px; align-items: flex-start; scroll-margin-top: 90px; }
+html.aurum .axa-msg.me { justify-content: flex-end; }
+html.aurum .axa-bubble { max-width: min(78%, 520px); background: var(--ax-ink); color: var(--ax-on-ink); border-radius: 20px; border-end-end-radius: 6px; padding: 10px 16px; font: 600 15px/1.6 var(--ax-font); white-space: pre-wrap; overflow-wrap: anywhere; animation: axaIn .25s var(--ax-ease) both; }
+html.aurum .axa-thinking { align-items: center; color: var(--ax-faint); font-size: 13.5px; font-weight: 600; }
+@keyframes axaIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+/* the slip */
+html.aurum .axa-slip { flex: 1; min-width: 0; max-width: 700px; background: var(--ax-surface); border-radius: 20px 20px 4px 4px; padding: 16px 18px 20px; animation: axaIn .32s var(--ax-ease) both;
+  -webkit-mask: linear-gradient(#000 0 0) top / 100% calc(100% - 7px) no-repeat, radial-gradient(circle at 50% 100%, transparent 4.5px, #000 5px) bottom / 13px 7px repeat-x;
+          mask: linear-gradient(#000 0 0) top / 100% calc(100% - 7px) no-repeat, radial-gradient(circle at 50% 100%, transparent 4.5px, #000 5px) bottom / 13px 7px repeat-x; }
+html.aurum .axa-slip.short { padding-bottom: 18px; }
+html.aurum .axa-slip > header { display: flex; gap: 12px; align-items: center; margin-bottom: 12px; }
+html.aurum .axa-ic { width: 36px; height: 36px; border-radius: 11px; background: var(--ax-surface-2); display: grid; place-items: center; flex: none; color: var(--ax-text); }
+html.aurum .axa-ic svg { width: 19px; height: 19px; }
+html.aurum .axa-slip.t-bad .axa-ic { background: var(--ax-bad-soft); color: var(--ax-bad); }
+html.aurum .axa-slip.t-warn .axa-ic { background: var(--ax-warn-soft); color: var(--ax-warn); }
+html.aurum .axa-slip.t-ok .axa-ic { background: var(--ax-ok-soft); color: var(--ax-ok); }
+html.aurum .axa-slip > header div { min-width: 0; display: flex; flex-direction: column; }
+html.aurum .axa-slip > header b { font: 700 19px/1.3 var(--ax-display); overflow-wrap: anywhere; }
+html.aurum .axa-slip > header span { font-size: 12.5px; color: var(--ax-faint); }
+html.aurum .axa-slip.short > header b { font-size: 24px; }
+/* ledger lines: label …… value */
+html.aurum .axa-ledger { margin: 0 0 4px; display: flex; flex-direction: column; gap: 2px; }
+html.aurum .axa-ledger > div { display: flex; align-items: baseline; flex-wrap: wrap; padding: 6px 0; }
+html.aurum .axa-ledger dt { flex: 0 1 auto; min-width: 0; font-size: 13.5px; color: var(--ax-muted); }
+html.aurum .axa-ledger i { flex: 1 1 16px; min-width: 16px; height: 0; margin: 0 8px; border-bottom: 2px dotted var(--ax-line-2); transform: translateY(-4px); }
+html.aurum .axa-ledger dd { flex: 0 1 auto; max-width: 66%; margin: 0; text-align: end; font: 700 16px/1.4 var(--ax-display); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+html.aurum .axa-ledger small { flex-basis: 100%; text-align: end; font-size: 11.5px; color: var(--ax-faint); margin-top: 1px; }
+html.aurum .axa-ledger .big dt { color: var(--ax-text); font-weight: 600; font-size: 14.5px; }
+html.aurum .axa-ledger .big dd { font-size: 24px; }
+html.aurum .axa-ledger .t-ok dd { color: var(--ax-ok); } html.aurum .axa-ledger .t-bad dd { color: var(--ax-bad); } html.aurum .axa-ledger .t-warn dd { color: var(--ax-warn); }
+html.aurum .axa-ledger dd em { direction: ltr; unicode-bidi: isolate; display: inline-block; font: 700 11.5px var(--ax-font); font-style: normal; margin-inline-start: 8px; padding: 2px 8px; border-radius: 999px; background: var(--ax-surface-2); color: var(--ax-muted); vertical-align: 2px; white-space: nowrap; }
+html.aurum .axa-ledger dd em.up, html.aurum .axa-ledger dd em.down.inv { background: var(--ax-ok-soft); color: var(--ax-ok); }
+html.aurum .axa-ledger dd em.down, html.aurum .axa-ledger dd em.up.inv { background: var(--ax-bad-soft); color: var(--ax-bad); }
+html.aurum .axa-ledger.cmp > div + div { border-top: 1px solid var(--ax-line); }
+/* blocks */
+html.aurum .axa-block { margin-top: 12px; }
+html.aurum .axa-block h4, html.aurum .axa-help h4 { margin: 0 0 6px; font-size: 12.5px; font-weight: 700; color: var(--ax-muted); }
+html.aurum .axa-spark { display: flex; align-items: flex-end; gap: 2px; height: 58px; padding: 0 2px; border-bottom: 1px solid var(--ax-line); }
+html.aurum .axa-spark span { flex: 1; min-width: 2px; background: var(--ax-ink); opacity: .22; border-radius: 3px 3px 1px 1px; transition: opacity .15s ease; }
+html.aurum .axa-spark span.zero { opacity: .08; }
+html.aurum .axa-spark span.now, html.aurum .axa-spark span:hover { opacity: 1; }
+html.aurum .axa-spark-x { display: flex; justify-content: space-between; font-size: 11px; color: var(--ax-faint); margin-top: 4px; }
+html.aurum .axa-bars { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+html.aurum .axa-bars li > button, html.aurum .axa-bars li > div { width: 100%; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 3px 10px; align-items: baseline; padding: 7px 8px; border-radius: 10px; border: 0; background: transparent; color: inherit; font: inherit; text-align: start; }
+html.aurum .axa-bars li > button { cursor: pointer; }
+html.aurum .axa-bars li > button:hover { background: var(--ax-hover); }
+html.aurum .axa-bars .l { font-size: 13.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+html.aurum .axa-bars .v { font: 700 14px var(--ax-display); white-space: nowrap; font-variant-numeric: tabular-nums; }
+html.aurum .axa-bars .b { grid-column: 1 / -1; height: 5px; border-radius: 999px; background: var(--ax-surface-2); overflow: hidden; }
+html.aurum .axa-bars .b u { display: block; height: 100%; border-radius: inherit; background: var(--ax-ink); text-decoration: none; }
+html.aurum .axa-bars .b.t-bad u { background: var(--ax-bad); } html.aurum .axa-bars .b.t-warn u { background: var(--ax-warn); }
+html.aurum .axa-bars small { grid-column: 1 / -1; font-size: 11.5px; color: var(--ax-faint); }
+/* rows */
+html.aurum .axa-rows { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-direction: column; counter-reset: axa; }
+html.aurum .axa-rows > li { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 4px 0; }
+html.aurum .axa-rows > li + li { border-top: 1px solid var(--ax-line); }
+html.aurum .axa-rowb { flex: 1 1 220px; min-width: 0; display: flex; align-items: center; gap: 10px; padding: 7px 6px; border-radius: 10px; border: 0; background: transparent; color: inherit; font: inherit; text-align: start; }
+html.aurum button.axa-rowb { cursor: pointer; } html.aurum button.axa-rowb:hover { background: var(--ax-hover); }
+html.aurum .axa-rowb .dot { width: 9px; height: 9px; border-radius: 50%; flex: none; background: var(--ax-line-2); }
+html.aurum .axa-rowb .dot.t-bad { background: var(--ax-bad); } html.aurum .axa-rowb .dot.t-warn { background: var(--ax-warn); } html.aurum .axa-rowb .dot.t-ok { background: var(--ax-ok); }
+html.aurum .axa-rows.ord .axa-rowb .dot { counter-increment: axa; width: 24px; height: 24px; display: grid; place-items: center; font: 700 12px var(--ax-font); color: #fff; }
+html.aurum .axa-rows.ord .axa-rowb .dot::before { content: counter(axa); }
+html.aurum .axa-rows.ord .axa-rowb .dot.t-n { background: var(--ax-ink); color: var(--ax-on-ink); }
+html.aurum .axa-rowb .m { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+html.aurum .axa-rowb .m b { font-size: 14px; font-weight: 700; overflow-wrap: anywhere; }
+html.aurum .axa-rowb .m small { font-size: 12px; color: var(--ax-faint); line-height: 1.5; }
+html.aurum .axa-rowb em { font: 700 14.5px var(--ax-display); font-style: normal; white-space: nowrap; font-variant-numeric: tabular-nums; }
+html.aurum .axa-rowa { display: flex; gap: 6px; }
+html.aurum .axa-mini { border: 0; cursor: pointer; border-radius: 999px; padding: 7px 12px; background: var(--ax-surface-2); color: var(--ax-text); font: 700 12px var(--ax-font); text-decoration: none; white-space: nowrap; }
+html.aurum .axa-mini.wa { background: #25D366; color: #fff; }
+/* help */
+html.aurum .axa-help { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-top: 4px; }
+html.aurum .axa-help section { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+html.aurum .axa-help button { border: 0; cursor: pointer; text-align: start; padding: 8px 10px; border-radius: 10px; background: var(--ax-surface-2); color: var(--ax-text); font: 600 13px var(--ax-font); }
+html.aurum .axa-help button:hover { background: var(--ax-surface-3); }
+/* note, actions, footer */
+html.aurum .axa-note { margin: 12px 0 0; padding: 10px 12px; border-radius: 12px; background: var(--ax-surface-2); font-size: 13.5px; line-height: 1.75; color: var(--ax-text); max-width: 70ch; }
+html.aurum .axa-note b { white-space: nowrap; }
+html.aurum .axa-slip.t-bad .axa-note { box-shadow: inset -3px 0 0 var(--ax-bad); }
+html.aurum .axa-slip.t-warn .axa-note { box-shadow: inset -3px 0 0 var(--ax-warn); }
+html.aurum .axa-slip.t-ok .axa-note { box-shadow: inset -3px 0 0 var(--ax-ok); }
+html.aurum .axa-acts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
+html.aurum .axa-acts button { border: 0; cursor: pointer; border-radius: 999px; padding: 9px 15px; background: var(--ax-surface-2); color: var(--ax-text); font: 700 13px var(--ax-font); }
+html.aurum .axa-acts button:hover { background: var(--ax-surface-3); }
+html.aurum .axa-acts button.pri { background: var(--ax-ink); color: var(--ax-on-ink); }
+html.aurum .axa-acts button.wa { background: #25D366; color: #fff; }
+html.aurum .axa-slip > footer { display: flex; align-items: center; gap: 2px; margin-top: 14px; padding-top: 10px; border-top: 1px dashed var(--ax-line-2); }
+html.aurum .axa-slip > footer time { font-size: 11.5px; color: var(--ax-faint); margin-inline-end: auto; font-variant-numeric: tabular-nums; }
+html.aurum .axa-slip > footer button { border: 0; cursor: pointer; background: transparent; color: var(--ax-muted); font: 600 12px var(--ax-font); display: inline-flex; align-items: center; gap: 5px; padding: 6px 8px; border-radius: 9px; }
+html.aurum .axa-slip > footer button:hover { background: var(--ax-hover); color: var(--ax-text); }
+html.aurum .axa-slip > footer svg { width: 15px; height: 15px; }
+/* follow-ups */
+html.aurum .axa-follow { display: flex; flex-wrap: wrap; gap: 6px; margin-inline-start: 42px; }
+html.aurum .axa-follow button { border: 1px solid var(--ax-line-2); cursor: pointer; border-radius: 999px; padding: 7px 13px; background: transparent; color: var(--ax-text); font: 600 12.5px var(--ax-font); }
+html.aurum .axa-follow button:hover { background: var(--ax-hover); border-color: var(--ax-ink); }
+/* first visit: what you can ask, by topic */
+html.aurum .axa-start { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+html.aurum .axa-start section { background: var(--ax-surface); border-radius: 20px; padding: 14px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+html.aurum .axa-start h3 { display: flex; align-items: center; gap: 8px; margin: 0 0 6px; font: 700 16px var(--ax-display); }
+html.aurum .axa-start h3 svg { width: 18px; height: 18px; color: var(--ax-muted); }
+html.aurum .axa-start button { border: 0; cursor: pointer; text-align: start; padding: 9px 10px; border-radius: 11px; background: transparent; color: var(--ax-text); font: 500 14px var(--ax-font); }
+html.aurum .axa-start button:hover { background: var(--ax-surface-2); }
+/* composer */
+html.aurum .axa-composer { position: sticky; bottom: 16px; z-index: 30; display: flex; align-items: center; gap: 6px; margin-top: 18px; padding: 6px; border-radius: 22px; background: var(--ax-surface); box-shadow: var(--ax-shadow-lift), 0 0 0 1px var(--ax-line); }
+html.aurum .axa-composer input#axa-q { flex: 1; min-width: 0; height: 44px; border: 0 !important; outline: 0; background: transparent !important; box-shadow: none !important; color: var(--ax-text); font: 500 15px var(--ax-font); padding: 0 8px !important; }
+html.aurum .axa-composer input::placeholder { color: var(--ax-faint); }
+html.aurum .axa-micb, html.aurum .axa-sendb { width: 44px; height: 44px; flex: none; border: 0; cursor: pointer; border-radius: 50%; display: grid; place-items: center; background: var(--ax-surface-2); color: var(--ax-text); }
+html.aurum .axa-micb[hidden] { display: none; }
+html.aurum .axa-micb.on { background: var(--ax-bad); color: #fff; animation: axaPulse 1.2s ease-in-out infinite; }
+html.aurum .axa-sendb { background: var(--ax-ink); color: var(--ax-on-ink); }
+html.aurum .axa-micb svg, html.aurum .axa-sendb svg { width: 20px; height: 20px; }
+html.aurum .axa-sendb svg { transform: scaleX(-1); }
+@keyframes axaPulse { 50% { box-shadow: 0 0 0 6px rgba(224, 27, 15, .18); } }
+html.aurum .axa button:focus-visible, html.aurum .axa a:focus-visible { outline: 2px solid var(--ax-blue); outline-offset: 2px; }
+html.aurum .axa-composer:focus-within { box-shadow: var(--ax-shadow-lift), 0 0 0 1.5px var(--ax-ink); }
+
+@media (max-width: 768px) {
+  html.aurum .axa-hero { grid-template-columns: auto minmax(0, 1fr); gap: 14px; padding: 18px; border-radius: 24px; }
+  html.aurum .axa-hero .axa-mark.lg { width: 30px; height: 35px; margin-top: 4px; }
+  html.aurum .axa-hero .axa-mark.lg i { border-radius: 6px; border-width: 1.5px; }
+  html.aurum .axa-hero .axa-mark.lg::after { background-size: 100% 2px, 100% 2px, 55% 2px; }
+  html.aurum .axa-hero-acts { margin-inline-start: -44px !important; }
+  html.aurum .axa-hero h2 { font-size: 25px; }
+  html.aurum .axa-hero p { font-size: 17px; }
+  html.aurum .axa-hero-acts { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin-inline-end: -18px; padding-inline-end: 18px; }
+  html.aurum .axa-hero-acts::-webkit-scrollbar { display: none; }
+  html.aurum .axa-hero-acts button { flex: none; }
+  html.aurum .axa-msg { gap: 8px; }
+  html.aurum .axa-msg.bot > .axa-mark { width: 24px; height: 28px; }
+  html.aurum .axa-msg.bot > .axa-mark::after { background-size: 100% 1.5px, 100% 1.5px, 55% 1.5px; }
+  html.aurum .axa-slip { padding: 14px 14px 18px; border-radius: 18px 18px 4px 4px; }
+  html.aurum .axa-slip > header b { font-size: 17.5px; }
+  html.aurum .axa-ledger dd { font-size: 15px; }
+  html.aurum .axa-ledger .big dd { font-size: 21px; }
+  html.aurum .axa-follow { margin-inline-start: 32px; }
+  html.aurum .axa-start { grid-template-columns: 1fr; }
+  html.aurum .axa-start section { padding: 12px; }
+  html.aurum .axa-help { grid-template-columns: 1fr; }
+  html.aurum .axa-composer { bottom: calc(80px + env(safe-area-inset-bottom, 0px)); }
+  html.aurum .axa-bubble { max-width: 86%; font-size: 14.5px; }
+  html.aurum .axa-slip > footer button span { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html.aurum .axa-mark.busy i, html.aurum .axa-mark.busy::after, html.aurum .axa-micb.on { animation: none !important; }
+  html.aurum .axa-slip, html.aurum .axa-bubble { animation: none !important; }
+}

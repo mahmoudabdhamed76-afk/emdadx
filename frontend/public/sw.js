@@ -1,8 +1,8 @@
 'use strict';
 
-const CACHE      = 'emdadx-v4.7-secure';
+const CACHE      = 'emdadx-v4.9-assistant';
 // relative to the SW scope, so it also works when the app lives under APP_PATH
-const APP_SHELL  = ['./', './index.html', './manifest.json', './css/aurum.css', './js/aurum.js', './js/glowchart.js', './js/stockhub.js', './js/stockcount.js', './js/debts.js', './js/business.js', './js/custody.js', './js/axcore.js', './js/approvals.js', './js/security.js', './js/ticker.js', './js/pulsescene.js', './vendor/gsap.min.js',
+const APP_SHELL  = ['./', './index.html', './manifest.json', './css/aurum.css', './js/aurum.js', './js/glowchart.js', './js/stockhub.js', './js/stockcount.js', './js/debts.js', './js/business.js', './js/custody.js', './js/axcore.js', './js/approvals.js', './js/security.js', './js/aging.js', './js/cheques.js', './js/profit.js', './js/purchase.js', './js/users.js', './js/isslist.js', './js/assistant.js', './js/ticker.js', './js/pulsescene.js', './vendor/gsap.min.js',
                     './fonts/fonts.css', './vendor/chart.umd.js', './vendor/modern-screenshot.js',
                     './icons/logo-square.png'];
 const DB_NAME    = 'emdadx-offline';
@@ -33,6 +33,7 @@ self.addEventListener('fetch', e => {
   // Only intercept same-origin GET requests for app shell
   if (e.request.method !== 'GET') return;
   if (url.pathname.includes('/api/')) return; // never cache API
+  if (/\/p\/[A-Za-z0-9]+\/?$/.test(url.pathname)) return; // a center's live link — always fresh
   if (url.origin !== self.location.origin) return;
 
   // Pages: network-first so a new release shows immediately; cache only when offline

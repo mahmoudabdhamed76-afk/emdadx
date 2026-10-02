@@ -131,35 +131,10 @@
 
   /* ════════ 2 · what needs the admin — roles + rules (js/axcore.js) ════════ */
   var ADMIN_ONLY = X.ADMIN_ONLY_PAGES, ALWAYS = ['dashboard', 'approvals'];
-  var ROLES = [['accountant', 'المحاسب'], ['sales', 'موظف المبيعات']];
-  var ORIG_PAGES = {};
-  try { ['accountant', 'sales'].forEach(function (r) { ORIG_PAGES[r] = (PERMISSIONS[r] || []).slice(); }); } catch (e) {}
-  function allPages() {
-    try { return NAV_ITEMS.map(function (n) { return n.key; }).filter(function (k) { return ADMIN_ONLY.indexOf(k) < 0; }); } catch (e) { return []; }
-  }
-  var DEFAULT_PERMS = {
-    accountant: function () { return { level: 'edits', pages: allPages() }; },
-    sales: function () { return { level: 'sensitive', pages: (ORIG_PAGES.sales || []).slice() }; }
-  };
-  function permOf(r) {
-    var p = (S()._perms || {})[r], d = DEFAULT_PERMS[r] ? DEFAULT_PERMS[r]() : { level: 'sensitive', pages: (ORIG_PAGES[r] || []).slice() };
-    if (!p) return d;
-    return { level: X.levelOf(S(), r) || 'sensitive', pages: Array.isArray(p.pages) ? p.pages.slice() : d.pages };
-  }
-  function levelFor(r) { return X.levelOf(S(), r); }
-  var lastPermsSig = '';
-  function applyPerms() {
-    if (typeof PERMISSIONS === 'undefined') return false;
-    var sig = JSON.stringify(S()._perms || null);
-    ROLES.forEach(function (rr) {
-      var r = rr[0], pages = permOf(r).pages.filter(function (k) { return ADMIN_ONLY.indexOf(k) < 0; });
-      ALWAYS.slice().reverse().forEach(function (k) { if (pages.indexOf(k) < 0) pages.unshift(k); });
-      PERMISSIONS[r] = pages;
-    });
-    var changed = sig !== lastPermsSig; lastPermsSig = sig;
-    return changed;
-  }
-  function classify(df) { return X.classify(df, levelFor(role()) || 'sensitive', { closedUntil: S().closedUntil || '' }); }
+  /* the admin sets, per user in «المستخدمين», what needs approval (js/axcore.js levelOf) */
+  function freshUser() { var u = user(); if (!u) return null; return A('users').find(function (x) { return x.id === u.id; }) || u; }
+  function levelFor() { return X.levelOf(S(), freshUser()); }
+  function classify(df) { return X.classify(df, levelFor() || 'sensitive', { closedUntil: S().closedUntil || '' }); }
 
   /* ════════ 3 · human words for a change ════════ */
   function shortLab(k, r) {
@@ -374,7 +349,7 @@
     if (!r || applying || window.__axNoGuard) return null;
     var closed = !!S().closedUntil;
     if (r === 'admin') return closed ? 'admin-closed' : null;
-    if (S().approvalsOff) return closed ? 'closed-only' : null;
+    if (S().approvalsOff || !levelFor()) return closed ? 'closed-only' : null;
     return 'full';
   }
   function guardOn() { return !!guardMode(); }
@@ -727,68 +702,26 @@
       (shown.length ? '<div class="apr-grid">' + shown.map(card).join('') + '</div>'
         : '<div class="skh-empty"><b>' + (ui.f === 'pending' ? (admin ? 'مفيش طلبات مستنية' : 'مفيش طلبات مستنية منك') : 'مفيش طلبات هنا') + '</b><span>' +
           (ui.f === 'pending' ? (admin ? 'أول ما محاسب يحاول يعدّل أو يحذف حاجة، الطلب هيظهر هنا ويوصلك تنبيه.' : 'لو حاولت تعدّل أو تحذف حاجة هيطلعلك زرار «إرسال الطلب للمدير».') : 'غيّر الفلتر') + '</span></div>') +
-      (admin ? permsCard() : '') +
+      (admin ? '<p class="apr-perm-link">' + ICON.key + ' إيه اللي يحتاج موافقتك لكل مستخدم، والأقسام اللي يدخلها — بتحددها من <a href="javascript:void(0)" onclick="navigate(\'users\')">«المستخدمين»</a>.</p>' : '') +
       '<details class="apr-rules"' + (admin ? '' : ' open') + '><summary>' + ICON.shield + ' إيه اللي بيحتاج موافقة؟</summary><ul>' +
-        (admin ? '' : '<li class="me"><b>صلاحيتك:</b> ' + LEVEL_NOTE[levelFor(role()) || 'sensitive'] + '</li>') +
+        (admin ? '' : '<li class="me"><b>صلاحيتك:</b> ' + LEVEL_NOTE[levelFor() || 'none'] + '</li>') +
         (S().closedUntil ? '<li>أي حاجة تاريخها ' + dmyStr(S().closedUntil) + ' أو قبله (الفترة مقفولة)</li>' : '') +
         '<li>حذف فاتورة أو صرف أو تحصيل أو مصروف أو فاتورة شراء أو سداد مورد أو تحويل بنكي</li>' +
         '<li>تعديل أي فاتورة أو فلوس اتسجلت (المبلغ، الخصم، الضريبة، التاريخ…)</li>' +
         '<li>تعديل رصيد عميل أو مورد (الرصيد، الرصيد الافتتاحي، حد الائتمان)</li>' +
         '<li>حذف عميل أو مورد أو صنف، وتعديل كميات المخزن من غير حركة، واعتماد الجرد</li>' +
         '<li>حذف مديونية أو تغيير المبلغ المدين بيه في «سداد المديونية»</li>' +
-        '<li>ولو الصلاحية «أي تعديل أو حذف»: كمان تعديل أي بيانات (عميل، مورد، صنف، موظف، عهدة، هدف الشهر…) وحذف أي حاجة</li>' +
+        '<li>ولو المدير محدد للمستخدم «أي تعديل أو حذف»: كمان تعديل أي بيانات (عميل، مورد، صنف، موظف، عهدة، هدف الشهر…) وحذف أي حاجة</li>' +
         '<li class="ok">الإضافة الجديدة (فاتورة، صرف، تحصيل، مصروف، عهدة…) بتتسجل على طول من غير موافقة. والمدير نفسه مش محتاج موافقة.</li>' +
       '</ul></details>';
   }
 
   var LEVEL_NOTE = {
     edits: 'أي تعديل أو حذف في أي حاجة بيروح للمدير الأول. الإضافة الجديدة (فاتورة، صرف، تحصيل، مصروف…) بتتسجل على طول.',
-    sensitive: 'الحذف وتعديل الفواتير والفلوس والأرصدة وكميات المخزن بس اللي بيروح للمدير. تعديل البيانات العادية (اسم، تليفون، سعر…) بيتنفذ على طول.'
+    sensitive: 'الحذف وتعديل الفواتير والفلوس والأرصدة وكميات المخزن بس اللي بيروح للمدير. تعديل البيانات العادية (اسم، تليفون، سعر…) بيتنفذ على طول.',
+    none: 'تعديلاتك بتتنفذ على طول من غير موافقة (إلا لو الفترة مقفولة).'
   };
   function dmyStr(ds) { var p = String(ds).split('-'); return (+p[2]) + '/' + (+p[1]) + '/' + p[0]; }
-  function navList() { try { return NAV_ITEMS.filter(function (n) { return ADMIN_ONLY.indexOf(n.key) < 0; }); } catch (e) { return []; } }
-  function permsCard() {
-    var navs = navList(), users = A('users');
-    return '<section class="apr-perms" id="apr-perms">' +
-      '<header><span class="apr-ic">' + ICON.key + '</span><div><b>صلاحيات المستخدمين</b>' +
-        '<span>كل دور يدخل أنهي أقسام، وإيه اللي يحتاج موافقتك. المستخدمين وسجل التعديلات والإعدادات للمدير بس.</span></div></header>' +
-      ROLES.map(function (rr, ri) {
-        var r = rr[0], p = permOf(r), n = users.filter(function (u) { return u.role === r; }).length;
-        return '<div class="apr-role">' +
-          '<div class="apr-role-h"><b>' + rr[1] + '</b><em>' + (n ? n + ' مستخدم' : 'مفيش مستخدمين بالدور ده') + '</em></div>' +
-          '<div class="ax-seg apr-lvl">' + [['edits', 'أي تعديل أو حذف بموافقتك'], ['sensitive', 'الحساس بس بموافقتك']].map(function (o) {
-            return '<button class="' + (p.level === o[0] ? 'on' : '') + '" onclick="AXApprovals.setLevel(' + ri + ',\'' + o[0] + '\')">' + o[1] + '</button>'; }).join('') + '</div>' +
-          '<p class="apr-role-note">' + LEVEL_NOTE[p.level] + '</p>' +
-          '<div class="apr-pages-l">الأقسام اللي يدخلها</div>' +
-          '<div class="apr-pages">' + navs.map(function (nv, i) {
-            var locked = ALWAYS.indexOf(nv.key) >= 0, on = locked || p.pages.indexOf(nv.key) >= 0;
-            return '<button class="' + (on ? 'on' : '') + (locked ? ' lock' : '') + '" style="--c:' + nv.color + '"' + (locked ? ' disabled title="دايماً متاح"' : ' onclick="AXApprovals.togglePage(' + ri + ',' + i + ')"') + '>' +
-              '<i>' + (on ? '✓' : '') + '</i>' + esc(nv.label) + '</button>';
-          }).join('') + '</div></div>';
-      }).join('') + '</section>';
-  }
-  function savePerms(r, p) {
-    if (!isAdmin()) return;
-    var all = S()._perms && typeof S()._perms === 'object' ? clone(S()._perms) : {};
-    all[r] = { level: p.level, pages: p.pages };
-    S()._perms = all;
-    rawSave();
-    applyPerms();
-    try { renderSidebar(); } catch (e) {}
-    draw();
-  }
-  function setLevel(ri, lvl) {
-    var r = ROLES[ri][0], p = permOf(r); if (p.level === lvl) return;
-    p.level = lvl; savePerms(r, p);
-    T(ROLES[ri][1] + ': ' + (lvl === 'edits' ? 'أي تعديل أو حذف هيحتاج موافقتك' : 'الحساس بس هيحتاج موافقتك'), 'info', 4000);
-  }
-  function togglePage(ri, i) {
-    var r = ROLES[ri][0], p = permOf(r), nv = navList()[i]; if (!nv) return;
-    var at = p.pages.indexOf(nv.key);
-    if (at >= 0) p.pages.splice(at, 1); else p.pages.push(nv.key);
-    savePerms(r, p);
-  }
-
   window.renderApprovals = function () {
     var root = document.getElementById('page-content'); if (!root) return;
     root.innerHTML = '<div class="apr" id="apr-root"></div>';
@@ -841,7 +774,6 @@
   var _rs = window.renderSidebar;
   if (typeof _rs === 'function' && !_rs._apr) {
     var wrs = function () {
-      try { applyPerms(); } catch (e) {}
       var r = _rs.apply(this, arguments);
       try {
         if (!base && guardOn()) snap();
@@ -872,7 +804,7 @@
         if (merged) {
           merged = false;
           if (guardOn() && !quiet()) snap();
-          if (applyPerms() && typeof renderSidebar === 'function') renderSidebar();
+          if (typeof renderSidebar === 'function') { try { renderSidebar(); } catch (e) {} }   // the admin may have changed my sections
         }
         checkEvents();
       } catch (e) {}
@@ -881,11 +813,10 @@
     wnb._apr = 1; window.updateNotifBadge = wnb;
   }
 
-  try { applyPerms(); } catch (e) {}
   window.AXApprovals = {
     submit: submit, discard: discard, confirmClosed: confirmClosed, approve: approve, reject: reject, doReject: doReject, withdraw: withdraw, toggle: toggleOn,
     filter: function (f) { ui.f = f; draw(); },
-    setLevel: setLevel, togglePage: togglePage, permOf: permOf, applyPerms: applyPerms,
+    levelFor: levelFor, LEVEL_NOTE: LEVEL_NOTE,
     who: function (i) { var n = ui.whoList[i] || ''; ui.who = ui.who === n ? '' : n; draw(); },
     pendingCount: pendingCount, render: window.renderApprovals,
     /* internals (kept public for tests / other modules) */

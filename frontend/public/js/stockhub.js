@@ -160,14 +160,24 @@
         '</div></div>' +
       '<div id="skh-ticker" class="axtk-host"></div>' +
       '<div class="skh-tabs" role="tablist" aria-label="أقسام الصفحة">' +
-        '<button role="tab" aria-selected="' + (st.tab !== 'count' && st.tab !== 'custody') + '" class="' + (st.tab !== 'count' && st.tab !== 'custody' ? 'on' : '') + '" onclick="AXStock.tab(\'stock\')">' + icon('misc') + '<span>المخزون</span></button>' +
+        '<button role="tab" aria-selected="' + (['count', 'custody', 'po'].indexOf(st.tab) < 0) + '" class="' + (['count', 'custody', 'po'].indexOf(st.tab) < 0 ? 'on' : '') + '" onclick="AXStock.tab(\'stock\')">' + icon('misc') + '<span>المخزون</span></button>' +
         '<button role="tab" aria-selected="' + (st.tab === 'count') + '" class="' + (st.tab === 'count' ? 'on' : '') + '" onclick="AXStock.tab(\'count\')">' +
           '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="m9 14 2 2 4-4"/></svg>' +
           '<span>الجرد الذكي</span>' + (due ? '<em>' + due + '</em>' : '') + '</button>' +
         '<button role="tab" aria-selected="' + (st.tab === 'custody') + '" class="' + (st.tab === 'custody' ? 'on' : '') + '" onclick="AXStock.tab(\'custody\')">' +
           '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-4V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2H4a1 1 0 0 0-1 1v11a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8a1 1 0 0 0-1-1zM10 5h4v2h-4z"/><path d="M3 13h18"/></svg>' +
           '<span>عهدتي</span>' + (window.AXCustody && AXCustody.openCount() ? '<em class="n">' + AXCustody.openCount() + '</em>' : '') + '</button>' +
+        (window.AXPO ? '<button role="tab" aria-selected="' + (st.tab === 'po') + '" class="' + (st.tab === 'po' ? 'on' : '') + '" onclick="AXStock.tab(\'po\')">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="20" r="1.5"/><circle cx="18" cy="20" r="1.5"/><path d="M2 3h3l2.6 12.4a2 2 0 0 0 2 1.6h8.2a2 2 0 0 0 2-1.6L21 7H6"/></svg>' +
+          '<span>طلب شراء</span>' + (function () { var n = AXPO.needCount(); return n ? '<em>' + n + '</em>' : ''; })() + '</button>' : '') +
       '</div>';
+    if (st.tab === 'po' && window.AXPO) {
+      root.innerHTML = head + '<div id="po-root"></div>';
+      st._items = items;
+      ticker(items);
+      AXPO.render(document.getElementById('po-root'));
+      return;
+    }
     if (st.tab === 'custody' && window.AXCustody) {
       root.innerHTML = head + '<div id="cus-root"></div>';
       st._items = items;

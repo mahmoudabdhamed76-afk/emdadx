@@ -22,6 +22,12 @@ const db = new DatabaseSync(DB_FILE);
 const schemaSql = fs.readFileSync(SCHEMA, 'utf8');
 db.exec(schemaSql);
 
+// 4.8 · users keep extra fields (the sections each user may open, what needs approval)
+try {
+  const cols = db.prepare('PRAGMA table_info(users)').all().map(c => c.name);
+  if (!cols.includes('data')) db.exec('ALTER TABLE users ADD COLUMN data TEXT');
+} catch (e) { console.error('users.data migration:', e.message); }
+
 const userCount = db.prepare('SELECT COUNT(*) as c FROM users').get().c;
 if (userCount === 0) {
   db.prepare(`INSERT INTO users (id, username, password, name, role) VALUES (?, ?, ?, ?, ?)`)

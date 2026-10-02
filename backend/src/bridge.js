@@ -3,7 +3,7 @@
 const { db } = require('../db');
 
 const tables = {
-  users: { cols: ['id','username','password','name','role','created_at','updated_at'], json: [] },
+  users: { cols: ['id','username','password','name','role','data','created_at','updated_at'], json: ['data'] },
   customers: { cols: ['id','name','phone','address','email','notes','opening_balance','data','created_at','updated_at'], json: ['data'] },
   suppliers: { cols: ['id','name','phone','address','email','notes','opening_balance','data','created_at','updated_at'], json: ['data'] },
   products: { cols: ['id','name','sku','category','unit','price','cost','stock','min_stock','data','created_at','updated_at'], json: ['data'] },

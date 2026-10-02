@@ -32,8 +32,13 @@
   d.setAttribute('data-theme', t === 'light' ? 'light' : 'dark');
   d.classList.add('aurum');
   if (rail) d.classList.add('ax-rail');
+  /* 4.9 · no splash: the login form shows at once. Only when this device was
+     signed in before do we keep it hidden for the moment the session check
+     takes, so a signed-in user never sees it flash. */
+  try { if (localStorage.getItem('emx_last_user')) { d.classList.add('ax-resume'); setTimeout(function () { d.classList.remove('ax-resume'); }, 8000); } } catch (e) {}
 })();
 </script>
+<style>html.ax-resume #login-page { visibility: hidden; }</style>
 <style>
 /* ========================= VARIABLES ========================= */
 :root {
@@ -8546,32 +8551,6 @@ input, textarea, select { transition: border-color .16s ease, box-shadow .16s ea
 .skeleton-title { height: 22px; width: 40%; margin: 12px 0; }
 .skeleton-card  { height: 110px; margin: 10px 0; border-radius: 16px; }
 
-/* ── Boot overlay (initial load only) ── */
-#boot-overlay {
-  position: fixed; inset: 0; z-index: 99998;
-  background: linear-gradient(155deg, #04060c, #0a1228);
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 18px;
-  transition: opacity .35s ease;
-}
-#boot-overlay.hide { opacity: 0; pointer-events: none; }
-.boot-logo {
-  width: 72px; height: 72px; border-radius: 20px;
-  animation: bootPulse 1.6s ease-in-out infinite;
-  box-shadow: 0 0 50px rgba(16,217,160,.2);
-}
-@keyframes bootPulse { 0%,100%{transform:scale(1);opacity:.85} 50%{transform:scale(1.06);opacity:1} }
-.boot-bar {
-  width: 160px; height: 3px; border-radius: 99px;
-  background: rgba(59,130,246,.12); overflow: hidden;
-}
-.boot-bar::after {
-  content: ''; display: block; height: 100%; width: 45%;
-  background: linear-gradient(90deg, #10d9a0, #2e9fff);
-  border-radius: 99px;
-  animation: bootSlide 1.1s cubic-bezier(.4,0,.2,1) infinite;
-}
-@keyframes bootSlide { from { margin-inline-start: -45%; } to { margin-inline-start: 100%; } }
 
 /* ── Reduced motion: respect user preference ── */
 @media (prefers-reduced-motion: reduce) {
@@ -8932,7 +8911,7 @@ audio::-webkit-media-controls-panel { background: rgba(15,23,42,.9); }
 }
 
 /* ── Logo: white background (logo is dark — needs light bg) ── */
-.lgx-brand img, .lgx-mini-logo img, .boot-logo,
+.lgx-brand img, .lgx-mini-logo img,
 .sidebar-brand img, .brand-logo img, .banner-icon {
   background: #fff !important;
   padding: 4px !important;
@@ -9492,10 +9471,6 @@ audio::-webkit-media-controls-panel { background: rgba(15,23,42,.9); }
 </head>
 <body>
 <div id="route-progress"><div class="rp-bar"></div></div>
-<div id="boot-overlay">
-  <img class="boot-logo" src="icons/logo-square.png" onerror="this.style.display='none'" alt="">
-  <div class="boot-bar"></div>
-</div>
 
 <!-- ============== LOGIN PAGE ============== -->
 <div id="login-page" class="lgn-wrap">
@@ -9655,7 +9630,7 @@ audio::-webkit-media-controls-panel { background: rgba(15,23,42,.9); }
 
     <footer class="app-footer">
       <div>جميع الحقوق محفوظة © 2026 إمداد إكس</div>
-      <div class="version">الإصدار 4.7</div>
+      <div class="version">الإصدار 4.9</div>
     </footer>
   </div>
 </div>
@@ -10207,6 +10182,9 @@ const SyncEngine = (() => {
       debts:     typeof renderDebts     === 'function' ? renderDebts     : null,
       approvals: typeof renderApprovals === 'function' ? renderApprovals : null,
       security:  typeof renderSecurity  === 'function' ? renderSecurity  : null,
+      aging:     typeof renderAging     === 'function' ? renderAging     : null,
+      cheques:   typeof renderCheques   === 'function' ? renderCheques   : null,
+      profit:    typeof renderProfit    === 'function' ? renderProfit    : null,
       suppliers: typeof renderSuppliers === 'function' ? renderSuppliers : null,
       issuances: typeof renderIssuances === 'function' ? renderIssuances : null,
       expenses:  typeof renderExpenses  === 'function' ? renderExpenses  : null,
@@ -10482,11 +10460,26 @@ function normalizeArabic(s) {
 let currentUser = null;
 const ROLE_LABELS = { admin: 'مدير النظام', accountant: 'محاسب', sales: 'موظف مبيعات' };
 const PERMISSIONS = {
-  admin: ['dashboard','customers','issuances','invoices','payments','transfers','debts','suppliers','inventory','stock','expenses','reports','aiassistant','approvals','users','audit','security','settings'],
-  accountant: ['dashboard','customers','issuances','invoices','payments','transfers','debts','suppliers','expenses','reports','aiassistant','approvals'],
-  sales: ['dashboard','customers','issuances','invoices','payments','inventory','stock','aiassistant','approvals']
+  admin: ['dashboard','customers','issuances','invoices','payments','aging','transfers','cheques','debts','suppliers','inventory','stock','expenses','reports','profit','aiassistant','approvals','users','audit','security','settings'],
+  accountant: ['dashboard','customers','issuances','invoices','payments','aging','transfers','cheques','debts','suppliers','expenses','reports','profit','aiassistant','approvals'],
+  sales: ['dashboard','customers','issuances','invoices','payments','aging','cheques','inventory','stock','aiassistant','approvals']
 };
-function can(page) { return currentUser && PERMISSIONS[currentUser.role].includes(page); }
+/* 4.8 · each user has his own sections (set by the admin in «المستخدمين»);
+   a user who was never customised gets his role's list above */
+const ADMIN_ONLY_PAGES = ['users', 'audit', 'security', 'settings'];
+function userPages(u) {
+  if (!u) return [];
+  if (u.role === 'admin') return PERMISSIONS.admin.slice();
+  const base = Array.isArray(u.pages) ? u.pages : (PERMISSIONS[u.role] || []);
+  const out = base.filter(p => !ADMIN_ONLY_PAGES.includes(p));
+  ['approvals', 'dashboard'].forEach(p => { if (!out.includes(p)) out.unshift(p); });
+  return out;
+}
+function can(page) {
+  if (!currentUser) return false;
+  const fresh = (DB.data.users || []).find(x => x.id === currentUser.id) || currentUser;   // picks up a change the admin just made
+  return userPages(fresh).includes(page);
+}
 
 /* 4.7: the password is checked by the server (Auth.login) — never in the browser */
 function login() { return false; }
@@ -11012,13 +11005,16 @@ const NAV_ITEMS = [
   { key: 'customers', label: 'العملاء والمراكز', color: '#8b5cf6', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>', section: 'main' },
   { key: 'invoices', label: 'الفواتير', color: '#06b6d4', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>', section: 'main' },
   { key: 'payments', label: 'التحصيل والمديونيات', color: '#f59e0b', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>', section: 'main' },
+  { key: 'aging', label: 'أعمار الديون', color: '#F43F5E', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2.5M9 2h6"/></svg>', section: 'main' },
   { key: 'transfers', label: 'التحويلات البنكية', color: '#ec4899', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 10h18"/><path d="M3 14h18"/><path d="M5 21V3"/><path d="M19 21V3"/><circle cx="12" cy="12" r="3"/></svg>', section: 'main' },
+  { key: 'cheques', label: 'الشيكات', color: '#0891B2', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M6 10h6M6 14h4M15 14h3"/></svg>', section: 'main' },
   { key: 'debts', label: 'سداد المديونية', color: '#F59E0B', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/></svg>', section: 'main' },
   { key: 'suppliers', label: 'الموردين', color: '#f97316', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M16 3h5v5"/><path d="M8 3H3v5"/><path d="M3 16v5h5"/><path d="M16 21h5v-5"/><circle cx="12" cy="12" r="3"/><path d="M12 1v4"/><path d="M12 19v4"/></svg>', section: 'main' },
   { key: 'inventory', label: 'المخازن', color: '#84cc16', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>', section: 'ops' },
   { key: 'stock', label: 'مخزوني وجرد', color: '#00A9A0', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="5"/><path d="M8 16v-3M12 16V8M16 16v-6"/></svg>', section: 'ops' },
   { key: 'expenses', label: 'المصروفات', color: '#ef4444', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>', section: 'ops' },
   { key: 'reports', label: 'التقارير', color: '#a855f7', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>', section: 'ops' },
+  { key: 'profit', label: 'الأرباح', color: '#22C55E', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg>', section: 'ops' },
   { key: 'aiassistant', label: 'المساعد الذكي', color: '#34d399', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><line x1="8" y1="16" x2="8" y2="16"/><line x1="16" y1="16" x2="16" y2="16"/></svg>', section: 'ops' },
   { key: 'approvals', label: 'طلبات الموافقة', color: '#6366F1', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3 8-8"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg>', section: 'ops' },
   { key: 'users', label: 'المستخدمين', color: '#14b8a6', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>', section: 'admin' },
@@ -11124,7 +11120,7 @@ function navigate(page, isBack) {
   currentPage = page;
   renderSidebar();
   toggleSidebar(false);
-  const titles = { dashboard:'لوحة التحكم', customers:'العملاء والمراكز', issuances:'صرف الورق للمراكز', invoices:'الفواتير', payments:'التحصيل والمديونيات', transfers:'التحويلات البنكية', debts:'سداد المديونية', suppliers:'الموردين', inventory:'إدارة المخازن', stock:'مخزوني وجرد', expenses:'المصروفات', reports:'التقارير', aiassistant:'المساعد الذكي', approvals:'طلبات الموافقة', users:'إدارة المستخدمين', security:'الأمان والنسخ الاحتياطي', audit:'سجل التعديلات الذكي', settings:'الإعدادات' };
+  const titles = { dashboard:'لوحة التحكم', customers:'العملاء والمراكز', issuances:'صرف الورق للمراكز', invoices:'الفواتير', payments:'التحصيل والمديونيات', transfers:'التحويلات البنكية', debts:'سداد المديونية', suppliers:'الموردين', inventory:'إدارة المخازن', stock:'مخزوني وجرد', expenses:'المصروفات', reports:'التقارير', aiassistant:'المساعد الذكي', approvals:'طلبات الموافقة', aging:'أعمار الديون', cheques:'الشيكات', profit:'الأرباح', users:'إدارة المستخدمين', security:'الأمان والنسخ الاحتياطي', audit:'سجل التعديلات الذكي', settings:'الإعدادات' };
   document.getElementById('topbar-title').innerText = titles[page] || '';
 
   const pc = document.getElementById('page-content');
@@ -11137,7 +11133,7 @@ function navigate(page, isBack) {
   }
 
   const doRender = () => {
-    const renderers = { dashboard: renderDashboard, customers: renderCustomers, issuances: renderIssuances, invoices: renderInvoices, payments: renderPayments, transfers: renderTransfersPage, debts: (typeof renderDebts === 'function' ? renderDebts : renderDashboard), suppliers: renderSuppliers, inventory: renderInventory, stock: (typeof renderStockHub === 'function' ? renderStockHub : renderDashboard), expenses: renderExpenses, reports: renderReports, aiassistant: renderAIAssistant, approvals: (typeof renderApprovals === 'function' ? renderApprovals : renderDashboard), users: renderUsers, security: (typeof renderSecurity === 'function' ? renderSecurity : renderDashboard), audit: renderAuditLog, settings: renderSettings };
+    const renderers = { dashboard: renderDashboard, customers: renderCustomers, issuances: renderIssuances, invoices: renderInvoices, payments: renderPayments, transfers: renderTransfersPage, debts: (typeof renderDebts === 'function' ? renderDebts : renderDashboard), suppliers: renderSuppliers, inventory: renderInventory, stock: (typeof renderStockHub === 'function' ? renderStockHub : renderDashboard), expenses: renderExpenses, reports: renderReports, aiassistant: renderAIAssistant, approvals: (typeof renderApprovals === 'function' ? renderApprovals : renderDashboard), aging: (typeof renderAging === 'function' ? renderAging : renderDashboard), cheques: (typeof renderCheques === 'function' ? renderCheques : renderDashboard), profit: (typeof renderProfit === 'function' ? renderProfit : renderDashboard), users: renderUsers, security: (typeof renderSecurity === 'function' ? renderSecurity : renderDashboard), audit: renderAuditLog, settings: renderSettings };
     (renderers[page] || renderDashboard)();
     updateBackButton();
     updateHomeFab();
@@ -11508,7 +11504,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.querySelectorAll('.notify-overlay:not(.show)').forEach(o => o.remove());
   }, true);
   /* 4.7 · who is this browser? (server session cookie) */
-  const dismissBoot = () => { const _b = document.getElementById('boot-overlay'); if (_b) { _b.classList.add('hide'); setTimeout(() => _b.remove(), 400); } };
+  const dismissBoot = () => document.documentElement.classList.remove('ax-resume');
   const prepareData = () => {
     if (!DB.load()) seedData();
     OfflineManager.setBase(DB.data);      // what the server has → every save sends only the difference
@@ -20772,81 +20768,7 @@ function deleteUser(id) {
 /* =========================================================
    🤖 AI ASSISTANT — تحليلات ذكية وإجابات فورية
 ========================================================= */
-function renderAIAssistant() {
-  const root = document.getElementById('page-content');
-  root.innerHTML = `
-    <div class="page-header">
-      <div>
-        <div class="page-title">🤖 المساعد الذكي</div>
-        <div class="page-subtitle">تحليلات ذكية وإجابات فورية عن بيانات الشركة</div>
-      </div>
-    </div>
-
-    <div class="ai-chat-wrap">
-      <div class="ai-chat-messages" id="ai-chat-messages">
-        <div class="ai-msg ai-msg-bot">
-          <div class="ai-avatar">🤖</div>
-          <div class="ai-bubble">
-            أهلاً! أنا المساعد الذكي. اسألني عن أي حاجة في بيانات شركتك — المبيعات، الأرباح، الديون، المخزون، أو العملاء. جرّب أحد الأسئلة السريعة تحت 👇
-          </div>
-        </div>
-      </div>
-
-      <div class="ai-suggestions" id="ai-suggestions">
-        ${[
-          'طلعنا قد إيه ورق الشهر ده؟',
-          'إيه أخبار الفرص والمستهدفين؟',
-          'كام مبيعاتي الشهر ده؟',
-          'إيه صافي الربح؟',
-          'مين أكتر عميل عليه فلوس؟',
-          'إيه اللي قرب يخلص في المخزن؟',
-          'كام إجمالي الديون؟',
-          'كام عميل عندي؟',
-          'أكتر منتج مبيعاً',
-          'عليا كام للموردين؟',
-          'متوسط قيمة الفاتورة',
-          'مين أكتر عميل بيشتري؟',
-          'إيه نصيحتك النهارده؟',
-          'ملخص الشركة'
-        ].map(q => `<button class="ai-chip" onclick="askAI('${q.replace(/'/g,"\\'")}')">${q}</button>`).join('')}
-      </div>
-
-      <div class="ai-input-bar">
-        <input type="text" id="ai-input" class="form-control" placeholder="اكتب سؤالك هنا..." onkeydown="if(event.key==='Enter')askAI()">
-        <button class="btn btn-primary" onclick="askAI()" style="flex-shrink:0">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-        </button>
-      </div>
-    </div>
-
-    <!-- ═══ العملاء المعرضون للفقد ═══ -->
-    <div class="churn-section">
-      <div class="churn-head">
-        <div>
-          <div class="churn-title">⚠️ العملاء المعرضون للفقد</div>
-          <div class="churn-sub">تحليل ذكي لسجل المبيعات — عملاء انخفض نشاطهم مقارنة بعاداتهم السابقة</div>
-        </div>
-      </div>
-      <div id="churn-list" class="churn-list"></div>
-    </div>
-
-    <!-- ═══ 🎯 العملاء المستهدفون ═══ -->
-    <div class="churn-section prospects-section">
-      <div class="churn-head">
-        <div>
-          <div class="churn-title">🎯 العملاء المستهدفون</div>
-          <div class="churn-sub">فرص تعاقد جديدة — متابعة ذكية وتذكير تلقائي واقتراح الخطوة التالية</div>
-        </div>
-        <button class="btn btn-primary btn-sm" onclick="toggleProspectForm()">➕ عميل مستهدف</button>
-      </div>
-      <div id="prospect-summary" class="prospect-summary"></div>
-      <div id="prospect-form" class="prospect-form" style="display:none"></div>
-      <div id="prospects-list" class="churn-list"></div>
-    </div>
-  `;
-  renderChurnRisk();
-  renderProspects();
-}
+/* renderAIAssistant → js/assistant.js (4.9) */
 
 /* ═══════════════════════════════════════════════════════
    🎯 PROSPECTS — العملاء المستهدفون (sales pipeline)
@@ -21205,270 +21127,7 @@ function renderChurnRisk() {
   }
 }
 
-function askAI(presetQuestion) {
-  const input = document.getElementById('ai-input');
-  const q = (presetQuestion || (input ? input.value : '') || '').trim();
-  if (!q) return;
-  if (input && !presetQuestion) input.value = '';
-  else if (input && presetQuestion) input.value = '';
-
-  const messages = document.getElementById('ai-chat-messages');
-  // user message
-  messages.insertAdjacentHTML('beforeend', `
-    <div class="ai-msg ai-msg-user">
-      <div class="ai-bubble">${escapeHtml(q)}</div>
-    </div>`);
-
-  // compute answer
-  const answer = aiAnswer(q);
-
-  // typing indicator then answer
-  messages.insertAdjacentHTML('beforeend', `
-    <div class="ai-msg ai-msg-bot" id="ai-typing">
-      <div class="ai-avatar">🤖</div>
-      <div class="ai-bubble"><span class="ai-typing-dots"><span></span><span></span><span></span></span></div>
-    </div>`);
-  messages.scrollTop = messages.scrollHeight;
-
-  setTimeout(() => {
-    const typing = document.getElementById('ai-typing');
-    if (typing) typing.remove();
-    messages.insertAdjacentHTML('beforeend', `
-      <div class="ai-msg ai-msg-bot">
-        <div class="ai-avatar">🤖</div>
-        <div class="ai-bubble">${answer}</div>
-      </div>`);
-    messages.scrollTop = messages.scrollHeight;
-  }, 450);
-}
-
-// The "brain": analyzes the real company data and answers in Arabic
-function aiAnswer(qRaw) {
-  const q = (qRaw || '').toLowerCase().trim();
-  const cur = (DB.data.settings && DB.data.settings.currency) || 'جنيه';
-  const curShort = cur === 'جنيه' ? 'ج.م' : cur === 'ريال' ? 'ر.س' : cur === 'درهم' ? 'د.إ' : cur;
-  const fmtm = (n) => `<b>${fmt(Math.round(n||0))} ${curShort}</b>`;
-
-  const today = todayStr();
-  const monthStart = today.slice(0,7) + '-01';
-  const has = (...words) => words.some(w => q.includes(w));
-
-  const invoices = DB.data.invoices || [];
-  const products = DB.data.products || [];
-  const customers = DB.data.customers || [];
-
-  // Helper: sum cost of goods for an invoice from its items (using product cost)
-  const invoiceCOGS = (inv) => (inv.items||[]).reduce((s,it) => {
-    const p = products.find(x => x.id === it.productId);
-    return s + ((p ? (p.cost||0) : 0) * (it.qty||it.quantity||0));
-  }, 0);
-
-  // ---- PROSPECTS (العملاء المستهدفون) ----
-  if (has('مستهدف', 'مستهدفين', 'فرص', 'فرصة', 'تعاقدات')) {
-    const pr = ((DB.data.settings||{})._prospects) || [];
-    const active = pr.filter(p => p.stage !== 'won' && p.stage !== 'lost');
-    if (!active.length) return '🎯 مفيش عملاء مستهدفين مسجلين. افتح قسم العملاء المستهدفين تحت وسجّل أول فرصة!';
-    const closing = active.filter(p => p.stage === 'closing' || p.stage === 'offer');
-    const atRisk = active.filter(p => {
-      const d = p.lastContact ? Math.floor((new Date(today) - new Date(p.lastContact))/86400000) : 999;
-      return d >= 7;
-    });
-    const totalVal = active.reduce((s,p)=>s+(p.expectedValue||0),0);
-    let ans = '🎯 <b>ملخص الفرص:</b><br>';
-    ans += '&nbsp;&nbsp;• فرص نشطة: <b>' + active.length + '</b> بقيمة متوقعة ' + fmtm(totalVal) + '<br>';
-    ans += '&nbsp;&nbsp;• قريبة من الإغلاق: <b>' + closing.length + '</b><br>';
-    if (atRisk.length) ans += '&nbsp;&nbsp;• ⚠️ معرضة للضياع (بدون متابعة 7+ أيام): <b>' + atRisk.length + '</b> — ' + atRisk.slice(0,3).map(p=>p.company).join('، ') + '<br>';
-    if (closing.length) ans += '<br>💡 ركّز النهارده على: <b>' + closing[0].company + '</b> — ' + (closing[0].stage==='closing'?'حدد ميعاد التوقيع':'تابع رد العرض');
-    return ans;
-  }
-
-  // ---- MONTHLY PAPER OUTPUT from stock (طلعنا قد ايه ورق) ----
-  if (has('طلعنا', 'صرفنا', 'خرج', 'اتصرف', 'طلع', 'نزل') && has('ورق', 'بلاستك', 'بلاستيك', 'خامة', 'مخزن')) {
-    const monthEnd = today.slice(0,7) + '-31';
-    const mNum = Number(today.slice(5,7));
-    const mStartLabel = '1-' + mNum;
-    const mEndLabel = '30-' + mNum;
-
-    const isPlastic = (n) => { n=(n||'').toLowerCase(); return n.includes('بلاستك')||n.includes('بلاستيك')||n.includes('plastic'); };
-    const isInk = (n) => { n=(n||'').toLowerCase(); return n.includes('حبر')||n.includes('تنر')||n.includes('تونر')||n.includes('ink')||n.includes('toner'); };
-
-    const moves = (DB.data.stockMoves || []).filter(m =>
-      m.type === 'out' && (m.date||'') >= monthStart && (m.date||'') <= monthEnd
-    );
-
-    let paperQty = 0, plasticQty = 0, otherQty = 0;
-    const byProduct = {};
-    moves.forEach(m => {
-      const p = products.find(x => x.id === m.productId);
-      const name = (p && p.name) || m.note || 'صنف غير معروف';
-      if (isInk(name)) return;
-      const qty = Number(m.quantity || m.qty || 0);
-      if (!qty) return;
-      if (isPlastic(name)) plasticQty += qty;
-      else if ((name||'').toLowerCase().match(/ورق|paper|a4|a3|a5|b4|b5|فرخ|ريم|رزمة|فوتو|photo|لفة|فيلم/)) paperQty += qty;
-      else otherQty += qty;
-      byProduct[name] = (byProduct[name] || 0) + qty;
-    });
-
-    const total = paperQty + plasticQty + otherQty;
-    if (!total) return '\u{1F4E6} مفيش حركات صرف من المخزن مسجلة الشهر ده (من ' + mStartLabel + ' لحد ' + mEndLabel + ').<br>اتأكد إن الفواتير وصرف الورق بيتسجلوا بكمياتهم.';
-
-    const breakdown = Object.entries(byProduct).sort((a,b)=>b[1]-a[1])
-      .map(([name, qty]) => '&nbsp;&nbsp;\u2022 ' + name + ': <b>' + fmt(qty).split('.')[0] + '</b>')
-      .join('<br>');
-    let ans = '\u{1F4E6} <b>اللي طلع من المخزن الشهر ده</b> (من ' + mStartLabel + ' إلى ' + mEndLabel + '):<br>';
-    ans += '\u{1F9FB} ورق: <b>' + fmt(paperQty).split('.')[0] + '</b> ورقة<br>';
-    ans += '\u{1F6CD}\uFE0F بلاستك: <b>' + fmt(plasticQty).split('.')[0] + '</b> ورقة<br>';
-    if (otherQty) ans += '\u{1F4CB} أصناف أخرى: <b>' + fmt(otherQty).split('.')[0] + '</b> قطعة<br>';
-    ans += '\u{1F4CA} الإجمالي: <b>' + fmt(total).split('.')[0] + '</b> من ' + moves.length + ' حركة صرف<br><br>';
-    ans += '<b>التصنيف بالتفصيل:</b><br>' + breakdown;
-    return ans;
-  }
-
-  // ---- SUPPLIERS we owe (عليا للموردين) — checked BEFORE debts (more specific) ----
-  if (has('مورد', 'موردين', 'للمورد', 'مورّد') || (has('عليا') && has('مورد'))) {
-    const suppliers = DB.data.suppliers || [];
-    if (suppliers.length === 0) return '🏭 مفيش موردين مسجلين لسه.';
-    let totalOwed = 0; const owedList = [];
-    suppliers.forEach(s => {
-      let bal = 0;
-      if (typeof supplierMetrics === 'function') { bal = supplierMetrics(s.id).balance || 0; }
-      else { bal = s.balance || 0; }
-      if (bal > 0) { totalOwed += bal; owedList.push({ name: s.name, bal }); }
-    });
-    owedList.sort((a,b)=>b.bal-a.bal);
-    if (owedList.length === 0) return '✅ مفيش مستحقات عليك للموردين حالياً.';
-    const top = owedList.slice(0,5).map((s,i)=>`${i+1}. <b>${escapeHtml(s.name)}</b>: ${fmt(Math.round(s.bal))} ${curShort}`).join('<br>');
-    return `🏭 <b>إجمالي اللي عليك للموردين:</b> ${fmtm(totalOwed)}<br>عدد الموردين المستحقين: <b>${owedList.length}</b><br><br>🔝 <b>الأكبر:</b><br>${top}`;
-  }
-
-  // ---- TOP PRODUCT (أكتر منتج) — checked BEFORE sales (so "أكتر منتج مبيعاً" doesn't hit sales) ----
-  if (has('أكتر منتج', 'اكتر منتج', 'أفضل منتج', 'افضل منتج', 'أكثر مبيع', 'اكثر مبيع', 'منتج مبيع', 'أكتر صنف', 'اكتر صنف', 'أكتر حاجة', 'اكتر حاجة')) {
-    const sales = {};
-    invoices.forEach(inv => (inv.items||[]).forEach(it => {
-      const name = it.productName || (products.find(p=>p.id===it.productId)||{}).name || 'غير معروف';
-      sales[name] = (sales[name]||0) + (it.total||0);
-    }));
-    const arr = Object.entries(sales).sort((a,b)=>b[1]-a[1]);
-    if (arr.length === 0) return '🏆 مفيش مبيعات مسجلة لسه عشان أحدد أكتر منتج.';
-    const top = arr.slice(0,5).map((e,i)=>`${i+1}. <b>${escapeHtml(e[0])}</b>: ${fmt(Math.round(e[1]))} ${curShort}`).join('<br>');
-    return `🏆 <b>أكتر المنتجات مبيعاً:</b><br>${top}`;
-  }
-
-  // ---- SALES (مبيعات) — invoices are the single source of truth ----
-  if (has('مبيعات', 'مبيعاتي', 'بعت', 'البيع', 'بيعت', 'مبيعا')) {
-    const monthInvs = invoices.filter(i => (i.date||'') >= monthStart);
-    const monthSales = monthInvs.reduce((s,i)=>s+(i.total||0), 0);
-    const todaySales = invoices.filter(i=>i.date===today).reduce((s,i)=>s+(i.total||0),0);
-    const allSales = invoices.reduce((s,i)=>s+(i.total||0),0);
-    if (invoices.length === 0) return '📊 لسه مفيش أي مبيعات مسجلة. ابدأ بإصدار فاتورة أو صرف ورق.';
-    return `📊 <b>المبيعات:</b><br>• هذا الشهر: ${fmtm(monthSales)}<br>• اليوم: ${fmtm(todaySales)}<br>• إجمالي كل المبيعات: ${fmtm(allSales)}<br>• عدد فواتير الشهر: <b>${monthInvs.length}</b>`;
-  }
-
-  // ---- PROFIT (أرباح) ----
-  if (has('ربح', 'أرباح', 'ارباح', 'مكسب', 'الربح', 'كسبت')) {
-    const monthInvs = invoices.filter(i => (i.date||'') >= monthStart);
-    const revenue = monthInvs.reduce((s,i)=>s+(i.total||0), 0);
-    let cogs = 0;
-    monthInvs.forEach(inv => { cogs += invoiceCOGS(inv); });
-    const expenses = (DB.data.expenses||[]).filter(e => e.kind !== 'purchase' && (e.date||'') >= monthStart).reduce((s,e)=>s+(e.amount||0), 0);
-    const profit = revenue - cogs - expenses;
-    const margin = revenue > 0 ? (profit/revenue*100) : 0;
-    if (invoices.length === 0) return '💰 لسه مفيش مبيعات لحساب الربح منها.';
-    return `💰 <b>صافي الربح هذا الشهر:</b> ${fmtm(profit)}<br><br>• الإيرادات (المبيعات): ${fmtm(revenue)}<br>• تكلفة البضاعة المباعة: ${fmtm(cogs)}<br>• المصروفات: ${fmtm(expenses)}<br>• هامش الربح: <b>${margin.toFixed(1)}%</b>`;
-  }
-
-  // ---- DEBTS / who owes most (ديون / عميل عليه فلوس) ----
-  if (has('مديون', 'عليه فلوس', 'عليه فلو', 'ديون', 'دين', 'مستحق', 'فلوسي', 'مدين', 'عميل عليه', 'عملاء عليهم')) {
-    const debtors = customers.filter(c => (c.balance||0) > 0).sort((a,b)=>(b.balance||0)-(a.balance||0));
-    const totalDebt = debtors.reduce((s,c)=>s+(c.balance||0), 0);
-    if (debtors.length === 0) return '✅ مفيش أي عميل عليه فلوس حالياً. كل الحسابات مسددة! 👏';
-    const top = debtors.slice(0,5).map((c,i)=>`${i+1}. <b>${escapeHtml(c.name)}</b>: ${fmt(Math.round(c.balance))} ${curShort}`).join('<br>');
-    const topOne = debtors[0];
-    return `💸 <b>أكتر عميل عليه فلوس:</b> ${escapeHtml(topOne.name)} بمبلغ ${fmtm(topOne.balance)}<br><br>إجمالي ديون العملاء: ${fmtm(totalDebt)} (${debtors.length} عميل)<br><br>🔝 <b>الترتيب:</b><br>${top}`;
-  }
-
-  // ---- INVENTORY — list what's in stock by item with quantities (المخزن) ----
-  if (has('مخزن', 'مخزون', 'المخزن', 'ستوك', 'عندي ايه', 'عندي إيه', 'الاصناف', 'الأصناف', 'موجود في', 'الكمي', 'متبقي', 'يخلص', 'ينفذ', 'قرب', 'ورق قد', 'قد ايه', 'قد إيه', 'عندنا كام', 'عندنا ورق', 'كام ورق', 'فيه كام', 'الورق', 'البضاعة', 'بضاعة')) {
-    if (products.length === 0) return '📦 مفيش منتجات مسجلة في المخزن لسه.';
-    const totalQty = products.reduce((s,p)=>s+(Number(p.quantity)||0),0);
-    const sorted = [...products].sort((a,b)=>(Number(b.quantity)||0)-(Number(a.quantity)||0));
-    const list = sorted.map(p => {
-      const low = (p.quantity||0) <= (p.minQuantity||0);
-      const warn = low ? ' ⚠️' : '';
-      return `• <b>${escapeHtml(p.name)}</b>: ${fmt(p.quantity||0)} ${escapeHtml(p.unit||'')}${warn}`;
-    }).join('<br>');
-    const lowItems = products.filter(p => (p.quantity||0) <= (p.minQuantity||0));
-    const lowNote = lowItems.length > 0
-      ? `<br><br>⚠️ <b>قرب يخلص (${lowItems.length}):</b> ${lowItems.map(p=>escapeHtml(p.name)).join('، ')}`
-      : '<br><br>✅ كل الأصناف فوق الحد الأدنى.';
-    return `📦 <b>المخزن (${products.length} صنف — إجمالي ${fmt(Math.round(totalQty))} ورقة):</b><br>${list}${lowNote}`;
-  }
-
-  // ---- CUSTOMERS count (كام عميل) ----
-  if (has('كام عميل', 'عدد العملاء', 'عملائي', 'كام مركز', 'العملاء', 'كام زبون')) {
-    const total = customers.length;
-    const active = customers.filter(c => invoices.some(inv=>inv.customerId===c.id)).length;
-    const withDebt = customers.filter(c=>(c.balance||0)>0).length;
-    return `👥 <b>العملاء:</b><br>• الإجمالي: <b>${total}</b><br>• نشطين (عليهم تعاملات): <b>${active}</b><br>• عليهم مديونية: <b>${withDebt}</b>`;
-  }
-
-  // ---- INVOICES (فواتير) ----
-  if (has('فاتورة', 'فواتير', 'كام فاتورة') && !has('متوسط', 'معدل')) {
-    const total = invoices.length;
-    const unpaid = invoices.filter(i=>i.status==='unpaid'||i.status==='partial').length;
-    const monthInv = invoices.filter(i=>(i.date||'')>=monthStart).length;
-    return `🧾 <b>الفواتير:</b><br>• الإجمالي: <b>${total}</b><br>• هذا الشهر: <b>${monthInv}</b><br>• غير مدفوعة/جزئية: <b>${unpaid}</b>`;
-  }
-
-  // ---- AVERAGE INVOICE VALUE (متوسط الفاتورة) ----
-  if (has('متوسط', 'معدل الفاتورة', 'متوسط الفاتورة', 'متوسط فاتورة')) {
-    if (invoices.length === 0) return '📊 لسه مفيش فواتير لحساب المتوسط.';
-    const avg = invoices.reduce((s,i)=>s+(i.total||0),0) / invoices.length;
-    const max = invoices.reduce((m,i)=>Math.max(m,i.total||0),0);
-    return `📊 <b>متوسط قيمة الفاتورة:</b> ${fmtm(avg)}<br>• أكبر فاتورة: ${fmtm(max)}<br>• عدد الفواتير: <b>${invoices.length}</b>`;
-  }
-
-  // ---- TOP BUYING CUSTOMER (أكتر عميل بيشتري) ----
-  if (has('أكتر عميل بيشتري', 'اكتر عميل بيشتري', 'أفضل عميل', 'افضل عميل', 'أكتر عميل شاري', 'اكتر زبون')) {
-    const byCust = {};
-    invoices.forEach(inv => { byCust[inv.customerId] = (byCust[inv.customerId]||0) + (inv.total||0); });
-    const arr = Object.entries(byCust).sort((a,b)=>b[1]-a[1]);
-    if (arr.length === 0) return '🛒 لسه مفيش مشتريات مسجلة.';
-    const top = arr.slice(0,5).map(([cid,amt],i)=>{
-      const c = customers.find(x=>x.id===cid);
-      return `${i+1}. <b>${escapeHtml(c?c.name:'غير معروف')}</b>: ${fmt(Math.round(amt))} ${curShort}`;
-    }).join('<br>');
-    return `🛒 <b>أكتر العملاء شراءً:</b><br>${top}`;
-  }
-
-  // ---- SMART ADVICE (نصيحة) ----
-  if (has('نصيحة', 'نصيحتك', 'اقتراح', 'رأيك', 'تنصحني', 'اعمل ايه', 'أعمل إيه')) {
-    const tips = [];
-    const lowItems = products.filter(p => (p.quantity||0) <= (p.minQuantity||0));
-    if (lowItems.length) tips.push(`📦 عندك <b>${lowItems.length}</b> صنف قرب يخلص (${lowItems.slice(0,3).map(p=>escapeHtml(p.name)).join('، ')})${lowItems.length>3?'...':''} — يفضل تطلبهم.`);
-    const bigDebtors = customers.filter(c=>(c.balance||0)>0).sort((a,b)=>b.balance-a.balance);
-    if (bigDebtors.length) tips.push(`💸 حصّل من <b>${escapeHtml(bigDebtors[0].name)}</b> (عليه ${fmt(Math.round(bigDebtors[0].balance))} ${curShort}) — أكبر مديونية.`);
-    const overdue = (typeof getOverdueIssuances === 'function') ? getOverdueIssuances().length : 0;
-    if (overdue) tips.push(`⏰ عندك <b>${overdue}</b> عملية متأخرة في التحصيل — راجعها.`);
-    const unpaidInv = invoices.filter(i=>i.status!=='paid').length;
-    if (unpaidInv) tips.push(`🧾 فيه <b>${unpaidInv}</b> فاتورة لسه مش مدفوعة بالكامل.`);
-    if (!tips.length) return '✅ كل حاجة تمام! المخزون كويس، مفيش ديون متأخرة، والفواتير مدفوعة. شغل ممتاز! 👏';
-    return `💡 <b>نصايح النهارده:</b><br><br>${tips.join('<br><br>')}`;
-  }
-
-  // ---- summary / general (ملخص) ----
-  if (has('ملخص', 'الوضع', 'إزاي', 'ازاي', 'الشركة', 'تقرير', 'الموقف')) {
-    const monthInvs = invoices.filter(i => (i.date||'') >= monthStart);
-    const revenue = monthInvs.reduce((s,i)=>s+(i.total||0),0);
-    const totalDebt = customers.reduce((s,c)=>s+(c.balance||0),0);
-    const low = products.filter(p=>(p.quantity||0)<=(p.minQuantity||0)).length;
-    return `📋 <b>ملخص سريع للشركة:</b><br>• مبيعات الشهر: ${fmtm(revenue)}<br>• إجمالي الديون: ${fmtm(totalDebt)}<br>• عدد العملاء: <b>${customers.length}</b><br>• أصناف قرب تخلص: <b>${low}</b><br>• فواتير غير مدفوعة: <b>${invoices.filter(i=>i.status!=='paid').length}</b>`;
-  }
-
-  // ---- fallback ----
-  return `🤔 معرفتش أجاوب على ده بالظبط. جرّب تسألني عن:<br>• المبيعات أو الأرباح<br>• الديون أو المديونيات<br>• المخزون واللي قرب يخلص<br>• العملاء أو الموردين<br>• الفواتير<br>أو اضغط أحد الأزرار السريعة فوق.`;
-}
+/* askAI / aiAnswer → js/assistant.js (4.9) */
 
 /* =========================================================
    SETTINGS PAGE
@@ -22540,145 +22199,7 @@ function exportCSV(type) {
 ========================================================= */
 let issuanceFilters = { search: '', from: '', to: '', customerId: '', productId: '' };
 
-function renderIssuances() {
-  const root = document.getElementById('page-content');
-  const issuances = (DB.data.issuances||[]).slice().sort((a,b)=>b.createdAt-a.createdAt);
-
-  // Apply filters
-  let list = issuances;
-  if (issuanceFilters.search) {
-    const q = issuanceFilters.search.toLowerCase();
-    list = list.filter(i => (i.customerName||'').toLowerCase().includes(q) || (i.productName||'').toLowerCase().includes(q) || String(i.number).includes(q));
-  }
-  if (issuanceFilters.from) list = list.filter(i => i.date >= issuanceFilters.from);
-  if (issuanceFilters.to) list = list.filter(i => i.date <= issuanceFilters.to);
-  if (issuanceFilters.customerId) list = list.filter(i => i.customerId === issuanceFilters.customerId);
-  if (issuanceFilters.productId) list = list.filter(i => i.productId === issuanceFilters.productId);
-
-  // Stats
-  const today = todayStr();
-  const monthStart = today.slice(0,8) + '01';
-  const todayCount = issuances.filter(i => i.date === today).length;
-  const todayQty = issuances.filter(i => i.date === today).reduce((s,i)=>s+i.quantity, 0);
-  const monthQty = issuances.filter(i => i.date >= monthStart).reduce((s,i)=>s+i.quantity, 0);
-  const monthTotal = issuances.filter(i => i.date >= monthStart).reduce((s,i)=>s+i.total, 0);
-  const listQty = list.reduce((s,i)=>s+i.quantity, 0);
-  const listTotal = list.reduce((s,i)=>s+i.total, 0);
-  const listPaid = list.reduce((s,i)=>s+(i.paid||0), 0);
-
-  root.innerHTML = `
-    <div class="page-header">
-      <div>
-        <h2 class="page-title">📄 صرف الورق للمراكز</h2>
-        <p class="page-subtitle">تسجيل كل عملية صرف ورق - يتم خصم الكمية من المخزن تلقائياً وإضافة المبلغ لحساب المركز</p>
-      </div>
-    </div>
-
-    <div class="section-action-bar">
-      <button class="btn btn-primary" onclick="openIssuanceForm()">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        صرف ورق جديد
-      </button>
-      <button class="btn btn-secondary iss-toinv-btn" onclick="openInvoiceFromIssuances()">🧾 فاتورة من الصرف${typeof issUninvoicedCount === 'function' && issUninvoicedCount() ? ' <span class="iss-uninv-badge">' + issUninvoicedCount() + '</span>' : ''}</button>
-      <button class="btn btn-secondary" onclick="exportCSV('issuances')">📥 تصدير Excel</button>
-    </div>
-
-    <div class="stats-grid">
-      <div class="stat-card info"><div class="stat-label">إجمالي العمليات</div><div class="stat-value">${issuances.length}</div></div>
-      <div class="stat-card success"><div class="stat-label">عمليات اليوم</div><div class="stat-value">${todayCount}</div><div class="stat-sub">${fmt(todayQty)} ورقة</div></div>
-      <div class="stat-card warning"><div class="stat-label">ورق مصروف هذا الشهر</div><div class="stat-value">${fmt(monthQty)}</div><div class="stat-sub">${fmtCurrency(monthTotal)}</div></div>
-      <div class="stat-card"><div class="stat-label">المعروض (بعد الفلتر)</div><div class="stat-value">${fmt(listQty)}</div><div class="stat-sub">${fmtCurrency(listTotal)} | محصل ${fmtCurrency(listPaid)}</div></div>
-    </div>
-
-    <div class="filter-bar">
-      <input class="form-control" type="text" id="iss-search" placeholder="🔍 بحث (مركز بأي حرف، نوع ورق، رقم...)" value="${issuanceFilters.search}" style="flex:1;min-width:200px">
-      <select class="form-control" id="iss-customer">
-        <option value="">جميع المراكز</option>
-        ${DB.data.customers.map(c => `<option value="${c.id}" ${issuanceFilters.customerId===c.id?'selected':''}>${escapeHtml(c.name)}</option>`).join('')}
-      </select>
-      <select class="form-control" id="iss-product">
-        <option value="">جميع أنواع الورق</option>
-        ${DB.data.products.map(p => `<option value="${p.id}" ${issuanceFilters.productId===p.id?'selected':''}>${escapeHtml(p.name)}</option>`).join('')}
-      </select>
-      <input class="form-control" type="date" id="iss-from" value="${issuanceFilters.from}" title="من">
-      <input class="form-control" type="date" id="iss-to" value="${issuanceFilters.to}" title="إلى">
-      <button class="btn btn-ghost" onclick="issuanceFilters={search:'',from:'',to:'',customerId:'',productId:''};renderIssuances()">إعادة ضبط</button>
-    </div>
-
-    <div class="table-wrap">
-      <div class="table-scroll">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>رقم</th>
-              <th>التاريخ</th>
-              <th>المركز / العميل</th>
-              <th>نوع الورق</th>
-              <th>الكمية</th>
-              <th>سعر الورقة</th>
-              <th>الإجمالي</th>
-              <th>المدفوع</th>
-              <th>المتبقي</th>
-              <th>الحالة</th>
-              <th>إجراءات</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${list.length === 0 ? `<tr><td colspan="11"><div class="empty-state"><div class="icon">📄</div><p>لا توجد عمليات صرف</p><button class="btn btn-primary" onclick="openIssuanceForm()" style="margin-top:12px">صرف ورق جديد</button></div></td></tr>` :
-              list.map(i => {
-                const remaining = i.total - (i.paid||0);
-                const today = todayStr();
-                let dueLabel = '';
-                if (i.dueDate && remaining > 0) {
-                  const daysDiff = Math.floor((new Date(i.dueDate) - new Date(today)) / 86400000);
-                  if (daysDiff < 0) dueLabel = `<div style="font-size:10px;color:var(--danger);background:rgba(239,68,68,.12);padding:2px 6px;border-radius:999px;margin-top:3px;display:inline-block">⏰ متأخر ${Math.abs(daysDiff)} يوم</div>`;
-                  else if (daysDiff <= 7) dueLabel = `<div style="font-size:10px;color:#92400e;background:rgba(245,158,11,.15);padding:2px 6px;border-radius:999px;margin-top:3px;display:inline-block">📅 ${daysDiff===0?'النهارده':daysDiff===1?'بكرة':`خلال ${daysDiff}ي`}</div>`;
-                  else dueLabel = `<div style="font-size:10px;color:var(--text-muted);margin-top:3px">📅 ${i.dueDate}</div>`;
-                }
-                return `<tr>
-                  <td><b style="color:var(--primary)">#${i.number}</b></td>
-                  <td>${i.date}${dueLabel}</td>
-                  <td><b>${escapeHtml(i.customerName)}</b></td>
-                  <td>${escapeHtml(i.productName)}</td>
-                  <td><b>${fmt(i.quantity)}</b></td>
-                  <td>${fmtCurrency(i.unitPrice)}</td>
-                  <td><b style="color:var(--success)">${fmtCurrency(i.total)}</b></td>
-                  <td style="color:var(--success)">${fmtCurrency(i.paid||0)}</td>
-                  <td style="color:${remaining>0?'var(--danger)':'var(--success)'}">${fmtCurrency(remaining)}</td>
-                  <td>${statusBadge(i.status)}</td>
-                  <td><div class="row-actions">
-                    <button class="btn-icon" onclick="viewIssuance('${i.id}')" title="عرض">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                    </button>
-                    ${(currentUser.role==='admin' || currentUser.role==='accountant') ? `<button class="btn-icon" onclick="editIssuance('${i.id}')" style="color:var(--info)" title="تعديل">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                    </button>` : ''}
-                    <button class="btn-icon" onclick="printIssuance('${i.id}')" title="طباعة إيصال">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-                    </button>
-                    ${(i.paid||0) < i.total ? `<button class="btn-icon" onclick="openPaymentForm('${i.customerId}')" style="color:var(--success)" title="تحصيل">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                    </button>` : ''}
-                    ${currentUser.role==='admin' ? `<button class="btn-icon" onclick="deleteIssuance('${i.id}')" style="color:var(--danger)" title="حذف">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
-                    </button>` : ''}
-                  </div></td>
-                </tr>`;
-              }).join('')
-            }
-          </tbody>
-        </table>
-      </div>
-    </div>
-  `;
-
-  // Wire up filters
-  document.getElementById('iss-search').addEventListener('input', e => { issuanceFilters.search = e.target.value; renderIssuances(); });
-  document.getElementById('iss-customer').addEventListener('change', e => { issuanceFilters.customerId = e.target.value; renderIssuances(); });
-  document.getElementById('iss-product').addEventListener('change', e => { issuanceFilters.productId = e.target.value; renderIssuances(); });
-  document.getElementById('iss-from').addEventListener('change', e => { issuanceFilters.from = e.target.value; renderIssuances(); });
-  document.getElementById('iss-to').addEventListener('change', e => { issuanceFilters.to = e.target.value; renderIssuances(); });
-}
+/* renderIssuances → js/isslist.js (4.9: one card per صرف, grouped by day / center) */
 
 /* ============== VOICE INPUT (Web Speech API) ============== */
 /* Picks the best-matching customer from the select by Arabic voice. */
@@ -23697,8 +23218,16 @@ function viewIssuance(id) {
 }
 
 function printIssuance(id) {
-  const i = (DB.data.issuances||[]).find(x => x.id === id);
-  if (!i) return;
+  const one = (DB.data.issuances||[]).find(x => x.id === id);
+  if (!one) return;
+  /* 4.9 · the receipt covers the whole صرف (every item with the same number, center and date) */
+  const batch = (DB.data.issuances||[]).filter(x => x.number === one.number && x.customerId === one.customerId && x.date === one.date)
+    .sort((a, b) => (a.batchIndex||0) - (b.batchIndex||0));
+  const i = Object.assign({}, one, {
+    total: batch.reduce((t, x) => t + (Number(x.total)||0), 0),
+    paid: batch.reduce((t, x) => t + (Number(x.paid)||0), 0),
+    notes: batch.map(x => x.notes).find(Boolean) || ''
+  });
   const customer = DB.data.customers.find(c => c.id === i.customerId);
   const s = DB.data.settings;
   const remaining = i.total - (i.paid||0);
@@ -23744,13 +23273,13 @@ function printIssuance(id) {
       <tr><th>نوع الورق</th><th>الوحدة</th><th>الكمية</th><th>سعر الورقة</th><th>الإجمالي</th></tr>
     </thead>
     <tbody>
-      <tr>
-        <td><b>${escapeHtml(i.productName)}</b></td>
-        <td>${escapeHtml(i.productUnit||'-')}</td>
-        <td><b>${fmt(i.quantity)}</b></td>
-        <td>${fmtCurrency(i.unitPrice)}</td>
-        <td><b>${fmtCurrency(i.total)}</b></td>
-      </tr>
+      ${batch.map(x => `<tr>
+        <td><b>${escapeHtml(x.productName)}</b></td>
+        <td>${escapeHtml(x.productUnit||x.unit||'-')}</td>
+        <td><b>${fmt(x.quantity)}</b></td>
+        <td>${fmtCurrency(x.unitPrice)}</td>
+        <td><b>${fmtCurrency(x.total)}</b></td>
+      </tr>`).join('')}
     </tbody>
   </table>
 
@@ -26362,6 +25891,13 @@ function exportSuppliersCSV() {
 <script src="js/axcore.js"></script>
 <script src="js/approvals.js"></script>
 <script src="js/security.js"></script>
+<script src="js/aging.js"></script>
+<script src="js/cheques.js"></script>
+<script src="js/profit.js"></script>
+<script src="js/purchase.js"></script>
+<script src="js/users.js"></script>
+<script src="js/isslist.js"></script>
+<script src="js/assistant.js"></script>
 <script src="vendor/gsap.min.js"></script>
 <script src="js/pulsescene.js"></script>
 </body>
