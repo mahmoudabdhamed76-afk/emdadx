@@ -6,6 +6,8 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<script>/* 4.12.1 · iPhone/iPad: stop Safari from zooming the page when a field is tapped (pinch-zoom still works on iOS) — same fix as EmdadX Attendance 1.2 */
+(function(){try{var ios=/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);if(!ios)return;document.documentElement.classList.add('ax-ios');var vp=document.querySelector('meta[name=viewport]');if(vp)vp.setAttribute('content','width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover');}catch(e){}})();</script>
 <title>إمداد إكس — إدارة التوريدات</title>
 
 <!-- PWA: install to home screen with company logo -->
@@ -9631,7 +9633,7 @@ audio::-webkit-media-controls-panel { background: rgba(15,23,42,.9); }
 
     <footer class="app-footer">
       <div>جميع الحقوق محفوظة © 2026 إمداد إكس</div>
-      <div class="version">الإصدار 4.12</div>
+      <div class="version">الإصدار 4.12.1</div>
     </footer>
   </div>
 </div>
