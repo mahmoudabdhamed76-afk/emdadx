@@ -30,6 +30,7 @@
   var t = 'dark', rail = false;
   try { t = localStorage.getItem('theme') || 'dark'; rail = localStorage.getItem('ax_rail') === '1'; } catch (e) {}
   d.setAttribute('data-theme', t === 'light' ? 'light' : 'dark');
+  try { var tc = document.querySelector('meta[name="theme-color"]'); if (tc) tc.setAttribute('content', t === 'light' ? '#002055' : '#000000'); } catch (e) {}
   d.classList.add('aurum');
   if (rail) d.classList.add('ax-rail');
   /* 4.9 · no splash: the login form shows at once. Only when this device was
@@ -9630,7 +9631,7 @@ audio::-webkit-media-controls-panel { background: rgba(15,23,42,.9); }
 
     <footer class="app-footer">
       <div>جميع الحقوق محفوظة © 2026 إمداد إكس</div>
-      <div class="version">الإصدار 4.9</div>
+      <div class="version">الإصدار 4.10</div>
     </footer>
   </div>
 </div>
@@ -25897,6 +25898,7 @@ function exportSuppliersCSV() {
 <script src="js/purchase.js"></script>
 <script src="js/users.js"></script>
 <script src="js/isslist.js"></script>
+<script src="js/papermeter.js"></script>
 <script src="js/assistant.js"></script>
 <script src="vendor/gsap.min.js"></script>
 <script src="js/pulsescene.js"></script>

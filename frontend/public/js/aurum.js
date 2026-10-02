@@ -79,7 +79,7 @@
     root.setAttribute('data-theme', t);
     try { localStorage.setItem('theme', t); } catch (e) {}
     var meta = document.querySelector('meta[name="theme-color"]');
-    if (meta) meta.setAttribute('content', t === 'light' ? '#F2F4F9' : '#000000');
+    if (meta) meta.setAttribute('content', t === 'light' ? '#002055' : '#000000');
     if (typeof updateThemeIcon === 'function') { try { updateThemeIcon(t); } catch (e) {} }
     if (typeof currentPage !== 'undefined' && currentPage === 'dashboard' && typeof renderDashboard === 'function') {
       try { renderDashboard(); } catch (e) {}

@@ -1,18 +1,19 @@
 /* ════════════════════════════════════════════════════════════════════
-   EmdadX · صرف الورق — القايمة المنظمة (4.9)
+   EmdadX · صرف الورق — القايمة (4.10)
    ------------------------------------------------------------------
-   · كل عملية صرف كارت واحد، حتى لو فيها كذا صنف (نفس الرقم والمركز
-     والتاريخ)، بدل صف لكل صنف
-   · متقسمة بالأيام (النهارده / امبارح / …) أو بالمراكز، ولكل مجموعة
-     إجمالي الفلوس واللي باقي
-   · فلتر سريع بالحالة: غير مدفوع · جزئي · مدفوع · متأخر
-   · على الموبايل: الكارت بيتلم في سطرين، والأزرار تحت بأسامي واضحة،
-     والفلاتر بتتقفل في زرار «فلترة»
+   قايمة هادية تتقري بسرعة: كل عملية صرف سطر واحد بس —
+     · نقطة الحالة (أخضر مدفوع · برتقاني جزئي/عليها فلوس · أحمر متأخر)
+     · اسم المركز، وتحته الصنف والكمية
+     · المبلغ، وتحته «مدفوع» أو «باقي …» أو «متأخر …»
+   ومفيش أزرار في القايمة: تدوس على السطر تفتح ورقة العملية وفيها كل
+   حاجة (تحصيل، طباعة، تعديل، حذف). الأيام عناوين صغيرة، والفلاتر
+   الزيادة مستخبية في «فلترة».
+   كل عملية صرف سطر واحد حتى لو فيها كذا صنف (نفس الرقم والمركز والتاريخ).
 ════════════════════════════════════════════════════════════════════ */
 (function () {
   'use strict';
 
-  var PAGE = 40;
+  var PAGE = 50;
   var MONTHS = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
   var DAYS = ['الأحد', 'الاتنين', 'التلات', 'الأربع', 'الخميس', 'الجمعة', 'السبت'];
 
@@ -51,8 +52,10 @@
     return DAYS[d.getDay()] + ' ' + d.getDate() + ' ' + MONTHS[d.getMonth()] + (String(d.getFullYear()) !== t.slice(0, 4) ? ' ' + d.getFullYear() : '');
   }
   function shortDate(ds) { var d = new Date(ds + 'T00:00:00'); return isNaN(d) ? (ds || '') : d.getDate() + ' ' + MONTHS[d.getMonth()]; }
+  function ops(n) { return n + ' ' + (n === 1 ? 'عملية' : n >= 3 && n <= 10 ? 'عمليات' : 'عملية'); }
+  function unitOf(i) { return i.productUnit || i.unit || ((A('products').find(function (p) { return p.id === i.productId; }) || {}).unit) || ''; }
 
-  /* ── one card per صرف: same number + center + date ── */
+  /* ── one line per صرف: same number + center + date ── */
   function batches() {
     var m = {}, out = [];
     A('issuances').forEach(function (i) {
@@ -103,69 +106,37 @@
     if (s === 'open') return list.filter(function (b) { return b.rem > 0.005; });
     return list.filter(function (b) { return b.status === s; });
   }
+  function tone(b) { return b.late ? 'late' : b.status === 'paid' ? 'paid' : b.status === 'partial' ? 'part' : 'open'; }
+  function stateTxt(b) {
+    if (b.status === 'paid') return 'مدفوع';
+    if (b.late) return 'متأخر ' + b.late + ' يوم';
+    return 'باقي ' + money(b.rem);
+  }
+  function what(b) {
+    var first = b.items[0];
+    if (b.items.length === 1) return esc(first.productName || 'صنف') + ' · ' + num(first.quantity) + (unitOf(first) ? ' ' + esc(unitOf(first)) : '');
+    return b.items.length + ' أصناف · ' + b.items.slice(0, 2).map(function (i) { return esc(i.productName || 'صنف'); }).join('، ') + (b.items.length > 2 ? '…' : '');
+  }
 
-  /* ── icons ── */
   var IC = {
-    view: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>',
-    edit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>',
-    print: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>',
-    pay: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>',
-    del: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>',
-    list: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3.5" cy="6" r="1"/><circle cx="3.5" cy="12" r="1"/><circle cx="3.5" cy="18" r="1"/></svg>',
-    filter: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 5h18l-7 8v6l-4 2v-8z"/></svg>',
     search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.6" y2="16.6"/></svg>',
-    plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>'
+    filter: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M7 12h10M10 18h4"/></svg>',
+    plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>',
+    chev: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>',
+    edit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>',
+    del: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>'
   };
-  var ST = { paid: 'مدفوع', partial: 'مدفوع جزئي', unpaid: 'غير مدفوع' };
-
-  function dueChip(b) {
-    if (b.rem <= 0.005 || !b.due) return '';
-    if (b.late) return '<em class="isx-due late">متأخر ' + b.late + ' يوم</em>';
-    var d = daysBetween(today(), b.due);
-    if (d === 0) return '<em class="isx-due soon">ميعاده النهارده</em>';
-    if (d === 1) return '<em class="isx-due soon">ميعاده بكرة</em>';
-    if (d <= 7) return '<em class="isx-due soon">ميعاده خلال ' + d + ' أيام</em>';
-    return '<em class="isx-due">ميعاده ' + shortDate(b.due) + '</em>';
-  }
-
-  function itemLine(i) {
-    var unit = i.productUnit || i.unit || '';
-    return '<li><b>' + esc(i.productName || 'صنف') + '</b><span>' + num(i.quantity) + (unit ? ' ' + esc(unit) : '') + ' × ' + num(i.unitPrice) + '</span>' +
-      '<i>' + money(i.total) + '</i></li>';
-  }
 
   function row(b, mode) {
-    var multi = b.items.length > 1, first = b.items[0];
-    var pct = b.total > 0 ? Math.min(100, Math.round(b.paid / b.total * 100)) : 100;
+    var t = tone(b);
     var title = mode === 'center' ? dayLabel(b.date) : b.customerName;
-    var items = multi
-      ? '<ul class="isx-items">' + b.items.slice(0, 4).map(itemLine).join('') + (b.items.length > 4 ? '<li class="more">و ' + (b.items.length - 4) + ' أصناف كمان</li>' : '') + '</ul>'
-      : '<div class="isx-one"><b>' + esc(first.productName || 'صنف') + '</b><span>' + num(first.quantity) + ((first.productUnit || first.unit) ? ' ' + esc(first.productUnit || first.unit) : '') + ' × ' + money(first.unitPrice) + '</span></div>';
     var k = esc(b.key).replace(/'/g, '&#39;');
-    var acts = [];
-    if (multi) acts.push(btn('isx-b', 'AXIss.batch(\'' + k + '\')', IC.list, 'الأصناف'));
-    else acts.push(btn('', 'viewIssuance(\'' + first.id + '\')', IC.view, 'عرض'));
-    if (!multi && canEdit()) acts.push(btn('', 'editIssuance(\'' + first.id + '\')', IC.edit, 'تعديل'));
-    acts.push(btn('', 'printIssuance(\'' + first.id + '\')', IC.print, 'طباعة'));
-    if (b.rem > 0.005) acts.push(btn('pay', 'openPaymentForm(\'' + b.customerId + '\')', IC.pay, 'تحصيل'));
-    if (!multi && canDelete()) acts.push(btn('del', 'deleteIssuance(\'' + first.id + '\')', IC.del, 'حذف'));
-    return '<article class="isx-row s-' + b.status + (b.late ? ' is-late' : '') + (multi ? ' multi' : ' one') + '">' +
-      '<i class="isx-st" aria-hidden="true"></i>' +
-      '<div class="isx-t"><b>' + esc(title) + '</b></div>' +
-      '<div class="isx-what">' + items + '</div>' +
-      '<div class="isx-meta"><span class="isx-no">#' + esc(b.number) + '</span>' + dueChip(b) +
-        (b.notes ? '<span class="isx-note" title="' + esc(b.notes) + '">📝 ' + esc(b.notes.length > 34 ? b.notes.slice(0, 34) + '…' : b.notes) + '</span>' : '') + '</div>' +
-      '<div class="isx-money">' +
-        '<b class="isx-total">' + money(b.total) + '</b>' +
-        '<span class="isx-bar" title="اتدفع ' + pct + '%"><i style="width:' + pct + '%"></i></span>' +
-        '<span class="isx-rem">' + (b.rem > 0.005 ? 'باقي <b>' + money(b.rem) + '</b>' : 'اتدفع كله') + '</span>' +
-      '</div>' +
-      '<em class="isx-pill">' + ST[b.status] + '</em>' +
-      '<div class="isx-acts">' + acts.join('') + '</div>' +
-    '</article>';
-  }
-  function btn(cls, onclick, icon, label) {
-    return '<button type="button" class="' + cls + '" onclick="' + onclick + '" title="' + label + '" aria-label="' + label + '">' + icon + '<span>' + label + '</span></button>';
+    return '<button type="button" class="isl-row t-' + t + '" onclick="AXIss.open(\'' + k + '\')">' +
+      '<i class="isl-dot" aria-hidden="true"></i>' +
+      '<span class="isl-main"><b>' + esc(title) + '</b><span>' + what(b) + '</span></span>' +
+      '<span class="isl-amt"><b>' + money(b.total) + '</b><span>' + stateTxt(b) + '</span></span>' +
+      '<span class="isl-chev" aria-hidden="true">' + IC.chev + '</span>' +
+    '</button>';
   }
 
   function groups(list, mode) {
@@ -184,38 +155,33 @@
   function drawList() {
     var host = document.getElementById('isx-list'); if (!host) return;
     var f = F(), all = batches(), base = baseFilter(all), list = byStatus(base, f.status);
-    /* status chips (counts follow the other filters) */
     var cnt = function (s) { return byStatus(base, s).length; };
-    var chips = [['', 'الكل'], ['open', 'عليها فلوس'], ['late', 'متأخر'], ['partial', 'جزئي'], ['paid', 'مدفوع']];
+    var chips = [['', 'الكل'], ['open', 'عليها فلوس'], ['late', 'متأخر'], ['paid', 'مدفوع']];
     var ch = document.getElementById('isx-chips');
     if (ch) ch.innerHTML = chips.map(function (c) {
       var n = cnt(c[0]);
-      return '<button type="button" class="' + (f.status === c[0] ? 'on' : '') + (c[0] === 'late' && n ? ' warn' : '') + '" onclick="AXIss.status(\'' + c[0] + '\')" aria-pressed="' + (f.status === c[0]) + '">' + c[1] + ' <em>' + n + '</em></button>';
+      return '<button type="button" class="' + (f.status === c[0] ? 'on' : '') + (c[0] === 'late' ? ' late' : '') + '" onclick="AXIss.status(\'' + c[0] + '\')" aria-pressed="' + (f.status === c[0]) + '">' + c[1] + (n ? ' <em>' + n + '</em>' : '') + '</button>';
     }).join('');
-    /* the "shown" stat follows every filter */
-    var sh = document.getElementById('isx-shown');
-    if (sh) {
-      var tot = list.reduce(function (s, b) { return s + b.total; }, 0), paid = list.reduce(function (s, b) { return s + b.paid; }, 0);
-      sh.innerHTML = '<div class="stat-label">المعروض دلوقتي</div><div class="stat-value">' + list.length + ' <small>عملية</small></div><div class="stat-sub">' + money(tot) + ' · اتحصّل ' + money(paid) + '</div>';
-    }
     var fb = document.getElementById('isx-fcount');
-    if (fb) { var n = ['customerId', 'productId', 'from', 'to'].filter(function (k) { return f[k]; }).length; fb.textContent = n ? n : ''; fb.style.display = n ? '' : 'none'; }
+    if (fb) { var n = ['customerId', 'productId', 'from', 'to'].filter(function (k) { return f[k]; }).length + (f.group === 'center' ? 1 : 0); fb.textContent = n ? n : ''; fb.hidden = !n; }
 
     if (!list.length) {
       var any = all.length > 0;
-      host.innerHTML = '<div class="isx-empty"><div>📄</div><b>' + (any ? 'مفيش عمليات بالفلتر ده' : 'لسه مفيش عمليات صرف') + '</b>' +
+      host.innerHTML = '<div class="isl-empty"><b>' + (any ? 'مفيش عمليات بالفلتر ده' : 'لسه مفيش عمليات صرف') + '</b>' +
+        '<span>' + (any ? 'جرّب تمسح البحث أو الفلاتر' : 'أول عملية صرف هتظهر هنا') + '</span>' +
         (any ? '<button type="button" onclick="AXIss.reset()">امسح الفلاتر</button>' : '<button type="button" class="pri" onclick="openIssuanceForm()">صرف ورق جديد</button>') + '</div>';
       return;
     }
     var shown = list.slice(0, f.limit), mode = f.group;
-    host.innerHTML = groups(shown, mode).map(function (g) {
-      return '<section class="isx-group">' +
-        '<header class="isx-gh"><b>' + esc(g.label) + '</b><span>' + g.list.length + ' ' + (g.list.length === 1 ? 'عملية' : g.list.length <= 10 ? 'عمليات' : 'عملية') +
-          ' · ' + money(g.total) + (g.rem > 0.005 ? ' · <em>باقي ' + money(g.rem) + '</em>' : '') + '</span></header>' +
-        g.list.map(function (b) { return row(b, mode); }).join('') +
-      '</section>';
-    }).join('') +
-    (list.length > shown.length ? '<button type="button" class="isx-more" onclick="AXIss.more()">اعرض ' + Math.min(PAGE, list.length - shown.length) + ' كمان <span>(فاضل ' + (list.length - shown.length) + ')</span></button>' : '');
+    var sumTot = list.reduce(function (s, b) { return s + b.total; }, 0), sumRem = list.reduce(function (s, b) { return s + b.rem; }, 0);
+    var filtered = f.status || f.search || f.customerId || f.productId || f.from || f.to;
+    host.innerHTML =
+      (filtered ? '<div class="isl-found">' + ops(list.length) + ' · ' + money(sumTot) + (sumRem > 0.5 ? ' · باقي ' + money(sumRem) : '') + '</div>' : '') +
+      '<div class="isl">' + groups(shown, mode).map(function (g) {
+        return '<div class="isl-day"><b>' + esc(g.label) + '</b><span>' + money(g.total) + '</span></div>' +
+          g.list.map(function (b) { return row(b, mode); }).join('');
+      }).join('') + '</div>' +
+      (list.length > shown.length ? '<button type="button" class="isl-more" onclick="AXIss.more()">اعرض كمان (فاضل ' + (list.length - shown.length) + ')</button>' : '');
   }
 
   function renderIssuances() {
@@ -223,55 +189,50 @@
     var f = F(), all = batches(), t = today(), ms = t.slice(0, 8) + '01';
     var todayB = all.filter(function (b) { return b.date === t; });
     var monthB = all.filter(function (b) { return b.date >= ms; });
-    var monthQty = monthB.reduce(function (s, b) { return s + b.qty; }, 0), monthTot = monthB.reduce(function (s, b) { return s + b.total; }, 0);
     var open = all.filter(function (b) { return b.rem > 0.005; }), openTot = open.reduce(function (s, b) { return s + b.rem; }, 0);
-    var late = all.filter(function (b) { return b.late > 0; }).length;
     var uninv = (typeof issUninvoicedCount === 'function') ? issUninvoicedCount() : 0;
     var C = A('customers').slice().sort(function (a, b) { return String(a.name).localeCompare(String(b.name), 'ar'); });
     var P = A('products');
-    var fOpen = !!f._open || !!(f.customerId || f.productId || f.from || f.to);
+    var fOpen = !!f._open;
 
-    root.innerHTML =
-      '<div class="page-header"><div><h2 class="page-title">📄 صرف الورق للمراكز</h2>' +
-      '<p class="page-subtitle">كل عملية صرف بتتخصم من المخزن لوحدها وبتتضاف على حساب المركز</p></div></div>' +
-
-      '<div class="section-action-bar">' +
-        '<button class="btn btn-primary" onclick="openIssuanceForm()">' + IC.plus + ' صرف ورق جديد</button>' +
-        '<button class="btn btn-secondary iss-toinv-btn" onclick="openInvoiceFromIssuances()">🧾 فاتورة من الصرف' + (uninv ? ' <span class="iss-uninv-badge">' + uninv + '</span>' : '') + '</button>' +
-        '<button class="btn btn-secondary" onclick="exportCSV(\'issuances\')">📥 تصدير Excel</button>' +
-      '</div>' +
-
-      '<div class="stats-grid isx-stats">' +
-        '<div class="stat-card info"><div class="stat-label">النهارده</div><div class="stat-value">' + todayB.length + ' <small>عملية</small></div><div class="stat-sub">' + money(todayB.reduce(function (s, b) { return s + b.total; }, 0)) + '</div></div>' +
-        '<div class="stat-card success"><div class="stat-label">مصروف الشهر ده</div><div class="stat-value">' + num(monthQty) + '</div><div class="stat-sub">' + monthB.length + ' عملية · ' + money(monthTot) + '</div></div>' +
-        '<div class="stat-card ' + (late ? 'danger' : 'warning') + '"><div class="stat-label">باقي على المراكز من الصرف</div><div class="stat-value">' + num(openTot) + ' <small>' + esc(cur()) + '</small></div><div class="stat-sub">' + open.length + ' عملية' + (late ? ' · <b>' + late + ' متأخرة</b>' : '') + '</div></div>' +
-        '<div class="stat-card" id="isx-shown"></div>' +
-      '</div>' +
-
-      '<div class="isx-tools">' +
-        '<div class="isx-top">' +
-          '<label class="isx-search">' + IC.search + '<input type="search" id="iss-search" placeholder="دوّر باسم المركز أو الصنف أو الرقم" value="' + esc(f.search) + '" autocomplete="off"></label>' +
-          '<button type="button" class="isx-ftoggle' + (fOpen ? ' on' : '') + '" onclick="AXIss.toggleF()" aria-expanded="' + fOpen + '">' + IC.filter + '<span>فلترة</span><em id="isx-fcount"></em></button>' +
-          '<div class="isx-seg" role="group" aria-label="التقسيم">' +
-            '<button type="button" class="' + (f.group === 'day' ? 'on' : '') + '" onclick="AXIss.group(\'day\')">بالأيام</button>' +
-            '<button type="button" class="' + (f.group === 'center' ? 'on' : '') + '" onclick="AXIss.group(\'center\')">بالمراكز</button>' +
-          '</div>' +
+    root.innerHTML = '<div class="isl-page">' +
+      '<div class="isl-head">' +
+        '<div><h2 class="page-title">صرف الورق</h2><p class="page-subtitle">كل عملية بتتخصم من المخزن وبتتضاف على حساب المركز</p></div>' +
+        '<div class="isl-head-a">' +
+          '<button class="btn btn-secondary" onclick="openInvoiceFromIssuances()">فاتورة من الصرف' + (uninv ? ' <span class="iss-uninv-badge">' + uninv + '</span>' : '') + '</button>' +
+          '<button class="btn btn-secondary isl-xls" onclick="exportCSV(\'issuances\')"><span>تصدير </span>Excel</button>' +
+          '<button class="btn btn-primary" onclick="openIssuanceForm()">' + IC.plus + ' صرف جديد</button>' +
         '</div>' +
-        '<div class="isx-filters" id="isx-filters"' + (fOpen ? '' : ' hidden') + '>' +
-          '<select class="form-control" id="iss-customer"><option value="">كل المراكز</option>' + C.map(function (c) { return '<option value="' + c.id + '"' + (f.customerId === c.id ? ' selected' : '') + '>' + esc(c.name) + '</option>'; }).join('') + '</select>' +
-          '<select class="form-control" id="iss-product"><option value="">كل الأصناف</option>' + P.map(function (p) { return '<option value="' + p.id + '"' + (f.productId === p.id ? ' selected' : '') + '>' + esc(p.name) + '</option>'; }).join('') + '</select>' +
-          '<label class="isx-date"><span>من</span><input class="form-control" type="date" id="iss-from" value="' + esc(f.from) + '"></label>' +
-          '<label class="isx-date"><span>لحد</span><input class="form-control" type="date" id="iss-to" value="' + esc(f.to) + '"></label>' +
-          '<button type="button" class="isx-reset" onclick="AXIss.reset()">امسح الفلاتر</button>' +
-        '</div>' +
-        '<div class="isx-chips" id="isx-chips" role="group" aria-label="الحالة"></div>' +
       '</div>' +
 
-      '<div id="isx-list" class="isx-list"></div>';
+      '<div class="isl-sum">' +
+        '<div><span>النهارده</span><b>' + money(todayB.reduce(function (s, b) { return s + b.total; }, 0)) + '</b><small>' + ops(todayB.length) + '</small></div>' +
+        '<div><span>الشهر ده</span><b>' + money(monthB.reduce(function (s, b) { return s + b.total; }, 0)) + '</b><small>' + ops(monthB.length) + '</small></div>' +
+        '<div class="' + (openTot > 0.5 ? 'warn' : '') + '"><span>باقي على المراكز</span><b>' + money(openTot) + '</b><small>' + ops(open.length) + '</small></div>' +
+      '</div>' +
+
+      '<div class="isl-tools">' +
+        '<label class="isl-search">' + IC.search + '<input type="search" id="iss-search" placeholder="دوّر بالمركز أو الصنف أو الرقم" value="' + esc(f.search) + '" autocomplete="off"></label>' +
+        '<button type="button" class="isl-ftoggle' + (fOpen ? ' on' : '') + '" onclick="AXIss.toggleF()" aria-expanded="' + fOpen + '">' + IC.filter + '<span>فلترة</span><em id="isx-fcount" hidden></em></button>' +
+      '</div>' +
+      '<div class="isl-filters" id="isx-filters"' + (fOpen ? '' : ' hidden') + '>' +
+        '<div class="isl-seg" role="group" aria-label="التقسيم"><span>اعرض</span>' +
+          '<button type="button" class="' + (f.group === 'day' ? 'on' : '') + '" onclick="AXIss.group(\'day\')">بالأيام</button>' +
+          '<button type="button" class="' + (f.group === 'center' ? 'on' : '') + '" onclick="AXIss.group(\'center\')">بالمراكز</button>' +
+        '</div>' +
+        '<select class="form-control" id="iss-customer"><option value="">كل المراكز</option>' + C.map(function (c) { return '<option value="' + c.id + '"' + (f.customerId === c.id ? ' selected' : '') + '>' + esc(c.name) + '</option>'; }).join('') + '</select>' +
+        '<select class="form-control" id="iss-product"><option value="">كل الأصناف</option>' + P.map(function (p) { return '<option value="' + p.id + '"' + (f.productId === p.id ? ' selected' : '') + '>' + esc(p.name) + '</option>'; }).join('') + '</select>' +
+        '<label class="isl-date"><span>من</span><input class="form-control" type="date" id="iss-from" value="' + esc(f.from) + '"></label>' +
+        '<label class="isl-date"><span>لحد</span><input class="form-control" type="date" id="iss-to" value="' + esc(f.to) + '"></label>' +
+        '<button type="button" class="isl-reset" onclick="AXIss.reset()">امسح الفلاتر</button>' +
+      '</div>' +
+      '<div class="isl-chips" id="isx-chips" role="group" aria-label="الحالة"></div>' +
+
+      '<div id="isx-list"></div></div>';
 
     var to;
     var s = document.getElementById('iss-search');
-    s.addEventListener('input', function (e) { F().search = e.target.value; F().limit = PAGE; clearTimeout(to); to = setTimeout(drawList, 180); });
+    s.addEventListener('input', function (e) { F().search = e.target.value; F().limit = PAGE; clearTimeout(to); to = setTimeout(drawList, 160); });
     [['iss-customer', 'customerId'], ['iss-product', 'productId'], ['iss-from', 'from'], ['iss-to', 'to']].forEach(function (p) {
       var el = document.getElementById(p[0]);
       if (el) el.addEventListener('change', function (e) { F()[p[1]] = e.target.value; F().limit = PAGE; drawList(); });
@@ -279,41 +240,56 @@
     drawList();
   }
 
-  /* a صرف with several items: list them with each item's own actions */
-  function batch(key) {
+  /* ── the صرف sheet: everything about one operation, and every action ── */
+  function open(key) {
     var b = batches().find(function (x) { return x.key === key; }); if (!b) return;
-    var html = '<div class="isx-sheet">' +
-      '<div class="isx-sheet-h"><div><b>' + esc(b.customerName) + '</b><span>' + dayLabel(b.date) + ' · ' + b.items.length + ' أصناف</span></div>' +
-        '<div class="isx-sheet-m"><b>' + money(b.total) + '</b><span>' + (b.rem > 0.005 ? 'باقي ' + money(b.rem) : 'اتدفع كله') + '</span></div></div>' +
-      '<ul class="isx-sheet-l">' + b.items.map(function (i) {
-        var unit = i.productUnit || i.unit || '';
-        return '<li><div><b>' + esc(i.productName || 'صنف') + '</b><span>' + num(i.quantity) + (unit ? ' ' + esc(unit) : '') + ' × ' + money(i.unitPrice) + ' = ' + money(i.total) + '</span></div>' +
-          '<div class="isx-sheet-a">' +
-            '<button type="button" onclick="closeModal();viewIssuance(\'' + i.id + '\')" title="عرض">' + IC.view + '</button>' +
-            (canEdit() ? '<button type="button" onclick="closeModal();editIssuance(\'' + i.id + '\')" title="تعديل">' + IC.edit + '</button>' : '') +
-            (canDelete() ? '<button type="button" class="del" onclick="closeModal();deleteIssuance(\'' + i.id + '\')" title="حذف">' + IC.del + '</button>' : '') +
-          '</div></li>';
-      }).join('') + '</ul></div>';
-    openModal('عملية صرف #' + esc(b.number), html,
-      '<button class="btn btn-secondary" onclick="closeModal();printIssuance(\'' + b.items[0].id + '\')">🖨 طباعة الإيصال</button>' +
-      (b.rem > 0.005 ? '<button class="btn btn-primary" onclick="closeModal();openPaymentForm(\'' + b.customerId + '\')">💵 تحصيل</button>' : ''));
+    var t = tone(b), multi = b.items.length > 1, first = b.items[0];
+    var pct = b.total > 0 ? Math.min(100, Math.round(b.paid / b.total * 100)) : 100;
+    var due = '';
+    if (b.rem > 0.005 && b.due) {
+      var d = daysBetween(today(), b.due);
+      due = d < 0 ? 'ميعاد التحصيل عدّى من ' + (-d) + ' يوم (' + shortDate(b.due) + ')' : d === 0 ? 'ميعاد التحصيل النهارده' : d === 1 ? 'ميعاد التحصيل بكرة' : 'ميعاد التحصيل ' + shortDate(b.due) + ' — بعد ' + d + ' يوم';
+    }
+    var html = '<div class="isl-sheet t-' + t + '">' +
+      '<div class="isl-sh-top"><div><b>' + esc(b.customerName) + '</b><span>' + dayLabel(b.date) + ' · صرف #' + esc(b.number) + '</span></div>' +
+        '<em class="isl-sh-st">' + (b.status === 'paid' ? 'مدفوع' : b.late ? 'متأخر' : b.status === 'partial' ? 'مدفوع جزئي' : 'لسه مدفعش') + '</em></div>' +
+      '<div class="isl-sh-money"><div><span>الإجمالي</span><b>' + money(b.total) + '</b></div><div><span>اتدفع</span><b>' + money(b.paid) + '</b></div><div class="rem"><span>الباقي</span><b>' + money(b.rem) + '</b></div></div>' +
+      '<div class="isl-sh-bar"><i style="width:' + pct + '%"></i></div>' +
+      (due ? '<p class="isl-sh-due">' + due + '</p>' : '') +
+      '<ul class="isl-sh-items">' + b.items.map(function (i) {
+        var u = unitOf(i);
+        return '<li><div><b>' + esc(i.productName || 'صنف') + '</b><span>' + num(i.quantity) + (u ? ' ' + esc(u) : '') + ' × ' + money(i.unitPrice) + '</span></div><strong>' + money(i.total) + '</strong>' +
+          (multi && (canEdit() || canDelete()) ? '<div class="isl-sh-ia">' +
+            (canEdit() ? '<button type="button" onclick="closeModal();editIssuance(\'' + i.id + '\')" title="تعديل الصنف ده" aria-label="تعديل">' + IC.edit + '</button>' : '') +
+            (canDelete() ? '<button type="button" class="del" onclick="closeModal();deleteIssuance(\'' + i.id + '\')" title="حذف الصنف ده" aria-label="حذف">' + IC.del + '</button>' : '') + '</div>' : '') +
+          '</li>';
+      }).join('') + '</ul>' +
+      (b.notes ? '<p class="isl-sh-note">' + esc(b.notes) + '</p>' : '') +
+      '<div class="isl-sh-acts">' +
+        (b.rem > 0.005 ? '<button type="button" class="pri" onclick="closeModal();openPaymentForm(\'' + b.customerId + '\')">تحصيل</button>' : '') +
+        '<button type="button" onclick="closeModal();printIssuance(\'' + first.id + '\')">طباعة الإيصال</button>' +
+        (!multi && canEdit() ? '<button type="button" onclick="closeModal();editIssuance(\'' + first.id + '\')">تعديل</button>' : '') +
+        (!multi && canDelete() ? '<button type="button" class="del" onclick="closeModal();deleteIssuance(\'' + first.id + '\')">حذف</button>' : '') +
+      '</div>' +
+    '</div>';
+    openModal('عملية صرف', html);
   }
 
   window.renderIssuances = renderIssuances;
   window.AXIss = {
-    batches: batches, draw: drawList, batch: batch,
+    batches: batches, draw: drawList, open: open, batch: open,
     status: function (s) { F().status = s; F().limit = PAGE; drawList(); },
-    group: function (g) { F().group = g; renderIssuances(); },
+    group: function (g) { F().group = g; F().limit = PAGE; drawList(); document.querySelectorAll('.isl-seg button').forEach(function (b) { b.classList.toggle('on', b.getAttribute('onclick').indexOf("'" + g + "'") > 0); }); },
     more: function () { F().limit += PAGE; drawList(); },
     toggleF: function () {
       var f = F(); f._open = !f._open;
-      var p = document.getElementById('isx-filters'), b = document.querySelector('.isx-ftoggle');
+      var p = document.getElementById('isx-filters'), b = document.querySelector('.isl-ftoggle');
       if (p) p.hidden = !f._open;
       if (b) { b.classList.toggle('on', f._open); b.setAttribute('aria-expanded', f._open); }
     },
     reset: function () {
-      var g = F().group;
-      window.issuanceFilters = { search: '', from: '', to: '', customerId: '', productId: '', status: '', group: g, limit: PAGE };
+      var o = F()._open;
+      window.issuanceFilters = { search: '', from: '', to: '', customerId: '', productId: '', status: '', group: 'day', limit: PAGE, _open: o };
       try { issuanceFilters = window.issuanceFilters; } catch (e) {}
       renderIssuances();
     }

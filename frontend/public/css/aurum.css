@@ -28,43 +28,44 @@ html.aurum {
 
 /* ── Light (My Life "paper") ── */
 html.aurum[data-theme="light"] {
+  /* 4.10 · day theme in the logo's own colors: white paper, navy ink, gold accent */
   color-scheme: light;
-  --ax-bg: #F2F2F2;
+  --ax-bg: #EDF1F7;
   --ax-side: #FFFFFF;
   --ax-surface: #FFFFFF;
-  --ax-surface-2: #F6F6F6;
-  --ax-surface-3: #EDEDED;
-  --ax-line: #E6E6E6;
-  --ax-line-2: #D4D4D4;
-  --ax-text: #000000;
-  --ax-muted: #6B6B6B;
-  --ax-faint: #9A9A9A;
-  --ax-ink: #000000;          /* the accent is the ink itself: black */
+  --ax-surface-2: #F2F5FA;
+  --ax-surface-3: #E6EBF3;
+  --ax-line: #E0E6EF;
+  --ax-line-2: #C5CFDE;
+  --ax-text: #0B1630;
+  --ax-muted: #536079;
+  --ax-faint: #8590A6;
+  --ax-ink: #002055;          /* the logo navy */
   --ax-on-ink: #FFFFFF;
-  --ax-deep: #000000;         /* header / hero panel */
+  --ax-deep: #002055;         /* header / hero panel */
   --ax-on-deep: #FFFFFF;
-  --ax-deep-muted: #A6A6A6;
-  --ax-gold: var(--ax-ink);
-  --ax-gold-2: #2A2A2A;
-  --ax-gold-soft: rgba(0, 0, 0, .06);
-  --ax-primary: #000000;
-  --ax-primary-hover: #2A2A2A;
+  --ax-deep-muted: #A9B8D6;
+  --ax-gold: #D79613;         /* the logo gold */
+  --ax-gold-2: #B87C08;
+  --ax-gold-soft: rgba(215, 150, 19, .14);
+  --ax-primary: #002055;
+  --ax-primary-hover: #0A2D6E;
   --ax-primary-ink: #FFFFFF;
-  --ax-primary-rgb: 0, 0, 0;
-  --ax-blue: #1D6FF2;   --ax-blue-soft: #DBE8FE;
-  --ax-ok: #1E9A4C;     --ax-ok-soft: #DDF3E4;
-  --ax-warn: #D98200;   --ax-warn-soft: #FEE8D4;
-  --ax-bad: #E01B0F;    --ax-bad-soft: #FCDAD7;
-  --ax-violet: #7C3AED; --ax-violet-soft: #E9E1FE;
-  --ax-teal: #00A9A0;   --ax-teal-soft: #CFF3F1;
-  --ax-pink: #E8115B;   --ax-pink-soft: #FCDAE7;
-  --ax-shadow: 0 1px 2px rgba(19, 38, 48, .05), 0 8px 24px -12px rgba(19, 38, 48, .16);
-  --ax-shadow-lift: 0 2px 6px rgba(19, 38, 48, .07), 0 18px 40px -16px rgba(19, 38, 48, .28);
-  --ax-shadow-lg: 0 24px 60px -12px rgba(0, 0, 0, .28);
-  --ax-hover: rgba(0, 0, 0, .04);
-  --ax-active: rgba(0, 0, 0, .06);
-  --ax-input: #F2F2F2;
-  --ax-ripple: rgba(0, 0, 0, .08);
+  --ax-primary-rgb: 0, 32, 85;
+  --ax-blue: #1F63E0;   --ax-blue-soft: #DCE7FD;
+  --ax-ok: #138A47;     --ax-ok-soft: #DBF2E4;
+  --ax-warn: #C27400;   --ax-warn-soft: #FDEBD2;
+  --ax-bad: #D5221A;    --ax-bad-soft: #FBDEDB;
+  --ax-violet: #6D3BDB; --ax-violet-soft: #E8E0FD;
+  --ax-teal: #00958D;   --ax-teal-soft: #D2F1EF;
+  --ax-pink: #D41459;   --ax-pink-soft: #FBDCE7;
+  --ax-shadow: 0 1px 2px rgba(0, 32, 85, .06), 0 10px 26px -14px rgba(0, 32, 85, .22);
+  --ax-shadow-lift: 0 2px 6px rgba(0, 32, 85, .08), 0 20px 42px -16px rgba(0, 32, 85, .32);
+  --ax-shadow-lg: 0 24px 60px -12px rgba(0, 32, 85, .32);
+  --ax-hover: rgba(0, 32, 85, .045);
+  --ax-active: rgba(0, 32, 85, .07);
+  --ax-input: #F2F5FA;
+  --ax-ripple: rgba(0, 32, 85, .1);
 }
 
 /* ── Dark (My Life night) ── */
@@ -1668,6 +1669,16 @@ html.aurum .pxs {
   background: var(--bg); color: #fff; box-shadow: var(--ax-shadow-lift); isolation: isolate;
 }
 html.aurum[data-theme="dark"] .pxs { box-shadow: 0 0 0 1px #1c1a28; }
+/* day theme: the scene takes the logo navy with blue and gold light instead of violet */
+html.aurum[data-theme="light"] .pxs { --bg: #00204F; }
+html.aurum[data-theme="light"] .pxs-g1 { background: radial-gradient(circle, rgba(58, 128, 255, .55), transparent 70%); }
+html.aurum[data-theme="light"] .pxs-g2 { background: radial-gradient(circle, rgba(215, 150, 19, .34), transparent 70%); }
+html.aurum[data-theme="light"] .pxs-c { border-color: rgba(150, 186, 255, .3); }
+html.aurum[data-theme="light"] .pxs-c.on { background: #E0A21E; border-color: #F6C25A; box-shadow: 0 0 14px rgba(224, 162, 30, .5); }
+html.aurum[data-theme="light"] .pxs-c svg { stroke: #00204F; }
+html.aurum[data-theme="light"] .pxs-cap-dot { background: #F6C25A; box-shadow: 0 0 10px #F6C25A; }
+html.aurum[data-theme="light"] .pxs-tile { background: rgba(255, 255, 255, .06); }
+html.aurum[data-theme="light"] .pxs-tile:hover { background: rgba(255, 255, 255, .1); }
 html.aurum .pxs-stage { position: relative; height: 480px; overflow: hidden; perspective: 1100px; }
 html.aurum .pxs-glow { position: absolute; border-radius: 50%; filter: blur(60px); pointer-events: none; will-change: transform; }
 html.aurum .pxs-g1 { width: 420px; height: 320px; top: -120px; right: 8%; background: radial-gradient(circle, rgba(108, 84, 255, .55), transparent 70%); }
@@ -2726,149 +2737,150 @@ html.aurum .ag-legend li span { white-space: nowrap; }
 }
 
 /* ════════════════════════════════════════════════════════════════════
-   32. 4.9 · صرف الورق — القايمة المنظمة (js/isslist.js)
+   32. 4.10 · صرف الورق — القايمة (js/isslist.js)
+   one quiet line per صرف: status dot · center and item · amount and state.
+   no buttons in the list — tapping a line opens the صرف sheet.
 ════════════════════════════════════════════════════════════════════ */
-html.aurum .isx-stats .stat-value small { font-size: 13px; font-weight: 600; color: var(--ax-faint); }
-html.aurum .isx-stats .stat-sub b { color: var(--ax-bad); }
-html.aurum .isx-tools { background: var(--ax-surface); border-radius: var(--ax-radius); box-shadow: var(--ax-shadow); padding: 12px; margin-bottom: 14px; }
-html.aurum .isx-top { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-html.aurum .isx-search { flex: 1 1 260px; min-width: 0; display: flex; align-items: center; gap: 8px; height: 44px; padding: 0 14px; border-radius: 14px; background: var(--ax-input); margin: 0; cursor: text; }
-html.aurum .isx-search svg { width: 18px; height: 18px; color: var(--ax-faint); flex: none; }
-html.aurum .isx-search input#iss-search { flex: 1; min-width: 0; border: 0 !important; outline: 0; background: transparent !important; box-shadow: none !important; color: var(--ax-text); font: 500 14px var(--ax-font); padding: 0 !important; height: 100%; }
-html.aurum .isx-search input::-webkit-search-cancel-button { filter: grayscale(1); }
-html.aurum .isx-ftoggle { height: 44px; border: 0; cursor: pointer; border-radius: 14px; padding: 0 14px; background: var(--ax-surface-2); color: var(--ax-text); font: 700 13px var(--ax-font); display: inline-flex; align-items: center; gap: 6px; }
-html.aurum .isx-ftoggle svg { width: 16px; height: 16px; }
-html.aurum .isx-ftoggle.on { box-shadow: inset 0 0 0 1.5px var(--ax-ink); }
-html.aurum .isx-ftoggle em { font-style: normal; font-size: 11px; min-width: 18px; height: 18px; border-radius: 999px; display: grid; place-items: center; background: var(--ax-bad); color: #fff; padding: 0 5px; }
-html.aurum .isx-seg { display: inline-flex; gap: 2px; padding: 4px; border-radius: 14px; background: var(--ax-surface-2); height: 44px; box-sizing: border-box; }
-html.aurum .isx-seg button { border: 0; cursor: pointer; border-radius: 10px; padding: 0 14px; background: transparent; color: var(--ax-muted); font: 700 13px var(--ax-font); white-space: nowrap; }
-html.aurum .isx-seg button.on { background: var(--ax-ink); color: var(--ax-on-ink); }
-html.aurum .isx-filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 8px; margin-top: 10px; align-items: end; }
-html.aurum .isx-filters > * { min-width: 0; }
-html.aurum .isx-filters[hidden] { display: none; }
-html.aurum .isx-filters .form-control { width: 100% !important; min-width: 0 !important; height: 42px; }
-html.aurum .isx-date { display: flex; flex-direction: column; gap: 3px; margin: 0; min-width: 0; }
-html.aurum .isx-date span { font-size: 11px; font-weight: 700; color: var(--ax-faint); padding-inline-start: 4px; }
-html.aurum .isx-reset { height: 42px; border: 0; cursor: pointer; border-radius: 12px; background: transparent; color: var(--ax-bad); font: 700 13px var(--ax-font); }
-html.aurum .isx-chips { display: flex; gap: 6px; overflow-x: auto; margin-top: 10px; padding-bottom: 2px; scrollbar-width: none; }
-html.aurum .isx-chips::-webkit-scrollbar { display: none; }
-html.aurum .isx-chips button { flex: none; border: 0; cursor: pointer; border-radius: 999px; padding: 8px 14px; background: var(--ax-surface-2); color: var(--ax-text); font: 700 12.5px var(--ax-font); display: inline-flex; gap: 6px; align-items: center; }
-html.aurum .isx-chips button em { font-style: normal; font-size: 11.5px; color: var(--ax-faint); font-variant-numeric: tabular-nums; }
-html.aurum .isx-chips button.warn em { color: var(--ax-bad); }
-html.aurum .isx-chips button.on { background: var(--ax-ink); color: var(--ax-on-ink); }
-html.aurum .isx-chips button.on em { color: inherit; opacity: .7; }
+html.aurum .isl-page { max-width: 980px; margin: 0 auto; }
+html.aurum .isl-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+html.aurum .isl-head .page-subtitle { margin-top: 2px; }
+html.aurum .isl-head-a { display: flex; gap: 8px; flex-wrap: wrap; }
+html.aurum .isl-head-a .btn svg { width: 17px; height: 17px; }
+html.aurum .isl-sum { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); background: var(--ax-surface); border-radius: var(--ax-radius); box-shadow: var(--ax-shadow); margin-bottom: 14px; }
+html.aurum .isl-sum > div { display: flex; flex-direction: column; gap: 2px; padding: 14px 18px; min-width: 0; }
+html.aurum .isl-sum > div + div { box-shadow: inset -1px 0 0 var(--ax-line); }
+html.aurum .isl-sum span { font-size: 12.5px; font-weight: 600; color: var(--ax-muted); }
+html.aurum .isl-sum b { font: 800 22px/1.25 var(--ax-display); color: var(--ax-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+html.aurum .isl-sum small { font-size: 11.5px; color: var(--ax-faint); }
+html.aurum .isl-sum .warn b { color: var(--ax-warn); }
 
-html.aurum .isx-list { display: flex; flex-direction: column; gap: 14px; margin-bottom: 18px; }
-html.aurum .isx-group { background: var(--ax-surface); border-radius: var(--ax-radius); box-shadow: var(--ax-shadow); overflow: hidden; animation: axRise .4s var(--ax-ease) both; }
-html.aurum .isx-gh { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding: 13px 16px 11px; background: var(--ax-surface-2); flex-wrap: wrap; }
-html.aurum .isx-gh b { font: 700 16px var(--ax-display); }
-html.aurum .isx-gh span { font-size: 12.5px; color: var(--ax-muted); font-variant-numeric: tabular-nums; }
-html.aurum .isx-gh em { font-style: normal; color: var(--ax-bad); font-weight: 700; }
+html.aurum .isl-tools { display: flex; gap: 8px; }
+html.aurum .isl-search { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; height: 46px; padding: 0 16px; border-radius: 14px; background: var(--ax-surface); box-shadow: var(--ax-shadow); margin: 0; cursor: text; }
+html.aurum .isl-search svg { width: 18px; height: 18px; color: var(--ax-faint); flex: none; }
+html.aurum .isl-search input#iss-search { flex: 1; min-width: 0; height: 100%; border: 0 !important; outline: 0; background: transparent !important; box-shadow: none !important; color: var(--ax-text); font: 500 14.5px var(--ax-font); padding: 0 !important; }
+html.aurum .isl-search:focus-within { box-shadow: var(--ax-shadow), 0 0 0 1.5px var(--ax-ink); }
+html.aurum .isl-ftoggle { height: 46px; border: 0; cursor: pointer; border-radius: 14px; padding: 0 16px; background: var(--ax-surface); box-shadow: var(--ax-shadow); color: var(--ax-text); font: 700 13.5px var(--ax-font); display: inline-flex; align-items: center; gap: 7px; }
+html.aurum .isl-ftoggle svg { width: 18px; height: 18px; }
+html.aurum .isl-ftoggle.on { box-shadow: var(--ax-shadow), inset 0 0 0 1.5px var(--ax-ink); }
+html.aurum .isl-ftoggle em { font-style: normal; font-size: 11px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; display: grid; place-items: center; background: var(--ax-ink); color: var(--ax-on-ink); }
+html.aurum .isl-ftoggle em[hidden] { display: none; }
+html.aurum .isl-filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 8px; align-items: end; margin-top: 8px; padding: 12px; border-radius: 16px; background: var(--ax-surface); box-shadow: var(--ax-shadow); }
+html.aurum .isl-filters[hidden] { display: none; }
+html.aurum .isl-filters > * { min-width: 0; }
+html.aurum .isl-filters .form-control { width: 100% !important; min-width: 0 !important; height: 42px; }
+html.aurum .isl-seg { grid-column: 1 / -1; display: flex; align-items: center; gap: 4px; }
+html.aurum .isl-seg span { font-size: 12.5px; font-weight: 600; color: var(--ax-muted); margin-inline-end: 6px; }
+html.aurum .isl-seg button { border: 0; cursor: pointer; border-radius: 999px; padding: 7px 14px; background: var(--ax-surface-2); color: var(--ax-text); font: 600 13px var(--ax-font); }
+html.aurum .isl-seg button.on { background: var(--ax-ink); color: var(--ax-on-ink); }
+html.aurum .isl-date { display: flex; flex-direction: column; gap: 3px; margin: 0; min-width: 0; }
+html.aurum .isl-date span { font-size: 11px; font-weight: 700; color: var(--ax-faint); padding-inline-start: 4px; }
+html.aurum .isl-reset { height: 42px; border: 0; cursor: pointer; border-radius: 12px; background: transparent; color: var(--ax-bad); font: 700 13px var(--ax-font); }
+html.aurum .isl-chips { display: flex; gap: 6px; margin: 12px 0; overflow-x: auto; scrollbar-width: none; }
+html.aurum .isl-chips::-webkit-scrollbar { display: none; }
+html.aurum .isl-chips button { flex: none; cursor: pointer; border-radius: 999px; padding: 7px 14px; border: 1px solid var(--ax-line-2); background: transparent; color: var(--ax-muted); font: 600 13px var(--ax-font); display: inline-flex; align-items: center; gap: 6px; }
+html.aurum .isl-chips button em { font-style: normal; font-size: 11.5px; font-weight: 700; color: var(--ax-faint); font-variant-numeric: tabular-nums; }
+html.aurum .isl-chips button.late em { color: var(--ax-bad); }
+html.aurum .isl-chips button.on { background: var(--ax-ink); border-color: var(--ax-ink); color: var(--ax-on-ink); }
+html.aurum .isl-chips button.on em { color: inherit; opacity: .75; }
+html.aurum .isl-found { font-size: 12.5px; color: var(--ax-muted); margin: 0 6px 8px; font-variant-numeric: tabular-nums; }
 
-html.aurum .isx-row { display: grid; grid-template-columns: 4px minmax(0, 1fr) 170px 104px 184px; grid-template-areas: "st t money pill acts" "st what money pill acts" "st meta money pill acts"; gap: 4px 14px; align-items: center; padding: 13px 16px; }
-html.aurum .isx-row + .isx-row { border-top: 1px solid var(--ax-line); }
-html.aurum .isx-st { grid-area: st; align-self: stretch; width: 4px; border-radius: 4px; background: var(--ax-line-2); }
-html.aurum .isx-row.s-paid .isx-st { background: var(--ax-ok); }
-html.aurum .isx-row.s-partial .isx-st { background: var(--ax-warn); }
-html.aurum .isx-row.is-late .isx-st { background: var(--ax-bad); }
-html.aurum .isx-t { grid-area: t; min-width: 0; }
-html.aurum .isx-what { grid-area: what; min-width: 0; }
-html.aurum .isx-meta { grid-area: meta; min-width: 0; }
-html.aurum .isx-t b { display: block; font-size: 15px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-html.aurum .isx-one { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; font-size: 13px; }
-html.aurum .isx-one b { font-weight: 600; color: var(--ax-text); }
-html.aurum .isx-one span { color: var(--ax-muted); font-variant-numeric: tabular-nums; }
-html.aurum .isx-items { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 3px; }
-html.aurum .isx-items li { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 10px; font-size: 12.5px; align-items: baseline; padding: 4px 8px; border-radius: 8px; background: var(--ax-surface-2); }
-html.aurum .isx-items li b { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-html.aurum .isx-items li span { color: var(--ax-muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
-html.aurum .isx-items li i { font-style: normal; font-weight: 700; white-space: nowrap; font-variant-numeric: tabular-nums; }
-html.aurum .isx-items li.more { display: block; color: var(--ax-faint); background: transparent; padding: 0 8px; }
-html.aurum .isx-meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 2px; }
-html.aurum .isx-no { font-size: 11.5px; font-weight: 700; color: var(--ax-faint); font-variant-numeric: tabular-nums; }
-html.aurum .isx-due { font-style: normal; font-size: 11px; font-weight: 700; padding: 2px 9px; border-radius: 999px; background: var(--ax-surface-2); color: var(--ax-muted); white-space: nowrap; }
-html.aurum .isx-due.soon { background: var(--ax-warn-soft); color: var(--ax-warn); }
-html.aurum .isx-due.late { background: var(--ax-bad-soft); color: var(--ax-bad); }
-html.aurum .isx-note { font-size: 11.5px; color: var(--ax-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
-html.aurum .isx-money { grid-area: money; display: flex; flex-direction: column; align-items: flex-end; gap: 5px; min-width: 0; }
-html.aurum .isx-total { font: 800 18px var(--ax-display); white-space: nowrap; font-variant-numeric: tabular-nums; }
-html.aurum .isx-bar { display: block; width: 120px; max-width: 100%; height: 5px; border-radius: 999px; background: var(--ax-surface-3); overflow: hidden; }
-html.aurum .isx-bar i { display: block; height: 100%; border-radius: inherit; background: var(--ax-ok); }
-html.aurum .isx-rem { font-size: 11.5px; color: var(--ax-faint); white-space: nowrap; }
-html.aurum .isx-rem b { color: var(--ax-text); font-variant-numeric: tabular-nums; }
-html.aurum .isx-pill { grid-area: pill; justify-self: center; font-style: normal; font-size: 11.5px; font-weight: 700; padding: 4px 10px; border-radius: 999px; white-space: nowrap; background: var(--ax-surface-2); color: var(--ax-muted); }
-html.aurum .s-paid .isx-pill { background: var(--ax-ok-soft); color: var(--ax-ok); }
-html.aurum .s-partial .isx-pill { background: var(--ax-warn-soft); color: var(--ax-warn); }
-html.aurum .is-late .isx-pill { background: var(--ax-bad); color: #fff; }
-html.aurum .isx-acts { grid-area: acts; display: flex; gap: 2px; justify-content: flex-end; }
-html.aurum .isx-acts button { width: 34px; height: 34px; border: 0; cursor: pointer; border-radius: 10px; background: transparent; color: var(--ax-muted); display: inline-flex; align-items: center; justify-content: center; gap: 5px; transition: background .15s ease, color .15s ease; }
-html.aurum .isx-acts button:hover { background: var(--ax-hover); color: var(--ax-text); }
-html.aurum .isx-acts button svg { width: 17px; height: 17px; flex: none; }
-html.aurum .isx-acts button span { display: none; }
-html.aurum .isx-acts button.pay { color: var(--ax-ok); }
-html.aurum .isx-acts button.del { color: var(--ax-bad); }
-html.aurum .isx-acts button.isx-b { color: var(--ax-text); }
-html.aurum .isx-more { border: 0; cursor: pointer; width: 100%; padding: 14px; border-radius: 16px; background: var(--ax-surface); box-shadow: var(--ax-shadow); color: var(--ax-text); font: 700 14px var(--ax-font); }
-html.aurum .isx-more span { color: var(--ax-faint); font-weight: 600; }
-html.aurum .isx-empty { background: var(--ax-surface); border-radius: var(--ax-radius); box-shadow: var(--ax-shadow); padding: 36px 16px; display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; }
-html.aurum .isx-empty div { font-size: 34px; }
-html.aurum .isx-empty b { font-size: 15px; }
-html.aurum .isx-empty button { border: 0; cursor: pointer; border-radius: 12px; padding: 10px 18px; background: var(--ax-surface-2); color: var(--ax-text); font: 700 13px var(--ax-font); }
-html.aurum .isx-empty button.pri { background: var(--ax-ink); color: var(--ax-on-ink); }
-/* the items sheet of a multi-item صرف */
-html.aurum .isx-sheet-h { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; padding: 12px 14px; border-radius: 14px; background: var(--ax-surface-2); margin-bottom: 10px; }
-html.aurum .isx-sheet-h div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-html.aurum .isx-sheet-h span { font-size: 12px; color: var(--ax-faint); }
-html.aurum .isx-sheet-m { align-items: flex-end; }
-html.aurum .isx-sheet-m b { font: 800 18px var(--ax-display); white-space: nowrap; }
-html.aurum .isx-sheet-l { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
-html.aurum .isx-sheet-l li { display: flex; align-items: center; gap: 10px; padding: 10px 4px; }
-html.aurum .isx-sheet-l li + li { border-top: 1px solid var(--ax-line); }
-html.aurum .isx-sheet-l li > div:first-child { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-html.aurum .isx-sheet-l li span { font-size: 12.5px; color: var(--ax-muted); font-variant-numeric: tabular-nums; }
-html.aurum .isx-sheet-a { display: flex; gap: 4px; }
-html.aurum .isx-sheet-a button { width: 38px; height: 38px; border: 0; cursor: pointer; border-radius: 11px; background: var(--ax-surface-2); color: var(--ax-text); display: grid; place-items: center; }
-html.aurum .isx-sheet-a button svg { width: 17px; height: 17px; }
-html.aurum .isx-sheet-a button.del { color: var(--ax-bad); }
+/* the list */
+html.aurum .isl { background: var(--ax-surface); border-radius: var(--ax-radius); box-shadow: var(--ax-shadow); overflow: hidden; margin-bottom: 14px; }
+html.aurum .isl-day { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding: 9px 18px; background: var(--ax-surface-2); }
+html.aurum .isl-day b { font-size: 13.5px; font-weight: 700; color: var(--ax-text); }
+html.aurum .isl-day span { font-size: 12.5px; color: var(--ax-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+html.aurum .isl-row { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto 16px; gap: 14px; align-items: center; width: 100%; padding: 13px 18px; margin: 0; border: 0; border-top: 1px solid var(--ax-line); background: transparent; color: inherit; font: inherit; text-align: start; cursor: pointer; transition: background .15s ease; }
+html.aurum .isl-day + .isl-row { border-top: 0; }
+html.aurum .isl-row:hover { background: var(--ax-hover); }
+html.aurum .isl-row:focus-visible { outline: 2px solid var(--ax-blue); outline-offset: -2px; }
+html.aurum .isl-dot { width: 10px; height: 10px; border-radius: 50%; box-sizing: border-box; }
+html.aurum .t-paid .isl-dot { background: var(--ax-ok); }
+html.aurum .t-part .isl-dot { background: var(--ax-warn); }
+html.aurum .t-open .isl-dot { border: 2px solid var(--ax-warn); }
+html.aurum .t-late .isl-dot { background: var(--ax-bad); box-shadow: 0 0 0 3px var(--ax-bad-soft); }
+html.aurum .isl-main { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+html.aurum .isl-main b { font-size: 15px; font-weight: 700; color: var(--ax-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+html.aurum .isl-main span { font-size: 13px; color: var(--ax-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+html.aurum .isl-amt { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+html.aurum .isl-amt b { font: 800 17px/1.25 var(--ax-display); color: var(--ax-text); white-space: nowrap; font-variant-numeric: tabular-nums; }
+html.aurum .isl-amt span { font-size: 12.5px; font-weight: 600; white-space: nowrap; font-variant-numeric: tabular-nums; }
+html.aurum .t-paid .isl-amt span { color: var(--ax-ok); }
+html.aurum .t-part .isl-amt span, html.aurum .t-open .isl-amt span { color: var(--ax-warn); }
+html.aurum .t-late .isl-amt span { color: var(--ax-bad); }
+html.aurum .isl-chev { color: var(--ax-line-2); display: grid; place-items: center; }
+html.aurum .isl-chev svg { width: 16px; height: 16px; }
+html.aurum .isl-row:hover .isl-chev { color: var(--ax-muted); }
+html.aurum .isl-more { border: 0; cursor: pointer; width: 100%; padding: 14px; border-radius: 16px; background: var(--ax-surface); box-shadow: var(--ax-shadow); color: var(--ax-text); font: 700 14px var(--ax-font); margin-bottom: 18px; }
+html.aurum .isl-empty { background: var(--ax-surface); border-radius: var(--ax-radius); box-shadow: var(--ax-shadow); padding: 40px 16px; display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; }
+html.aurum .isl-empty b { font-size: 16px; }
+html.aurum .isl-empty span { font-size: 13px; color: var(--ax-muted); margin-bottom: 8px; }
+html.aurum .isl-empty button { border: 0; cursor: pointer; border-radius: 12px; padding: 10px 18px; background: var(--ax-surface-2); color: var(--ax-text); font: 700 13.5px var(--ax-font); }
+html.aurum .isl-empty button.pri { background: var(--ax-ink); color: var(--ax-on-ink); }
 
-@media (max-width: 1100px) and (min-width: 701px) {
-  html.aurum .isx-row { grid-template-columns: 4px minmax(0, 1fr) 150px 184px; grid-template-areas: "st t money acts" "st what money acts" "st meta pill acts"; }
-  html.aurum .isx-pill { justify-self: end; }
-}
+/* the صرف sheet */
+html.aurum .isl-sh-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+html.aurum .isl-sh-top > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+html.aurum .isl-sh-top b { font: 800 22px/1.3 var(--ax-display); }
+html.aurum .isl-sh-top span { font-size: 13px; color: var(--ax-muted); }
+html.aurum .isl-sh-st { font-style: normal; flex: none; font-size: 12.5px; font-weight: 700; padding: 5px 12px; border-radius: 999px; background: var(--ax-warn-soft); color: var(--ax-warn); }
+html.aurum .t-paid .isl-sh-st { background: var(--ax-ok-soft); color: var(--ax-ok); }
+html.aurum .t-late .isl-sh-st { background: var(--ax-bad); color: #fff; }
+html.aurum .isl-sh-money { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 16px; }
+html.aurum .isl-sh-money > div { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border-radius: 14px; background: var(--ax-surface-2); min-width: 0; }
+html.aurum .isl-sh-money span { font-size: 12px; color: var(--ax-muted); }
+html.aurum .isl-sh-money b { font: 800 17px var(--ax-display); white-space: nowrap; font-variant-numeric: tabular-nums; }
+html.aurum .t-paid .isl-sh-money .rem b { color: var(--ax-ok); }
+html.aurum .t-part .isl-sh-money .rem b, html.aurum .t-open .isl-sh-money .rem b { color: var(--ax-warn); }
+html.aurum .t-late .isl-sh-money .rem b { color: var(--ax-bad); }
+html.aurum .isl-sh-bar { height: 6px; border-radius: 999px; background: var(--ax-surface-3); overflow: hidden; margin-top: 10px; }
+html.aurum .isl-sh-bar i { display: block; height: 100%; border-radius: inherit; background: var(--ax-ok); }
+html.aurum .isl-sh-due { margin: 10px 0 0; font-size: 13px; font-weight: 600; color: var(--ax-warn); }
+html.aurum .t-late .isl-sh-due { color: var(--ax-bad); }
+html.aurum .isl-sh-items { list-style: none; margin: 16px 0 0; padding: 0; border-top: 1px solid var(--ax-line); }
+html.aurum .isl-sh-items li { display: flex; align-items: center; gap: 12px; padding: 12px 2px; border-bottom: 1px solid var(--ax-line); }
+html.aurum .isl-sh-items li > div:first-child { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+html.aurum .isl-sh-items li b { font-size: 14.5px; font-weight: 700; }
+html.aurum .isl-sh-items li span { font-size: 12.5px; color: var(--ax-muted); font-variant-numeric: tabular-nums; }
+html.aurum .isl-sh-items li strong { font: 800 15.5px var(--ax-display); white-space: nowrap; font-variant-numeric: tabular-nums; }
+html.aurum .isl-sh-ia { display: flex; gap: 4px; }
+html.aurum .isl-sh-ia button { width: 36px; height: 36px; border: 0; cursor: pointer; border-radius: 10px; background: var(--ax-surface-2); color: var(--ax-text); display: grid; place-items: center; }
+html.aurum .isl-sh-ia button svg { width: 16px; height: 16px; }
+html.aurum .isl-sh-ia button.del { color: var(--ax-bad); }
+html.aurum .isl-sh-note { margin: 12px 0 0; padding: 10px 12px; border-radius: 12px; background: var(--ax-surface-2); font-size: 13.5px; line-height: 1.7; color: var(--ax-text); }
+html.aurum .isl-sh-acts { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+html.aurum .isl-sh-acts button { flex: 1 1 120px; height: 48px; border: 0; cursor: pointer; border-radius: 14px; background: var(--ax-surface-2); color: var(--ax-text); font: 700 14px var(--ax-font); }
+html.aurum .isl-sh-acts button:hover { background: var(--ax-surface-3); }
+html.aurum .isl-sh-acts button.pri { background: var(--ax-ink); color: var(--ax-on-ink); }
+html.aurum .isl-sh-acts button.del { flex: 0 1 96px; background: var(--ax-bad-soft); color: var(--ax-bad); }
+
 @media (max-width: 700px) {
-  html.aurum .isx-tools { padding: 10px; border-radius: 18px; }
-  html.aurum .isx-search { flex-basis: 100%; }
-  html.aurum .isx-ftoggle { flex: 1; justify-content: center; }
-  html.aurum .isx-seg { flex: 1.4; }
-  html.aurum .isx-seg button { flex: 1; padding: 0 8px; }
-  html.aurum .isx-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  html.aurum .isx-filters select { grid-column: 1 / -1; }
-  html.aurum .isx-reset { grid-column: 1 / -1; }
-  html.aurum .isx-list { gap: 12px; }
-  html.aurum .isx-group { border-radius: 18px; }
-  html.aurum .isx-gh { padding: 11px 14px 9px; }
-  html.aurum .isx-gh b { font-size: 15px; }
-  html.aurum .isx-gh span { font-size: 12px; }
-  html.aurum .isx-row { grid-template-columns: 4px minmax(0, 1fr) auto; grid-template-areas: "st t money" "st what what" "st meta pill" "st acts acts"; gap: 6px 12px; padding: 12px 14px; align-items: start; }
-  html.aurum .isx-row.one { grid-template-areas: "st t money" "st what money" "st meta pill" "st acts acts"; }
-  html.aurum .isx-bar { display: none; }
-  html.aurum .isx-meta { align-self: center; }
-  html.aurum .isx-pill { align-self: center !important; }
-  html.aurum .isx-money { gap: 4px; }
-  html.aurum .isx-total { font-size: 17px; }
-  html.aurum .isx-pill { justify-self: end; align-self: start; font-size: 11px; padding: 3px 9px; }
-  html.aurum .isx-t b { font-size: 14.5px; white-space: normal; }
-  html.aurum .isx-items li { gap: 8px; padding: 6px 9px; }
-  html.aurum .isx-acts { margin-top: 6px; gap: 6px; }
-  html.aurum .isx-acts button { flex: 1; width: auto; height: 38px; background: var(--ax-surface-2); color: var(--ax-text); border-radius: 11px; font: 700 12px var(--ax-font); }
-  html.aurum .isx-acts button svg { width: 15px; height: 15px; }
-  html.aurum .isx-acts button span { display: inline; }
-  html.aurum .isx-acts button.pay { background: var(--ax-ok-soft); color: var(--ax-ok); }
-  html.aurum .isx-acts button.del { flex: 0 0 42px; background: var(--ax-bad-soft); }
-  html.aurum .isx-acts button.del span { display: none; }
-}
-@media (max-width: 380px) {
-  html.aurum .isx-acts button span { display: none; }
+  html.aurum .isl-head { flex-direction: column; align-items: stretch; gap: 10px; margin-bottom: 12px; }
+  html.aurum .isl-head .page-subtitle { display: none; }
+  html.aurum .isl-head-a { flex-wrap: nowrap; }
+  html.aurum .isl-head-a .btn { flex: 1 1 auto; justify-content: center; padding-inline: 10px !important; font-size: 13px !important; min-height: 44px; white-space: nowrap; }
+  html.aurum .isl-head-a .btn-primary { order: -1; flex-grow: 1.3; }
+  html.aurum .isl-head-a .isl-xls { flex: 0 0 auto; }
+  html.aurum .isl-head-a .isl-xls span { display: none; }
+  html.aurum .isl-chips button { padding: 7px 12px; }
+  html.aurum .isl-sum { border-radius: 18px; }
+  html.aurum .isl-sum > div { padding: 11px 10px; }
+  html.aurum .isl-sum span { font-size: 11.5px; }
+  html.aurum .isl-sum b { font-size: 16px; }
+  html.aurum .isl-sum small { font-size: 11px; }
+  html.aurum .isl-ftoggle span { display: none; }
+  html.aurum .isl-ftoggle { padding: 0 13px; }
+  html.aurum .isl-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  html.aurum .isl-filters select, html.aurum .isl-reset { grid-column: 1 / -1; }
+  html.aurum .isl { border-radius: 18px; }
+  html.aurum .isl-day { padding: 8px 14px; }
+  html.aurum .isl-row { grid-template-columns: 10px minmax(0, 1fr) auto; gap: 12px; padding: 12px 14px; }
+  html.aurum .isl-chev { display: none; }
+  html.aurum .isl-main b { font-size: 14.5px; }
+  html.aurum .isl-main span { font-size: 12.5px; }
+  html.aurum .isl-amt b { font-size: 16px; }
+  html.aurum .isl-amt span { font-size: 12px; }
+  html.aurum .isl-sh-money b { font-size: 15px; }
+  html.aurum .isl-sh-top b { font-size: 20px; }
 }
 
 /* ════════════════════════════════════════════════════════════════════
@@ -3070,3 +3082,132 @@ html.aurum .axa-composer:focus-within { box-shadow: var(--ax-shadow-lift), 0 0 0
   html.aurum .axa-mark.busy i, html.aurum .axa-mark.busy::after, html.aurum .axa-micb.on { animation: none !important; }
   html.aurum .axa-slip, html.aurum .axa-bubble { animation: none !important; }
 }
+
+/* ════════════════════════════════════════════════════════════════════
+   34. 4.10 · عداد الورق في الهيدر (js/papermeter.js)
+════════════════════════════════════════════════════════════════════ */
+html.aurum .pm { --pm-c: var(--ax-ok); --pm-soft: var(--ax-ok-soft); }
+html.aurum .pm.s-warn, html.aurum .pm-pop.s-warn { --pm-c: var(--ax-warn); --pm-soft: var(--ax-warn-soft); }
+html.aurum .pm.s-bad, html.aurum .pm-pop.s-bad { --pm-c: var(--ax-bad); --pm-soft: var(--ax-bad-soft); }
+html.aurum .pm.s-none, html.aurum .pm-pop.s-none { --pm-c: var(--ax-faint); --pm-soft: var(--ax-surface-2); }
+html.aurum .pm-pop { --pm-c: var(--ax-ok); --pm-soft: var(--ax-ok-soft); }
+html.aurum .topbar .paper-counter.pm {
+  position: relative; display: inline-flex !important; align-items: center !important; gap: 10px !important;
+  height: 46px; padding: 0 12px 0 10px !important; margin: 0 2px; border: 0 !important; border-radius: 15px !important;
+  background: var(--ax-surface) !important; box-shadow: var(--ax-shadow) !important; color: var(--ax-text) !important;
+  cursor: pointer; font: inherit !important; overflow: visible; transition: box-shadow .2s ease, transform .15s ease;
+}
+html.aurum .topbar .paper-counter.pm:hover { box-shadow: var(--ax-shadow-lift) !important; transform: translateY(-1px); }
+html.aurum .topbar .paper-counter.pm:focus-visible { outline: 2px solid var(--ax-blue); outline-offset: 2px; }
+html.aurum .pm-ic { width: 32px; height: 32px; border-radius: 10px; display: grid; place-items: center; flex: none; background: var(--pm-soft); color: var(--pm-c); }
+html.aurum .topbar .pm-ic svg { width: 19px !important; height: 19px !important; color: var(--pm-c) !important; }
+html.aurum .pm-t { display: flex; flex-direction: column; align-items: flex-start; line-height: 1.1; }
+html.aurum .pm-lab { font-size: 10.5px; font-weight: 600; color: var(--ax-faint); }
+html.aurum .pm-v { display: inline-flex; align-items: baseline; gap: 4px; }
+html.aurum .topbar .pm .paper-counter-num { font: 800 18px/1.15 var(--ax-display) !important; color: var(--ax-text) !important; }
+html.aurum .pm-v em { font-style: normal; font-size: 11.5px; font-weight: 600; color: var(--ax-muted); }
+html.aurum .pm-sub { align-self: stretch; display: flex; align-items: center; padding-inline-start: 10px; box-shadow: inset -1px 0 0 var(--ax-line); font-size: 12px; font-weight: 700; color: var(--pm-c); white-space: nowrap; }
+html.aurum .pm-chev { display: grid; place-items: center; color: var(--ax-faint); }
+html.aurum .topbar .pm-chev svg { width: 14px !important; height: 14px !important; color: currentColor !important; transition: transform .2s ease; }
+html.aurum .pm.open .pm-chev svg { transform: rotate(180deg); }
+html.aurum .pm-lvl { position: absolute; inset-inline: 14px; bottom: 4px; height: 3px; border-radius: 999px; background: var(--ax-surface-3); overflow: hidden; pointer-events: none; }
+html.aurum .pm-lvl i { display: block; height: 100%; border-radius: inherit; background: var(--pm-c); transition: width .6s var(--ax-ease); }
+html.aurum .pm.s-bad .pm-ic { animation: pmPulse 1.8s ease-in-out infinite; }
+@keyframes pmPulse { 50% { box-shadow: 0 0 0 4px var(--pm-soft); } }
+html.aurum .pm.bump .paper-counter-num { animation: paperBump .45s cubic-bezier(.34, 1.56, .64, 1); }
+html.aurum .pm-delta { position: absolute; top: -12px; inset-inline-start: 42px; left: auto; transform: none; font: 800 12px var(--ax-font); padding: 2px 8px; border-radius: 999px; opacity: 0; pointer-events: none; text-shadow: none; z-index: 3; }
+html.aurum .pm-delta.down { background: var(--ax-warn-soft); color: var(--ax-warn); }
+html.aurum .pm-delta.up { background: var(--ax-ok-soft); color: var(--ax-ok); }
+html.aurum .pm-delta.show { animation: pmDelta 1.8s ease forwards; }
+@keyframes pmDelta { 0% { opacity: 0; transform: translateY(6px); } 15% { opacity: 1; transform: translateY(0); } 75% { opacity: 1; transform: translateY(-4px); } 100% { opacity: 0; transform: translateY(-12px); } }
+
+/* the panel */
+html.aurum .pm-backdrop { display: none; }
+html.aurum .pm-pop {
+  position: fixed; z-index: 1200; width: min(380px, calc(100vw - 24px)); max-height: min(560px, calc(100vh - 100px)); overflow: auto;
+  background: var(--ax-surface); color: var(--ax-text); border-radius: 20px; box-shadow: var(--ax-shadow-lg), 0 0 0 1px var(--ax-line);
+  padding: 16px; opacity: 0; transform: translateY(-6px) scale(.98); transform-origin: top center; pointer-events: none;
+  transition: opacity .18s ease, transform .22s var(--ax-ease);
+}
+html.aurum .pm-pop.show { opacity: 1; transform: none; pointer-events: auto; }
+html.aurum .pm-h { display: flex; align-items: flex-start; gap: 10px; }
+html.aurum .pm-h > div { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+html.aurum .pm-h span { font-size: 12.5px; font-weight: 600; color: var(--ax-muted); }
+html.aurum .pm-h b { font: 800 28px/1.15 var(--ax-display); font-variant-numeric: tabular-nums; }
+html.aurum .pm-h b small { font: 600 13px var(--ax-font); color: var(--ax-muted); }
+html.aurum .pm-h em { font-style: normal; font-size: 12px; font-weight: 700; padding: 5px 11px; border-radius: 999px; background: var(--pm-soft); color: var(--pm-c); white-space: nowrap; margin-top: 4px; }
+html.aurum .pm-x { width: 34px; height: 34px; border: 0; cursor: pointer; border-radius: 10px; background: var(--ax-surface-2); color: var(--ax-muted); display: grid; place-items: center; flex: none; }
+html.aurum .pm-x svg { width: 16px; height: 16px; }
+html.aurum .pm-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin: 14px 0 6px; }
+html.aurum .pm-stats > div { display: flex; flex-direction: column; gap: 1px; padding: 9px 10px; border-radius: 12px; background: var(--ax-surface-2); min-width: 0; }
+html.aurum .pm-stats span { font-size: 11px; color: var(--ax-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+html.aurum .pm-stats b { font: 800 16px var(--ax-display); font-variant-numeric: tabular-nums; }
+html.aurum .pm-items { list-style: none; margin: 0; padding: 0; }
+html.aurum .pm-items li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 10px; align-items: center; padding: 11px 2px; border-bottom: 1px solid var(--ax-line); }
+html.aurum .pm-items li:last-child { border-bottom: 0; }
+html.aurum .pm-in { min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+html.aurum .pm-in b { font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+html.aurum .pm-in span { font-size: 12px; color: var(--ax-muted); }
+html.aurum .pm-items li.s-bad .pm-in span { color: var(--ax-bad); font-weight: 600; }
+html.aurum .pm-items li.s-warn .pm-in span { color: var(--ax-warn); font-weight: 600; }
+html.aurum .pm-items strong { font: 800 16px var(--ax-display); white-space: nowrap; font-variant-numeric: tabular-nums; }
+html.aurum .pm-items strong small { font: 600 11.5px var(--ax-font); color: var(--ax-muted); }
+html.aurum .pm-ib { grid-column: 1 / -1; height: 4px; border-radius: 999px; background: var(--ax-surface-2); overflow: hidden; }
+html.aurum .pm-ib u { display: block; height: 100%; border-radius: inherit; background: var(--ax-ok); text-decoration: none; }
+html.aurum .pm-items li.s-warn .pm-ib u { background: var(--ax-warn); }
+html.aurum .pm-items li.s-bad .pm-ib u { background: var(--ax-bad); }
+html.aurum .pm-items li.s-idle .pm-ib u { background: var(--ax-line-2); }
+html.aurum .pm-empty { margin: 10px 0; font-size: 13px; color: var(--ax-muted); }
+html.aurum .pm-f { display: flex; gap: 6px; margin-top: 12px; }
+html.aurum .pm-f button { flex: 1; height: 42px; border: 0; cursor: pointer; border-radius: 12px; background: var(--ax-surface-2); color: var(--ax-text); font: 700 13px var(--ax-font); white-space: nowrap; }
+html.aurum .pm-f button.pri { background: var(--ax-ink); color: var(--ax-on-ink); }
+
+@media (min-width: 769px) {
+  html.aurum .topbar .search-box { min-width: 170px !important; }
+  html.aurum .topbar-title { flex: 0 0 auto; max-width: 34vw; }
+}
+@media (max-width: 1599px) and (min-width: 769px) { html.aurum .topbar .pm .pm-lab { display: none; } }
+@media (max-width: 1250px) and (min-width: 769px) { html.aurum .topbar .pm .pm-sub, html.aurum .topbar .pm .pm-chev { display: none; } }
+
+/* mobile: a full row under the page title, inside the deep header */
+@media (max-width: 768px) {
+  html.aurum .topbar { flex-wrap: wrap !important; row-gap: 10px !important; height: auto !important; }
+  html.aurum .topbar .topbar-title { flex: 1 1 0 !important; min-width: 0 !important; }
+  html.aurum.pm-mini .topbar .paper-counter.pm { display: none !important; }
+  html.aurum .topbar .paper-counter.pm {
+    display: flex !important; order: 99; flex: 1 1 100%; width: 100%; height: 48px; margin: 0 !important; padding: 0 12px !important;
+    background: rgba(255, 255, 255, .08) !important; box-shadow: none !important; color: var(--ax-on-deep) !important; border-radius: 14px !important;
+  }
+  html.aurum .topbar .paper-counter.pm:hover { transform: none; }
+  html.aurum .topbar .pm-ic { background: rgba(255, 255, 255, .1); }
+  html.aurum .topbar .pm .paper-counter-num { color: var(--ax-on-deep) !important; font-size: 19px !important; }
+  html.aurum .topbar .pm-t { flex-direction: row; align-items: baseline; gap: 8px; }
+  html.aurum .topbar .pm-lab { font-size: 12px; color: var(--ax-deep-muted); }
+  html.aurum .topbar .pm-v em { color: var(--ax-deep-muted); }
+  html.aurum .topbar .pm-sub { margin-inline-start: auto; box-shadow: none; padding: 0; font-size: 12px; }
+  html.aurum .topbar .pm-chev { color: var(--ax-deep-muted); }
+  html.aurum .topbar .pm-lvl { inset-inline: 12px; bottom: 0; height: 3px; background: rgba(255, 255, 255, .1); }
+  html.aurum .topbar .pm.s-ok .pm-sub, html.aurum .topbar .pm.s-ok .pm-ic { color: #5CE89A; }
+  html.aurum .topbar .pm.s-ok .pm-ic svg { color: #5CE89A !important; }
+  html.aurum .topbar .pm.s-ok .pm-lvl i { background: #5CE89A; }
+  html.aurum .topbar .pm.s-warn .pm-sub, html.aurum .topbar .pm.s-warn .pm-ic svg { color: #FFC24D !important; }
+  html.aurum .topbar .pm.s-warn .pm-lvl i { background: #FFC24D; }
+  html.aurum .topbar .pm.s-bad .pm-sub, html.aurum .topbar .pm.s-bad .pm-ic svg { color: #FF8A7A !important; }
+  html.aurum .topbar .pm.s-bad .pm-lvl i { background: #FF8A7A; }
+  html.aurum .topbar .pm.s-bad .pm-ic { animation: none; background: rgba(255, 120, 100, .16); }
+  html.aurum .pm-delta { top: -8px; inset-inline-start: 48px; }
+  /* the panel becomes a bottom sheet */
+  html.aurum .pm-backdrop { display: block; position: fixed; inset: 0; z-index: 1190; background: rgba(0, 16, 45, .4); opacity: 0; pointer-events: none; transition: opacity .2s ease; }
+  html.aurum.pm-on .pm-backdrop { opacity: 1; pointer-events: auto; }
+  html.aurum .pm-pop { top: auto !important; left: 0 !important; right: 0; bottom: 0; width: 100%; max-height: 82vh; border-radius: 24px 24px 0 0; padding: 18px 16px calc(18px + env(safe-area-inset-bottom, 0px)); transform: translateY(100%); transform-origin: bottom center; }
+  html.aurum .pm-pop.show { transform: none; }
+}
+@media (prefers-reduced-motion: reduce) { html.aurum .pm-ic, html.aurum .pm-delta.show { animation: none !important; } html.aurum .pm-pop { transition: opacity .1s; } }
+
+/* 4.10 · day theme: the old violet / orange action buttons take the logo gold, so every page
+   speaks navy (main action) + gold (second action) + white */
+html.aurum[data-theme="light"] .btn[style*="#7c3aed"], html.aurum[data-theme="light"] .btn-warning {
+  background: var(--ax-gold) !important; color: #241600 !important; box-shadow: 0 6px 16px -8px rgba(215, 150, 19, .6) !important;
+}
+html.aurum[data-theme="light"] .btn[style*="#7c3aed"]:hover, html.aurum[data-theme="light"] .btn-warning:hover { background: #C88A0E !important; }
+html.aurum[data-theme="light"] .btn-primary[style*="#7c3aed"]:disabled { opacity: .5; }
