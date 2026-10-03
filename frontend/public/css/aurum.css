@@ -3737,3 +3737,14 @@ html.aurum .notes-panel { height: 100vh; height: 100dvh; padding-bottom: env(saf
 @supports (-webkit-touch-callout: none) {
   @media (max-width: 768px) { html.aurum .filter-bar input[type="date"], html.aurum .pi-dates input[type="date"] { width: 100%; } }
 }
+
+/* ════════════════════════════════════════════════════════════════════
+   44. 4.12.2 · الشريط السفلي لحد آخر الشاشة + التحليلات تحت الرئيسية
+   سفاري الآيفون الجديد بيسيب مسافة تحت العناصر الثابتة في الآخر — الشريط
+   بقى لونه ممدود لتحت فمفيش فراغ أسود، والأيقونات نازلة أكتر.
+════════════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  html.aurum #bottom-nav { padding-bottom: max(4px, calc(env(safe-area-inset-bottom, 0px) - 16px)) !important; padding-top: 6px !important; }
+  html.aurum #bottom-nav::after { content: ''; position: absolute; inset-inline: 0; top: 100%; height: 240px; background: var(--ax-surface); pointer-events: none; }
+  html.aurum .mh-an { margin: 22px 2px 12px !important; }
+}

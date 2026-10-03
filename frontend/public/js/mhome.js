@@ -133,7 +133,6 @@
       (showXl ? '<button type="button" class="mh-xl" onclick="AXM.excel()"><span class="mh-xl-i">' + IC.xls + '</span><span class="mh-xl-t"><b>تصدير كل بيانات البرنامج إلى إكسل</b><em>(ملف واحد بكل الأوراق والمعادلات)</em></span><span class="mh-xl-d">' + IC.down + '</span></button>' : '') +
       '<h2 class="mh-sec">الأقسام</h2>' +
       '<section class="mh-tiles">' + tiles + '</section>' +
-      '<button type="button" class="mh-classic" onclick="AXM.classic(true)">عرض لوحة التحليلات الكاملة</button>' +
     '</div>';
   }
   function renderHome() {
@@ -145,12 +144,12 @@
   function wrapDash() {
     var curFn = window.renderDashboard;
     if (typeof curFn !== 'function' || curFn._mh) return;
+    /* 4.12.2 · on the phone: the short home on top, and the full analytics right under it — always */
     var w = function () {
-      if (mobile() && !classic) { renderHome(); return; }
       var r = curFn.apply(this, arguments);
-      if (mobile() && classic) {
+      if (mobile()) {
         var pc = document.getElementById('page-content');
-        if (pc && !document.getElementById('mh-back-home')) pc.insertAdjacentHTML('afterbegin', '<button type="button" class="mh-backhome" id="mh-back-home" onclick="AXM.classic(false)">' + IC.back + 'رجوع للرئيسية المختصرة</button>');
+        if (pc && !document.getElementById('mh-root')) pc.insertAdjacentHTML('afterbegin', homeHtml() + '<h2 class="mh-sec mh-an" id="mh-an">لوحة التحليلات</h2>');
       }
       return r;
     };
@@ -197,7 +196,7 @@
   }
   function buildNav() {
     var bn = document.getElementById('bottom-nav'), u = me(); if (!bn || !u) return;
-    var sig = [u.id, mine(), canGo('invoices'), canGo('customers'), canGo('issuances')].join('|');
+    var sig = [u.id, canGo('invoices'), canGo('customers'), canGo('issuances'), 'v2'].join('|');
     if (bn.getAttribute('data-mh') === sig && !bn.querySelector('.bn-create')) return;
     var item = function (page, label, icon, click, extra) {
       return '<button type="button" class="bn-item' + (extra || '') + '"' + (page ? ' data-page="' + page + '"' : '') + ' onclick="' + click + '" aria-label="' + label + '">' + icon + '<span>' + label + '</span></button>';
@@ -207,7 +206,6 @@
       item(canGo('issuances') ? 'issuances' : '', 'بيع', IC.sell, 'AXM.sell()', ' bn-sell') +
       (canGo('invoices') ? item('invoices', 'الفواتير', IC.doc, "navigate('invoices')") : '') +
       (canGo('customers') ? item('customers', 'عملاء', IC.users, "navigate('customers')") : '') +
-      item(mine(), 'شاشتي', IC.mine, "AXM.go(AXM.mine())", ' bn-mine') +
       item('', 'المزيد', IC.more, 'AXM.more()', ' bn-more');
     bn.setAttribute('data-mh', sig);
   }
@@ -233,7 +231,6 @@
     ].filter(function (q) { return canGo(q[0]) && (q[1].indexOf('AX.') !== 0 || window.AX); });
     var all = [];
     try { all = NAV_ITEMS.filter(function (n) { return canGo(n.key); }); } catch (e) {}
-    var opts = all.filter(function (n) { return n.key !== 'dashboard'; }).map(function (n) { return '<option value="' + n.key + '"' + (n.key === mine() ? ' selected' : '') + '>' + esc(n.label) + '</option>'; }).join('');
     var theme = document.documentElement.getAttribute('data-theme') === 'dark';
     var html = '<div class="mh-scrim" onclick="AXM.more(false)"></div>' +
       '<div class="mh-panel" role="dialog" aria-modal="true" aria-label="المزيد"><div class="mh-grip"></div>' +
@@ -245,7 +242,6 @@
           var ic = n.key === 'purchases' ? PURCH_IC : n.icon;
           return '<button type="button" style="--tc:' + n.color + '" onclick="AXM.more(false);navigate(\'' + n.key + '\')"><span class="mh-ai">' + ic + '</span><span>' + esc(n.label) + '</span></button>';
         }).join('') + '</div>' +
-        '<label class="mh-mine"><span>' + IC.mine + 'شاشتي</span><select class="form-control" onchange="AXM.setMine(this.value)">' + opts + '</select></label>' +
         '<button type="button" class="mh-out" onclick="AXM.power()">' + IC.power + 'تسجيل خروج</button>' +
       '</div>';
     if (!el) { el = document.createElement('div'); el.id = 'mh-more'; el.className = 'mh-sheet'; document.body.appendChild(el); }
