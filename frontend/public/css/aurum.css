@@ -3880,3 +3880,27 @@ html.aurum .mr-foot b { color: var(--ax-text); }
   html.aurum table.iss-tbl tr.iss-row .row-actions .btn-icon { height: 32px; border-radius: 9px; }
   html.aurum table.iss-tbl tr.iss-row .row-actions .btn-icon svg { width: 15px; height: 15px; }
 }
+
+/* ════════════════════════════════════════════════════════════════════
+   47. 4.14 · قلم الهايلايتر الأخضر على الأرقام الخضرا (js/marker.js)
+   خط ماركر فسفوري: أغمق في أول الضربة وبيخف في آخرها، حواف مايلة شوية،
+   ولو الرقم اتلف على سطرين كل سطر بياخد ضربته.
+════════════════════════════════════════════════════════════════════ */
+html.aurum .ax-hl {
+  --hl: 92, 236, 104;
+  display: inline-block; position: relative; line-height: 1.3; vertical-align: baseline;
+  margin: 1px -0.08em 0; padding: 0 0.3em; white-space: nowrap;
+  border-radius: 0.85em 0.25em 0.9em 0.3em / 0.4em 0.9em 0.35em 0.8em;
+  background-color: transparent !important;
+  background-image:
+    linear-gradient(100deg, rgba(var(--hl), .0) 0%, rgba(var(--hl), .78) 3%, rgba(var(--hl), .52) 55%, rgba(var(--hl), .7) 92%, rgba(var(--hl), .12) 100%),
+    linear-gradient(176deg, transparent 0 18%, rgba(var(--hl), .22) 19% 84%, transparent 85%) !important;
+  background-repeat: no-repeat; background-position: right center; background-size: 100% 100%;
+  -webkit-box-decoration-break: clone; box-decoration-break: clone;
+  color: #063B1A !important; text-shadow: none !important;
+}
+html.aurum[data-theme="dark"] .ax-hl { --hl: 74, 222, 128; color: #04210E !important; font-weight: 800; }
+html.aurum .ax-hl.ax-hl-draw { animation: axHlDraw .7s cubic-bezier(.3, .7, .2, 1) both; }
+@keyframes axHlDraw { from { background-size: 0% 100%; } to { background-size: 100% 100%; } }
+@media (prefers-reduced-motion: reduce) { html.aurum .ax-hl.ax-hl-draw { animation: none; } }
+@media print { html.aurum .ax-hl { background-image: none !important; color: inherit !important; } }
