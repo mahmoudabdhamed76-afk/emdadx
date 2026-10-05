@@ -229,7 +229,8 @@
       ['expenses', 'openExpenseForm()', 'مصروف', '#ef4444'], ['suppliers', 'openPurchaseForm()', 'فاتورة شراء', '#f97316'],
       ['suppliers', "navigate('suppliers');setTimeout(function(){openSupplierPaymentForm()},140)", 'سداد مورد', '#d97706'],
       ['payments', 'AXWeekly.open()', 'كشوف الأسبوع', '#16a34a'],
-      ['dashboard', 'AX.dayClose()', 'تقفيل اليوم', '#0d9488']
+      ['dashboard', 'AX.dayClose()', 'تقفيل اليوم', '#0d9488'],
+      ['customers', 'AXM.owed()', 'ليا كام برا', '#16a34a']
     ].filter(function (q) { return canGo(q[0]) && (q[1].indexOf('AX.') !== 0 || window.AX); });
     var all = [];
     try { all = NAV_ITEMS.filter(function (n) { return canGo(n.key); }); } catch (e) {}
@@ -247,6 +248,33 @@
         '<button type="button" class="mh-out" onclick="AXM.power()">' + IC.power + 'تسجيل خروج</button>' +
       '</div>';
     if (!el) { el = document.createElement('div'); el.id = 'mh-more'; el.className = 'mh-sheet'; document.body.appendChild(el); }
+    el.innerHTML = html; void el.offsetWidth;
+    el.classList.add('show');
+    document.documentElement.classList.add('mh-lock');
+  }
+
+  /* ════════ «ليا كام برا» — كل مركز عليه فلوس وقد إيه، من الأكبر للأصغر ════════ */
+  function owed(open) {
+    var el = document.getElementById('mh-owed');
+    if (open === false) { if (el) el.classList.remove('show'); document.documentElement.classList.remove('mh-lock'); return; }
+    var list = A('customers').filter(function (c) { return N(c.balance) > 0.5; }).sort(function (a, b) { return N(b.balance) - N(a.balance); });
+    var total = list.reduce(function (t, c) { return t + N(c.balance); }, 0), top = list.length ? N(list[0].balance) : 1;
+    var rows = list.map(function (c, i) {
+      var w = Math.max(4, Math.round(N(c.balance) / top * 100));
+      return '<button type="button" class="mo-row" onclick="AXM.owed(false);' + (canGo('payments') ? 'openPaymentForm(\'' + c.id + '\')' : 'navigate(\'customers\')') + '">' +
+        '<span class="mo-n">' + (i + 1) + '</span>' +
+        '<span class="mo-t"><b>' + esc(c.name) + '</b><i class="mo-bar"><u style="width:' + w + '%"></u></i></span>' +
+        '<strong>' + num(c.balance) + ' <small>' + cur() + '</small></strong></button>';
+    }).join('');
+    var html = '<div class="mh-scrim" onclick="AXM.owed(false)"></div>' +
+      '<div class="mh-panel mo" role="dialog" aria-modal="true" aria-label="ليا كام برا"><div class="mh-grip"></div>' +
+        '<div class="mo-h"><div><span>ليا كام برا</span><b>' + num(total) + ' <small>' + cur() + '</small></b><em>' +
+          (list.length ? 'عند ' + list.length + ' ' + (list.length === 1 ? 'مركز' : list.length <= 10 ? 'مراكز' : 'مركز') : 'مفيش فلوس برا — كله خالص') + '</em></div>' +
+          '<button type="button" class="mo-x" onclick="AXM.owed(false)" aria-label="اقفل">✕</button></div>' +
+        (list.length ? '<div class="mo-list">' + rows + '</div>' : '') +
+        (canGo('aging') ? '<button type="button" class="mo-more" onclick="AXM.owed(false);navigate(\'aging\')">أعمار الديون بالتفصيل</button>' : '') +
+      '</div>';
+    if (!el) { el = document.createElement('div'); el.id = 'mh-owed'; el.className = 'mh-sheet mo-sheet ax-hl-off'; document.body.appendChild(el); }
     el.innerHTML = html; void el.offsetWidth;
     el.classList.add('show');
     document.documentElement.classList.add('mh-lock');
@@ -328,7 +356,7 @@
   window.addEventListener('load', boot);
 
   window.AXM = {
-    render: renderHome, more: more, search: search, sell: sell, power: power, shield: shield, low: low, order: order, mine: mine,
+    render: renderHome, more: more, owed: owed, search: search, sell: sell, power: power, shield: shield, low: low, order: order, mine: mine,
     go: function (p) { more(false); go(p); },
     setMine: function (k) { var u = me() || {}; ls('ax_mine_' + (u.id || ''), k); buildNav(); if (typeof updateHomeFab === 'function') updateHomeFab(); if (typeof toast === 'function') toast('«شاشتي» بقت: ' + ((navItem(k) || {}).label || k)); },
     excel: function () { if (window.AXX) AXX.exportAll(); },

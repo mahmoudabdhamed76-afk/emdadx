@@ -4080,3 +4080,27 @@ html.aurum .axa-tabs button.on { background: var(--ax-ink); color: var(--ax-on-i
   html.aurum .axa-chat .axa-composer { position: static !important; }
 }
 html.aurum ax-m { font: inherit; color: inherit; }
+
+/* ════════════════════════════════════════════════════════════════════
+   51. 4.16.1 · «ليا كام برا» — قايمة بسيطة بفلوسي عند المراكز (js/mhome.js)
+════════════════════════════════════════════════════════════════════ */
+.mo-sheet .mh-panel.mo { max-height: 86dvh; display: flex; flex-direction: column; }
+.mo-h { display: flex; align-items: flex-start; gap: 10px; padding: 4px 4px 14px; border-bottom: 1px solid var(--ax-line, #232323); }
+.mo-h > div { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.mo-h span { font-size: 13px; font-weight: 700; color: var(--ax-muted, #9E9E9E); }
+.mo-h b { font: 800 34px/1.15 var(--ax-display, system-ui); font-variant-numeric: tabular-nums; color: var(--ax-ok, #5CE89A); }
+.mo-h b small { font: 600 15px var(--ax-font, system-ui); color: var(--ax-muted, #9E9E9E); }
+.mo-h em { font-style: normal; font-size: 12.5px; color: var(--ax-muted, #9E9E9E); }
+.mo-x { width: 36px; height: 36px; border: 0; border-radius: 12px; background: var(--ax-surface-2, #1A1A1A); color: var(--ax-muted, #9E9E9E); font-size: 15px; cursor: pointer; flex: none; }
+.mo-list { overflow-y: auto; overscroll-behavior: contain; padding: 6px 0; flex: 1; min-height: 0; }
+.mo-row { width: 100%; display: flex; align-items: center; gap: 10px; padding: 11px 6px; border: 0; border-bottom: 1px solid var(--ax-line, #232323); background: transparent; color: var(--ax-text, #fff); cursor: pointer; text-align: start; font: inherit; }
+.mo-row:last-child { border-bottom: 0; }
+.mo-row:active { background: var(--ax-surface-2, #1A1A1A); }
+.mo-n { width: 24px; height: 24px; border-radius: 8px; flex: none; display: grid; place-items: center; font-size: 11.5px; font-weight: 800; background: var(--ax-surface-2, #1A1A1A); color: var(--ax-muted, #9E9E9E); }
+.mo-t { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.mo-t b { font-size: 15px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mo-bar { display: block; height: 4px; border-radius: 9px; background: var(--ax-surface-2, #1A1A1A); overflow: hidden; }
+.mo-bar u { display: block; height: 100%; border-radius: inherit; background: var(--ax-ok, #5CE89A); }
+.mo-row strong { flex: none; font: 800 16px var(--ax-display, system-ui); font-variant-numeric: tabular-nums; }
+.mo-row strong small { font: 600 11.5px var(--ax-font, system-ui); color: var(--ax-muted, #9E9E9E); }
+.mo-more { margin: 10px 0 4px; height: 46px; border: 1px solid var(--ax-line-2, #333); border-radius: 14px; background: transparent; color: var(--ax-text, #fff); font: 700 14px var(--ax-font, system-ui); cursor: pointer; flex: none; }
