@@ -84,8 +84,9 @@
     if (!el || el.dataset.pm) return el;
     var b = document.createElement('button');
     b.type = 'button'; b.id = 'paper-counter'; b.className = 'paper-counter pm'; b.dataset.pm = '1';
-    b.setAttribute('aria-haspopup', 'dialog'); b.setAttribute('aria-expanded', 'false');
-    b.onclick = function (e) { e.stopPropagation(); toggle(); };
+    /* 4.17 · just a display now — tapping it doesn't open anything */
+    b.tabIndex = -1; b.setAttribute('aria-disabled', 'true');
+    b.onclick = function (e) { e.preventDefault(); e.stopPropagation(); };
     b.innerHTML = '<span class="pm-ic">' + ICON + '</span>' +
       '<span class="pm-t"><small class="pm-lab">رصيد الورق</small><span class="pm-v"><b class="paper-counter-num" id="paper-counter-num">0</b><em id="pm-unit">ورقة</em></span></span>' +
       '<span class="pm-sub" id="pm-sub"></span>' +
