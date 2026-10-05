@@ -6,6 +6,10 @@ process.on('warning', (w) => {
   console.warn(w);
 });
 
+/* 4.20 · one bad request must never take the whole app down */
+process.on('unhandledRejection', (e) => console.error('[unhandledRejection]', e && e.stack || e));
+process.on('uncaughtException', (e) => { console.error('[uncaughtException]', e && e.stack || e); setTimeout(() => process.exit(1), 200); });   // Railway restarts it clean
+
 const http = require('node:http');
 const fs   = require('node:fs');
 const path = require('node:path');
@@ -28,6 +32,17 @@ const MAX_BACKUPS = 20;
 /* ═══ start-up: hash old passwords, load sessions + data ═══ */
 auth.migratePasswords();
 auth.loadSessions();
+/* 4.20 · anyone still on an easy password (from before this version) gets the change screen too */
+setTimeout(async () => {          // in the background, so a big users list never slows the start
+  try {
+    for (const u of db.prepare('SELECT id, username, password FROM users').all()) {
+      const tries = ['admin', '123456', '12345', '1234', '0000', '000000', '111111', 'password', '12345678', 'qwerty', String(u.username || '')].filter(Boolean);
+      for (const p of tries) {
+        if (await auth.verifyPasswordAsync(p, u.password)) { db.prepare('INSERT INTO user_flags (user_id, must_change) VALUES (?, 1) ON CONFLICT(user_id) DO UPDATE SET must_change = 1').run(u.id); break; }
+      }
+    }
+  } catch (e) { console.error('[weak-check]', e.message); }
+}, 3000);
 store.load();
 
 /* ═══════════════════════════════════════════════════════
@@ -61,9 +76,23 @@ setInterval(() => {
 /* ═══════════════════════════════════════════════════════
    HELPERS
 ═══════════════════════════════════════════════════════ */
+/* 4.20 · security headers on every response: no framing (click-jacking), no MIME sniffing,
+   HTTPS-only once the app has been opened over HTTPS, no plugins / foreign <base> */
+function secHeaders(req) {
+  const h = {
+    'X-Content-Type-Options': 'nosniff',
+    'X-Frame-Options': 'DENY',
+    'Content-Security-Policy': "frame-ancestors 'none'; object-src 'none'; base-uri 'self'",
+    'Referrer-Policy': 'same-origin',
+    'Permissions-Policy': 'camera=(self), microphone=(self), geolocation=(self), payment=()'
+  };
+  if (req && auth.isHttps && auth.isHttps(req)) h['Strict-Transport-Security'] = 'max-age=31536000';
+  return h;
+}
 function sendJSON(res, status, obj, extraHeaders) {
+  if (res.headersSent || res.writableEnded) return;
   const body = JSON.stringify(obj);
-  res.writeHead(status, Object.assign({
+  res.writeHead(status, Object.assign(secHeaders(res.req), {
     'Content-Type':   'application/json; charset=utf-8',
     'Content-Length': Buffer.byteLength(body),
     'Cache-Control':  'no-store'
@@ -73,15 +102,15 @@ function sendJSON(res, status, obj, extraHeaders) {
 function readBody(req, limitMb) {
   return new Promise((resolve, reject) => {
     const chunks = []; let size = 0;
-    const LIMIT = (limitMb || 100) * 1024 * 1024;
+    const LIMIT = (limitMb || 1) * 1024 * 1024;
     req.on('data', (c) => {
       size += c.length;
-      if (size > LIMIT) { req.destroy(); reject(new Error('Payload too large')); return; }
+      if (size > LIMIT) { const err = new Error('too_large'); err.status = 413; reject(err); req.destroy(); return; }
       chunks.push(c);
     });
     req.on('end', () => {
       try { const raw = Buffer.concat(chunks).toString('utf8'); resolve(raw ? JSON.parse(raw) : null); }
-      catch (e) { reject(e); }
+      catch (e) { const err = new Error('bad_json'); err.status = 400; reject(err); }
     });
     req.on('error', reject);
   });
@@ -97,7 +126,7 @@ function serveStatic(res, filePath) {
     if (err) { res.writeHead(404); res.end('Not found'); return; }
     const ext = path.extname(filePath).toLowerCase();
     const isHtml = ext === '.html';
-    res.writeHead(200, {
+    res.writeHead(200, Object.assign(secHeaders(res.req), {
       'Content-Type':   MIME[ext] || 'application/octet-stream',
       'Content-Length': data.length,
       'Cache-Control':  isHtml ? 'no-cache, no-store, must-revalidate'
@@ -106,7 +135,7 @@ function serveStatic(res, filePath) {
       'Pragma': 'no-cache', 'Expires': '0',
       'X-Content-Type-Options': 'nosniff',
       'Referrer-Policy': 'same-origin'
-    });
+    }));
     res.end(data);
   });
 }
@@ -153,6 +182,10 @@ function currentUser(req) {
   return u && u.disabled !== true ? u : null;
 }
 const publicUser = u => ({ id: u.id, username: u.username, name: u.name, role: u.role });
+/* weak password → must change it first */
+function mustChange(id) { if (process.env.EMX_DEV_WEAK_OK === '1') return false; try { const r = db.prepare('SELECT must_change FROM user_flags WHERE user_id = ?').get(id); return !!(r && r.must_change); } catch (e) { return false; } }
+function setMustChange(id, on) { try { db.prepare('INSERT INTO user_flags (user_id, must_change) VALUES (?, ?) ON CONFLICT(user_id) DO UPDATE SET must_change = excluded.must_change').run(id, on ? 1 : 0); } catch (e) { console.error('[user_flags]', e.message); } }
+function weakPw(pw, username) { pw = String(pw || ''); return pw.length < 6 || pw.toLowerCase() === String(username || '').toLowerCase() || /^(admin|123456?|1234|0000|000000|111111|password|12345678|qwerty)$/i.test(pw); }
 
 /* ═══════════════════════════════════════════════════════
    REQUEST ROUTER
@@ -172,7 +205,7 @@ const server = http.createServer(async (req, res) => {
   try {
     /* ── public ── */
     if (pathname === '/api/health') {
-      return sendJSON(res, 200, { ok: true, time: new Date().toISOString(), version: _dataVersion, connectedClients: _clients.size });
+      return sendJSON(res, 200, { ok: true, time: new Date().toISOString() });
     }
     if (pathname === '/sw.js') {
       const swPath = path.join(PUBLIC, 'sw.js');
@@ -187,18 +220,21 @@ const server = http.createServer(async (req, res) => {
 
     /* ── login / logout / who am I ── */
     if (pathname === '/api/login' && req.method === 'POST') {
-      const b = (await readBody(req, 1)) || {};
-      const wait = auth.throttled(req, b.username);
+      const b = (await readBody(req, 0.02)) || {};
+      const name = String(b.username || '').slice(0, 64), pw = String(b.password || '').slice(0, 256);
+      const wait = auth.throttled(req, name);
       if (wait) return sendJSON(res, 429, { error: 'too_many', message: 'محاولات كتير غلط — استنى ' + wait + ' دقيقة وجرّب تاني' });
-      const u = store.userByName(b.username);
-      const ok = !!u && u.disabled !== true && auth.verifyPassword(String(b.password || ''), auth.storedHash(u.id));
-      if (!ok) { auth.failed(req, b.username); return sendJSON(res, 401, { error: 'bad_login', message: 'اسم المستخدم أو كلمة السر غلط' }); }
-      auth.succeeded(req, b.username);
+      const u = store.userByName(name);
+      let ok = false;
+      try { ok = !!u && u.disabled !== true && await auth.verifyPasswordAsync(pw, auth.storedHash(u.id)); }
+      catch (e) { return sendJSON(res, 503, { error: 'busy', message: 'السيرفر مشغول — جرّب كمان ثانية' }); }
+      if (!ok) { auth.failed(req, name); return sendJSON(res, 401, { error: 'bad_login', message: 'اسم المستخدم أو كلمة السر غلط' }); }
+      auth.succeeded(req, name);
       if (!auth.isHash(auth.storedHash(u.id))) auth.migratePasswords();
       const token = auth.createSession(u.id, req);
-      const pw = String(b.password || '');
-      const weak = pw.length < 6 || pw.toLowerCase() === String(u.username || '').toLowerCase() || /^(admin|123456?|1234|0000|password)$/i.test(pw);
-      return sendJSON(res, 200, { ok: true, user: publicUser(u), weak, token }, { 'Set-Cookie': auth.cookieHeader(req, token) });
+      const weak = weakPw(pw, u.username);
+      setMustChange(u.id, weak);
+      return sendJSON(res, 200, { ok: true, user: publicUser(u), weak, mustChange: mustChange(u.id), token }, { 'Set-Cookie': auth.cookieHeader(req, token) });
     }
     if (pathname === '/api/logout' && req.method === 'POST') {
       const t = auth.tokenOf(req); if (t) auth.dropSession(t);
@@ -207,7 +243,7 @@ const server = http.createServer(async (req, res) => {
     if (pathname === '/api/me' && req.method === 'GET') {
       const u = currentUser(req);
       /* 4.13 · renew the cookie on every visit, so an active device never gets signed out */
-      return u ? sendJSON(res, 200, { user: publicUser(u), token: auth.tokenOf(req) }, { 'Set-Cookie': auth.cookieHeader(req, auth.tokenOf(req)) }) : sendJSON(res, 401, { error: 'login' });
+      return u ? sendJSON(res, 200, { user: publicUser(u), token: auth.tokenOf(req), mustChange: mustChange(u.id) }, { 'Set-Cookie': auth.cookieHeader(req, auth.tokenOf(req)) }) : sendJSON(res, 401, { error: 'login' });
     }
 
     /* ── everything below needs a logged-in user ── */
@@ -216,6 +252,9 @@ const server = http.createServer(async (req, res) => {
       if (!me) return sendJSON(res, 401, { error: 'login', message: 'سجّل دخول الأول' });
       const admin = me.role === 'admin';
       const adminOnly = () => sendJSON(res, 403, { error: 'forbidden', message: 'للمدير بس' });
+      /* a weak password (e.g. the first admin/admin): reading is fine, nothing gets written until it's changed */
+      if (req.method !== 'GET' && pathname !== '/api/password' && mustChange(me.id))
+        return sendJSON(res, 403, { error: 'must_change', message: 'غيّر كلمة السر الأول — دي سهلة التخمين' });
 
       /* live dollar / gold prices for the header tape */
       if (pathname === '/api/market' && req.method === 'GET') {
@@ -229,8 +268,8 @@ const server = http.createServer(async (req, res) => {
         return sendJSON(res, 200, Object.assign({}, blob, { __version: _dataVersion }));
       }
       if (pathname === '/api/ops' && req.method === 'POST') {
-        const b = await readBody(req, 60);
-        if (!b || typeof b !== 'object' || !b.ops) return sendJSON(res, 400, { error: 'bad_request' });
+        const b = await readBody(req, 15);
+        if (!b || typeof b !== 'object' || !b.ops || typeof b.ops !== 'object') return sendJSON(res, 400, { error: 'bad_request' });
         if (opSeen(b.opId)) return sendJSON(res, 200, { ok: true, dup: true, version: _dataVersion });
         const prev = _dataVersion;
         try {
@@ -246,8 +285,8 @@ const server = http.createServer(async (req, res) => {
       /* full replace — restore / import (admin only) */
       if (pathname === '/api/data' && req.method === 'POST') {
         if (!admin) return adminOnly();
-        const body = await readBody(req);
-        if (!body || typeof body !== 'object') return sendJSON(res, 400, { error: 'Invalid body' });
+        const body = await readBody(req, 60);
+        if (!body || typeof body !== 'object' || Array.isArray(body)) return sendJSON(res, 400, { error: 'Invalid body' });
         takeBackup(true);
         store.full(body);
         notifyDataChanged({ source: req.headers['x-client-id'] || 'unknown', type: 'replace' });
@@ -259,11 +298,13 @@ const server = http.createServer(async (req, res) => {
         const clientId = (++_clientSeq).toString();
         res.writeHead(200, { 'Content-Type': 'text/event-stream; charset=utf-8', 'Cache-Control': 'no-cache, no-store', 'Connection': 'keep-alive', 'X-Accel-Buffering': 'no' });
         res.write(`data: ${JSON.stringify({ event: 'connected', clientId, version: _dataVersion })}\n\n`);
+        /* at most 6 live streams per user — the oldest one is closed */
+        const mine = [..._clients].filter(([, c]) => c.userId === me.id);
+        if (mine.length >= 6) mine.slice(0, mine.length - 5).forEach(([id, c]) => { _clients.delete(id); try { c.res.end(); } catch (_) {} });
         _clients.set(clientId, { res, userId: me.id });
-        req.on('close', () => _clients.delete(clientId));
-        req.on('error', () => _clients.delete(clientId));
-        req.socket.on('close', () => _clients.delete(clientId));
-        const keepalive = setInterval(() => { try { res.write(`: heartbeat\n\n`); } catch { clearInterval(keepalive); _clients.delete(clientId); } }, 15000);
+        const keepalive = setInterval(() => { if (res.writableEnded || res.destroyed) return done(); try { res.write(`: heartbeat\n\n`); } catch { done(); } }, 15000);
+        function done() { clearInterval(keepalive); _clients.delete(clientId); }
+        req.on('close', done); req.on('error', done); res.on('close', done);
         return;
       }
 
@@ -313,10 +354,18 @@ const server = http.createServer(async (req, res) => {
       }
       /* change my own password */
       if (pathname === '/api/password' && req.method === 'POST') {
-        const b = (await readBody(req, 1)) || {};
-        if (!auth.verifyPassword(String(b.current || ''), auth.storedHash(me.id))) return sendJSON(res, 400, { error: 'bad_current', message: 'كلمة السر الحالية غلط' });
-        if (String(b.next || '').length < 4) return sendJSON(res, 400, { error: 'weak', message: 'كلمة السر الجديدة 4 حروف على الأقل' });
-        db.prepare('UPDATE users SET password = ? WHERE id = ?').run(auth.hashPassword(b.next), me.id);
+        const b = (await readBody(req, 0.02)) || {};
+        const wait = auth.throttled(req, 'pw:' + me.id);
+        if (wait) return sendJSON(res, 429, { error: 'too_many', message: 'محاولات كتير غلط — استنى ' + wait + ' دقيقة' });
+        let okCur = false;
+        try { okCur = await auth.verifyPasswordAsync(String(b.current || '').slice(0, 256), auth.storedHash(me.id)); }
+        catch (e) { return sendJSON(res, 503, { error: 'busy', message: 'السيرفر مشغول — جرّب كمان ثانية' }); }
+        if (!okCur) { auth.failed(req, 'pw:' + me.id); return sendJSON(res, 400, { error: 'bad_current', message: 'كلمة السر الحالية غلط' }); }
+        const next = String(b.next || '');
+        if (next.length < 6 || next.length > 128) return sendJSON(res, 400, { error: 'weak', message: 'كلمة السر الجديدة من 6 حروف لـ 128' });
+        if (weakPw(next, me.username)) return sendJSON(res, 400, { error: 'weak', message: 'كلمة السر دي سهلة التخمين — اختار حاجة أصعب' });
+        db.prepare('UPDATE users SET password = ? WHERE id = ?').run(auth.hashPassword(next), me.id);
+        setMustChange(me.id, false);
         auth.dropUserSessions(me.id, auth.tokenOf(req));
         return sendJSON(res, 200, { ok: true });
       }
@@ -343,8 +392,9 @@ const server = http.createServer(async (req, res) => {
     return serveStatic(res, path.join(PUBLIC, 'index.html'));
 
   } catch (e) {
+    if (e && e.status) { if (!res.headersSent) sendJSON(res, e.status, { error: e.message }); else res.destroy(); return; }
     console.error(`[${req.method} ${pathname}]`, e);
-    sendJSON(res, 500, { error: e.message });
+    if (!res.headersSent) sendJSON(res, 500, { error: 'server', message: 'حصلت مشكلة في السيرفر' }); else res.destroy();
   }
 });
 
@@ -359,4 +409,9 @@ server.listen(PORT, HOST, () => {
   console.log('====================================');
 });
 server.on('error', (e) => { console.error('Server error:', e); process.exit(1); });
-server.maxConnections = 1000;
+server.maxConnections = 3000;
+/* 4.20 · slow / half-open requests get dropped instead of piling up */
+server.headersTimeout = 15000;      // the request line + headers must arrive within 15 s
+server.requestTimeout = 120000;     // a whole request (even a big restore upload) within 2 min
+server.keepAliveTimeout = 10000;
+server.timeout = 0;                 // live streams (SSE) stay open; they have their own heartbeat

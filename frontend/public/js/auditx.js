@@ -67,27 +67,38 @@
 
   /* ════════ the lock ════════ */
   function isOpen() { return Date.now() < openUntil; }
-  function lockHtml(err) {
+  var KINDS = {
+    audit: { title: 'سجل التعديلات مقفول', sub: 'القسم ده ليك انت بس — اكتب كلمة السر عشان تفتحه.', go: 'افتح السجل' },
+    settings: { title: 'الإعدادات مقفولة', sub: 'الإعدادات ليك انت بس — اكتب نفس كلمة سر سجل التعديلات عشان تفتحها.', go: 'افتح الإعدادات' }
+  };
+  function lockHtml(err, kind) {
+    var K = KINDS[kind] || KINDS.audit;
     return '<div class="axl"><div class="axl-card' + (err ? ' shake' : '') + '">' +
       '<div class="axl-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2.5"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/><circle cx="12" cy="15.5" r="1.4"/></svg></div>' +
-      '<h2>سجل التعديلات مقفول</h2><p>القسم ده ليك انت بس — اكتب كلمة سر السجل عشان تفتحه.</p>' +
-      '<form onsubmit="AXAudit.unlock(event)" autocomplete="off">' +
+      '<h2>' + K.title + '</h2><p>' + K.sub + '</p>' +
+      '<form onsubmit="AXAudit.unlock(event, \'' + (kind || 'audit') + '\')" autocomplete="off">' +
         '<input id="axl-pw" class="form-control" type="password" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="كلمة السر" aria-label="كلمة السر">' +
         (err ? '<div class="axl-err">كلمة السر غلط — جرّب تاني</div>' : '') +
-        '<button type="submit" class="btn btn-primary axl-go">افتح السجل</button>' +
+        '<button type="submit" class="btn btn-primary axl-go">' + K.go + '</button>' +
       '</form></div></div>';
   }
-  function unlock(e) {
+  /* wrong tries: 5 → wait a minute (on this device) */
+  var bad = 0, badUntil = 0;
+  function unlock(e, kind) {
     if (e) e.preventDefault();
-    if (busy) return; busy = true;
+    if (busy) return;
+    var root = document.getElementById('page-content');
+    if (Date.now() < badUntil) { if (typeof toast === 'function') toast('محاولات كتير غلط — استنى دقيقة', 'error'); return; }
+    busy = true;
     var inp = document.getElementById('axl-pw'), pw = inp ? inp.value : '';
     hash(pw).then(function (h) {
       busy = false;
-      if (h === lockHash()) { openUntil = Date.now() + OPEN_MS; shown = 40; render(); }
-      else { var root = document.getElementById('page-content'); if (root) { root.innerHTML = lockHtml(true); focusPw(); } }
+      if (h === lockHash()) { bad = 0; openUntil = Date.now() + OPEN_MS; shown = 40; rerender(kind); }
+      else { if (++bad >= 5) { bad = 0; badUntil = Date.now() + 60e3; } if (root) { root.innerHTML = lockHtml(true, kind); focusPw(); } }
     });
   }
-  function lock() { openUntil = 0; render(); }
+  function rerender(kind) { if (kind === 'settings') { if (typeof window.renderSettings === 'function') window.renderSettings(); } else render(); }
+  function lock(kind) { openUntil = 0; rerender(kind); }
   function focusPw() { setTimeout(function () { var i = document.getElementById('axl-pw'); if (i) try { i.focus(); } catch (e) {} }, 60); }
   function changePw() {
     if (typeof openModal !== 'function') return;
@@ -231,12 +242,17 @@
   function render() {
     var root = document.getElementById('page-content'); if (!root) return;
     if (me().role !== 'admin') { root.innerHTML = '<div class="empty-state"><div class="icon">🔒</div><p>الصفحة دي للمدير بس</p></div>'; return; }
-    if (!isOpen()) { root.innerHTML = lockHtml(false); focusPw(); return; }
+    if (!isOpen()) { root.innerHTML = lockHtml(false, 'audit'); focusPw(); return; }
     openUntil = Date.now() + OPEN_MS;                                           // still using it → keep it open
     try { page(root); } catch (e) { console.error('[auditx]', e); if (typeof orig === 'function') orig(); }
   }
   window.renderAuditLog = render;
   var st = 0;
+  /* shared with the settings page: one password, one open window */
+  window.AXLock = {
+    isOpen: isOpen, touch: function () { if (isOpen()) openUntil = Date.now() + OPEN_MS; },
+    html: lockHtml, focus: focusPw, lock: lock, changePw: changePw
+  };
   window.AXAudit = {
     unlock: unlock, lock: lock, changePw: changePw, savePw: savePw,
     f: function (k, v) { setF(k, v); },

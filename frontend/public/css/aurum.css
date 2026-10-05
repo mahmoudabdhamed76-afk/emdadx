@@ -4301,3 +4301,68 @@ html.aurum .fx-tape .axtk-it small { color: rgba(255, 255, 255, .45); }
   html.aurum .topbar .fx-tape .axtk--bar { background: rgba(255, 255, 255, .08); box-shadow: none; }
   html.aurum.pm-mini .topbar .fx-tape { display: none !important; }
 }
+
+/* 4.20 · forced password change (weak password) */
+.axpw { position: fixed; inset: 0; z-index: 20000; display: grid; place-items: center; padding: 20px; background: rgba(0, 0, 0, .72); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+.axpw-card { width: min(400px, 100%); background: var(--ax-surface, #121212); color: var(--ax-text, #fff); border-radius: 26px; padding: 26px 22px 20px; text-align: center; box-shadow: 0 30px 80px rgba(0, 0, 0, .6); }
+.axpw-ic { font-size: 40px; margin-bottom: 8px; }
+.axpw-card h2 { margin: 0 0 6px; font: 800 22px var(--ax-display, system-ui); }
+.axpw-card p { margin: 0 0 16px; font-size: 13.5px; line-height: 1.7; color: var(--ax-muted, #9E9E9E); }
+.axpw-card form { display: flex; flex-direction: column; gap: 10px; }
+.axpw-card input { height: 48px; text-align: center; }
+.axpw-err { min-height: 18px; color: var(--ax-bad, #FF6B6B); font-size: 13px; font-weight: 700; }
+.axpw-go { height: 48px; }
+.axpw-out { border: 0; background: transparent; color: var(--ax-muted, #9E9E9E); font: 600 13px var(--ax-font, system-ui); cursor: pointer; padding: 6px; }
+
+/* ════════════════════════════════════════════════════════════════════
+   58. 4.20 · القسم المفتوح في القايمة الجانبية = ضربة ماركر (اقتراح ٣)
+   أبيض في الوضع الغامق، كحلي في الفاتح — حواف غير منتظمة، مايلة سنة،
+   وبتترسم من اليمين لما تفتح القسم.
+════════════════════════════════════════════════════════════════════ */
+html.aurum { --mkc: 0, 32, 85; }
+html.aurum[data-theme="dark"] { --mkc: 255, 255, 255; }
+html.aurum .nav-item.active {
+  background-color: transparent !important;
+  background-image:
+    linear-gradient(100deg, rgba(var(--mkc), .55) 0%, rgba(var(--mkc), .97) 4%, rgba(var(--mkc), .84) 50%, rgba(var(--mkc), .95) 93%, rgba(var(--mkc), .6) 100%),
+    linear-gradient(176deg, transparent 0 15%, rgba(var(--mkc), .22) 16% 85%, transparent 86%) !important;
+  background-repeat: no-repeat !important; background-position: right center !important; background-size: 100% 100% !important;
+  border-radius: 1.1em .35em 1.2em .4em / .55em 1.2em .5em 1.1em !important;
+  transform: rotate(-.6deg);
+  box-shadow: none !important;
+  color: var(--ax-on-ink) !important;
+  animation: navMk .55s cubic-bezier(.3, .7, .2, 1) both;
+}
+html.aurum .nav-item.active .icon { color: var(--ax-on-ink) !important; background: transparent !important; }
+html.aurum .nav-item.active .badge { transform: rotate(.6deg); }
+@keyframes navMk { from { background-size: 0% 100%, 0% 100%; } to { background-size: 100% 100%, 100% 100%; } }
+@media (prefers-reduced-motion: reduce) { html.aurum .nav-item.active { animation: none; } }
+
+/* ════════════════════════════════════════════════════════════════════
+   59. 4.20 · الإعدادات مترتبة في أقسام (js/settingsx.js)
+════════════════════════════════════════════════════════════════════ */
+html.aurum .axs-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+html.aurum .axs-lock { display: flex; gap: 6px; }
+html.aurum .axs { display: flex; flex-direction: column; gap: 14px; max-width: 1000px; }
+html.aurum .axs-tabs { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+html.aurum .axs-tab { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; text-align: start; border: 1px solid var(--ax-line-2); background: var(--ax-surface); color: var(--ax-text); border-radius: 16px; padding: 12px; cursor: pointer; font-family: var(--ax-font); min-width: 0; transition: border-color .15s, background .15s; }
+html.aurum .axs-tab span { font-size: 20px; line-height: 1; margin-bottom: 4px; }
+html.aurum .axs-tab b { font-size: 14px; font-weight: 800; }
+html.aurum .axs-tab small { font-size: 11.5px; color: var(--ax-muted); line-height: 1.4; }
+html.aurum .axs-tab.on { border-color: transparent; background: var(--ax-ink); color: var(--ax-on-ink); }
+html.aurum .axs-tab.on small { color: inherit; opacity: .7; }
+html.aurum .axs-tab.d.on { background: var(--ax-bad); color: #fff; }
+html.aurum .axs-group { display: flex; flex-direction: column; gap: 14px; }
+html.aurum .axs-group[hidden] { display: none !important; }
+html.aurum .axs-card { margin: 0 !important; border: 1px solid var(--ax-line) !important; background: var(--ax-surface) !important; border-radius: 20px !important; box-shadow: var(--ax-shadow) !important; overflow: hidden; }
+html.aurum .axs-card .card-header { background: transparent !important; border-bottom: 1px solid var(--ax-line) !important; }
+html.aurum .axs-card .card-title { color: var(--ax-text) !important; font-size: 16px !important; }
+html.aurum .axs-group[data-g="danger"] .axs-card { border-color: color-mix(in srgb, var(--ax-bad) 45%, transparent) !important; }
+html.aurum .axs-group[data-g="danger"] .card-title { color: var(--ax-bad) !important; }
+@media (max-width: 768px) {
+  html.aurum .axs-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  html.aurum .axs-tab small { display: none; }
+  html.aurum .axs-tab { flex-direction: row; align-items: center; gap: 8px; padding: 11px 12px; }
+  html.aurum .axs-tab span { margin: 0; font-size: 18px; }
+  html.aurum .axs-tab:last-child:nth-child(odd) { grid-column: 1 / -1; }
+}

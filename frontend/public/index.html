@@ -9633,7 +9633,7 @@ audio::-webkit-media-controls-panel { background: rgba(15,23,42,.9); }
 
     <footer class="app-footer">
       <div>جميع الحقوق محفوظة © 2026 إمداد إكس</div>
-      <div class="version">الإصدار 4.19</div>
+      <div class="version">الإصدار 4.20</div>
     </footer>
   </div>
 </div>
@@ -9822,6 +9822,7 @@ const Auth = {
     if (!ct.includes('application/json')) return 'offline';
     const j = await r.json();
     if (j && j.token) DeviceToken.set(j.token);   // devices signed in before 4.13 get their token here
+    if (j && j.mustChange) { window.__mustChange = true; if (window.AXForcePw) AXForcePw.check(j); }   // 4.20 · weak password → change it first
     return j.user || null;
   },
   async login(username, password) {
@@ -11618,6 +11619,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       prepareData();
       launch(j.user);
       toast('مرحباً بك ' + currentUser.name);
+      if (window.AXForcePw) AXForcePw.check(j);
       try { if (j.weak) sessionStorage.setItem('emx_weak', '1'); else sessionStorage.removeItem('emx_weak'); } catch (_) {}
       if (j.weak) setTimeout(() => toast('كلمة السر بتاعتك سهلة التخمين — غيّرها' + (currentUser.role === 'admin' ? ' من «الأمان والنسخ»' : ' من القايمة اللي على اسمك'), 'warning', 8000), 1800);
     } catch (err) {
@@ -14975,7 +14977,7 @@ function viewCustomerStatement(id) {
       </table>
     </div>
   `;
-  openModal('كشف حساب: ' + c.name, html,
+  openModal('كشف حساب: ' + escapeHtml(c.name), html,
     `<button class="btn btn-success" onclick="closeModal();openPaymentForm('${c.id}')">💰 تسجيل تحصيل</button>
      ${c.phone ? `<button class="btn" style="background:linear-gradient(135deg,#25d366,#128c7e);color:white" onclick="sendCustomerStatementWhatsApp('${c.id}')">📲 إرسال على واتساب</button>` : ''}
      <button class="btn btn-secondary" onclick="closeModal()">إغلاق</button>`, 'large');
@@ -16616,7 +16618,7 @@ function sendDebtReminderWhatsApp(customerId) {
     </div>
   `;
 
-  openModal(`📲 إرسال تذكير على واتساب — ${c.name}`, html,
+  openModal(`📲 إرسال تذكير على واتساب — ${escapeHtml(c.name)}`, html,
     `<button class="btn btn-secondary" onclick="closeModal()">إغلاق</button>`,
     'large');
 }
@@ -16829,7 +16831,7 @@ function _showEditInvoiceModal(inv) {
     </tr>
   `).join('');
 
-  openModal(`✏️ تعديل فاتورة #${inv.number}`, `
+  openModal(`✏️ تعديل فاتورة #${escapeHtml(String(inv.number))}`, `
     <form id="edit-invoice-form">
       <div style="padding:10px 14px;background:rgba(245,158,11,.10);border-inline-start:3px solid #f59e0b;border-radius:8px;margin-bottom:14px;font-size:12.5px;color:var(--text)">
         ✏️ تقدر تعدّل <b>سعر</b> أي صنف أو <b>مبلغه</b> — الإجمالي وحساب العميل بيتظبطوا لوحدهم. الكمية ثابتة عشان المخزن (لو عايز تغيرها احذف الفاتورة واعمل واحدة جديدة).
@@ -23398,7 +23400,7 @@ function viewIssuance(id) {
   const remaining = i.total - (i.paid||0);
   const linkedPays = DB.data.payments.filter(p => p.issuanceId === i.id);
 
-  openModal(`📄 تفاصيل عملية صرف #${i.number}`, `
+  openModal(`📄 تفاصيل عملية صرف #${escapeHtml(String(i.number))}`, `
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:14px">
       <div class="kpi"><div class="l">رقم العملية</div><div class="v">#${i.number}</div></div>
       <div class="kpi"><div class="l">التاريخ</div><div class="v" style="font-size:14px">${i.date}</div></div>
@@ -23556,7 +23558,7 @@ function _showEditIssuanceModal(i) {
   // Available stock = current stock + this issuance's qty (since we'll revert it before re-applying)
   const availableStock = (p ? p.quantity : 0) + i.quantity;
 
-  openModal(`✏️ تعديل صرف ورق #${i.number}`, `
+  openModal(`✏️ تعديل صرف ورق #${escapeHtml(String(i.number))}`, `
     <form id="edit-issuance-form">
       <div style="padding:10px 14px;background:rgba(245,158,11,.10);border-inline-start:3px solid #f59e0b;border-radius:8px;margin-bottom:14px;font-size:12.5px;color:var(--text)">
         ⚠️ <b>ملاحظة:</b> لا يمكن تغيير المركز أو نوع الورق. لو محتاج تغيير دول، احذف العملية وأنشئ واحدة جديدة.
@@ -24939,7 +24941,7 @@ function openSupplierPriceList(supplierId) {
     </div>
   `;
 
-  openModal(`💰 قائمة أسعار: ${s.name}`, body, `
+  openModal(`💰 قائمة أسعار: ${escapeHtml(s.name)}`, body, `
     <button class="btn btn-ghost" onclick="closeModal()">إغلاق</button>
   `);
 }
@@ -26139,5 +26141,7 @@ function exportSuppliersCSV() {
 <script src="js/picker.js"></script>
 <script src="js/auditx.js"></script>
 <script src="js/fxtape.js"></script>
+<script src="js/forcepw.js"></script>
+<script src="js/settingsx.js"></script>
 </body>
 </html>

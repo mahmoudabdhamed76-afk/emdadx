@@ -384,7 +384,7 @@
     var b = budgetNow(), sim = simulate(b, plan().strategy || 'smart', firstBudget(b));
     var planned = sim.months[0] ? (sim.months[0].pays[d.id] || 0) : 0, bal = balanceOf(d);
     var sugg = Math.round(Math.min(bal, planned || bal));
-    openModal('سداد دفعة — ' + d.name,
+    openModal('سداد دفعة — ' + esc(d.name),
       '<form id="dbt-pay" onsubmit="return false">' +
         '<div class="dbt-payhead"><div><span>المتبقي</span><b>' + money(bal) + '</b></div><div><span>قسط الشهر في الخطة</span><b>' + (planned ? money(planned) : '—') + '</b></div></div>' +
         '<div class="form-group"><label>المبلغ *</label><input class="form-control" name="amount" type="number" inputmode="decimal" min="0" step="any" value="' + (sugg || '') + '" required></div>' +
@@ -426,7 +426,7 @@
   function history(did) {
     var d = debts().find(function (x) { return x.id === did; }); if (!d) return;
     var ps = (d.payments || []).slice().sort(function (a, b) { return String(b.date).localeCompare(String(a.date)) || b.createdAt - a.createdAt; });
-    openModal('سجل الدفعات — ' + d.name,
+    openModal('سجل الدفعات — ' + esc(d.name),
       ps.length ? '<ul class="dbt-hist">' + ps.map(function (p) {
         return '<li><div><b>' + money(p.amount) + '</b><span>' + dmy(p.date) + (p.note ? ' · ' + esc(p.note) : '') + (p.spId ? ' · سداد للمورد' : p.expId ? ' · اتسجل مصروف' : '') + '</span></div>' +
           '<button onclick="AXDebt.delPay(\'' + d.id + '\',\'' + p.id + '\')" aria-label="حذف الدفعة">' + ICON.trash + '</button></li>';

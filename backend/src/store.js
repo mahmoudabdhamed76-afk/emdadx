@@ -99,19 +99,68 @@ function checkRequests(u, cd) {
   });
 }
 
+/* ── 4.20 · security: a change is cleaned up before anything looks at it ──
+   · no __proto__ / constructor / prototype anywhere (they could swap the settings' prototype)
+   · «removed» is always a list of keys ("i:<id>"), so the approval check sees every delete
+   · record ids can't carry quotes / tags / spaces (they end up inside onclick="…" on screens) */
+const BAD_KEY = /^(__proto__|constructor|prototype)$/;
+const BAD_ID = /["'`<>\\\s&()]/;
+function own(o, k) { return Object.prototype.hasOwnProperty.call(o, k); }
+function badId(id) { return id != null && (String(id).length > 100 || BAD_ID.test(String(id))); }
+function scrub(v, depth) {
+  if (!v || typeof v !== 'object' || depth > 40) return v;
+  if (Array.isArray(v)) { v.forEach(x => scrub(x, depth + 1)); return v; }
+  Object.keys(v).forEach(k => {
+    if (BAD_KEY.test(k)) { delete v[k]; return; }
+    if (k === 'id' && badId(v[k])) throw new Refused('bad_id', 'رقم السجل فيه رموز مش مسموحة');   // ids at any depth (payments inside a debt…)
+    scrub(v[k], depth + 1);
+  });
+  return v;
+}
+function plainObj(v) { return v && typeof v === 'object' && !Array.isArray(v) ? v : {}; }
+function sanitize(w) {
+  w = plainObj(w);
+  w.cols = plainObj(w.cols); w.sets = plainObj(w.sets); w.keys = plainObj(w.keys);
+  [w.cols, w.sets, w.keys].forEach(g => Object.keys(g).forEach(k => { if (BAD_KEY.test(k)) delete g[k]; }));
+  [w.cols, w.sets].forEach(g => Object.keys(g).forEach(k => {
+    const cd = plainObj(g[k]);
+    cd.added = (Array.isArray(cd.added) ? cd.added : []).filter(r => r && typeof r === 'object' && !Array.isArray(r)).map(r => scrub(r, 0));
+    cd.added.forEach(r => { if (badId(r.id)) throw new Refused('bad_id', 'رقم السجل فيه رموز مش مسموحة'); });
+    cd.removed = (Array.isArray(cd.removed) ? cd.removed : []).map(r => typeof r === 'string' ? r : AX.keyOf(r));
+    cd.modified = (Array.isArray(cd.modified) ? cd.modified : []).filter(x => x && typeof x === 'object' && typeof x.k === 'string' && Array.isArray(x.f) && x.a && typeof x.a === 'object')
+      .map(x => {
+        /* an edit never renames a record (diffs are keyed by id) */
+        x.f = x.f.filter(f => typeof f === 'string' && !BAD_KEY.test(f) && f !== 'id');
+        delete x.a.id; if (x.b && typeof x.b === 'object') delete x.b.id;
+        scrub(x.a, 0); if (x.b) scrub(x.b, 0); return x;
+      });
+    g[k] = cd;
+  }));
+  Object.keys(w.keys).forEach(k => { const e = plainObj(w.keys[k]); scrub(e, 0); w.keys[k] = e; });
+  if (w.counters) {
+    w.counters = plainObj(w.counters); w.counters.a = plainObj(w.counters.a);
+    Object.keys(w.counters.a).forEach(n => { if (BAD_KEY.test(n) || !isFinite(Number(w.counters.a[n]))) delete w.counters.a[n]; });
+  }
+  return w;
+}
+
 /* ── the main entry: apply a change sent by a device ── */
 function apply(u, w) {
   const d = data();
-  w = w && typeof w === 'object' ? w : {};
-  w.cols = w.cols || {}; w.sets = w.sets || {}; w.keys = w.keys || {};
+  w = sanitize(w);
   Object.keys(w.cols).forEach(k => { if (!bridge.KNOWN_KEYS.has(k)) delete w.cols[k]; });
   const admin = u.role === 'admin';
   const s = d.settings || {};
 
   if (!admin) {
     if (w.cols.users) throw new Refused('forbidden', 'المستخدمين للمدير بس');
-    Object.keys(w.keys).forEach(k => { if (!AX.USER_KEYS[k]) throw new Refused('forbidden', 'الإعداد ده للمدير بس: ' + k); });
-    Object.keys(w.sets).forEach(k => { if (!AX.USER_KEYS[k]) throw new Refused('forbidden', 'الإعداد ده للمدير بس: ' + k); });
+    Object.keys(w.keys).forEach(k => { if (!own(AX.USER_KEYS, k)) throw new Refused('forbidden', 'الإعداد ده للمدير بس: ' + k); });
+    Object.keys(w.sets).forEach(k => { if (!own(AX.USER_KEYS, k)) throw new Refused('forbidden', 'الإعداد ده للمدير بس: ' + k); });
+    /* a list (approvals, debts, cheques…) only changes item by item through «sets», never replaced whole through «keys» */
+    Object.keys(w.keys).forEach(k => {
+      const cur = s[k], nv = w.keys[k].a;
+      if ((AX.isIdArr(cur) && cur.length) || (AX.isIdArr(nv) && nv.length)) throw new Refused('forbidden', 'القايمة دي بتتعدل عنصر عنصر بس: ' + k);
+    });
     /* the audit log: a user can only add his own entries */
     if (w.cols.auditLog) w.cols.auditLog = { added: (w.cols.auditLog.added || []).filter(e => e && e.userId === u.id), removed: [], modified: [] };
     checkApprovals(u, w.sets._approvals);
@@ -138,12 +187,13 @@ function apply(u, w) {
   const pwById = {};
   if (w.cols.users) {
     const auth = require('./auth');
-    (w.cols.users.added || []).forEach(r => { if (r && r.password) { pwById[r.id] = auth.hashPassword(r.password); delete r.password; } });
+    const pwOk = v => { if (String(v).length > 128) throw new Refused('weak', 'كلمة السر طويلة قوي (128 حرف بالكتير)'); return v; };
+    (w.cols.users.added || []).forEach(r => { if (r && r.password) { pwById[r.id] = auth.hashPassword(pwOk(r.password)); delete r.password; } });
     (w.cols.users.modified || []).forEach(x => {
       const i = x.f.indexOf('password');
       if (i >= 0) {
         const v = x.a.password; x.f.splice(i, 1); delete x.a.password; if (x.b) delete x.b.password;
-        if (v && x.k.indexOf('i:') === 0) pwById[x.k.slice(2)] = auth.hashPassword(v);
+        if (v && x.k.indexOf('i:') === 0) pwById[x.k.slice(2)] = auth.hashPassword(pwOk(v));
       }
     });
   }
@@ -177,6 +227,9 @@ function apply(u, w) {
     load();   // memory back in line with the database
     throw e;
   }
+  /* 4.20 · a password the admin changed signs that user out everywhere */
+  const changedPw = Object.keys(pwById).filter(id => !(w.cols.users.added || []).some(r => r && String(r.id) === id));
+  if (changedPw.length) { const auth = require('./auth'); changedPw.forEach(id => auth.dropUserSessions(id)); }
   dirty = true;
   return { users: Object.keys(pwById).length };
 }
