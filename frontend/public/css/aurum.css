@@ -4104,3 +4104,32 @@ html.aurum ax-m { font: inherit; color: inherit; }
 .mo-row strong { flex: none; font: 800 16px var(--ax-display, system-ui); font-variant-numeric: tabular-nums; }
 .mo-row strong small { font: 600 11.5px var(--ax-font, system-ui); color: var(--ax-muted, #9E9E9E); }
 .mo-more { margin: 10px 0 4px; height: 46px; border: 1px solid var(--ax-line-2, #333); border-radius: 14px; background: transparent; color: var(--ax-text, #fff); font: 700 14px var(--ax-font, system-ui); cursor: pointer; flex: none; }
+
+/* 4.16.2 · «فتح» in the live board tiles sits at the bottom corner — it no longer covers the number */
+html.aurum .pxs-go { top: auto !important; bottom: 10px !important; left: 10px !important; }
+html.aurum .pxs-tile.on .pxs-ts { padding-inline-end: 58px; }
+
+/* ════════════════════════════════════════════════════════════════════
+   52. 4.16.2 · «عليا كام» + ترتيب «إنشاء سريع» بالضغط المطوّل
+════════════════════════════════════════════════════════════════════ */
+.mo-owe .mo-h b { color: var(--ax-bad, #FF6B6B); }
+.mo-owe .mo-bar u { background: var(--ax-bad, #FF6B6B); }
+.mo-k { font-style: normal; font-size: 11.5px; color: var(--ax-muted, #9E9E9E); margin-top: -4px; }
+.mo-btns { display: flex; gap: 8px; flex: none; }
+.mo-btns .mo-more { flex: 1; }
+.mh-qh { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.mh-qh h6 { margin-bottom: 0 !important; }
+.mh-qsort { border: 1px solid var(--ax-line-2, #333); background: transparent; color: var(--ax-text, #fff); border-radius: 999px; padding: 5px 14px; font: 700 12.5px var(--ax-font, system-ui); cursor: pointer; }
+.mh-qedit .mh-qsort { background: var(--ax-ink, #fff); color: var(--ax-on-ink, #000); border-color: transparent; }
+.mh-qhint { display: none; margin: 4px 2px 8px; font-size: 12px; color: var(--ax-muted, #9E9E9E); }
+.mh-qedit .mh-qhint { display: block; }
+#mh-quick > button { -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
+.mh-qedit #mh-quick > button { touch-action: none; animation: mhWiggle .32s ease-in-out infinite alternate; }
+.mh-qedit #mh-quick > button:nth-child(2n) { animation-delay: -.16s; }
+@keyframes mhWiggle { from { transform: rotate(-1.4deg); } to { transform: rotate(1.4deg); } }
+#mh-quick > button.mh-qdrag { animation: none !important; transform: scale(1.08) !important; opacity: .92; box-shadow: 0 14px 30px -10px rgba(0, 0, 0, .6), 0 0 0 2px var(--tc, #fff) !important; z-index: 2; position: relative; }
+@media (prefers-reduced-motion: reduce) { .mh-qedit #mh-quick > button { animation: none; outline: 1.5px dashed var(--ax-line-2, #333); } }
+/* the canvas under the bottom bar matches the bar, so a lifted bar never shows a black strip */
+@media (max-width: 900px) { html.aurum { background: var(--ax-surface) !important; } }
+html.aurum .pxs-ts .ax-hl { white-space: nowrap !important; overflow: hidden; text-overflow: ellipsis; max-width: 100%; vertical-align: middle; }
+html.aurum .pxs-ts { min-width: 0; overflow: hidden; }

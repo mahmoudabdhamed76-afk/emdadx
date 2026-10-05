@@ -230,8 +230,10 @@
       ['suppliers', "navigate('suppliers');setTimeout(function(){openSupplierPaymentForm()},140)", 'سداد مورد', '#d97706'],
       ['payments', 'AXWeekly.open()', 'كشوف الأسبوع', '#16a34a'],
       ['dashboard', 'AX.dayClose()', 'تقفيل اليوم', '#0d9488'],
-      ['customers', 'AXM.owed()', 'ليا كام برا', '#16a34a']
-    ].filter(function (q) { return canGo(q[0]) && (q[1].indexOf('AX.') !== 0 || window.AX); });
+      ['customers', 'AXM.owed()', 'ليا كام برا', '#16a34a'],
+      ['suppliers', 'AXM.owe()', 'عليا كام', '#dc2626']
+    ].filter(function (q) { return (canGo(q[0]) || (q[0] === 'suppliers' && canGo('debts'))) && (q[1].indexOf('AX.') !== 0 || window.AX); });
+    quick = sortQuick(quick, u);
     var all = [];
     try { all = NAV_ITEMS.filter(function (n) { return canGo(n.key); }); } catch (e) {}
     var theme = document.documentElement.getAttribute('data-theme') === 'dark';
@@ -240,7 +242,9 @@
         '<div class="mh-me"><span class="mh-av">' + esc(initial(u.name)) + '</span><div><b>' + esc(u.name || '') + '</b><span>' + esc(roleLabel(u)) + ' · ' + esc(S().companyName || 'إمداد إكس') + '</span></div>' +
           '<button type="button" class="mh-theme" onclick="toggleTheme();AXM.more(false)" aria-label="تبديل الوضع">' + IC.moon + '<span>' + (theme ? 'نهاري' : 'ليلي') + '</span></button></div>' +
         '<button type="button" class="mh-sbox" onclick="AXM.more(false);AXM.search()">' + IC.search + '<span>ابحث عن عميل، فاتورة، صنف…</span></button>' +
-        (quick.length ? '<h6>إنشاء سريع</h6><div class="mh-quick">' + quick.map(function (q) { return '<button type="button" style="--tc:' + q[3] + '" onclick="AXM.more(false);' + q[1].replace(/"/g, '&quot;') + '"><i>+</i><span>' + q[2] + '</span></button>'; }).join('') + '</div>' : '') +
+        (quick.length ? '<div class="mh-qh"><h6>إنشاء سريع</h6><button type="button" class="mh-qsort" onclick="AXM.qedit()">' + 'رتّب' + '</button></div>' +
+          '<p class="mh-qhint">دوس مطوّل على أي زرار وحرّكه للمكان اللي تحبه</p>' +
+          '<div class="mh-quick" id="mh-quick">' + quick.map(function (q) { return '<button type="button" data-q="' + esc(q[2]) + '" style="--tc:' + q[3] + '" onclick="AXM.more(false);' + q[1].replace(/"/g, '&quot;') + '"><i>+</i><span>' + q[2] + '</span></button>'; }).join('') + '</div>' : '') +
         '<h6>كل الأقسام</h6><div class="mh-all">' + all.map(function (n) {
           var ic = n.key === 'purchases' ? PURCH_IC : n.icon;
           return '<button type="button" style="--tc:' + n.color + '" onclick="AXM.more(false);navigate(\'' + n.key + '\')"><span class="mh-ai">' + ic + '</span><span>' + esc(n.label) + '</span></button>';
@@ -251,6 +255,58 @@
     el.innerHTML = html; void el.offsetWidth;
     el.classList.add('show');
     document.documentElement.classList.add('mh-lock');
+    wireQuick(el);
+  }
+
+  /* ════════ «إنشاء سريع» — your own order: long-press a button, then drag it where you like ════════ */
+  function qKey(u) { return 'ax_quick_' + ((u && u.id) || ''); }
+  function sortQuick(list, u) {
+    var saved; try { saved = JSON.parse(ls(qKey(u)) || '[]'); } catch (e) { saved = []; }
+    if (!Array.isArray(saved) || !saved.length) return list;
+    return list.map(function (q, i) { var k = saved.indexOf(q[2]); return { q: q, k: k < 0 ? 1000 + i : k }; })
+      .sort(function (a, b) { return a.k - b.k; }).map(function (x) { return x.q; });
+  }
+  function saveQuick() {
+    var box = document.getElementById('mh-quick'); if (!box) return;
+    var order = Array.prototype.map.call(box.children, function (b) { return b.getAttribute('data-q'); });
+    ls(qKey(me()), JSON.stringify(order));
+  }
+  var qe = { on: false, drag: null, timer: 0, x: 0, y: 0, ate: 0 };
+  function qEdit(on) {
+    var panel = document.querySelector('#mh-more .mh-panel'); if (!panel) return;
+    qe.on = on === undefined ? !qe.on : !!on;
+    panel.classList.toggle('mh-qedit', qe.on);
+    var b = panel.querySelector('.mh-qsort'); if (b) b.textContent = qe.on ? 'تم ✓' : 'رتّب';
+    if (!qe.on) { saveQuick(); if (qe.drag) qe.drag.classList.remove('mh-qdrag'); qe.drag = null; }
+  }
+  function wireQuick(el) {
+    var box = el.querySelector('#mh-quick'); if (!box) return;
+    qe.on = false; qe.drag = null;
+    // while arranging, a tap doesn't open anything
+    box.addEventListener('click', function (e) { if (qe.on || Date.now() - qe.ate < 400) { e.preventDefault(); e.stopPropagation(); } }, true);
+    box.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+    box.addEventListener('pointerdown', function (e) {
+      var b = e.target.closest('button'); if (!b) return;
+      qe.x = e.clientX; qe.y = e.clientY;
+      if (qe.on) { startDrag(b); return; }
+      clearTimeout(qe.timer);
+      qe.timer = setTimeout(function () {                                      // long press → arrange mode, and this button is already in hand
+        qEdit(true); qe.ate = Date.now(); startDrag(b);
+        try { if (navigator.vibrate) navigator.vibrate(18); } catch (x) {}
+      }, 420);
+    });
+    function startDrag(b) { qe.drag = b; b.classList.add('mh-qdrag'); }
+    box.addEventListener('pointermove', function (e) {
+      if (!qe.drag) { if (Math.abs(e.clientX - qe.x) > 8 || Math.abs(e.clientY - qe.y) > 8) clearTimeout(qe.timer); return; }
+      var t = document.elementFromPoint(e.clientX, e.clientY), over = t && t.closest ? t.closest('#mh-quick > button') : null;
+      if (!over || over === qe.drag) return;
+      var kids = Array.prototype.slice.call(box.children);
+      if (kids.indexOf(over) > kids.indexOf(qe.drag)) box.insertBefore(qe.drag, over.nextSibling); else box.insertBefore(qe.drag, over);
+    });
+    function drop() { clearTimeout(qe.timer); if (qe.drag) { qe.drag.classList.remove('mh-qdrag'); qe.drag = null; qe.ate = Date.now(); saveQuick(); } }
+    box.addEventListener('pointerup', drop); box.addEventListener('pointercancel', drop);
+    // no page scrolling while a button is in hand (iOS ignores touch-action set mid-gesture)
+    box.addEventListener('touchmove', function (e) { if (qe.drag) e.preventDefault(); }, { passive: false });
   }
 
   /* ════════ «ليا كام برا» — كل مركز عليه فلوس وقد إيه، من الأكبر للأصغر ════════ */
@@ -279,6 +335,81 @@
     el.classList.add('show');
     document.documentElement.classList.add('mh-lock');
   }
+
+  /* ════════ «عليا كام» — اللي عليك: الموردين (بضاعة لسه متسددتش) + أي دين تاني مسجّل في «سداد المديونية» ════════ */
+  var DKIND = { bank: 'بنك / قرض', person: 'شخص', rent: 'إيجار / أقساط', other: 'دين', supplier: 'مورد' };
+  function owe(open) {
+    var el = document.getElementById('mh-owe');
+    if (open === false) { if (el) el.classList.remove('show'); document.documentElement.classList.remove('mh-lock'); return; }
+    var rows = [];
+    if (typeof supplierMetrics === 'function') A('suppliers').forEach(function (sp) {
+      var b = 0; try { b = N(supplierMetrics(sp.id).balance); } catch (e) {}
+      if (b > 0.5) rows.push({ name: sp.name, kind: 'مورد · بضاعة', bal: b, on: canGo('suppliers') ? "navigate('suppliers');setTimeout(function(){openSupplierPaymentForm(null,'" + sp.id + "')},150)" : '' });
+    });
+    (Array.isArray(S()._debts) ? S()._debts : []).forEach(function (d) {
+      if (d.supplierId) return;                                                 // already counted with its supplier
+      var paid = (d.payments || []).reduce(function (t, p) { return t + N(p.amount); }, 0), b = Math.max(0, N(d.amount) - paid);
+      if (b > 0.5) rows.push({ name: d.name || 'دين', kind: DKIND[d.kind] || 'دين', bal: b, due: d.due, on: canGo('debts') ? "navigate('debts')" : '' });
+    });
+    rows.sort(function (a, b) { return b.bal - a.bal; });
+    var total = rows.reduce(function (t, r) { return t + r.bal; }, 0), top = rows.length ? rows[0].bal : 1;
+    var list = rows.map(function (r, i) {
+      return '<button type="button" class="mo-row" onclick="AXM.owe(false);' + (r.on ? r.on.replace(/"/g, '&quot;') : '') + '">' +
+        '<span class="mo-n">' + (i + 1) + '</span>' +
+        '<span class="mo-t"><b>' + esc(r.name) + '</b><em class="mo-k">' + esc(r.kind) + (r.due ? ' · لحد ' + esc(r.due) : '') + '</em><i class="mo-bar"><u style="width:' + Math.max(4, Math.round(r.bal / top * 100)) + '%"></u></i></span>' +
+        '<strong>' + num(r.bal) + ' <small>' + cur() + '</small></strong></button>';
+    }).join('');
+    var html = '<div class="mh-scrim" onclick="AXM.owe(false)"></div>' +
+      '<div class="mh-panel mo mo-owe" role="dialog" aria-modal="true" aria-label="عليا كام"><div class="mh-grip"></div>' +
+        '<div class="mo-h"><div><span>عليا كام</span><b>' + num(total) + ' <small>' + cur() + '</small></b><em>' +
+          (rows.length ? 'لـ ' + rows.length + ' ' + (rows.length === 1 ? 'جهة' : rows.length <= 10 ? 'جهات' : 'جهة') + ' — موردين وديون' : 'مفيش عليك حاجة لحد — كله متسدد') + '</em></div>' +
+          '<button type="button" class="mo-x" onclick="AXM.owe(false)" aria-label="اقفل">✕</button></div>' +
+        (rows.length ? '<div class="mo-list">' + list + '</div>' : '') +
+        '<div class="mo-btns">' +
+          (canGo('suppliers') ? '<button type="button" class="mo-more" onclick="AXM.owe(false);navigate(\'suppliers\')">الموردين</button>' : '') +
+          (canGo('debts') ? '<button type="button" class="mo-more" onclick="AXM.owe(false);navigate(\'debts\')">سجّل / سدّد دين</button>' : '') +
+        '</div>' +
+      '</div>';
+    if (!el) { el = document.createElement('div'); el.id = 'mh-owe'; el.className = 'mh-sheet mo-sheet ax-hl-off'; document.body.appendChild(el); }
+    el.innerHTML = html; void el.offsetWidth;
+    el.classList.add('show');
+    document.documentElement.classList.add('mh-lock');
+  }
+
+  /* ════════ the bottom bar always sits on the bottom edge ════════
+     iOS (home-screen app) sometimes leaves the page lifted after the keyboard or a sheet closes, so
+     the bar floats with a black strip under it until you drag the page. We re-anchor it to the
+     visible screen and give iOS a nudge to drop the stale offset. */
+  function anchorNav() {
+    var nav = document.getElementById('bottom-nav'), vv = window.visualViewport;
+    if (!nav || !vv || !mobile()) { if (nav) nav.style.transform = ''; return; }
+    var a = document.activeElement, typing = a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName);
+    var gap = Math.round(vv.offsetTop + vv.height - window.innerHeight);
+    nav.style.transform = (!typing && gap > 1 && gap < 260) ? 'translateY(' + gap + 'px)' : '';
+  }
+  function nudge() {
+    var a = document.activeElement;
+    if (a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) return;
+    var y = window.scrollY || 0;
+    try { window.scrollTo(window.scrollX || 0, y + 1); window.scrollTo(window.scrollX || 0, y); } catch (e) {}
+    anchorNav();
+  }
+  (function () {
+    var vv = window.visualViewport;
+    if (vv) { vv.addEventListener('resize', anchorNav); vv.addEventListener('scroll', anchorNav); }
+    window.addEventListener('resize', anchorNav);
+    window.addEventListener('orientationchange', function () { setTimeout(nudge, 350); });
+    document.addEventListener('focusout', function () { setTimeout(nudge, 120); setTimeout(nudge, 450); });
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) setTimeout(nudge, 200); });
+    window.addEventListener('pageshow', function () { setTimeout(nudge, 200); });
+    // a sheet closing (mh-lock off) is the other moment iOS forgets where the page was
+    var locked = false;
+    new MutationObserver(function () {
+      var l = document.documentElement.classList.contains('mh-lock');
+      if (locked && !l) { setTimeout(nudge, 60); setTimeout(nudge, 380); }
+      locked = l;
+    }).observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+  })();
 
   /* ════════ full-screen search (re-uses the global search box) ════════ */
   function search(open) {
@@ -356,7 +487,7 @@
   window.addEventListener('load', boot);
 
   window.AXM = {
-    render: renderHome, more: more, owed: owed, search: search, sell: sell, power: power, shield: shield, low: low, order: order, mine: mine,
+    render: renderHome, more: more, owed: owed, owe: owe, qedit: function () { qEdit(); }, search: search, sell: sell, power: power, shield: shield, low: low, order: order, mine: mine,
     go: function (p) { more(false); go(p); },
     setMine: function (k) { var u = me() || {}; ls('ax_mine_' + (u.id || ''), k); buildNav(); if (typeof updateHomeFab === 'function') updateHomeFab(); if (typeof toast === 'function') toast('«شاشتي» بقت: ' + ((navItem(k) || {}).label || k)); },
     excel: function () { if (window.AXX) AXX.exportAll(); },
