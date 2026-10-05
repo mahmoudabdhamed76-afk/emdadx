@@ -14,7 +14,7 @@
   var ROOTS = '#page-content, .modal-overlay, #axn, .mh-sheet, #pm-pop, .topbar';
   var SKIP = 'input, textarea, select, option, .ax-mkb, svg, canvas, script, style, #bottom-nav, .sidebar, .nav-item, .badge, .notif-dot, .mh-dot, .fc-day, .pm, .pxs-go, .ax-hl-off';
   var BTN = 'button, a.btn, .btn, [role="tab"]';
-  var BTN_SKIP = '#bottom-nav, .sidebar, .nav-item, .pm, .pxs-tiles, .ax-hl-off, .btn-icon, .voice-mic-btn, .axa-micb, .axa-sendb, .topbar-btn, .modal-close, .mh-ic, svg';
+  var BTN_SKIP = '#mh-more .mh-quick, #mh-more .mh-all, #bottom-nav, .sidebar, .nav-item, .pm, .pxs-tiles, .ax-hl-off, .btn-icon, .voice-mic-btn, .axa-micb, .axa-sendb, .topbar-btn, .modal-close, .mh-ic, svg';
   var DIGIT = /[0-9٠-٩]/, LETTERS = /[A-Za-zء-ي]/g, WORDISH = /[0-9٠-٩A-Za-zء-ي]/;
   var OURS = /\b(ax-hl[\w-]*|ax-mkb[\w-]*|hlk-\w+)\b/g;
   var FAM = ['g', 'r', 'b', 'y', 'o', 'v', 't', 'p'];

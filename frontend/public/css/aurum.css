@@ -4285,3 +4285,83 @@ html.aurum .topbar .paper-counter.pm:active { transform: none !important; }
 /* 4.17.2 · الرقم الكبير فوق رسم اللوحة الحية — ماركر أخضر دايماً، وبيترسم تاني كل 15 ثانية */
 html.aurum .pxs-gval .ax-hl { padding: 0 .28em; margin: 0 -.06em; }
 html.aurum .pxs-gval .ax-hl.ax-hl-draw { animation-duration: .85s; }
+
+/* ════════════════════════════════════════════════════════════════════
+   56. 4.18 · «المزيد» بتأثير 3D — كل زرار بلاطة بارزة: حرف جانبي بلون
+   القسم، لمعة من فوق، أيقونة مجسّمة طالعة لبرّه، بتميل مع صباعك،
+   وبتنضغط لتحت لما تدوس، وبتدخل بقلبة خفيفة لما القايمة تفتح.
+════════════════════════════════════════════════════════════════════ */
+#mh-more .mh-quick, #mh-more .mh-all { perspective: 900px; gap: 10px; }
+#mh-more .mh-quick button, #mh-more .mh-all button {
+  --rx: 0deg; --ry: 0deg; --lift: 0px; --edge: 6px;
+  --e: color-mix(in srgb, var(--tc, #888) 30%, #050505);
+  position: relative; transform-style: preserve-3d; isolation: isolate;
+  border: 1px solid rgba(255, 255, 255, .07) !important; border-top-color: rgba(255, 255, 255, .16) !important;
+  background:
+    radial-gradient(120% 70% at 50% -10%, color-mix(in srgb, var(--tc, #888) 16%, transparent), transparent 60%),
+    linear-gradient(180deg, #232323 0%, #171717 55%, #111 100%) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .10),
+    inset 0 -2px 0 rgba(0, 0, 0, .45),
+    0 var(--edge) 0 -1px var(--e),
+    0 calc(var(--edge) + 1px) 0 -1px rgba(0, 0, 0, .55),
+    0 calc(var(--edge) + 12px) 22px -10px rgba(0, 0, 0, .75),
+    0 10px 26px -14px color-mix(in srgb, var(--tc, #888) 45%, transparent) !important;
+  transform: perspective(700px) rotateX(var(--rx)) rotateY(var(--ry)) translateY(var(--lift));
+  transition: transform .22s cubic-bezier(.2, .9, .3, 1.2), box-shadow .18s ease;
+  margin-bottom: 6px;
+}
+/* glossy top sheen */
+#mh-more .mh-quick button::before, #mh-more .mh-all button::before {
+  content: ''; position: absolute; inset: 1px 1px 45% 1px; border-radius: 15px 15px 40% 40% / 15px 15px 22px 22px; z-index: -1; pointer-events: none;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .09), rgba(255, 255, 255, 0));
+}
+/* the icon pops out of the tile */
+#mh-more .mh-quick i, #mh-more .mh-ai {
+  position: relative; transform: translateZ(26px);
+  background: linear-gradient(160deg, color-mix(in srgb, var(--tc) 55%, #fff 0%) 0%, color-mix(in srgb, var(--tc) 85%, #000) 100%) !important;
+  color: #fff !important;
+  box-shadow:
+    inset 0 1.5px 0 rgba(255, 255, 255, .45),
+    inset 0 -3px 0 rgba(0, 0, 0, .28),
+    0 3px 0 color-mix(in srgb, var(--tc) 55%, #000),
+    0 8px 16px -4px color-mix(in srgb, var(--tc) 70%, transparent) !important;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, .35);
+}
+#mh-more .mh-quick i::after, #mh-more .mh-ai::after {
+  content: ''; position: absolute; inset: 2px 3px 55% 3px; border-radius: 9px 9px 50% 50%; pointer-events: none;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .42), rgba(255, 255, 255, 0));
+}
+#mh-more .mh-ai svg { position: relative; z-index: 1; filter: drop-shadow(0 1px 1px rgba(0, 0, 0, .3)); }
+#mh-more .mh-quick button > span, #mh-more .mh-all button > span:last-child { transform: translateZ(12px); }
+/* pressed: the tile goes down onto its edge */
+#mh-more .mh-quick button:active, #mh-more .mh-all button:active, #mh-more button.mh3d-press {
+  --lift: 4px; --edge: 2px;
+}
+/* opening: tiles flip up one after another */
+#mh-more.show .mh-quick button, #mh-more.show .mh-all button { animation: mh3dIn .5s cubic-bezier(.2, .9, .3, 1.15) backwards; animation-delay: calc(var(--i, 0) * 22ms + 60ms); }
+@keyframes mh3dIn { from { opacity: 0; transform: perspective(700px) rotateX(-55deg) translateY(18px); } to { opacity: 1; transform: perspective(700px) rotateX(0) translateY(0); } }
+/* light theme */
+html[data-theme="light"] #mh-more .mh-quick button, html[data-theme="light"] #mh-more .mh-all button {
+  --e: color-mix(in srgb, var(--tc, #888) 35%, #b8c2d6);
+  border-color: rgba(0, 32, 85, .08) !important; border-top-color: #fff !important;
+  background:
+    radial-gradient(120% 70% at 50% -10%, color-mix(in srgb, var(--tc, #888) 12%, transparent), transparent 60%),
+    linear-gradient(180deg, #ffffff 0%, #f4f6fb 60%, #e9edf5 100%) !important;
+  box-shadow:
+    inset 0 1px 0 #fff,
+    inset 0 -2px 0 rgba(0, 32, 85, .07),
+    0 var(--edge) 0 -1px var(--e),
+    0 calc(var(--edge) + 12px) 22px -12px rgba(0, 32, 85, .35),
+    0 10px 24px -14px color-mix(in srgb, var(--tc, #888) 40%, transparent) !important;
+}
+html[data-theme="light"] #mh-more .mh-quick button::before, html[data-theme="light"] #mh-more .mh-all button::before { background: linear-gradient(180deg, rgba(255, 255, 255, .9), rgba(255, 255, 255, 0)); }
+/* arranging mode keeps its wiggle, without the tilt */
+#mh-more .mh-qedit #mh-quick > button { --rx: 0deg !important; --ry: 0deg !important; }
+@media (prefers-reduced-motion: reduce) {
+  #mh-more.show .mh-quick button, #mh-more.show .mh-all button { animation: none; }
+  #mh-more .mh-quick button, #mh-more .mh-all button { transition: none; }
+}
+#mh-more.show .mh-qedit #mh-quick > button { animation: mhWiggle .32s ease-in-out infinite alternate; animation-delay: 0s; }
+#mh-more.show .mh-qedit #mh-quick > button:nth-child(2n) { animation-delay: -.16s; }
+#mh-more.show .mh-qedit #mh-quick > button.mh-qdrag { animation: none !important; }

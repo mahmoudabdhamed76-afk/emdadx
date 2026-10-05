@@ -252,10 +252,36 @@
         '<button type="button" class="mh-out" onclick="AXM.power()">' + IC.power + 'تسجيل خروج</button>' +
       '</div>';
     if (!el) { el = document.createElement('div'); el.id = 'mh-more'; el.className = 'mh-sheet'; document.body.appendChild(el); }
-    el.innerHTML = html; void el.offsetWidth;
+    el.innerHTML = html;
+    Array.prototype.forEach.call(el.querySelectorAll('.mh-quick > button, .mh-all > button'), function (b, i) { b.style.setProperty('--i', Math.min(i, 24)); });
+    void el.offsetWidth;
     el.classList.add('show');
     document.documentElement.classList.add('mh-lock');
     wireQuick(el);
+    wire3d(el);
+  }
+
+  /* 3D tiles: each one leans toward your finger / mouse and springs back */
+  function wire3d(el) {
+    if (el.__3d) return; el.__3d = true;
+    var reduce = false; try { reduce = matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
+    function tile(t) { return t && t.closest ? t.closest('.mh-quick > button, .mh-all > button') : null; }
+    function tilt(b, x, y) {
+      if (reduce || qe.on) return;
+      var r = b.getBoundingClientRect(), px = (x - r.left) / r.width - .5, py = (y - r.top) / r.height - .5;
+      b.style.setProperty('--ry', (px * 18).toFixed(1) + 'deg');
+      b.style.setProperty('--rx', (-py * 18).toFixed(1) + 'deg');
+    }
+    function flat(b) { if (!b) return; b.style.setProperty('--rx', '0deg'); b.style.setProperty('--ry', '0deg'); b.classList.remove('mh3d-press'); }
+    var cur = null;
+    el.addEventListener('pointerdown', function (e) { var b = tile(e.target); if (!b) return; cur = b; b.classList.add('mh3d-press'); tilt(b, e.clientX, e.clientY); });
+    el.addEventListener('pointermove', function (e) {
+      var b = tile(e.target);
+      if (e.pointerType === 'mouse') { if (cur && cur !== b) flat(cur); cur = b; if (b) tilt(b, e.clientX, e.clientY); return; }
+      if (cur) { if (b === cur) tilt(cur, e.clientX, e.clientY); else { flat(cur); cur = null; } }
+    });
+    ['pointerup', 'pointercancel'].forEach(function (ev) { el.addEventListener(ev, function () { if (cur) { var b = cur; b.classList.remove('mh3d-press'); setTimeout(function () { flat(b); }, 140); } cur = null; }); });
+    el.addEventListener('pointerleave', function () { flat(cur); cur = null; });
   }
 
   /* ════════ «إنشاء سريع» — your own order: long-press a button, then drag it where you like ════════ */
