@@ -4266,3 +4266,18 @@ html.aurum .topbar .paper-counter.pm:active { transform: none !important; }
   .axu-item { padding: 11px 10px 11px 6px; gap: 10px; }
   .axu-t { font-size: 14px; }
 }
+
+/* ════════════════════════════════════════════════════════════════════
+   55. 4.17.1 · الشريط الأسود تحت الشريط السفلي على الآيفون — زي برنامج الموظفين
+   كانت html و body ثابتين على طول الشاشة (height:100%) و overflow-x:hidden بيخلي
+   الـ body نفسه هو اللي بيسكرول جواه؛ الآيفون لما الشاشة تتغير (كيبورد / رجوع للبرنامج)
+   كان بيسيب الطول القديم فيبان فراغ أسود. دلوقتي زي برنامج الموظفين: الطول على قد
+   المحتوى والصفحة كلها بتسكرول بالشباك نفسه، والشريط fixed على آخر الشاشة.
+════════════════════════════════════════════════════════════════════ */
+@media (max-width: 900px) {
+  html.aurum, html.aurum body { height: auto !important; min-height: 100% !important; max-width: 100% !important; }
+  html.aurum { overflow-x: hidden !important; overflow-y: visible !important; }
+  html.aurum body { overflow: visible !important; overflow-x: clip !important; position: relative; }
+  html.aurum #bottom-nav { padding-bottom: calc(6px + env(safe-area-inset-bottom, 0px)) !important; }
+  html.aurum.mh-lock, html.aurum.mh-lock body, html.aurum.axn-lock, html.aurum.axn-lock body { overflow: hidden !important; }
+}
