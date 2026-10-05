@@ -4281,3 +4281,7 @@ html.aurum .topbar .paper-counter.pm:active { transform: none !important; }
   html.aurum #bottom-nav { padding-bottom: calc(6px + env(safe-area-inset-bottom, 0px)) !important; }
   html.aurum.mh-lock, html.aurum.mh-lock body, html.aurum.axn-lock, html.aurum.axn-lock body { overflow: hidden !important; }
 }
+
+/* 4.17.2 · الرقم الكبير فوق رسم اللوحة الحية — ماركر أخضر دايماً، وبيترسم تاني كل 15 ثانية */
+html.aurum .pxs-gval .ax-hl { padding: 0 .28em; margin: 0 -.06em; }
+html.aurum .pxs-gval .ax-hl.ax-hl-draw { animation-duration: .85s; }

@@ -18,6 +18,9 @@
   var DIGIT = /[0-9٠-٩]/, LETTERS = /[A-Za-zء-ي]/g, WORDISH = /[0-9٠-٩A-Za-zء-ي]/;
   var OURS = /\b(ax-hl[\w-]*|ax-mkb[\w-]*|hlk-\w+)\b/g;
   var FAM = ['g', 'r', 'b', 'y', 'o', 'v', 't', 'p'];
+  /* always a green stroke, whatever its own colour — and it's drawn again every 15 seconds
+     (the big number over the live board's graph: «34,000 ورقة») */
+  var FORCE_G = '.pxs-gval', REDRAW_MS = 15000;
   var timer = 0, inkRGB = null;
 
   function clean(t) { return String(t || '').replace(/\s+/g, ' ').trim(); }
@@ -91,8 +94,10 @@
       return c.nodeType === 3 || c === inner || (c.nodeType === 1 && !c.textContent.trim());
     });
     if (!only) return;
-    var k = kindOf(el);
+    var forced = el.matches(FORCE_G);
+    var k = forced ? 'g' : kindOf(el);
     if (!k || !(isNumberText(txt) || isShortText(txt))) return;
+    if (forced) { if (el.__hlDrawn) was = true; el.__hlDrawn = true; }      // the count-up rewrites it often — draw once, then every 15 s
     var tgt = inner;
     if (!tgt) {
       if (getComputedStyle(el).display === 'inline') tgt = el;
@@ -160,6 +165,14 @@
     } catch (e) { console.warn('[marker]', e); }
   }
   function later() { if (!timer) timer = setTimeout(scan, 140); }
+  function redraw() {
+    if (document.hidden) return;
+    Array.prototype.forEach.call(document.querySelectorAll(FORCE_G + ' .ax-hl, ' + FORCE_G + '.ax-hl'), function (h) {
+      h.classList.remove('ax-hl-draw'); void h.offsetWidth; h.classList.add('ax-hl-draw');
+      setTimeout(function () { h.classList.remove('ax-hl-draw'); }, 900);
+    });
+  }
+  setInterval(redraw, REDRAW_MS);
   function boot() {
     new MutationObserver(function (ms) {
       for (var i = 0; i < ms.length; i++) {
@@ -182,5 +195,5 @@
     }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'class'] });
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot); else boot();
-  window.AXMarker = { scan: scan, kindOf: kindOf, family: family, isGreen: isGreen, isNumberText: isNumberText, isShortText: isShortText };
+  window.AXMarker = { scan: scan, redraw: redraw, kindOf: kindOf, family: family, isGreen: isGreen, isNumberText: isNumberText, isShortText: isShortText };
 })();
