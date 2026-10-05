@@ -3852,3 +3852,31 @@ html.aurum .mr-foot { display: flex; gap: 16px; align-items: center; flex-wrap: 
 html.aurum .mr-foot b { color: var(--ax-text); }
 @media (max-width: 900px) { html.aurum .mr-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } html.aurum .mr-grid { grid-template-columns: 1fr; } }
 @media (max-width: 768px) { html.aurum .mr-k b { font-size: 18px; } html.aurum .mr-acts { width: 100%; } html.aurum .mr-acts .btn { flex: 1; } }
+
+/* 4.13.1 · كروت صرف الورق على الموبايل أصغر — تستوعب داتا أكتر في الشاشة */
+@media (max-width: 768px) {
+  html.aurum table.iss-tbl tr.iss-row {
+    grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px 6px;
+    grid-template-areas: "num cus cus st" "prod prod date date" "qty price tot rem" "act act act act";
+    margin: 0 0 8px; padding: 10px 11px; border-radius: 14px;
+  }
+  html.aurum table.iss-tbl tr.iss-row > td { font-size: 12.5px; }
+  html.aurum table.iss-tbl tr.iss-row > td.ic-0 { font-size: 13px; align-self: center; }
+  html.aurum table.iss-tbl tr.iss-row > td.ic-2 { font: 800 14.5px/1.3 var(--ax-display); white-space: nowrap !important; overflow: hidden; text-overflow: ellipsis; align-self: center; }
+  html.aurum table.iss-tbl tr.iss-row > td.ic-3 { font-size: 12px; white-space: nowrap !important; overflow: hidden; text-overflow: ellipsis; }
+  html.aurum table.iss-tbl tr.iss-row > td.ic-1 { font-size: 11.5px; }
+  html.aurum table.iss-tbl tr.iss-row > td.ic-1 div { display: inline-block !important; margin: 0 4px 0 0; font-size: 10.5px; }
+  html.aurum table.iss-tbl tr.iss-row > td.ic-7 { display: none !important; }
+  html.aurum table.iss-tbl tr.iss-row > td.ic-9 { align-self: center; }
+  html.aurum table.iss-tbl tr.iss-row > td.ic-9 .badge-status, html.aurum table.iss-tbl tr.iss-row > td.ic-9 span { font-size: 10.5px !important; padding: 2px 8px !important; white-space: nowrap; }
+  html.aurum table.iss-tbl tr.iss-row > td.ic-4, html.aurum table.iss-tbl tr.iss-row > td.ic-5,
+  html.aurum table.iss-tbl tr.iss-row > td.ic-6, html.aurum table.iss-tbl tr.iss-row > td.ic-8 {
+    padding: 5px 7px !important; border-radius: 9px; font-size: 12px; line-height: 1.3; white-space: nowrap !important; overflow: hidden; text-overflow: ellipsis;
+  }
+  html.aurum table.iss-tbl tr.iss-row > td.ic-4::before, html.aurum table.iss-tbl tr.iss-row > td.ic-5::before,
+  html.aurum table.iss-tbl tr.iss-row > td.ic-6::before, html.aurum table.iss-tbl tr.iss-row > td.ic-8::before { font-size: 10px; margin-bottom: 0; }
+  html.aurum table.iss-tbl tr.iss-row > td.ic-10 { padding-top: 6px !important; }
+  html.aurum table.iss-tbl tr.iss-row .row-actions { gap: 5px; }
+  html.aurum table.iss-tbl tr.iss-row .row-actions .btn-icon { height: 32px; border-radius: 9px; }
+  html.aurum table.iss-tbl tr.iss-row .row-actions .btn-icon svg { width: 15px; height: 15px; }
+}
