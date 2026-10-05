@@ -913,12 +913,11 @@
     if (H.low) heroActs.push(['اللي قرب يخلص', 'إيه اللي قرب يخلص في المخزن؟']);
     heroActs.push(['ملخص النهارده', 'ملخص النهارده'], ['أعمل إيه النهارده؟', 'أعمل إيه النهارده؟']);
     var html =
-      '<section class="axa-hero">' +
-        '<div class="axa-hero-top"><div class="axa-hero-mark">' + mark('lg') + '</div>' +
-          '<div class="axa-hero-t"><h2>' + esc(greeting()) + '</h2><small>' + esc(dayName(today()) === 'النهارده' ? DAYS[dt(today()).getDay()] + ' ' + dm(today()) : dm(today())) + '</small></div></div>' +
-        '<div class="axa-kpis">' + H.kpis.map(function (k) { return '<div class="axa-kpi k-' + k.c + '"><span>' + esc(k.l) + '</span><b>' + esc(k.v) + '</b><small>' + esc(k.s) + '</small></div>'; }).join('') + '</div>' +
-        '<p class="axa-hero-note">' + H.b + '</p>' +
-        '<div class="axa-hero-acts">' + heroActs.map(function (a) { return '<button type="button" onclick="' + fn(function () { ask(a[1]); }) + '">' + esc(a[0]) + '</button>'; }).join('') + '</div>' +
+      '<section class="axa-hero axa-hero-c">' +
+        '<div class="axa-hero-top"><h2><span class="axa-bot" aria-hidden="true">🤖</span><span>المساعد الذكي</span><span class="axa-spark" aria-hidden="true">✨</span></h2>' +
+          '<small>' + esc(DAYS[dt(today()).getDay()] + ' ' + dm(today())) + '</small></div>' +
+        '<div class="axa-kpis">' + H.kpis.map(function (k) { return '<div class="axa-kpi k-' + k.c + '" title="' + esc(k.s) + '"><span>' + esc(k.l) + '</span><b>' + esc(k.v) + '</b></div>'; }).join('') + '</div>' +
+        '<div class="axa-hero-acts">' + heroActs.filter(function (a) { return a[0] !== 'أعمل إيه النهارده؟' || heroActs.length < 4; }).map(function (a) { return '<button type="button" onclick="' + fn(function () { ask(a[1]); }) + '">' + esc(a[0]) + '</button>'; }).join('') + '</div>' +
       '</section>' +
       '<nav class="axa-tabs" role="tablist">' +
         tabBtn('chat', 'المحادثة', 0) + tabBtn('churn', 'معرضين نخسرهم', C.ch) + tabBtn('prospects', 'المستهدفين', C.pr) +

@@ -393,11 +393,46 @@
     var y = window.scrollY || 0;
     try { window.scrollTo(window.scrollX || 0, y + 1); window.scrollTo(window.scrollX || 0, y); } catch (e) {}
     anchorNav();
+    checkShrunk();
+  }
+  /* iPhone home-screen app: after the keyboard / coming back to the app, iOS sometimes keeps the
+     app window shorter than the screen (black strip under the bar until you touch the screen).
+     Spot it (window shorter than the screen while nothing is being typed) and make iOS lay the
+     page out again — a tiny scroll + a one-frame height change, the same thing your finger does. */
+  var standalone = (function () { try { return navigator.standalone === true || matchMedia('(display-mode: standalone)').matches; } catch (e) { return false; } })();
+  var shrinkTries = 0, shrinkTimer = 0;
+  function screenH() {
+    var w = screen.width || 0, h = screen.height || 0;
+    return window.innerWidth > window.innerHeight ? Math.min(w, h) : Math.max(w, h);
+  }
+  function shrunk() {
+    if (!standalone || !mobile()) return false;
+    var a = document.activeElement; if (a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) return false;
+    return screenH() - window.innerHeight > 20;
+  }
+  function relayout() {
+    var de = document.documentElement, y = window.scrollY || 0;
+    de.style.minHeight = (screenH() + 1) + 'px';
+    try { window.scrollTo(0, y + 2); } catch (e) {}
+    requestAnimationFrame(function () {
+      de.style.minHeight = '';
+      try { window.scrollTo(0, y); } catch (e) {}
+      anchorNav();
+    });
+  }
+  function checkShrunk() {
+    if (!shrunk()) { shrinkTries = 0; return; }
+    if (shrinkTries >= 6) return;                                  // don't fight iOS forever
+    shrinkTries++;
+    relayout();
+    clearTimeout(shrinkTimer); shrinkTimer = setTimeout(checkShrunk, 250 * shrinkTries);
   }
   (function () {
     var vv = window.visualViewport;
     if (vv) { vv.addEventListener('resize', anchorNav); vv.addEventListener('scroll', anchorNav); }
-    window.addEventListener('resize', anchorNav);
+    window.addEventListener('resize', function () { anchorNav(); shrinkTries = 0; setTimeout(checkShrunk, 160); });
+    document.addEventListener('touchend', function () { if (shrunk()) { shrinkTries = 0; setTimeout(checkShrunk, 60); } }, { passive: true });
+    setTimeout(checkShrunk, 900);
     window.addEventListener('orientationchange', function () { setTimeout(nudge, 350); });
     document.addEventListener('focusout', function () { setTimeout(nudge, 120); setTimeout(nudge, 450); });
     document.addEventListener('visibilitychange', function () { if (!document.hidden) setTimeout(nudge, 200); });

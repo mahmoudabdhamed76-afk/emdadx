@@ -12,7 +12,7 @@
 
 <!-- PWA: install to home screen with company logo -->
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#000000">
+<meta name="theme-color" content="#121212">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -32,7 +32,7 @@
   var t = 'dark', rail = false;
   try { t = localStorage.getItem('theme') || 'dark'; rail = localStorage.getItem('ax_rail') === '1'; } catch (e) {}
   d.setAttribute('data-theme', t === 'light' ? 'light' : 'dark');
-  try { var tc = document.querySelector('meta[name="theme-color"]'); if (tc) tc.setAttribute('content', t === 'light' ? '#002055' : '#000000'); } catch (e) {}
+  try { var tc = document.querySelector('meta[name="theme-color"]'); if (tc) tc.setAttribute('content', t === 'light' ? '#002055' : '#121212'); } catch (e) {}
   d.classList.add('aurum');
   if (rail) d.classList.add('ax-rail');
   /* 4.9 · no splash: the login form shows at once. Only when this device was
@@ -9633,7 +9633,7 @@ audio::-webkit-media-controls-panel { background: rgba(15,23,42,.9); }
 
     <footer class="app-footer">
       <div>جميع الحقوق محفوظة © 2026 إمداد إكس</div>
-      <div class="version">الإصدار 4.16.2</div>
+      <div class="version">الإصدار 4.16.3</div>
     </footer>
   </div>
 </div>
