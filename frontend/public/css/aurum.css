@@ -3106,7 +3106,7 @@ html.aurum[data-theme="light"] .data-table tbody tr:last-child td { border-botto
 
 /* inputs and selects: a real edge */
 html.aurum[data-theme="light"] .form-control, html.aurum[data-theme="light"] select.form-control,
-html.aurum[data-theme="light"] input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not(#axa-q):not(.lgn-input),
+html.aurum[data-theme="light"] input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not(#axa-q):not(#axp-q):not(.lgn-input),
 html.aurum[data-theme="light"] textarea {
   border: 1px solid var(--ax-line-2) !important; background-color: #FFFFFF !important;
 }
@@ -3909,3 +3909,51 @@ html.aurum .ax-hl.ax-hl-draw { animation: axHlDraw .7s cubic-bezier(.3, .7, .2, 
 @keyframes axHlDraw { from { background-size: 0% 100%; } to { background-size: 100% 100%; } }
 @media (prefers-reduced-motion: reduce) { html.aurum .ax-hl.ax-hl-draw { animation: none; } }
 @media print { html.aurum .ax-hl { background-image: none !important; color: inherit !important; } }
+
+/* ════════════════════════════════════════════════════════════════════
+   48. 4.15 · قايمة الاختيار العايمة بالبحث على الموبايل (js/picker.js)
+   الخانة نفسها بتبقى بحث، والنتايج في كارت عايم تحتها.
+════════════════════════════════════════════════════════════════════ */
+html.axp-mob select.axp-on { pointer-events: none; }
+.axp-bd { position: fixed; inset: 0; z-index: 10040; background: rgba(0, 0, 0, .38); cursor: pointer; touch-action: none; -webkit-tap-highlight-color: transparent; }
+.axp-fld { position: fixed; z-index: 10052; display: flex; align-items: center; gap: 10px; padding: 0 14px; box-sizing: border-box;
+  background: var(--ax-surface-2, #1A1A1A); border: 1.5px solid var(--ax-ink, #fff); border-radius: 16px;
+  box-shadow: 0 0 0 4px rgba(var(--ax-primary-rgb, 255, 255, 255), .08); opacity: 0; transform: scale(.985); transition: opacity .14s, transform .14s; }
+.axp-fld.in { opacity: 1; transform: none; }
+.axp-fld .axp-ic { font-size: 17px; flex: none; opacity: .8; }
+#axp-q, html.aurum #axp-q { flex: 1; height: 100% !important; min-height: 0 !important; border-radius: 0 !important; line-height: normal !important; min-width: 0; height: 100%; border: 0 !important; outline: 0 !important; box-shadow: none !important; background: transparent !important;
+  color: var(--ax-text, #fff) !important; font: 600 16px/1 var(--ax-font, system-ui) !important; padding: 0 !important; -webkit-appearance: none; appearance: none; }
+#axp-q::placeholder { color: var(--ax-muted, #9E9E9E); font-weight: 500; }
+#axp-q::-webkit-search-cancel-button { -webkit-appearance: none; }
+.axp-fld .axp-n { flex: none; color: var(--ax-muted, #9E9E9E); font-size: 12.5px; font-weight: 600; white-space: nowrap; }
+.axp-pop { position: fixed; z-index: 10050; box-sizing: border-box; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
+  background: var(--ax-surface-3, #1E1E1E); border: 1px solid var(--ax-line-2, #333); border-radius: 22px; padding: 8px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, .55); opacity: 0; transform: translateY(-6px); transition: opacity .16s, transform .16s; }
+.axp-pop.up { transform: translateY(6px); }
+.axp-pop.in { opacity: 1; transform: none; }
+.axp-row { display: flex; align-items: center; gap: 12px; padding: 11px 10px; border-radius: 14px; cursor: pointer; color: var(--ax-text, #fff); -webkit-tap-highlight-color: transparent; }
+.axp-row:active { background: var(--ax-gold-soft, rgba(255, 255, 255, .08)); }
+.axp-row.hi { background: var(--ax-ink, #fff); color: var(--ax-on-ink, #000); }
+.axp-row.dis { opacity: .4; pointer-events: none; }
+.axp-row.all .axp-nm { color: var(--ax-muted, #9E9E9E); }
+.axp-row.hi.all .axp-nm { color: inherit; }
+.axp-tx { flex: 1; min-width: 0; }
+.axp-nm { font-weight: 700; font-size: 15.5px; line-height: 1.35; overflow-wrap: anywhere; }
+.axp-sub { font-size: 12.5px; color: var(--ax-muted, #9E9E9E); margin-top: 2px; line-height: 1.4; }
+.axp-row.hi .axp-sub { color: color-mix(in srgb, var(--ax-on-ink, #000) 62%, transparent); }
+.axp-nm mark { background: rgba(255, 200, 0, .32); color: inherit; border-radius: 5px; padding: 0 2px; }
+.axp-row.hi .axp-nm mark { background: rgba(255, 190, 0, .6); }
+.axp-dot { width: 10px; height: 10px; border-radius: 99px; flex: none; }
+.axp-d-ok { background: var(--ax-ok, #5CE89A); } .axp-d-warn { background: var(--ax-warn, #FFBD5C); } .axp-d-bad { background: var(--ax-bad, #FF6B6B); }
+.axp-ok { color: var(--ax-ok, #5CE89A); font-weight: 700; } .axp-warn { color: var(--ax-warn, #FFBD5C); } .axp-bad { color: var(--ax-bad, #FF6B6B); }
+.axp-row.hi .axp-ok { color: #0B7A3B; } .axp-row.hi .axp-warn { color: #9A5B00; } .axp-row.hi .axp-bad { color: #C81E1E; }
+html.aurum[data-theme="light"] .axp-ok { color: #0B8A43; } html.aurum[data-theme="light"] .axp-warn { color: #B26A00; } html.aurum[data-theme="light"] .axp-bad { color: #D32626; }
+html.aurum[data-theme="light"] .axp-row.hi .axp-ok { color: #6FF0A8; } html.aurum[data-theme="light"] .axp-row.hi .axp-warn { color: #FFC66E; } html.aurum[data-theme="light"] .axp-row.hi .axp-bad { color: #FF8A8A; }
+.axp-go { font-size: 18px; font-weight: 900; flex: none; }
+.axp-ck { flex: none; width: 22px; height: 22px; border-radius: 99px; display: grid; place-items: center; font-size: 12px; font-weight: 900; background: var(--ax-ink, #fff); color: var(--ax-on-ink, #000); }
+.axp-g { color: var(--ax-faint, #6E6E6E); font-size: 12px; font-weight: 800; padding: 10px 10px 4px; }
+.axp-empty { color: var(--ax-muted, #9E9E9E); padding: 14px 10px; font-size: 14px; text-align: center; }
+.axp-add { display: flex; align-items: center; gap: 8px; width: 100%; border: 0; background: transparent; padding: 12px 10px; border-radius: 14px;
+  color: var(--ax-ok, #5CE89A); font: 700 14.5px var(--ax-font, system-ui); cursor: pointer; text-align: start; }
+html.aurum[data-theme="light"] .axp-add { color: #0B8A43; }
+.axp-foot { display: flex; justify-content: space-between; gap: 8px; color: var(--ax-faint, #6E6E6E); font-size: 11.5px; padding: 9px 10px 4px; border-top: 1px solid var(--ax-line, #232323); margin-top: 4px; position: sticky; bottom: -8px; background: inherit; }
