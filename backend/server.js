@@ -196,7 +196,7 @@ const server = http.createServer(async (req, res) => {
       const token = auth.createSession(u.id, req);
       const pw = String(b.password || '');
       const weak = pw.length < 6 || pw.toLowerCase() === String(u.username || '').toLowerCase() || /^(admin|123456?|1234|0000|password)$/i.test(pw);
-      return sendJSON(res, 200, { ok: true, user: publicUser(u), weak }, { 'Set-Cookie': auth.cookieHeader(req, token) });
+      return sendJSON(res, 200, { ok: true, user: publicUser(u), weak, token }, { 'Set-Cookie': auth.cookieHeader(req, token) });
     }
     if (pathname === '/api/logout' && req.method === 'POST') {
       const t = auth.tokenOf(req); if (t) auth.dropSession(t);
@@ -204,7 +204,8 @@ const server = http.createServer(async (req, res) => {
     }
     if (pathname === '/api/me' && req.method === 'GET') {
       const u = currentUser(req);
-      return u ? sendJSON(res, 200, { user: publicUser(u) }) : sendJSON(res, 401, { error: 'login' });
+      /* 4.13 · renew the cookie on every visit, so an active device never gets signed out */
+      return u ? sendJSON(res, 200, { user: publicUser(u), token: auth.tokenOf(req) }, { 'Set-Cookie': auth.cookieHeader(req, auth.tokenOf(req)) }) : sendJSON(res, 401, { error: 'login' });
     }
 
     /* ── everything below needs a logged-in user ── */

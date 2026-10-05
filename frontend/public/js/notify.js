@@ -239,6 +239,8 @@
       }
     });
 
+    /* 4.13 · other modules add their own (margins, weekly statements …) */
+    (window.AXNSources || []).forEach(function (fn) { var l = call(fn); if (Array.isArray(l)) l.forEach(function (x) { if (x) push(x); }); });
     out.forEach(function (x) { x.acts = (x.acts || []).filter(Boolean); });
     return out;
   }

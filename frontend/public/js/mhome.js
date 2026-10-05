@@ -83,7 +83,7 @@
     ['issuances', 'صرف الورق'], ['invoices', 'المبيعات'], ['purchases', 'المشتريات'], ['payments', 'التحصيل'],
     ['customers', 'العملاء'], ['forecast', 'مواعيد السحب'], ['inventory', 'المخازن'], ['stock', 'مخزوني وجرد'],
     ['suppliers', 'الموردين'], ['expenses', 'المصروفات'], ['reports', 'التقارير'], ['profit', 'الأرباح'],
-    ['cheques', 'الشيكات'], ['aging', 'أعمار الديون'], ['requests', 'الطلبات'], ['aiassistant', 'المساعد الذكي']
+    ['cheques', 'الشيكات'], ['monthly', 'تقرير الشهر'], ['aging', 'أعمار الديون'], ['requests', 'الطلبات'], ['aiassistant', 'المساعد الذكي']
   ];
   function tileSub(k, m) {
     var t = today(), m0 = t.slice(0, 8) + '01';
@@ -101,6 +101,7 @@
         case 'expenses': return money(A('expenses').filter(function (e) { return e.kind !== 'purchase' && (e.date || '') >= m0; }).reduce(function (s, e) { return s + N(e.amount); }, 0)) + ' الشهر';
         case 'reports': return 'تقارير وتحليلات';
         case 'profit': return 'هامش وأرباح';
+        case 'monthly': return 'تقفيل وطباعة PDF';
         case 'cheques': var c = window.AXCheq && AXCheq.dueSoon ? AXCheq.dueSoon().length : 0; return c ? c + ' ميعادهم قرّب' : 'وارد وصادر';
         case 'aging': return 'مين متأخر وبقاله قد إيه';
         case 'requests': var r = window.AXReq ? AXReq.list().filter(function (x) { return x.status === 'pending'; }).length : 0; return r ? r + ' مستني' : 'طلبات واقتراحات';
@@ -227,6 +228,7 @@
       ['payments', 'openPaymentForm()', 'تحصيل', '#10b981'], ['customers', 'openCustomerForm()', 'عميل جديد', '#8b5cf6'],
       ['expenses', 'openExpenseForm()', 'مصروف', '#ef4444'], ['suppliers', 'openPurchaseForm()', 'فاتورة شراء', '#f97316'],
       ['suppliers', "navigate('suppliers');setTimeout(function(){openSupplierPaymentForm()},140)", 'سداد مورد', '#d97706'],
+      ['payments', 'AXWeekly.open()', 'كشوف الأسبوع', '#16a34a'],
       ['dashboard', 'AX.dayClose()', 'تقفيل اليوم', '#0d9488']
     ].filter(function (q) { return canGo(q[0]) && (q[1].indexOf('AX.') !== 0 || window.AX); });
     var all = [];

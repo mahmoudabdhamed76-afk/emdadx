@@ -12,7 +12,7 @@
 ════════════════════════════════════════════════════════════════════ */
 (function () {
   'use strict';
-  var DEF = { overdueDays: 30, staleDays: 60, expiryWarnDays: 60, requireCustomerFirst: true };
+  var DEF = { overdueDays: 30, staleDays: 60, expiryWarnDays: 60, requireCustomerFirst: true, creditBlock: true, blockOverdueDays: 60, minMargin: 5 };
 
   function D() { return (typeof DB !== 'undefined' && DB && DB.data) || {}; }
   function S() { var d = D(); if (!d.settings) d.settings = {}; return d.settings; }
@@ -31,7 +31,10 @@
       overdueDays: int(s.overdueDays, DEF.overdueDays),
       staleDays: int(s.staleDays, DEF.staleDays),
       expiryWarnDays: int(s.expiryWarnDays, DEF.expiryWarnDays),
-      requireCustomerFirst: s.requireCustomerFirst !== false
+      requireCustomerFirst: s.requireCustomerFirst !== false,
+      creditBlock: s.creditBlock !== false,
+      blockOverdueDays: int(s.blockOverdueDays, DEF.blockOverdueDays),
+      minMargin: (s.minMargin === 0 || (Number(s.minMargin) > 0 && Number(s.minMargin) < 90)) ? Number(s.minMargin) : DEF.minMargin
     };
   }
 
@@ -118,6 +121,12 @@
         '</div>' +
         '<label class="axr-check"><input type="checkbox" id="axr-cust"' + (r.requireCustomerFirst ? ' checked' : '') + '>' +
           '<span><b>إلزام اختيار العميل قبل بدء فاتورة البيع</b><em>الأصناف والمبالغ تفضل مقفولة لحد ما تختار العميل — في الفاتورة وصرف الورق</em></span></label>' +
+        '<div class="axr-grid" style="margin-top:14px">' +
+          field('axr-block', 'وقف الصرف لو عليه متأخرات أكتر من (يوم)', r.blockOverdueDays, 'أقدم فلوس عليه لسه متدفعتش') +
+          '<label class="axr-f" for="axr-margin"><span>أقل هامش ربح مقبول (%)</span><input class="form-control" type="number" inputmode="decimal" min="0" max="89" step="0.5" id="axr-margin" value="' + r.minMargin + '"><em>تحته يجيلك تنبيه إن سعر المركز محتاج يتعدّل</em></label>' +
+        '</div>' +
+        '<label class="axr-check"><input type="checkbox" id="axr-credit"' + (r.creditBlock ? ' checked' : '') + '>' +
+          '<span><b>وقف الصرف لو المركز عدّى حد الائتمان أو عليه متأخرات</b><em>المدير يكمّل بتأكيد، والموظف يبعت طلب استثناء للمدير في «الطلبات والمقترحات»</em></span></label>' +
         '<div class="axr-foot"><span id="axr-preview" aria-live="polite"></span>' +
           '<button type="button" class="btn btn-primary" onclick="AXRules.save()">حفظ القواعد</button></div>' +
       '</div></div>';
@@ -141,6 +150,9 @@
     s.staleDays = int((document.getElementById('axr-stale') || {}).value, DEF.staleDays);
     s.expiryWarnDays = int((document.getElementById('axr-expiry') || {}).value, DEF.expiryWarnDays);
     s.requireCustomerFirst = !!(document.getElementById('axr-cust') || {}).checked;
+    s.creditBlock = !!(document.getElementById('axr-credit') || {}).checked;
+    s.blockOverdueDays = int((document.getElementById('axr-block') || {}).value, DEF.blockOverdueDays);
+    var mm = parseFloat((document.getElementById('axr-margin') || {}).value); s.minMargin = mm >= 0 && mm < 90 ? mm : DEF.minMargin;
     DB.save();
     T('اتحفظت قواعد البيع والتنبيهات');
     try { if (typeof updateNotifBadge === 'function') updateNotifBadge(); } catch (e) {}

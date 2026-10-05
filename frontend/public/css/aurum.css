@@ -3748,3 +3748,107 @@ html.aurum .notes-panel { height: 100vh; height: 100dvh; padding-bottom: env(saf
   html.aurum #bottom-nav::after { content: ''; position: absolute; inset-inline: 0; top: 100%; height: 240px; background: var(--ax-surface); pointer-events: none; }
   html.aurum .mh-an { margin: 22px 2px 12px !important; }
 }
+
+/* ════════════════════════════════════════════════════════════════════
+   45. 4.13 · قايمة صرف الورق على الموبايل = كروت طولية (js/isscards.js)
+════════════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  html.aurum .iss-wrap { background: transparent !important; box-shadow: none !important; border: 0 !important; padding: 0 !important; overflow: visible !important; }
+  html.aurum .iss-wrap .table-scroll { overflow: visible !important; }
+  html.aurum table.iss-tbl, html.aurum table.iss-tbl tbody { display: block; width: 100%; min-width: 0 !important; border: 0 !important; background: transparent !important; }
+  html.aurum table.iss-tbl thead { display: none; }
+  html.aurum table.iss-tbl tr.iss-row {
+    display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px 10px;
+    grid-template-areas: "num num st" "cus cus cus" "prod prod date" "qty price tot" "paid rem rem" "act act act";
+    margin: 0 0 12px; padding: 14px; border-radius: 18px; background: var(--ax-surface) !important;
+    border: 1px solid var(--ax-line) !important; box-shadow: var(--ax-shadow);
+  }
+  html.aurum table.iss-tbl tr.iss-row > td { display: block; padding: 0 !important; border: 0 !important; background: transparent !important; text-align: start !important; min-width: 0; white-space: normal !important; font-size: 13.5px; }
+  html.aurum table.iss-tbl tr.iss-row > td.ic-0 { grid-area: num; font-size: 15px; }
+  html.aurum table.iss-tbl tr.iss-row > td.ic-1 { grid-area: date; text-align: end !important; color: var(--ax-muted); font-size: 12.5px; }
+  html.aurum table.iss-tbl tr.iss-row > td.ic-2 { grid-area: cus; font: 800 17px/1.35 var(--ax-display); }
+  html.aurum table.iss-tbl tr.iss-row > td.ic-3 { grid-area: prod; color: var(--ax-muted); font-weight: 600; }
+  html.aurum table.iss-tbl tr.iss-row > td.ic-4 { grid-area: qty; }
+  html.aurum table.iss-tbl tr.iss-row > td.ic-5 { grid-area: price; }
+  html.aurum table.iss-tbl tr.iss-row > td.ic-6 { grid-area: tot; }
+  html.aurum table.iss-tbl tr.iss-row > td.ic-7 { grid-area: paid; }
+  html.aurum table.iss-tbl tr.iss-row > td.ic-8 { grid-area: rem; }
+  html.aurum table.iss-tbl tr.iss-row > td.ic-9 { grid-area: st; justify-self: end; }
+  html.aurum table.iss-tbl tr.iss-row > td.ic-10 { grid-area: act; padding-top: 10px !important; border-top: 1px solid var(--ax-line) !important; }
+  html.aurum table.iss-tbl tr.iss-row > td.ic-4, html.aurum table.iss-tbl tr.iss-row > td.ic-5, html.aurum table.iss-tbl tr.iss-row > td.ic-6,
+  html.aurum table.iss-tbl tr.iss-row > td.ic-7, html.aurum table.iss-tbl tr.iss-row > td.ic-8 {
+    background: var(--ax-surface-2) !important; border-radius: 12px; padding: 8px 10px !important; font-weight: 800; font-variant-numeric: tabular-nums; overflow-wrap: anywhere;
+  }
+  html.aurum table.iss-tbl tr.iss-row > td.ic-4::before, html.aurum table.iss-tbl tr.iss-row > td.ic-5::before, html.aurum table.iss-tbl tr.iss-row > td.ic-6::before,
+  html.aurum table.iss-tbl tr.iss-row > td.ic-7::before, html.aurum table.iss-tbl tr.iss-row > td.ic-8::before {
+    content: attr(data-label); display: block; font: 600 11px var(--ax-font); color: var(--ax-faint); margin-bottom: 2px;
+  }
+  html.aurum table.iss-tbl tr.iss-row > td.ic-1 div { display: block !important; margin-top: 2px; }
+  html.aurum table.iss-tbl tr.iss-row .row-actions { display: flex; justify-content: space-between; gap: 6px; }
+  html.aurum table.iss-tbl tr.iss-row .row-actions .btn-icon { flex: 1; height: 40px; border-radius: 12px; background: var(--ax-surface-2) !important; display: grid; place-items: center; }
+  html.aurum table.iss-tbl tr:not(.iss-row) { display: block; }
+  html.aurum table.iss-tbl tr:not(.iss-row) > td { display: block; }
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   46. 4.13 · وقف الصرف + الأسعار + تقرير الشهر + كشوف الأسبوع
+════════════════════════════════════════════════════════════════════ */
+html.aurum .axc-block { margin: 0 0 14px; padding: 13px 14px; border-radius: 14px; background: var(--ax-bad-soft); color: var(--ax-text); border: 1px solid color-mix(in srgb, var(--ax-bad) 40%, transparent); }
+html.aurum .axc-block > b { display: block; color: var(--ax-bad); font: 800 15px var(--ax-display); margin-bottom: 4px; }
+html.aurum .axc-block ul { margin: 0 0 10px; padding-inline-start: 18px; font-size: 13px; line-height: 1.7; }
+html.aurum .axc-acts { display: flex; gap: 8px; flex-wrap: wrap; }
+html.aurum .axc-wait { font-weight: 700; font-size: 13px; color: var(--ax-warn); }
+html.aurum .axm-k { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 10px; }
+html.aurum .axm-k > div { display: flex; flex-direction: column; padding: 10px 12px; border-radius: 12px; background: var(--ax-surface-2); }
+html.aurum .axm-k em { font-style: normal; font-size: 11.5px; color: var(--ax-muted); }
+html.aurum .axm-k b { font: 800 18px var(--ax-display); }
+html.aurum .axm-k .t-bad { color: var(--ax-bad); } html.aurum .axm-k .t-warn { color: var(--ax-warn); }
+html.aurum .axm-note { font-size: 12.5px; color: var(--ax-muted); margin: 6px 0; }
+html.aurum .axm-list, html.aurum .wk-list { list-style: none; margin: 0; padding: 0; }
+html.aurum .axm-list li, html.aurum .wk-list li { display: flex; align-items: center; gap: 10px; padding: 11px 2px; border-bottom: 1px solid var(--ax-line); }
+html.aurum .axm-list li > div, html.aurum .wk-list li > div { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+html.aurum .axm-list b, html.aurum .wk-list b { font-size: 14.5px; }
+html.aurum .axm-list span, html.aurum .wk-list span { font-size: 12px; color: var(--ax-muted); }
+html.aurum .axm-list em { font-style: normal; font: 800 14px var(--ax-display); color: var(--ax-warn); }
+html.aurum .axm-list li.loss em { color: var(--ax-bad); }
+html.aurum .axm-list button, html.aurum .wk-list button { border: 0; border-radius: 10px; padding: 8px 14px; background: var(--ax-ink); color: var(--ax-on-ink); font: 700 13px var(--ax-font); cursor: pointer; min-height: 38px; }
+html.aurum .wk-list li.done { opacity: .6; } html.aurum .wk-list li.done button { background: var(--ax-surface-3); color: var(--ax-text); }
+html.aurum .axm-ok, html.aurum .wk-done { text-align: center; color: var(--ax-ok); font-weight: 700; padding: 14px 0; }
+html.aurum .wk-head { display: grid; grid-template-columns: auto 1fr; align-items: baseline; gap: 4px 10px; margin-bottom: 12px; }
+html.aurum .wk-head b { font: 800 22px var(--ax-display); } html.aurum .wk-head span { color: var(--ax-muted); font-size: 13px; }
+html.aurum .wk-head i { grid-column: 1 / -1; height: 6px; border-radius: 99px; background: var(--ax-surface-3); overflow: hidden; }
+html.aurum .wk-head u { display: block; height: 100%; background: var(--ax-ok); }
+html.aurum .wk-next { width: 100%; margin-bottom: 10px; min-height: 48px; }
+
+html.aurum .mr-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+html.aurum .mr-acts { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+html.aurum .mr-closed { font-weight: 800; color: var(--ax-ok); background: var(--ax-ok-soft); padding: 9px 14px; border-radius: 12px; }
+html.aurum .mr-hint { font-size: 12.5px; color: var(--ax-faint); }
+html.aurum .mr-pick { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+html.aurum .mr-pick button { width: 40px; height: 40px; border-radius: 12px; border: 1px solid var(--ax-line-2); background: var(--ax-surface); color: var(--ax-text); font: 800 20px/1 var(--ax-font); cursor: pointer; }
+html.aurum .mr-pick button:disabled { opacity: .35; cursor: default; }
+html.aurum .mr-pick b { font: 800 20px var(--ax-display); min-width: 130px; text-align: center; }
+html.aurum .mr-pick span { color: var(--ax-muted); font-size: 13px; }
+html.aurum .mr-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 14px; }
+html.aurum .mr-k { display: flex; flex-direction: column; gap: 2px; padding: 14px 16px; border-radius: var(--ax-radius); background: var(--ax-surface); border: 1px solid var(--ax-line); box-shadow: var(--ax-shadow); min-width: 0; }
+html.aurum .mr-k span { font-size: 12.5px; font-weight: 600; color: var(--ax-muted); }
+html.aurum .mr-k b { font: 800 22px/1.2 var(--ax-display); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+html.aurum .mr-k.hi { border-color: color-mix(in srgb, var(--ax-blue) 40%, transparent); }
+html.aurum .mr-k.ok b { color: var(--ax-ok); } html.aurum .mr-k.bad b { color: var(--ax-bad); }
+html.aurum .mr-d { font-style: normal; font-size: 12px; font-weight: 800; }
+html.aurum .mr-d.up { color: var(--ax-ok); } html.aurum .mr-d.down { color: var(--ax-bad); }
+html.aurum .mr-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+html.aurum .mr-box { background: var(--ax-surface); border: 1px solid var(--ax-line); border-radius: var(--ax-radius); box-shadow: var(--ax-shadow); padding: 14px 16px; min-width: 0; }
+html.aurum .mr-box h3 { margin: 0 0 8px; font: 800 16px var(--ax-display); }
+html.aurum .mr-top, html.aurum .mr-list { list-style: none; margin: 0; padding: 0; }
+html.aurum .mr-top li, html.aurum .mr-list li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 10px; padding: 9px 0; border-bottom: 1px solid var(--ax-line); }
+html.aurum .mr-top li b, html.aurum .mr-list li b { font-size: 14px; }
+html.aurum .mr-top li span, html.aurum .mr-list li span { grid-column: 1; font-size: 12px; color: var(--ax-muted); }
+html.aurum .mr-top li em, html.aurum .mr-list li em { grid-column: 2; grid-row: 1 / span 2; align-self: center; font-style: normal; font-weight: 800; font-size: 13px; }
+html.aurum .mr-top li em.t-bad { color: var(--ax-bad); }
+html.aurum .mr-none { color: var(--ax-faint); font-size: 13px; padding: 8px 0; display: block !important; }
+html.aurum .mr-more { margin-top: 10px; }
+html.aurum .mr-foot { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; margin-top: 14px; color: var(--ax-muted); font-size: 13px; }
+html.aurum .mr-foot b { color: var(--ax-text); }
+@media (max-width: 900px) { html.aurum .mr-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } html.aurum .mr-grid { grid-template-columns: 1fr; } }
+@media (max-width: 768px) { html.aurum .mr-k b { font-size: 18px; } html.aurum .mr-acts { width: 100%; } html.aurum .mr-acts .btn { flex: 1; } }

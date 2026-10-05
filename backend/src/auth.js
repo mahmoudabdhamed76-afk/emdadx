@@ -11,7 +11,7 @@ const crypto = require('node:crypto');
 const { db } = require('../db');
 
 const COOKIE = 'emx_sid';
-const SESSION_DAYS = 30;
+const SESSION_DAYS = 365;   // 4.13 · stays signed in (sliding: every use pushes it a year ahead)
 const SESSION_MS = SESSION_DAYS * 864e5;
 
 /* ── passwords ── */
@@ -81,7 +81,11 @@ function tokenOf(req) {
   const c = parseCookies(req)[COOKIE];
   if (c) return c;
   const a = req.headers.authorization || '';
-  return a.startsWith('Bearer ') ? a.slice(7).trim() : null;
+  if (a.startsWith('Bearer ')) return a.slice(7).trim();
+  /* 4.13 · the live stream (EventSource can't send headers) may carry the device token */
+  const u = String(req.url || '');
+  if (u.indexOf('/api/events') >= 0) { const m = u.match(/[?&]t=([a-f0-9]{64})/); if (m) return m[1]; }
+  return null;
 }
 /* → user id of a valid session, or null */
 function sessionUserId(req) {

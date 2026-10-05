@@ -1,8 +1,8 @@
 'use strict';
 
-const CACHE      = 'emdadx-v4.12.2-nav';
+const CACHE      = 'emdadx-v4.13-control';
 // relative to the SW scope, so it also works when the app lives under APP_PATH
-const APP_SHELL  = ['./', './index.html', './manifest.json', './css/aurum.css', './js/aurum.js', './js/glowchart.js', './js/stockhub.js', './js/stockcount.js', './js/debts.js', './js/business.js', './js/custody.js', './js/axcore.js', './js/rules.js', './js/forecast.js', './js/purchases.js', './js/xlsx.js', './js/notify.js', './js/approvals.js', './js/security.js', './js/aging.js', './js/cheques.js', './js/profit.js', './js/purchase.js', './js/requests.js', './js/users.js', './js/assistant.js', './js/papermeter.js', './js/ticker.js', './js/pulsescene.js', './js/mhome.js', './vendor/gsap.min.js',
+const APP_SHELL  = ['./', './index.html', './manifest.json', './css/aurum.css', './js/aurum.js', './js/glowchart.js', './js/stockhub.js', './js/stockcount.js', './js/debts.js', './js/business.js', './js/custody.js', './js/axcore.js', './js/rules.js', './js/forecast.js', './js/purchases.js', './js/xlsx.js', './js/credit.js', './js/monthly.js', './js/notify.js', './js/approvals.js', './js/security.js', './js/aging.js', './js/cheques.js', './js/profit.js', './js/purchase.js', './js/requests.js', './js/isscards.js', './js/users.js', './js/assistant.js', './js/papermeter.js', './js/ticker.js', './js/pulsescene.js', './js/mhome.js', './vendor/gsap.min.js',
                     './fonts/fonts.css', './vendor/chart.umd.js', './vendor/modern-screenshot.js',
                     './icons/logo-square.png'];
 const DB_NAME    = 'emdadx-offline';
@@ -38,14 +38,22 @@ self.addEventListener('fetch', e => {
 
   // Pages: network-first so a new release shows immediately; cache only when offline
   if (e.request.mode === 'navigate' || url.pathname.endsWith('.html') || url.pathname.endsWith('/')) {
-    e.respondWith(
-      fetch(e.request)
-        .then(res => {
-          if (res && res.status === 200) { const clone = res.clone(); caches.open(CACHE).then(c => c.put(e.request, clone)); }
-          return res;
-        })
-        .catch(() => caches.match(e.request).then(r => r || caches.match('./index.html')))
-    );
+    /* 4.13 · a weak signal must not leave a blank screen: after 4 s the saved copy opens,
+       and the fresh one is still saved for next time */
+    const fromCache = () => caches.match(e.request).then(r => r || caches.match('./index.html'));
+    const net = fetch(e.request).then(res => {
+      if (res && res.status === 200) { const clone = res.clone(); caches.open(CACHE).then(c => c.put(e.request, clone)); }
+      return res;
+    });
+    e.respondWith(new Promise(resolve => {
+      let done = false;
+      const t = setTimeout(() => { fromCache().then(r => { if (!done && r) { done = true; resolve(r); } }); }, 4000);
+      net.then(res => {
+        if (done) return;
+        if (res && res.status >= 500) return fromCache().then(r => { done = true; clearTimeout(t); resolve(r || res); });
+        done = true; clearTimeout(t); resolve(res);
+      }).catch(() => fromCache().then(r => { if (!done) { done = true; clearTimeout(t); resolve(r || Response.error()); } }));
+    }));
     return;
   }
 
