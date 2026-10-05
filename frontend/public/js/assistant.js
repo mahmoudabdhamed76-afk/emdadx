@@ -863,13 +863,18 @@
   function heroLines() {
     var t = today(), P0 = { from: t, to: t }, s = sales(P0), py = sum(pays(P0).filter(function (x) { return +x.amount > 0; }), 'amount');
     var od = overdue(), low = stockModel().filter(function (i) { return i.state === 'crit' || i.state === 'empty'; });
-    var a = s.length ? 'النهارده اتصرف <b>' + ops(s) + '</b> ' + plural(ops(s), 'عملية', 'عمليات', 'عملية') + ' بـ <b>' + money(sum(s, 'total')) + '</b>' : 'لسه مفيش صرف النهارده';
-    a += py > 0 ? '، واتحصّل <b>' + money(py) + '</b>.' : '، ومفيش تحصيل لسه.';
+    var n = ops(s), odSum = sum(od, 'remaining'), g = od.length ? groupBy(od, 'customerId', 'remaining') : [];
     var b;
-    if (od.length) { var g = groupBy(od, 'customerId', 'remaining'); b = 'فيه <b>' + money(sum(od, 'remaining')) + '</b> متأخرين، أكترهم عند ' + esc(cname(g[0].k)) + '.'; }
+    if (od.length) b = 'أكتر متأخرات عند <b>' + esc(cname(g[0].k)) + '</b>' + (low.length ? ' · و<b>' + low.length + '</b> ' + plural(low.length, 'صنف', 'أصناف', 'صنف') + ' في المخزن ' + (low.length === 1 ? 'قرب يخلص' : 'قربوا يخلصوا') : '') + '.';
     else if (low.length) b = '<b>' + low.length + '</b> ' + plural(low.length, 'صنف', 'أصناف', 'صنف') + ' في المخزن ' + (low.length === 1 ? 'قرب يخلص' : 'قربوا يخلصوا') + '.';
     else b = 'مفيش متأخرات، والمخزن تمام.';
-    return { a: a, b: b, od: od.length, low: low.length };
+    var kpis = [
+      { c: 'b', l: 'صرف النهارده', v: n ? money(sum(s, 'total')) : '0', s: n ? n + ' ' + plural(n, 'عملية', 'عمليات', 'عملية') : 'لسه مفيش' },
+      { c: 'g', l: 'اتحصّل النهارده', v: py > 0 ? money(py) : '0', s: py > 0 ? 'تحصيل' : 'لسه مفيش' },
+      od.length ? { c: 'r', l: 'متأخرات', v: money(odSum), s: 'عند ' + g.length + ' ' + plural(g.length, 'مركز', 'مراكز', 'مركز') }
+                : { c: low.length ? 'y' : 'g', l: 'المخزن', v: low.length ? String(low.length) : 'تمام', s: low.length ? plural(low.length, 'صنف قرب يخلص', 'أصناف قربت تخلص', 'صنف قربوا يخلصوا') : 'مفيش نواقص' }
+    ];
+    return { b: b, kpis: kpis, od: od.length, low: low.length };
   }
   /* the quick questions, pinned at the top of the chat — each topic has its own color */
   var CATS = [
@@ -909,12 +914,11 @@
     heroActs.push(['ملخص النهارده', 'ملخص النهارده'], ['أعمل إيه النهارده؟', 'أعمل إيه النهارده؟']);
     var html =
       '<section class="axa-hero">' +
-        '<div class="axa-hero-mark">' + mark('lg') + '</div>' +
-        '<div class="axa-hero-t">' +
-          '<h2>' + esc(greeting()) + '</h2>' +
-          '<p>' + H.a + '</p><p>' + H.b + '</p>' +
-          '<div class="axa-hero-acts">' + heroActs.map(function (a) { return '<button type="button" onclick="' + fn(function () { ask(a[1]); }) + '">' + esc(a[0]) + '</button>'; }).join('') + '</div>' +
-        '</div>' +
+        '<div class="axa-hero-top"><div class="axa-hero-mark">' + mark('lg') + '</div>' +
+          '<div class="axa-hero-t"><h2>' + esc(greeting()) + '</h2><small>' + esc(dayName(today()) === 'النهارده' ? DAYS[dt(today()).getDay()] + ' ' + dm(today()) : dm(today())) + '</small></div></div>' +
+        '<div class="axa-kpis">' + H.kpis.map(function (k) { return '<div class="axa-kpi k-' + k.c + '"><span>' + esc(k.l) + '</span><b>' + esc(k.v) + '</b><small>' + esc(k.s) + '</small></div>'; }).join('') + '</div>' +
+        '<p class="axa-hero-note">' + H.b + '</p>' +
+        '<div class="axa-hero-acts">' + heroActs.map(function (a) { return '<button type="button" onclick="' + fn(function () { ask(a[1]); }) + '">' + esc(a[0]) + '</button>'; }).join('') + '</div>' +
       '</section>' +
       '<nav class="axa-tabs" role="tablist">' +
         tabBtn('chat', 'المحادثة', 0) + tabBtn('churn', 'معرضين نخسرهم', C.ch) + tabBtn('prospects', 'المستهدفين', C.pr) +

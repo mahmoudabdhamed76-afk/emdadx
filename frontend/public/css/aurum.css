@@ -3882,14 +3882,31 @@ html.aurum .mr-foot b { color: var(--ax-text); }
 }
 
 /* ════════════════════════════════════════════════════════════════════
-   47. 4.14 · قلم الهايلايتر الأخضر على الأرقام الخضرا والأحمر على الحمرا (js/marker.js)
-   خط ماركر فسفوري: أغمق في أول الضربة وبيخف في آخرها، حواف مايلة شوية،
-   ولو الرقم اتلف على سطرين كل سطر بياخد ضربته.
+   47. 4.14–4.16 · قلم الهايلايتر بكل الألوان (js/marker.js)
+   خط ماركر فسفوري: أتقل في أول الضربة وبيخف في آخرها، حواف مايلة شوية.
+   hlk-* = لون القلم (--hl) ولون الكلام فوقه (--hlt) لكل عيلة لون.
 ════════════════════════════════════════════════════════════════════ */
+html.aurum .hlk-g { --hl: 92, 236, 104;  --hlt: #063B1A; }
+html.aurum .hlk-r { --hl: 255, 92, 112;  --hlt: #5A0712; }
+html.aurum .hlk-b { --hl: 92, 170, 255;  --hlt: #062A5C; }
+html.aurum .hlk-y { --hl: 255, 212, 60;  --hlt: #4A3300; }
+html.aurum .hlk-o { --hl: 255, 156, 72;  --hlt: #4A1F00; }
+html.aurum .hlk-v { --hl: 178, 146, 255; --hlt: #2A1060; }
+html.aurum .hlk-t { --hl: 60, 222, 214;  --hlt: #003F3B; }
+html.aurum .hlk-p { --hl: 255, 118, 186; --hlt: #5A0634; }
+html.aurum[data-theme="dark"] .hlk-g { --hl: 74, 222, 128;  --hlt: #04210E; }
+html.aurum[data-theme="dark"] .hlk-r { --hl: 251, 113, 133; --hlt: #2B0308; }
+html.aurum[data-theme="dark"] .hlk-b { --hl: 96, 165, 250;  --hlt: #031633; }
+html.aurum[data-theme="dark"] .hlk-y { --hl: 252, 211, 77;  --hlt: #2B1E00; }
+html.aurum[data-theme="dark"] .hlk-o { --hl: 251, 146, 60;  --hlt: #2A1000; }
+html.aurum[data-theme="dark"] .hlk-v { --hl: 167, 139, 250; --hlt: #170838; }
+html.aurum[data-theme="dark"] .hlk-t { --hl: 45, 212, 191;  --hlt: #002A26; }
+html.aurum[data-theme="dark"] .hlk-p { --hl: 244, 114, 182; --hlt: #300219; }
+
+/* the stroke behind coloured text */
 html.aurum .ax-hl {
-  --hl: 92, 236, 104;
   display: inline-block; position: relative; line-height: 1.3; vertical-align: baseline;
-  margin: 1px -0.08em 0; padding: 0 0.3em; white-space: nowrap;
+  margin: 1px -0.08em 0; padding: 0 0.3em; white-space: nowrap; max-width: 100%;
   border-radius: 0.85em 0.25em 0.9em 0.3em / 0.4em 0.9em 0.35em 0.8em;
   background-color: transparent !important;
   background-image:
@@ -3897,18 +3914,45 @@ html.aurum .ax-hl {
     linear-gradient(176deg, transparent 0 18%, rgba(var(--hl), .22) 19% 84%, transparent 85%) !important;
   background-repeat: no-repeat; background-position: right center; background-size: 100% 100%;
   -webkit-box-decoration-break: clone; box-decoration-break: clone;
-  color: #063B1A !important; text-shadow: none !important;
+  color: var(--hlt) !important; -webkit-text-fill-color: var(--hlt); text-shadow: none !important;
 }
-html.aurum[data-theme="dark"] .ax-hl { --hl: 74, 222, 128; color: #04210E !important; font-weight: 800; }
-/* 4.14.1 · نفس القلم بالأحمر للكلام والأرقام الحمرا (متبقي، متأخر، غير مدفوع …) */
-html.aurum .ax-hl.ax-hl-r { --hl: 255, 92, 112; color: #5A0712 !important; }
-html.aurum[data-theme="dark"] .ax-hl.ax-hl-r { --hl: 251, 113, 133; color: #2B0308 !important; font-weight: 800; }
-/* status pill that already had a pale tint: the marker stroke takes its place */
+html.aurum[data-theme="dark"] .ax-hl { font-weight: 800; }
+html.aurum .ax-hl:not([class*="hlk-"]) { --hl: 92, 236, 104; --hlt: #063B1A; }
+/* long labels may wrap inside a narrow card */
+html.aurum .ax-hl-in.ax-hl { white-space: normal; }
+html.aurum .ax-hl-in.ax-hl:not(:has(*)) { white-space: nowrap; }
+/* a status pill that already had a pale tint: the stroke takes its place */
 html.aurum .ax-hl-host { background: transparent !important; box-shadow: none !important; border-color: transparent !important; padding-inline: 0 !important; }
+
+/* buttons: the button itself is the stroke */
+html.aurum .ax-mkb, html.aurum[data-theme] .ax-mkb[data-mk] {
+  border-color: transparent !important; box-shadow: none !important; text-shadow: none !important;
+  border-radius: 0.95em 0.3em 1.05em 0.35em / 0.5em 1.05em 0.45em 0.95em !important;
+  background-color: transparent !important;
+  background-image:
+    linear-gradient(100deg, rgba(var(--mk), .74) 0%, rgba(var(--mk), 1) 5%, rgba(var(--mk), .9) 48%, rgba(var(--mk), .97) 90%, rgba(var(--mk), .66) 100%),
+    linear-gradient(178deg, transparent 0 12%, rgba(255, 255, 255, .09) 13% 20%, transparent 21% 80%, rgba(0, 0, 0, .07) 81% 88%, transparent 89%) !important;
+  background-repeat: no-repeat !important; background-size: 100% 100% !important;
+  transition: filter .15s, transform .15s;
+}
+html.aurum .ax-mkb:hover { filter: brightness(1.06); }
+html.aurum .ax-mkb:active { transform: scale(.98) rotate(-.4deg); }
+html.aurum .ax-mkb.ax-mkb-t, html.aurum[data-theme] .ax-mkb.ax-mkb-t[class] {
+  background-image:
+    linear-gradient(100deg, rgba(var(--hl), .2) 0%, rgba(var(--hl), .8) 4%, rgba(var(--hl), .56) 55%, rgba(var(--hl), .74) 92%, rgba(var(--hl), .2) 100%),
+    linear-gradient(176deg, transparent 0 16%, rgba(var(--hl), .2) 17% 86%, transparent 87%) !important;
+  color: var(--hlt) !important;
+}
+html.aurum .ax-mkb.ax-mkb-t svg { color: var(--hlt) !important; stroke: currentColor; }
+html.aurum .ax-mkb.ax-mkb-t em, html.aurum .ax-mkb.ax-mkb-t small { color: inherit !important; }
+
 html.aurum .ax-hl.ax-hl-draw { animation: axHlDraw .7s cubic-bezier(.3, .7, .2, 1) both; }
 @keyframes axHlDraw { from { background-size: 0% 100%; } to { background-size: 100% 100%; } }
 @media (prefers-reduced-motion: reduce) { html.aurum .ax-hl.ax-hl-draw { animation: none; } }
-@media print { html.aurum .ax-hl { background-image: none !important; color: inherit !important; } }
+@media print {
+  html.aurum .ax-hl { background-image: none !important; color: inherit !important; -webkit-text-fill-color: currentColor; }
+  html.aurum .ax-mkb { background-image: none !important; }
+}
 
 /* ════════════════════════════════════════════════════════════════════
    48. 4.15 · قايمة الاختيار العايمة بالبحث على الموبايل (js/picker.js)
@@ -3957,3 +4001,82 @@ html.aurum[data-theme="light"] .axp-row.hi .axp-ok { color: #6FF0A8; } html.auru
   color: var(--ax-ok, #5CE89A); font: 700 14.5px var(--ax-font, system-ui); cursor: pointer; text-align: start; }
 html.aurum[data-theme="light"] .axp-add { color: #0B8A43; }
 .axp-foot { display: flex; justify-content: space-between; gap: 8px; color: var(--ax-faint, #6E6E6E); font-size: 11.5px; padding: 9px 10px 4px; border-top: 1px solid var(--ax-line, #232323); margin-top: 4px; position: sticky; bottom: -8px; background: inherit; }
+
+/* ════════════════════════════════════════════════════════════════════
+   49. 4.16 · رصيد الورق نيون: أخضر مضيء من 10,000 وطالع، أحمر تحت 10,000
+════════════════════════════════════════════════════════════════════ */
+html.aurum .topbar .paper-counter.pm.n-ok  { --neon: 57, 255, 136; }
+html.aurum .topbar .paper-counter.pm.n-low { --neon: 255, 56, 96; }
+html.aurum[data-theme="light"] .topbar .paper-counter.pm.n-ok  { --neon: 0, 196, 98; }
+html.aurum[data-theme="light"] .topbar .paper-counter.pm.n-low { --neon: 232, 24, 64; }
+html.aurum .topbar .paper-counter.pm.n-ok, html.aurum .topbar .paper-counter.pm.n-low {
+  --pm-c: rgb(var(--neon)); --pm-soft: rgba(var(--neon), .14);
+  box-shadow: 0 0 0 1px rgba(var(--neon), .5), 0 0 14px rgba(var(--neon), .28), inset 0 0 16px rgba(var(--neon), .07) !important;
+}
+html.aurum .topbar .pm.n-ok .paper-counter-num, html.aurum .topbar .pm.n-low .paper-counter-num {
+  color: rgb(var(--neon)) !important;
+  text-shadow: 0 0 6px rgba(var(--neon), .85), 0 0 16px rgba(var(--neon), .5), 0 0 28px rgba(var(--neon), .25) !important;
+}
+html.aurum[data-theme="light"] .topbar .pm.n-ok .paper-counter-num, html.aurum[data-theme="light"] .topbar .pm.n-low .paper-counter-num {
+  text-shadow: 0 0 10px rgba(var(--neon), .45) !important;
+}
+html.aurum .topbar .pm.n-ok .pm-ic, html.aurum .topbar .pm.n-low .pm-ic { box-shadow: 0 0 12px rgba(var(--neon), .35), inset 0 0 0 1px rgba(var(--neon), .4); }
+html.aurum .topbar .pm.n-ok .pm-ic svg, html.aurum .topbar .pm.n-low .pm-ic svg { filter: drop-shadow(0 0 4px rgba(var(--neon), .8)); }
+html.aurum .pm.n-ok .pm-sub, html.aurum .pm.n-low .pm-sub { color: rgb(var(--neon)); text-shadow: 0 0 8px rgba(var(--neon), .55); }
+html.aurum .pm.n-ok.n-note .pm-sub { color: #FFC24A; text-shadow: 0 0 8px rgba(255, 194, 74, .5); }
+html.aurum[data-theme="light"] .pm.n-ok.n-note .pm-sub { color: #B56A00; text-shadow: none; }
+html.aurum .pm.n-ok .pm-lvl i, html.aurum .pm.n-low .pm-lvl i { background: rgb(var(--neon)) !important; box-shadow: 0 0 8px rgba(var(--neon), .9), 0 0 16px rgba(var(--neon), .5); }
+html.aurum .pm.n-ok .pm-lvl, html.aurum .pm.n-low .pm-lvl { background: rgba(var(--neon), .14); overflow: visible; }
+html.aurum .pm.n-low .pm-ic { animation: pmNeon 1.6s ease-in-out infinite; }
+@keyframes pmNeon { 50% { box-shadow: 0 0 20px rgba(var(--neon), .7), inset 0 0 0 1px rgba(var(--neon), .7); } }
+@media (prefers-reduced-motion: reduce) { html.aurum .pm.n-low .pm-ic { animation: none; } }
+
+/* ════════════════════════════════════════════════════════════════════
+   50. 4.16 · المساعد الشخصي أكتر تنظيماً
+   ترحيب قصير + 3 مربعات أرقام + زراير في شبكة · تابات متساوية ·
+   الأقسام شبكة 4 · الأسئلة كلها ظاهرة من غير سحب بالعرض
+════════════════════════════════════════════════════════════════════ */
+html.aurum .axa-hero { display: block !important; padding: 20px 22px !important; }
+html.aurum .axa-hero-top { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
+html.aurum .axa-hero-top .axa-mark { margin-top: 0 !important; }
+html.aurum .axa-hero-t { min-width: 0; }
+html.aurum .axa-hero-t h2 { margin: 0 !important; font-size: 26px !important; line-height: 1.2 !important; }
+html.aurum .axa-hero-t small { display: block; margin-top: 2px; font-size: 13px; color: var(--ax-deep-muted); }
+html.aurum .axa-kpis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+html.aurum .axa-kpi { min-width: 0; display: flex; flex-direction: column; gap: 3px; padding: 11px 12px; border-radius: 16px; background: rgba(255, 255, 255, .06); }
+html.aurum[data-theme="light"] .axa-kpi { background: rgba(255, 255, 255, .09); }
+html.aurum .axa-kpi span { font-size: 11.5px; font-weight: 600; color: var(--ax-deep-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+html.aurum .axa-kpi b { font: 800 18px/1.25 var(--ax-display); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+html.aurum .axa-kpi small { font-size: 11px; color: var(--ax-deep-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+html.aurum .axa-kpi.k-b b { color: #6FBEFF; } html.aurum .axa-kpi.k-g b { color: #5CE89A; }
+html.aurum .axa-kpi.k-r b { color: #FF6B6B; } html.aurum .axa-kpi.k-y b { color: #FFBD5C; }
+html.aurum .axa-kpi b .ax-hl { font-size: 16px; }
+html.aurum .axa-hero-note { margin: 12px 2px 0 !important; font: 500 14.5px/1.6 var(--ax-font) !important; color: var(--ax-deep-muted) !important; max-width: none !important; }
+html.aurum .axa-hero-note b { color: var(--ax-on-deep); }
+html.aurum .axa-hero-acts { display: grid !important; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px !important; margin: 14px 0 0 !important; padding: 0 !important; overflow: visible !important; }
+html.aurum .axa-hero-acts button { width: 100%; padding: 11px 10px !important; border-radius: 14px !important; font-size: 13.5px !important; white-space: nowrap; }
+html.aurum .axa-tabs { display: grid !important; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px !important; padding: 4px; border-radius: 18px; background: var(--ax-surface); box-shadow: var(--ax-shadow); overflow: visible !important; }
+html.aurum .axa-tabs button { width: 100%; box-shadow: none !important; background: transparent; padding: 10px 6px !important; border-radius: 14px !important; display: inline-flex; align-items: center; justify-content: center; gap: 6px; white-space: nowrap; font-size: 13.5px !important; }
+html.aurum .axa-tabs button.on { background: var(--ax-ink); color: var(--ax-on-ink); }
+@media (max-width: 768px) {
+  html.aurum .axa-hero { padding: 16px !important; border-radius: 24px !important; }
+  html.aurum .axa-hero-t h2 { font-size: 22px !important; }
+  html.aurum .axa-kpis { gap: 6px; }
+  html.aurum .axa-kpi { padding: 10px 9px; border-radius: 14px; }
+  html.aurum .axa-kpi b { font-size: 15.5px; }
+  html.aurum .axa-kpi b .ax-hl { font-size: 14px; }
+  html.aurum .axa-hero-note { font-size: 13.5px !important; }
+  html.aurum .axa-hero-acts { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-inline: 0 !important; }
+  html.aurum .axa-hero-acts button { font-size: 13px !important; }
+  html.aurum .axa-tabs button { font-size: 12.5px !important; padding: 9px 4px !important; }
+  /* quick questions: 4 topic tiles, then every question visible (wraps — no sideways scrolling) */
+  html.aurum .axa-qt { display: grid !important; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px !important; overflow: visible !important; margin-bottom: 10px !important; }
+  html.aurum .axa-qt button { flex-direction: column; justify-content: center; gap: 4px !important; padding: 9px 2px !important; border-radius: 14px !important; font-size: 12.5px !important; min-width: 0; }
+  html.aurum .axa-qt button svg { width: 18px !important; height: 18px !important; }
+  html.aurum .axa-qc { flex-wrap: wrap !important; overflow: visible !important; gap: 6px !important; }
+  html.aurum .axa-qc button { white-space: normal !important; flex: 1 1 auto; text-align: center !important; padding: 8px 12px !important; font-size: 13px !important; }
+  html.aurum .axa-chat { height: auto !important; min-height: 0 !important; }
+  html.aurum .axa-chat .axa-msgs { flex: none !important; min-height: 0 !important; max-height: 62dvh; }
+  html.aurum .axa-chat .axa-composer { position: static !important; }
+}
+html.aurum ax-m { font: inherit; color: inherit; }

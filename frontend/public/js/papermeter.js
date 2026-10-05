@@ -12,7 +12,7 @@
 (function () {
   'use strict';
 
-  var last = null, popOpen = false;
+  var last = null, popOpen = false, NEON_MIN = 10000;
   var MONTHS = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
   var EXCL = ['حبر', 'تنر', 'تونر', 'ink', 'toner', 'كارتريدج', 'cartridge', 'ريبون', 'ribbon'];
   var INCL = ['ورق', 'بلاستك', 'بلاستيك', 'فوتو', 'photo', 'paper', 'a4', 'a3', 'a5', 'فيلم', 'افلام', 'أفلام'];
@@ -103,7 +103,9 @@
     var u = document.getElementById('pm-unit'); if (u) u.textContent = M.unit;
     var s = document.getElementById('pm-sub'); if (s) s.textContent = subTxt(M);
     var l = document.getElementById('pm-lvl'); if (l) l.style.width = (isFinite(M.cover) ? Math.max(4, Math.min(100, M.cover / 30 * 100)) : (M.total > 0 ? 100 : 0)) + '%';
-    el.className = 'paper-counter pm s-' + M.state + (popOpen ? ' open' : '');
+    /* 4.16 · neon: green while the paper on hand is 10,000 or more, red under 10,000 */
+    var neon = M.state === 'none' ? '' : (M.total >= NEON_MIN ? ' n-ok' : ' n-low');
+    el.className = 'paper-counter pm s-' + M.state + neon + ((M.bad || M.low) && M.total >= NEON_MIN ? ' n-note' : '') + (popOpen ? ' open' : '');
     el.title = 'رصيد الورق: ' + num(M.total) + ' ' + M.unit + ' — ' + subTxt(M);
     if (last !== null && Math.round(M.total) !== Math.round(last)) {
       var d = document.getElementById('paper-counter-delta'), diff = M.total - last;
