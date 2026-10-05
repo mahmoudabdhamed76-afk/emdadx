@@ -3882,7 +3882,7 @@ html.aurum .mr-foot b { color: var(--ax-text); }
 }
 
 /* ════════════════════════════════════════════════════════════════════
-   47. 4.14 · قلم الهايلايتر الأخضر على الأرقام الخضرا (js/marker.js)
+   47. 4.14 · قلم الهايلايتر الأخضر على الأرقام الخضرا والأحمر على الحمرا (js/marker.js)
    خط ماركر فسفوري: أغمق في أول الضربة وبيخف في آخرها، حواف مايلة شوية،
    ولو الرقم اتلف على سطرين كل سطر بياخد ضربته.
 ════════════════════════════════════════════════════════════════════ */
@@ -3900,6 +3900,11 @@ html.aurum .ax-hl {
   color: #063B1A !important; text-shadow: none !important;
 }
 html.aurum[data-theme="dark"] .ax-hl { --hl: 74, 222, 128; color: #04210E !important; font-weight: 800; }
+/* 4.14.1 · نفس القلم بالأحمر للكلام والأرقام الحمرا (متبقي، متأخر، غير مدفوع …) */
+html.aurum .ax-hl.ax-hl-r { --hl: 255, 92, 112; color: #5A0712 !important; }
+html.aurum[data-theme="dark"] .ax-hl.ax-hl-r { --hl: 251, 113, 133; color: #2B0308 !important; font-weight: 800; }
+/* status pill that already had a pale tint: the marker stroke takes its place */
+html.aurum .ax-hl-host { background: transparent !important; box-shadow: none !important; border-color: transparent !important; padding-inline: 0 !important; }
 html.aurum .ax-hl.ax-hl-draw { animation: axHlDraw .7s cubic-bezier(.3, .7, .2, 1) both; }
 @keyframes axHlDraw { from { background-size: 0% 100%; } to { background-size: 100% 100%; } }
 @media (prefers-reduced-motion: reduce) { html.aurum .ax-hl.ax-hl-draw { animation: none; } }
