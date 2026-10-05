@@ -16,6 +16,8 @@ const { exportBlob, defaultBlob } = require('./src/bridge');
 const auth  = require('./src/auth');
 const store = require('./src/store');
 const portal = require('./src/portal');
+const market = require('./src/market');
+try { market.init(require('./db').DATA_DIR); } catch (e) { console.warn('[market] init', e.message); }
 
 const PORT     = Number(process.env.PORT) || 8787;
 const HOST     = process.env.HOST || '0.0.0.0';
@@ -214,6 +216,12 @@ const server = http.createServer(async (req, res) => {
       if (!me) return sendJSON(res, 401, { error: 'login', message: 'سجّل دخول الأول' });
       const admin = me.role === 'admin';
       const adminOnly = () => sendJSON(res, 403, { error: 'forbidden', message: 'للمدير بس' });
+
+      /* live dollar / gold prices for the header tape */
+      if (pathname === '/api/market' && req.method === 'GET') {
+        try { return sendJSON(res, 200, await market.get()); }
+        catch (e) { return sendJSON(res, 503, { error: 'market', message: 'أسعار السوق مش متاحة دلوقتي' }); }
+      }
 
       /* data */
       if (pathname === '/api/data' && req.method === 'GET') {

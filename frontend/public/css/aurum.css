@@ -4285,3 +4285,19 @@ html.aurum .topbar .paper-counter.pm:active { transform: none !important; }
 /* 4.17.2 · الرقم الكبير فوق رسم اللوحة الحية — ماركر أخضر دايماً، وبيترسم تاني كل 15 ثانية */
 html.aurum .pxs-gval .ax-hl { padding: 0 .28em; margin: 0 -.06em; }
 html.aurum .pxs-gval .ax-hl.ax-hl-draw { animation-duration: .85s; }
+
+/* ════════════════════════════════════════════════════════════════════
+   57. 4.19 · شريط الدولار والدهب المباشر مكان «رصيد الورق» (js/fxtape.js)
+════════════════════════════════════════════════════════════════════ */
+html.aurum .topbar #paper-counter { display: none !important; }
+html.aurum .topbar .fx-tape { flex: 0 1 380px; min-width: 240px; height: 46px; margin: 0 2px; border-radius: 15px; overflow: hidden; }
+html.aurum .topbar .fx-tape .axtk--bar { height: 100%; border-radius: inherit; }
+html.aurum .fx-tape .axtk-it em { font-size: 12.5px; }
+html.aurum .fx-tape .axtk-it b { font-size: 16px; }
+html.aurum .fx-tape .axtk-it { cursor: default; }
+html.aurum .fx-tape .axtk-it small { color: rgba(255, 255, 255, .45); }
+@media (max-width: 768px) {
+  html.aurum .topbar .fx-tape { order: 99; flex: 1 1 100%; width: 100%; min-width: 0; height: 48px; margin: 0; border-radius: 14px; }
+  html.aurum .topbar .fx-tape .axtk--bar { background: rgba(255, 255, 255, .08); box-shadow: none; }
+  html.aurum.pm-mini .topbar .fx-tape { display: none !important; }
+}

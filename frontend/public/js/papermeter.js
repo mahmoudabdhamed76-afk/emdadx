@@ -193,7 +193,7 @@
     var t = e.target, root = t === document || t === document.documentElement;
     if (!root && t !== document.body && !(t && t.id === 'page-content')) return;
     var y = root ? (window.scrollY || document.documentElement.scrollTop || 0) : t.scrollTop;
-    var b = document.getElementById('paper-counter'); if (!b) return;
+    var b = document.getElementById('fx-tape') || document.getElementById('paper-counter'); if (!b) return;
     if (!mini && y > 160) {
       var h = b.getBoundingClientRect().height + 10;
       mini = true; document.documentElement.classList.add('pm-mini'); if (popOpen) close();
