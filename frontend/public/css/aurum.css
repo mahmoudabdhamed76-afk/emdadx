@@ -4726,3 +4726,29 @@ html.aurum .axa-slip.axa-typing :is(.axa-acts, .axa-rowa, footer, .axa-ledger i,
 html.aurum .axa-slip :is(.axa-acts, .axa-rowa, footer, .axa-ledger i, .dot, .axa-ic) { transition: opacity .35s ease; }
 html.aurum .axa-follow.axa-wait { opacity: 0; transform: translateY(6px); pointer-events: none; }
 html.aurum .axa-follow { transition: opacity .35s ease, transform .35s ease; }
+
+/* ════════════════════════════════════════════════════════════════════
+   67. 4.26 · أرقام ردود المساعد = Green Highlighter Marker Effect
+   الإجمالي وكل رقم في الرد (الأرقام اللي على الشمال) عليه ضربة ماركر
+   فسفوري أخضر بتترسم بعد ما الرد يخلص كتابة؛ الكلام فاضل بألوان «مساعدك الذكي».
+════════════════════════════════════════════════════════════════════ */
+html.aurum .axa-slip :is(mark.axa-num, .axa-bars .v, .axa-rows .axa-rowb > em) {
+  --hl: 92, 236, 104; --hlt: #063B1A;
+  display: inline-block; position: relative; line-height: 1.3; margin: 1px -0.06em 0; padding: 0 .32em; white-space: nowrap; max-width: 100%;
+  border-radius: .85em .25em .9em .3em / .4em .9em .35em .8em; transform: rotate(-.6deg);
+  background-color: transparent !important;
+  background-image:
+    linear-gradient(100deg, rgba(var(--hl), .0) 0%, rgba(var(--hl), .82) 3%, rgba(var(--hl), .58) 55%, rgba(var(--hl), .76) 92%, rgba(var(--hl), .14) 100%),
+    linear-gradient(176deg, transparent 0 18%, rgba(var(--hl), .24) 19% 84%, transparent 85%) !important;
+  background-repeat: no-repeat !important; background-position: right center !important; background-size: 100% 100% !important;
+  -webkit-background-clip: border-box !important; background-clip: border-box !important;
+  color: var(--hlt) !important; -webkit-text-fill-color: var(--hlt) !important; font-weight: 800; font-style: normal;
+  -webkit-box-decoration-break: clone; box-decoration-break: clone;
+  transition: background-size .55s cubic-bezier(.3, .7, .2, 1); }
+html.aurum[data-theme="dark"] .axa-slip :is(mark.axa-num, .axa-bars .v, .axa-rows .axa-rowb > em) { --hl: 74, 222, 128; --hlt: #04210E; }
+[dir="ltr"] html.aurum .axa-slip :is(mark.axa-num, .axa-bars .v, .axa-rows .axa-rowb > em) { background-position: left center !important; }
+html.aurum .axa-slip.axa-typing :is(mark.axa-num, .axa-bars .v, .axa-rows .axa-rowb > em) { background-size: 0% 100%, 0% 100% !important; }
+html.aurum .axa-slip .axa-ledger .big mark.axa-num { padding: 0 .36em; }
+html.aurum .axa-slip .axa-rows .axa-rowb > em:empty { display: none; }
+html.aurum .axa-heard { margin: -2px 0 8px; font-size: 12px; opacity: .85; }
+html.aurum .axa-slip mark.axa-num { white-space: normal !important; display: inline !important; line-height: 1.7 !important; }

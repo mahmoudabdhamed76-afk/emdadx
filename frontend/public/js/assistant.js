@@ -134,7 +134,7 @@
     order.sort(function (a, b) { return m[b] - m[a]; });
     return order.map(function (u) { return { u: u, q: m[u] }; });
   }
-  function qtyTxt(parts) { return parts.length ? parts.map(function (x) { return num(x.q) + ' ' + x.u; }).join(' + ') : '0'; }
+  function qtyTxt(parts) { return parts.length ? parts.map(function (x) { return num(x.q) + '\u00A0' + x.u; }).join(' + ') : '0'; }
   function sum(list, k) { return list.reduce(function (s, x) { return s + (Number(x[k]) || 0); }, 0); }
   function pays(p) { return A('payments').filter(function (x) { return inP(p, x.date); }); }
   function exps(p) { return A('expenses').filter(function (e) { return e.kind !== 'purchase' && inP(p, e.date); }); }
@@ -620,7 +620,7 @@
     hi: W(['صباح', 'مساء', 'ازيك', 'إزيك', 'اهلا', 'أهلا', 'السلام', 'هاي', 'hello', 'hi']),
     thanks: W(['شكرا', 'شكراً', 'تسلم', 'متشكر', 'ميرسي', 'thanks', 'حبيبي']),
     help: W(['بتعرف تعمل', 'تقدر تعمل', 'تعرف تعمل', 'بتعمل ايه', 'مساعده', 'ساعدني', 'اسالك عن', 'اسألك عن', 'help']),
-    brief: W(['ملخص', 'الوضع', 'اخبار', 'الموقف', 'تقرير', 'عامل ايه', 'ايه الدنيا']),
+    brief: W(['ملخص', 'الوضع', 'الاوضاع', 'اوضاع', 'اخبار', 'الموقف', 'تقرير', 'عامل ايه', 'ايه الدنيا', 'ماشي ازاي', 'ماشيه ازاي', 'عامله ايه', 'الدنيا عامله']),
     compare: W(['قارن', 'مقارنه', 'مقارنة', 'بالنسبه للشهر', 'احسن ولا', 'أحسن ولا']),
     advice: W(['نصيحه', 'نصيحتك', 'انصحني', 'تنصحني', 'اعمل ايه', 'أعمل إيه', 'اولويات', 'أولويات', 'مهام', 'ابدا بايه', 'اقتراح']),
     prospects: W(['مستهدف', 'مستهدفين', 'فرص', 'فرصه', 'تعاقد', 'عملاء جداد']),
@@ -663,6 +663,106 @@
       acts: [go], follow: ['مين متأخر في الدفع؟', 'مراكز وقفت سحب'] };
   }
 
+  /* ───────────────────────── 4.26 · فهم أذكى للكلام العادي ───────────────────────── */
+  var X = {
+    have: W(['عندي', 'عندنا', 'معايا', 'معانا', 'فاضل', 'فضل', 'باقي', 'رصيد', 'رصيدي', 'رصيدنا', 'موجود', 'متبقي', 'المتاح', 'متاح', 'يكفي', 'هيكفي', 'هيقضي', 'يقضي', 'هيخلص', 'هتخلص', 'يخلص', 'تخلص', 'في المخزن', 'بالمخزن', 'جوه المخزن']),
+    paper: W(['ورق', 'ورقه', 'اوراق', 'فيلم', 'افلام', 'رزمه', 'رزم', 'لفه', 'لفات', 'شيت']),
+    sold: W(['اتباع', 'اتباعت', 'اتصرف', 'اتصرفت', 'طلع', 'طلعت', 'طلعنا', 'خرج', 'سحبنا', 'سحبوا', 'اتسحب', 'اتسحبت', 'صرفنا', 'بعنا', 'متوسط سحب', 'متوسط السحب', 'استهلاك', 'استهلكنا', 'المنصرف']),
+    got: W(['قبضت', 'قبضنا', 'حصلت', 'حصلنا', 'اتحصل', 'دخلي', 'دخل لي', 'جالي فلوس', 'جالنا فلوس', 'استلمت', 'استلمنا', 'لميت', 'لمينا']),
+    unpaid: W(['مدفعش', 'مدفعوش', 'مدفعتش', 'لسه مدفع', 'مسددش', 'مسددوش', 'لسه مسدد', 'فلوسي', 'فلوسنا', 'عند الناس', 'فلوس برا', 'فلوس بره', 'برا كام', 'بره كام', 'اللي برا', 'اللي بره', 'مديونين', 'مين عليه', 'مين عليهم', 'ليا كام', 'ليا عند', 'فلوس المراكز', 'فلوس العملاء', 'عليه فلوس', 'عليهم فلوس', 'اكبر دين']),
+    top: W(['اكتر واحد', 'مين اكتر', 'اكبر واحد', 'احسن مركز', 'احسن عميل', 'احسن واحد', 'اكتر حد', 'مين اكبر', 'مين احسن']),
+    buy: W(['بيسحب', 'بيشتري', 'سحب', 'اشتري', 'بيشتروا', 'بيسحبوا', 'بياخد', 'شاري', 'شرا']),
+    cash: W(['الخزنه', 'الخزينه', 'الكاش', 'كاش', 'النقديه', 'السيوله', 'فلوس معايا', 'معايا فلوس', 'معايا كام فلوس', 'في الدرج', 'رصيد الخزنه']),
+    reorder: W(['هطلب', 'اطلب', 'نطلب', 'محتاج اطلب', 'محتاجين نطلب', 'اشتري ايه', 'نشتري ايه', 'ناقصني', 'ناقصنا', 'ايه الناقص', 'محتاج اشتري', 'اجيب ايه']),
+    stopped: W(['بطلت', 'بطلوا', 'وقفت', 'وقفوا', 'مبقاش', 'مبقوش', 'بطل', 'نايم', 'مختفي', 'اختفي', 'مسحبش', 'مسحبوش', 'مش بيسحب', 'مش بيسحبوا']),
+    avg: W(['متوسط', 'في اليوم', 'يوميا', 'كل يوم'])
+  };
+  function paperStockAns() {
+    var PI = paperInfo(), items = stockModel().filter(function (i) { return PI.ids[i.id]; });
+    if (!items.length) return stockAns();
+    var byU = {}; items.forEach(function (i) { var u = unitOfP(i.id, i.unit); byU[u] = (byU[u] || 0) + Math.max(0, i.bal); });
+    var parts = Object.keys(byU).map(function (u) { return { u: u, q: byU[u] }; }).sort(function (a, b) { return b.q - a.q; });
+    var rank = { empty: 0, crit: 1, low: 2, ok: 3, idle: 4 };
+    items = items.slice().sort(function (a, b) { return (rank[a.state] - rank[b.state]) || (a.cover - b.cover); });
+    var bad = items.filter(function (i) { return i.state === 'empty' || i.state === 'crit'; });
+    var soon = items.filter(function (i) { return isFinite(i.cover) && i.bal > 0; }).sort(function (a, b) { return a.cover - b.cover; })[0];
+    var r = {
+      icon: 'stack', title: 'الورق اللي عندك دلوقتي', sub: items.length + ' ' + plural(items.length, 'صنف', 'أصناف', 'صنف') + ' ورق وأفلام',
+      ledger: [{ l: 'رصيد الورق', v: qtyTxt(parts), big: parts.length <= 1 }],
+      rows: items.map(function (i) { return { l: i.name, sub: coverTxt(i) + (i.avg ? ' · بيتسحب ' + num(i.avg, i.avg < 10 ? 1 : 0) + ' في اليوم' : ''), v: num(i.bal) + ' ' + unitOfP(i.id, i.unit), tone: i.state === 'empty' || i.state === 'crit' ? 'bad' : i.state === 'low' ? 'warn' : 'ok', on: fn(function () { ask(i.name, { pid: i.id }); }) }; }),
+      acts: [], follow: ['طلعنا قد إيه ورق النهارده؟', 'طلعنا قد إيه ورق الشهر ده؟', 'إيه اللي قرب يخلص؟']
+    };
+    if (bad.length) { r.ledger.push({ l: 'خلص أو قرب يخلص', v: bad.length + ' ' + plural(bad.length, 'صنف', 'أصناف', 'صنف'), tone: 'bad' }); r.acts.push({ t: 'اعمل طلب شراء', pri: true, on: fn(function () { navigate('stock'); setTimeout(function () { if (window.AXStock) AXStock.tab('po'); }, 120); }) }); }
+    if (soon) r.note = 'أول صنف هيخلص: ' + esc(soon.name) + ' — ' + coverTxt(soon) + '.';
+    r.acts.push({ t: 'افتح مخزوني', on: fn(function () { navigate('stock'); }) });
+    return r;
+  }
+  function cashAns() {
+    var inn = sum(A('payments'), 'amount'), ex = sum(A('expenses'), 'amount'), sp = sum(A('supplierPayments'), 'amount'), bal = inn - ex - sp;
+    var t = today(), tin = sum(pays({ from: t, to: t }), 'amount'), tex = sum(A('expenses').filter(function (e) { return String(e.date || '').slice(0, 10) === t; }), 'amount') + sum(A('supplierPayments').filter(function (x) { return String(x.date || '').slice(0, 10) === t; }), 'amount');
+    return { icon: 'cash', title: 'الخزنة', sub: 'نفس رقم «الخزنة» في لوحة التحكم',
+      ledger: [{ l: 'رصيد الخزنة دلوقتي', v: money(bal), big: true, tone: bal < 0 ? 'bad' : 'ok' },
+        { l: 'دخل النهارده', v: money(tin), tone: tin > 0 ? 'ok' : '' }, { l: 'خرج النهارده', v: money(tex) },
+        { l: 'كل التحصيلات', v: money(inn) }, { l: 'كل المصروفات', v: money(ex) }, { l: 'كل اللي اتدفع للموردين', v: money(sp) }],
+      follow: ['اتحصّل كام النهارده؟', 'المصروفات الشهر ده', 'عليا كام للموردين؟'] };
+  }
+  /* rules for everyday phrasing — run before the old keyword routing */
+  function smart(q) {
+    var c = findCustomer(q), paperish = has(q, X.paper), prods = findProducts(q);
+    /* «فيلم A4» / «ورق A4»: the kind of paper named narrows the products */
+    if (prods.length > 1) {
+      var film = has(q, W(['فيلم', 'افلام'])), sheet = has(q, W(['ورق', 'ورقه'])) && !film;
+      var nar = prods.filter(function (p) { var n = N(p.name); return film ? /فيلم|افلام/.test(n) : sheet ? /ورق/.test(n) : true; });
+      if (nar.length) prods = nar;
+    }
+    if (has(q, W(['ملخص'])) || (has(q, I.brief) && !has(q, I.sales) && !hasPeriod(q))) return brief();
+    if (has(q, W(['نخسر', 'هنخسر', 'نخسره', 'نخسرهم', 'معرضين', 'ممكن نفقد']))) return customersAns();
+    if (has(q, I.customers) && has(q, W(['كام', 'عدد']))) return customersAns();
+    var stockQ = (has(q, X.have) || (prods.length && has(q, W(['كام', 'قد ايه', 'اد ايه'])))) && !has(q, X.sold) && !has(q, X.got) && !has(q, I.debts) && !has(q, X.unpaid) && !has(q, W(['مركز', 'مراكز', 'عميل', 'عملاء']));
+    if (stockQ && !c) {
+      if (prods.length && !(paperish && prods.length > 1 && !has(q, W(['a3', 'a4', 'حراري', 'بلاستك', 'جرام'])))) {
+        var items = stockModel().filter(function (i) { return prods.some(function (p) { return p.id === i.id; }); });
+        if (items.length === 1) return productAns(items[0]);
+        if (items.length > 1) return stockAns(items.map(function (i) { return i.id; }));
+      }
+      if (paperish || has(q, W(['كام', 'قد ايه', 'اد ايه']))) return paperish ? paperStockAns() : stockAns();
+    }
+    if (has(q, X.cash) && !c) return cashAns();
+    if (has(q, X.reorder)) return stockAns();
+    if (has(q, X.sold) && (paperish || has(q, W(['كام', 'قد ايه', 'اد ايه', 'كميه', 'كمية'])) || has(q, X.avg)) && !has(q, X.got) && !c) {
+      var po = period(q.replace(/ ?(في اليوم|كل يوم|يوميا|اليوميه|اليومي)/g, ' '), 'month'); st.ctx = { intent: 'output', p: po }; return outputAns(po);
+    }
+    if (has(q, X.got) && !c) { var pc = period(q, 'today'); st.ctx = { intent: 'collect', p: pc }; return collectAns(pc); }
+    if (has(q, X.unpaid) && !c && !has(q, W(['عليا', 'علينا', 'عليك'])) && !has(q, I.suppliers)) return has(q, W(['متاخر', 'ميعاد', 'معاد'])) ? overdueAns() : debtsAns();
+    if (has(q, X.top) && !has(q, I.debts) && !has(q, X.unpaid) && (has(q, X.buy) || has(q, W(['مركز', 'عميل', 'واحد'])))) { var pt = period(q, 'month'); st.ctx = { intent: 'topC', p: pt }; return topCustomersAns(pt); }
+    if (has(q, X.stopped) && (has(q, W(['سحب', 'تسحب', 'يسحب', 'يشتري', 'بيشتري', 'تشتري', 'مراكز', 'مركز', 'عملاء'])))) return customersAns();
+    return null;
+  }
+  /* last chance: compare the words with the questions I already know and take the closest one */
+  var KNOWN = [
+    ['ملخص النهارده', 'ملخص النهارده اخبار الوضع ايه الدنيا الشغل ماشي'], ['مبيعات الشهر ده', 'مبيعات بعنا بيع ايراد دخل'],
+    ['اتحصّل كام النهارده؟', 'تحصيل حصلت قبضت دفعوا فلوس دخلت'], ['مين أكتر مركز عليه فلوس؟', 'ديون مديونيه عليه فلوس مستحق برا'],
+    ['مين متأخر في الدفع؟', 'متاخر متاخرين ميعاد فات عدي'], ['إيه اللي قرب يخلص؟', 'يخلص خلص ناقص نواقص مخزن رصيد'],
+    ['عندي كام ورقة؟', 'عندي ورق ورقه افلام فيلم رزمه رصيد فاضل باقي'], ['طلعنا قد إيه ورق الشهر ده؟', 'طلع اتباع سحب صرف كميه ورق'],
+    ['أكتر المراكز شراءً الشهر ده', 'اكتر اكبر احسن مركز عميل شراء سحب'], ['أكتر صنف بيتباع', 'اكتر صنف منتج بيتباع مطلوب'],
+    ['الأرباح الشهر ده', 'ربح ارباح مكسب كسبت هامش'], ['المصروفات الشهر ده', 'مصروف مصاريف صرفت نفقات'],
+    ['عليا كام للموردين؟', 'مورد موردين عليا ادفع'], ['الخزنة فيها كام؟', 'خزنه كاش نقديه سيوله'],
+    ['أعمل إيه النهارده؟', 'اعمل ايه نصيحه اولويات ابدا'], ['مراكز وقفت سحب', 'وقفت بطلت مسحبتش نايمه'],
+    ['قارن الشهر ده بالشهر اللي فات', 'قارن مقارنه احسن ولا اوحش']
+  ];
+  function stem(w) { return w.replace(/^(وال|بال|لل|ال|و|ب|ل|ف)(?=...)/, '').replace(/(ين|ات|ون|ها|هم|ه|ي|نا)$/, ''); }
+  function guess(q) {
+    var qs = q.split(' ').map(stem).filter(function (w) { return w.length >= 2; });
+    if (!qs.length) return null;
+    var best = null, bs = 0;
+    KNOWN.forEach(function (k) {
+      var ks = N(k[1]).split(' ').map(stem), sc = 0;
+      qs.forEach(function (w) { if (ks.some(function (x) { return x === w || (w.length >= 3 && (x.indexOf(w) === 0 || w.indexOf(x) === 0) && Math.min(x.length, w.length) >= 3); })) sc++; });
+      if (sc > bs) { bs = sc; best = k[0]; }
+    });
+    return bs >= 1 ? best : null;
+  }
+
   function understand(raw, force) {
     var q = N(raw);
     force = force || {};
@@ -675,6 +775,7 @@
     if (has(q, I.thanks) && words <= 4) return { icon: 'spark', title: 'العفو', note: 'تحب أجيبلك حاجة تانية؟', follow: ['ملخص النهارده', 'أعمل إيه النهارده؟'], plainOnly: true };
     if (has(q, I.help)) return helpAns();
     if (has(q, I.hi) && words <= 4 && !has(q, I.brief)) return brief();
+    var sm = smart(q); if (sm) return sm;
 
     var per = function (def) { return period(q, def); };
     var set = function (intent, p) { st.ctx = { intent: intent, p: p }; };
@@ -719,6 +820,12 @@
     }
     if (hasPeriod(q) && words <= 4) { var pd = per('month'); set('sales', pd); return salesAns(pd); }
     if (prods.length) return stockAns(prods.map(function (p) { return p.id; }));
+    var gq = guess(q);
+    if (gq && N(gq) !== q && !st.guessing) {
+      st.guessing = true;
+      try { var gr = understand(gq); } finally { st.guessing = false; }
+      if (gr && gr.title !== 'مش متأكد فهمت') { gr.heard = gq; return gr; }
+    }
     return { icon: 'question', title: 'مش متأكد فهمت', note: 'جرّب تسأل بشكل تاني، أو اختار من دول:', follow: ['ملخص النهارده', 'مبيعات الشهر ده', 'مين أكتر مركز عليه فلوس؟', 'إيه اللي قرب يخلص؟', 'بتعرف تعمل إيه؟'] };
   }
 
@@ -770,7 +877,7 @@
   function ledgerHtml(L, compare) {
     if (!L || !L.length) return '';
     return '<dl class="axa-ledger' + (compare ? ' cmp' : '') + '">' + L.map(function (r) {
-      return '<div class="' + (r.big ? 'big ' : '') + (r.tone ? 't-' + r.tone : '') + '"><dt>' + esc(r.l) + '</dt><i></i><dd>' + esc(r.v) + (r.d || '') + '</dd>' +
+      return '<div class="' + (r.big ? 'big ' : '') + (r.tone ? 't-' + r.tone : '') + '"><dt>' + esc(r.l) + '</dt><i></i><dd>' + (/\d/.test(String(r.v)) ? '<mark class="axa-num">' + esc(r.v) + '</mark>' : esc(r.v)) + (r.d || '') + '</dd>' +
         (r.sub ? '<small>' + esc(r.sub) + '</small>' : '') + '</div>';
     }).join('') + '</dl>';
   }
@@ -826,6 +933,7 @@
     }
     return '<div class="axa-slip ax-hl-off' + (r.tone ? ' t-' + r.tone : '') + '">' +
       '<header><span class="axa-ic">' + ic(r.icon) + '</span><div><b>' + esc(r.title) + '</b>' + (r.sub ? '<span>' + esc(r.sub) + '</span>' : '') + '</div></header>' +
+      (r.heard ? '<p class="axa-heard">فهمت سؤالك كده: «' + esc(r.heard) + '»</p>' : '') +
       ledgerHtml(r.ledger, r.compare) + sparkHtml(r.spark) + barsHtml(r.bars) + barsHtml(r.bars2) + rowsHtml(r.rows, r.ordered) + groupsHtml(r.groups) +
       (r.note ? '<p class="axa-note">' + r.note + '</p>' : '') +
       actsHtml(r.acts) +
