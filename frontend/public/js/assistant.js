@@ -874,9 +874,53 @@
       var at = clock(), m = { who: 'bot', html: slip(r, at), follow: r.follow, q2: { q: q, f: force }, at: at };
       st.msgs.push(m);
       if (st.msgs.length > 60) st.msgs.splice(0, st.msgs.length - 60);
-      if (box) { box.insertAdjacentHTML('beforeend', msgHtml(m) + followHtml(r.follow)); scrollEnd(true); }
+      if (box) {
+        box.insertAdjacentHTML('beforeend', msgHtml(m) + followHtml(r.follow));
+        var slips = box.querySelectorAll('.axa-msg.bot .axa-slip'), fol = box.querySelector('.axa-follow:last-child');
+        typeIn(slips[slips.length - 1], fol);
+        scrollEnd(true);
+      }
       st.busy = false;
     }, 420 + Math.random() * 260);
+  }
+  /* the answer types itself in fast — same typewriter + colors as «مساعدك الذكي» over the floating robot */
+  function typeIn(slip, follow) {
+    if (!slip) return;
+    if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    var skip = 'footer, .axa-acts, .axa-rowa, script, style';
+    var nodes = [], walker = document.createTreeWalker(slip, NodeFilter.SHOW_TEXT, {
+      acceptNode: function (n) { return (!n.nodeValue.trim() || (n.parentNode.closest && n.parentNode.closest(skip))) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT; }
+    });
+    while (walker.nextNode()) nodes.push({ n: walker.currentNode, t: Array.from(walker.currentNode.nodeValue) });
+    if (!nodes.length) return;
+    var total = nodes.reduce(function (a, x) { return a + x.t.length; }, 0);
+    slip.classList.add('axa-typing', 'ax-hl-off');
+    if (follow) follow.classList.add('axa-wait');
+    nodes.forEach(function (x) { x.n.nodeValue = ''; });
+    var caret = document.createElement('i'); caret.className = 'axa-caret'; caret.setAttribute('aria-hidden', 'true');
+    var dur = Math.max(450, Math.min(1500, total * 9)), t0 = 0, i = 0, done = 0;
+    function finish() {
+      nodes.forEach(function (x) { x.n.nodeValue = x.t.join(''); });
+      if (caret.parentNode) caret.parentNode.removeChild(caret);
+      slip.classList.remove('axa-typing');
+      slip.classList.add('axa-typed');
+      setTimeout(function () { slip.classList.remove('ax-hl-off'); }, 40);     // now the marker may draw on the numbers
+      if (follow) follow.classList.remove('axa-wait');
+    }
+    function step(ts) {
+      if (!slip.isConnected) return;
+      if (!t0) t0 = ts;
+      var want = Math.min(total, Math.ceil((ts - t0) / dur * total));
+      while (done < want && i < nodes.length) {
+        var x = nodes[i], have = x.n.nodeValue.length, need = Math.min(x.t.length - have, want - done);
+        x.n.nodeValue = x.t.slice(0, have + need).join(''); done += need;
+        if (x.n.parentNode && caret.previousSibling !== x.n) x.n.parentNode.insertBefore(caret, x.n.nextSibling);
+        if (x.n.nodeValue.length >= x.t.length) i++;
+      }
+      if (done >= total) { setTimeout(finish, 160); return; }
+      requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
   }
   function scrollEnd(toLastBot) {
     requestAnimationFrame(function () {

@@ -4701,3 +4701,26 @@ html.aurum .axa-hero-c .axa-kpi small { display: none; }
     transition: bottom .32s cubic-bezier(.2, .9, .3, 1); }
   html.aurum.bn-hide .axa-chat .axa-composer { bottom: calc(10px + env(safe-area-inset-bottom, 0px)); transition: bottom .42s cubic-bezier(.45, 0, .7, .3); }
 }
+
+/* ════════════════════════════════════════════════════════════════════
+   66. 4.25 · الرد بيتكتب بسرعة زي الآلة الكاتبة — بنفس ألوان «مساعدك الذكي»
+   العنوان فاضل بالألوان دي على طول، والباقي ملوّن وهو بيتكتب وبعدين يرجع عادي.
+════════════════════════════════════════════════════════════════════ */
+html.aurum { --axg: linear-gradient(90deg, #5CF2C2, #E9F25A 55%, #FFC04A); }
+html.aurum[data-theme="light"] { --axg: linear-gradient(90deg, #0A9A8F, #12A150 55%, #D07A00); }
+html.aurum .axa-slip > header b { background: var(--axg); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent; }
+html.aurum .axa-slip.axa-typing :is(header span, dt, dd, .l, .v, small, h4, .axa-note, .m b, .m small, li em, p) {
+  background: var(--axg); -webkit-background-clip: text; background-clip: text; color: transparent !important; -webkit-text-fill-color: transparent; }
+html.aurum .axa-slip.axa-typed :is(header span, dt, dd, .l, .v, small, h4, .axa-note, .m b, .m small, li em, p) { animation: axaSettle .45s ease both; }
+@keyframes axaSettle { from { opacity: .55; } to { opacity: 1; } }
+html.aurum .axa-caret { display: inline-block; width: 2px; height: 1em; margin: 0 1px; vertical-align: -.12em; border-radius: 2px; background: #5CF2C2; animation: axCaret .45s steps(2) infinite; -webkit-text-fill-color: initial; }
+html.aurum[data-theme="light"] .axa-caret { background: #12A150; }
+/* bars, spark, buttons and footer show up once the words are in */
+html.aurum .axa-slip.axa-typing .axa-bars .b u { width: 0 !important; }
+html.aurum .axa-slip .axa-bars .b u { transition: width .6s cubic-bezier(.22, 1, .36, 1); }
+html.aurum .axa-slip.axa-typing .axa-spark span { transform: scaleY(0); }
+html.aurum .axa-slip .axa-spark span { transform-origin: bottom; transition: transform .5s cubic-bezier(.22, 1, .36, 1); }
+html.aurum .axa-slip.axa-typing :is(.axa-acts, .axa-rowa, footer, .axa-ledger i, .dot, .axa-ic) { opacity: 0; }
+html.aurum .axa-slip :is(.axa-acts, .axa-rowa, footer, .axa-ledger i, .dot, .axa-ic) { transition: opacity .35s ease; }
+html.aurum .axa-follow.axa-wait { opacity: 0; transform: translateY(6px); pointer-events: none; }
+html.aurum .axa-follow { transition: opacity .35s ease, transform .35s ease; }
