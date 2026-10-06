@@ -822,9 +822,9 @@
     st.fns['c' + id] = function () { copy(plain(r)); };
     st.fns['w' + id] = function () { window.open('https://wa.me/?text=' + encodeURIComponent(plain(r) + '\n\n— ' + (S().companyName || 'إمداد إكس')), '_blank'); };
     if (r.plainOnly) {
-      return '<div class="axa-slip short' + (r.tone ? ' t-' + r.tone : '') + '"><header><span class="axa-ic">' + ic(r.icon) + '</span><div><b>' + esc(r.title) + '</b>' + (r.sub ? '<span>' + esc(r.sub) + '</span>' : '') + '</div></header>' + (r.note ? '<p class="axa-note">' + r.note + '</p>' : '') + '</div>';
+      return '<div class="axa-slip ax-hl-off short' + (r.tone ? ' t-' + r.tone : '') + '"><header><span class="axa-ic">' + ic(r.icon) + '</span><div><b>' + esc(r.title) + '</b>' + (r.sub ? '<span>' + esc(r.sub) + '</span>' : '') + '</div></header>' + (r.note ? '<p class="axa-note">' + r.note + '</p>' : '') + '</div>';
     }
-    return '<div class="axa-slip' + (r.tone ? ' t-' + r.tone : '') + '">' +
+    return '<div class="axa-slip ax-hl-off' + (r.tone ? ' t-' + r.tone : '') + '">' +
       '<header><span class="axa-ic">' + ic(r.icon) + '</span><div><b>' + esc(r.title) + '</b>' + (r.sub ? '<span>' + esc(r.sub) + '</span>' : '') + '</div></header>' +
       ledgerHtml(r.ledger, r.compare) + sparkHtml(r.spark) + barsHtml(r.bars) + barsHtml(r.bars2) + rowsHtml(r.rows, r.ordered) + groupsHtml(r.groups) +
       (r.note ? '<p class="axa-note">' + r.note + '</p>' : '') +
@@ -894,7 +894,7 @@
     while (walker.nextNode()) nodes.push({ n: walker.currentNode, t: Array.from(walker.currentNode.nodeValue) });
     if (!nodes.length) return;
     var total = nodes.reduce(function (a, x) { return a + x.t.length; }, 0);
-    slip.classList.add('axa-typing', 'ax-hl-off');
+    slip.classList.add('axa-typing');
     if (follow) follow.classList.add('axa-wait');
     nodes.forEach(function (x) { x.n.nodeValue = ''; });
     var caret = document.createElement('i'); caret.className = 'axa-caret'; caret.setAttribute('aria-hidden', 'true');
@@ -904,7 +904,6 @@
       if (caret.parentNode) caret.parentNode.removeChild(caret);
       slip.classList.remove('axa-typing');
       slip.classList.add('axa-typed');
-      setTimeout(function () { slip.classList.remove('ax-hl-off'); }, 40);     // now the marker may draw on the numbers
       if (follow) follow.classList.remove('axa-wait');
     }
     function step(ts) {

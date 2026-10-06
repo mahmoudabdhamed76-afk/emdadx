@@ -4709,10 +4709,12 @@ html.aurum .axa-hero-c .axa-kpi small { display: none; }
 html.aurum { --axg: linear-gradient(90deg, #5CF2C2, #E9F25A 55%, #FFC04A); }
 html.aurum[data-theme="light"] { --axg: linear-gradient(90deg, #0A9A8F, #12A150 55%, #D07A00); }
 html.aurum .axa-slip > header b { background: var(--axg); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent; }
-html.aurum .axa-slip.axa-typing :is(header span, dt, dd, .l, .v, small, h4, .axa-note, .m b, .m small, li em, p) {
+/* 4.25.1: the whole answer keeps these colors (not just while it types) */
+html.aurum .axa-slip :is(header div > span, dt, dd, .l, .v, small, h4, .axa-note, .m b, .m small, li em, p) {
   background: var(--axg); -webkit-background-clip: text; background-clip: text; color: transparent !important; -webkit-text-fill-color: transparent; }
-html.aurum .axa-slip.axa-typed :is(header span, dt, dd, .l, .v, small, h4, .axa-note, .m b, .m small, li em, p) { animation: axaSettle .45s ease both; }
-@keyframes axaSettle { from { opacity: .55; } to { opacity: 1; } }
+html.aurum .axa-slip dd em { -webkit-text-fill-color: currentColor; background-clip: border-box; -webkit-background-clip: border-box; }
+html.aurum .axa-slip .axa-ledger dd em.up, html.aurum .axa-slip .axa-ledger dd em.down.inv { background: var(--ax-ok-soft); color: var(--ax-ok) !important; }
+html.aurum .axa-slip .axa-ledger dd em.down, html.aurum .axa-slip .axa-ledger dd em.up.inv { background: var(--ax-bad-soft); color: var(--ax-bad) !important; }
 html.aurum .axa-caret { display: inline-block; width: 2px; height: 1em; margin: 0 1px; vertical-align: -.12em; border-radius: 2px; background: #5CF2C2; animation: axCaret .45s steps(2) infinite; -webkit-text-fill-color: initial; }
 html.aurum[data-theme="light"] .axa-caret { background: #12A150; }
 /* bars, spark, buttons and footer show up once the words are in */
