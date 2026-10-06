@@ -4666,3 +4666,38 @@ html[data-theme="light"] .axbot-txt { background: linear-gradient(90deg, #0A9A8F
 }
 [dir="ltr"] .axbot-tag { left: auto; right: -2px; transform-origin: calc(100% - 30px) 100%; }
 [dir="ltr"] .axbot-tag::after { left: auto; right: 19px; }
+
+/* ════════════════════════════════════════════════════════════════════
+   65. 4.24 · المساعد الذكي: مربعات الأرقام بتتداس + منطقة الإجابة على قدها
+   على الموبايل: مفيش صندوق طويل فاضي — الردود بتنزل في الصفحة نفسها، وخانة
+   السؤال ثابتة تحت فوق الشريط السفلي (وبتنزل معاه لما يستخبى).
+════════════════════════════════════════════════════════════════════ */
+html.aurum button.axa-kpi { border: 0; cursor: pointer; text-align: start; font: inherit; color: var(--ax-on-deep, #fff); transition: background .15s, transform .12s; -webkit-tap-highlight-color: transparent; }
+html.aurum button.axa-kpi:hover { background: rgba(255, 255, 255, .11); }
+html.aurum button.axa-kpi:active { transform: scale(.97); }
+html.aurum .axa-hero-c .axa-kpi small { display: none; }
+@media (max-width: 768px) {
+  html.aurum .axa-hero-c .axa-kpi small { display: block; font-size: 10.5px; opacity: .85; max-width: 100%; }
+  html.aurum .axa-hero-c .axa-kpi b { font-size: 15px; }
+
+  html.aurum .axa-chat { height: auto !important; min-height: 0 !important; overflow: visible !important; }
+  html.aurum .axa-chat .axa-msgs, html.aurum .axa-msgs { flex: none !important; height: auto !important; min-height: 0 !important; max-height: none !important; overflow: visible !important; padding: 12px 10px 4px !important; gap: 10px; }
+  html.aurum .axa-empty { font-size: 13px; line-height: 1.7; }
+  html.aurum .axa-empty p { padding: 9px 12px; }
+  html.aurum .axa-msg { gap: 0; scroll-margin-top: 140px; }
+  html.aurum .axa-msgs .axa-msg.bot:not(.axa-thinking) > .axa-mark, html.aurum .axa-empty .axa-mark { display: none; }
+  html.aurum .axa-msg.me .axa-bubble { font-size: 14px; padding: 8px 14px; border-radius: 16px 16px 4px 16px; }
+  html.aurum .axa-slip { padding: 12px 13px 12px; border-radius: 18px; max-width: 100%; }
+  html.aurum .axa-slip > header { gap: 10px; margin-bottom: 8px; }
+  html.aurum .axa-slip > header b { font-size: 16.5px; }
+  html.aurum .axa-slip.short > header b { font-size: 18px; }
+  html.aurum .axa-ledger > div { padding: 4px 0; }
+  html.aurum .axa-ledger dt { font-size: 13px; }
+  html.aurum .axa-ledger dd { font-size: 14.5px; }
+  html.aurum .axa-ledger .big dd { font-size: 19px; }
+  html.aurum .axa-follow { margin: 2px 0 6px; }
+  html.aurum .axa-chat .axa-composer { position: sticky !important; bottom: calc(78px + env(safe-area-inset-bottom, 0px)); z-index: 30; margin: 6px 8px 8px !important;
+    border-radius: 18px !important; border-top: 0 !important; background: var(--ax-surface) !important; box-shadow: 0 0 0 1px var(--ax-line-2), 0 10px 26px -8px rgba(0, 0, 0, .45) !important;
+    transition: bottom .32s cubic-bezier(.2, .9, .3, 1); }
+  html.aurum.bn-hide .axa-chat .axa-composer { bottom: calc(10px + env(safe-area-inset-bottom, 0px)); transition: bottom .42s cubic-bezier(.45, 0, .7, .3); }
+}

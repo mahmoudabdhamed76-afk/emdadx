@@ -41,7 +41,7 @@
   function allowed(page) { try { return typeof can !== 'function' || can(page); } catch (e) { return true; } }
   function me() { return (typeof currentUser !== 'undefined' && currentUser) || {}; }
   function fn(f) { var id = 'f' + (++st.fid); st.fns[id] = f; return "AXA.run('" + id + "')"; }
-  function plural(n, one, few, many) { return n === 1 ? one : (n >= 3 && n <= 10) ? few : many; }
+  function plural(n, one, few, many) { return n === 1 ? one : (n >= 2 && n <= 10) ? few : many; }
 
   /* Arabic normalisation: hamza forms, taa marbuta, alef maqsura, diacritics, Arabic digits */
   function N(s) {
@@ -115,6 +115,26 @@
     return out;
   }
   function ops(list) { var s = {}; list.forEach(function (x) { s[x.kind + (x.n || '') + '|' + x.cid + '|' + x.date] = 1; }); return Object.keys(s).length; }
+  /* paper = the products the paper balance counts (same rule as «رصيد الورق»: ورق/أفلام بالورقة، مش حبر) */
+  function paperInfo() {
+    var ids = {}, unit = 'ورقة', ok = false;
+    try { if (window.AXPaper && AXPaper.model) { var m = AXPaper.model(); (m.items || []).forEach(function (i) { ids[i.id] = 1; ok = true; }); unit = m.unit || unit; } } catch (e) {}
+    if (!ok) A('products').forEach(function (p) {
+      var n = String(p.name || ''), u = String(p.unit || '');
+      if (!/حبر|ink|كارتردج|خرطوش/i.test(n) && /ورق|فيلم|افلام|أفلام|film|paper|ورقة|لفة|رزمة/i.test(n + ' ' + u)) ids[p.id] = 1;
+    });
+    return { ids: ids, unit: unit };
+  }
+  function paperOut(list, P) { P = P || paperInfo(); return list.reduce(function (s, x) { return s + (x.pid && P.ids[x.pid] ? (+x.qty || 0) : 0); }, 0); }
+  /* quantities are only added up within the same unit — 20 رزمة and 20 ورقة never become «40» */
+  function unitOfP(pid, fb) { var p = A('products').find(function (y) { return y.id === pid; }); return String((p && p.unit) || fb || 'ورقة').trim(); }
+  function paperByUnit(list, P) {
+    P = P || paperInfo(); var m = {}, order = [];
+    list.forEach(function (x) { if (!(x.pid && P.ids[x.pid])) return; var u = unitOfP(x.pid, x.unit); if (!(u in m)) { m[u] = 0; order.push(u); } m[u] += +x.qty || 0; });
+    order.sort(function (a, b) { return m[b] - m[a]; });
+    return order.map(function (u) { return { u: u, q: m[u] }; });
+  }
+  function qtyTxt(parts) { return parts.length ? parts.map(function (x) { return num(x.q) + ' ' + x.u; }).join(' + ') : '0'; }
   function sum(list, k) { return list.reduce(function (s, x) { return s + (Number(x[k]) || 0); }, 0); }
   function pays(p) { return A('payments').filter(function (x) { return inP(p, x.date); }); }
   function exps(p) { return A('expenses').filter(function (e) { return e.kind !== 'purchase' && inP(p, e.date); }); }
@@ -196,7 +216,7 @@
     var low = stockModel().filter(function (i) { return i.state === 'crit' || i.state === 'empty'; });
     var chq = (window.AXCheq && allowed('cheques')) ? AXCheq.dueSoon() : [];
     var ledger = [
-      { l: 'صرف النهارده', v: ops(s) + ' ' + plural(ops(s), 'عملية', 'عمليات', 'عملية') + ' بـ ' + money(sum(s, 'total')) },
+      { l: 'ورق اتسحب النهارده', v: qtyTxt(paperByUnit(s)), big: paperByUnit(s).length <= 1, sub: ops(s) ? ops(s) + ' ' + plural(ops(s), 'عملية صرف', 'عمليات صرف', 'عملية صرف') + ' بقيمة ' + money(sum(s, 'total')) : 'لسه مفيش صرف النهارده' },
       { l: 'اتحصّل النهارده', v: money(sum(py, 'amount')), tone: sum(py, 'amount') > 0 ? 'ok' : '' },
       { l: 'متأخر في الدفع', v: od.length ? money(odSum) : 'مفيش', tone: od.length ? 'bad' : 'ok' },
       { l: 'أصناف قربت تخلص', v: low.length ? low.length + ' ' + plural(low.length, 'صنف', 'أصناف', 'صنف') : 'مفيش', tone: low.length ? 'warn' : 'ok' }
@@ -211,7 +231,7 @@
       ledger: ledger,
       note: od.length ? 'أكبر متأخرات عند ' + esc(cname(odBy[0].k)) + ' بـ ' + money(odBy[0].v) + '.' : 'مفيش فلوس متأخرة على حد — يوم هادي.',
       tone: od.length ? 'bad' : 'ok', acts: acts,
-      follow: ['مبيعات الشهر ده', 'قارن الشهر ده بالشهر اللي فات', 'مين أكتر مركز عليه فلوس؟']
+      follow: ['طلعنا قد إيه ورق النهارده؟', 'مبيعات الشهر ده', 'مين أكتر مركز عليه فلوس؟']
     };
   }
 
@@ -411,20 +431,36 @@
   }
 
   function outputAns(p) {
-    var s = sales(p).filter(function (x) { return x.qty > 0; });
-    if (!s.length) return { icon: 'stack', title: 'المصروف من المخزن ' + p.label, sub: rangeTxt(p), note: 'مفيش صرف متسجل في الفترة دي.' };
-    var byP = {}; s.forEach(function (x) { var k = x.pid || x.pname; var g = byP[k] || (byP[k] = { name: x.pname || 'صنف', unit: x.unit || '', q: 0, v: 0 }); g.q += x.qty; g.v += x.total; if (!g.unit && x.unit) g.unit = x.unit; });
-    var list = Object.keys(byP).map(function (k) { var g = byP[k]; if (!g.unit) { var pr = A('products').find(function (y) { return y.id === k; }); if (pr) g.unit = pr.unit || ''; } return g; }).sort(function (a, b) { return b.v - a.v; });
-    var mx = Math.max.apply(null, list.map(function (g) { return g.v; })) || 1;
-    var cs = groupBy(s, 'cid', 'total').slice(0, 5), cmx = cs.length ? cs[0].v : 1;
-    var pr = p.prev ? sales(p.prev) : null;
-    return {
-      icon: 'stack', title: 'اللي طلع من المخزن ' + p.label, sub: rangeTxt(p),
-      ledger: [{ l: 'قيمة المصروف', v: money(sum(s, 'total')), d: pr ? delta(sum(s, 'total'), sum(pr, 'total')) : '', big: true }, { l: 'عدد العمليات', v: num(ops(s)) }],
-      bars: { title: 'حسب الصنف', items: list.slice(0, 8).map(function (g) { return { l: g.name, txt: num(g.q) + ' ' + g.unit, sub: money(g.v), w: g.v / mx }; }) },
-      bars2: { title: 'أكتر المراكز سحبًا', items: cs.map(function (x) { var c = cust(x.k); return { l: cname(x.k), txt: money(x.v), w: x.v / cmx, on: c ? fn(function () { ask('حساب ' + c.name, { cid: c.id }); }) : '' }; }) },
-      follow: ['إيه اللي قرب يخلص في المخزن؟', 'قارن الشهر ده بالشهر اللي فات']
+    var s = sales(p).filter(function (x) { return x.qty > 0; }), PI = paperInfo();
+    if (!s.length) return { icon: 'stack', title: 'الورق اللي اتسحب ' + p.label, sub: rangeTxt(p), note: 'مفيش صرف متسجل في الفترة دي.', follow: ['طلعنا قد إيه ورق الشهر ده؟', 'إيه اللي قرب يخلص في المخزن؟'] };
+    var byP = {}; s.forEach(function (x) { var k = x.pid || x.pname; var g = byP[k] || (byP[k] = { id: x.pid, name: x.pname || 'صنف', unit: x.unit || '', q: 0, v: 0, paper: !!(x.pid && PI.ids[x.pid]) }); g.q += x.qty; g.v += x.total; if (!g.unit && x.unit) g.unit = x.unit; });
+    var list = Object.keys(byP).map(function (k) { var g = byP[k]; if (!g.unit) { var pr = A('products').find(function (y) { return y.id === k; }); if (pr) g.unit = pr.unit || ''; } return g; })
+      .sort(function (a, b) { return (b.paper - a.paper) || (b.q - a.q); });
+    var pq = paperOut(s, PI), paperRows = s.filter(function (x) { return x.pid && PI.ids[x.pid]; });
+    var pr = p.prev ? sales(p.prev) : null, ppq = pr ? paperOut(pr, PI) : 0;
+    var parts = paperByUnit(s, PI), one = parts.length <= 1, U = parts.length ? parts[0].u : PI.unit;
+    var pparts = pr ? paperByUnit(pr, PI) : [];
+    var days = p.all ? 0 : daysBetween(p.from, p.to) + 1;
+    var qmx = Math.max.apply(null, list.map(function (g) { return g.q; })) || 1;
+    var cs = groupBy(paperRows.length ? paperRows : s, 'cid', 'qty').slice(0, 6), cmx = cs.length ? cs[0].v : 1;
+    var same = one && pparts.length <= 1 && (!pparts.length || pparts[0].u === U);
+    var ledger = [{ l: 'ورق اتسحب', v: qtyTxt(parts), d: pr && same ? delta(pq, ppq) : '', big: one, sub: pr && ppq ? p.prev.label + ': ' + qtyTxt(pparts) : '' },
+      { l: 'عدد عمليات الصرف', v: num(ops(s)) }];
+    if (days > 1 && one && pq) ledger.push({ l: 'متوسط اليوم', v: num(pq / days, pq / days < 10 ? 1 : 0) + ' ' + U });
+    ledger.push({ l: 'قيمتها', v: money(sum(s, 'total')) });
+    var r = {
+      icon: 'stack', title: 'الورق اللي اتسحب ' + p.label, sub: rangeTxt(p),
+      ledger: ledger,
+      bars: { title: 'حسب الصنف', items: list.slice(0, 8).map(function (g) { return { l: g.name, txt: num(g.q) + ' ' + (g.id ? unitOfP(g.id, g.unit) : g.unit), sub: money(g.v), w: g.q / qmx, on: g.id ? fn(function () { ask(g.name, { pid: g.id }); }) : '' }; }) },
+      bars2: { title: 'أكتر المراكز سحبًا', items: cs.map(function (x) { var c = cust(x.k); return { l: cname(x.k), txt: one ? num(x.v) + ' ' + U : qtyTxt(paperByUnit((paperRows.length ? paperRows : s).filter(function (y) { return y.cid === x.k; }), PI)), w: x.v / cmx, on: c ? fn(function () { ask('حساب ' + c.name, { cid: c.id }); }) : '' }; }) },
+      follow: p.from === p.to ? ['طلعنا قد إيه ورق الأسبوع ده؟', 'طلعنا قد إيه ورق الشهر ده؟', 'إيه اللي قرب يخلص في المخزن؟'] : ['إيه اللي قرب يخلص في المخزن؟', 'قارن الشهر ده بالشهر اللي فات']
     };
+    if (days > 1 && days <= 62) {
+      var byDay = {}; paperRows.forEach(function (x) { byDay[x.date] = (byDay[x.date] || 0) + x.qty; });
+      var items = []; for (var i = 0; i < days; i++) { var dd = addDays(p.from, i); items.push({ l: dm(dd), v: byDay[dd] || 0 }); }
+      r.spark = { items: items, label: 'الورق يوم بيوم', fmt: function (v) { return num(v) + (one ? ' ' + U : ''); } };
+    }
+    return r;
   }
 
   function topProductsAns(p) {
@@ -750,7 +786,7 @@
   function sparkHtml(sp) {
     if (!sp || !sp.items || sp.items.length < 2) return '';
     var mx = Math.max.apply(null, sp.items.map(function (x) { return x.v; })) || 1, n = sp.items.length;
-    return '<div class="axa-block"><div class="axa-spark" role="img" aria-label="المبيعات يوم بيوم">' + sp.items.map(function (x, i) {
+    return '<div class="axa-block"><div class="axa-spark" role="img" aria-label="' + esc(sp.label || 'المبيعات يوم بيوم') + '">' + sp.items.map(function (x, i) {
       return '<span class="' + (i === n - 1 ? 'now' : '') + (x.v ? '' : ' zero') + '" style="height:' + Math.max(3, Math.round(x.v / mx * 100)) + '%" title="' + esc(x.l + ': ' + (sp.fmt ? sp.fmt(x.v) : num(x.v))) + '"></span>';
     }).join('') + '</div><div class="axa-spark-x"><span>' + esc(sp.items[0].l) + '</span><span>' + esc(sp.items[n - 1].l) + '</span></div></div>';
   }
@@ -849,6 +885,12 @@
       var target = el && el.length ? el[el.length - 1] : box.lastElementChild;
       if (!target) return;
       /* the messages scroll inside the chat box; the quick questions above stay put */
+      if (box.scrollHeight <= box.clientHeight + 4) {          // phone: the page itself scrolls
+        var tb = document.querySelector('.topbar'), off = (tb ? tb.getBoundingClientRect().bottom : 70) + 10;
+        var y = target.getBoundingClientRect().top + (window.pageYOffset || 0) - off;
+        try { window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' }); } catch (e) { window.scrollTo(0, y); }
+        return;
+      }
       var top = target.getBoundingClientRect().top - box.getBoundingClientRect().top + box.scrollTop - 8;
       try { box.scrollTo({ top: Math.max(0, top), behavior: 'smooth' }); } catch (e) { box.scrollTop = top; }
     });
@@ -861,7 +903,8 @@
     return (h < 12 ? 'صباح الخير' : h < 17 ? 'نهارك سعيد' : 'مساء الخير') + (n ? ' يا ' + n : '');
   }
   function heroLines() {
-    var t = today(), P0 = { from: t, to: t }, s = sales(P0), py = sum(pays(P0).filter(function (x) { return +x.amount > 0; }), 'amount');
+    var t = today(), P0 = { from: t, to: t }, s = sales(P0), pyl = pays(P0).filter(function (x) { return +x.amount > 0; }), py = sum(pyl, 'amount'), npy = pyl.length;
+    var PI = paperInfo(), pq = paperOut(s, PI), pqt = qtyTxt(paperByUnit(s, PI));
     var od = overdue(), low = stockModel().filter(function (i) { return i.state === 'crit' || i.state === 'empty'; });
     var n = ops(s), odSum = sum(od, 'remaining'), g = od.length ? groupBy(od, 'customerId', 'remaining') : [];
     var b;
@@ -869,10 +912,10 @@
     else if (low.length) b = '<b>' + low.length + '</b> ' + plural(low.length, 'صنف', 'أصناف', 'صنف') + ' في المخزن ' + (low.length === 1 ? 'قرب يخلص' : 'قربوا يخلصوا') + '.';
     else b = 'مفيش متأخرات، والمخزن تمام.';
     var kpis = [
-      { c: 'b', l: 'صرف النهارده', v: n ? money(sum(s, 'total')) : '0', s: n ? n + ' ' + plural(n, 'عملية', 'عمليات', 'عملية') : 'لسه مفيش' },
-      { c: 'g', l: 'اتحصّل النهارده', v: py > 0 ? money(py) : '0', s: py > 0 ? 'تحصيل' : 'لسه مفيش' },
-      od.length ? { c: 'r', l: 'متأخرات', v: money(odSum), s: 'عند ' + g.length + ' ' + plural(g.length, 'مركز', 'مراكز', 'مركز') }
-                : { c: low.length ? 'y' : 'g', l: 'المخزن', v: low.length ? String(low.length) : 'تمام', s: low.length ? plural(low.length, 'صنف قرب يخلص', 'أصناف قربت تخلص', 'صنف قربوا يخلصوا') : 'مفيش نواقص' }
+      { c: 'b', l: 'ورق اتسحب النهارده', v: pq > 0 ? pqt : '0', s: n ? n + ' ' + plural(n, 'عملية صرف', 'عمليات صرف', 'عملية صرف') + ' · ' + money(sum(s, 'total')) : 'لسه مفيش صرف', q: 'طلعنا قد إيه ورق النهارده؟' },
+      { c: 'g', l: 'اتحصّل النهارده', v: py > 0 ? money(py) : '0', s: py > 0 ? npy + ' ' + plural(npy, 'دفعة', 'دفعات', 'دفعة') : 'لسه مفيش تحصيل', q: 'اتحصّل كام النهارده؟' },
+      od.length ? { c: 'r', l: 'متأخرات', v: money(odSum), s: 'عند ' + g.length + ' ' + plural(g.length, 'مركز', 'مراكز', 'مركز'), q: 'مين متأخر في الدفع؟' }
+                : { c: low.length ? 'y' : 'g', l: 'المخزن', v: low.length ? low.length + ' ' + plural(low.length, 'صنف', 'أصناف', 'صنف') : 'تمام', s: low.length ? (low.length === 1 ? 'قرب يخلص' : 'قربوا يخلصوا') : 'مفيش نواقص', q: 'إيه اللي قرب يخلص في المخزن؟' }
     ];
     return { b: b, kpis: kpis, od: od.length, low: low.length };
   }
@@ -916,7 +959,7 @@
       '<section class="axa-hero axa-hero-c">' +
         '<div class="axa-hero-top"><h2><span class="axa-bot" aria-hidden="true">🤖</span><span>المساعد الذكي</span><span class="axa-spark" aria-hidden="true">✨</span></h2>' +
           '<small>' + esc(DAYS[dt(today()).getDay()] + ' ' + dm(today())) + '</small></div>' +
-        '<div class="axa-kpis">' + H.kpis.map(function (k) { return '<div class="axa-kpi k-' + k.c + '" title="' + esc(k.s) + '"><span>' + esc(k.l) + '</span><b>' + esc(k.v) + '</b></div>'; }).join('') + '</div>' +
+        '<div class="axa-kpis">' + H.kpis.map(function (k) { return '<button type="button" class="axa-kpi k-' + k.c + '" title="' + esc(k.s) + '" onclick="' + fn(function () { ask(k.q); }) + '"><span>' + esc(k.l) + '</span><b>' + esc(k.v) + '</b><small>' + esc(k.s) + '</small></button>'; }).join('') + '</div>' +
         '<div class="axa-hero-acts">' + heroActs.filter(function (a) { return a[0] !== 'أعمل إيه النهارده؟' || heroActs.length < 4; }).map(function (a) { return '<button type="button" onclick="' + fn(function () { ask(a[1]); }) + '">' + esc(a[0]) + '</button>'; }).join('') + '</div>' +
       '</section>' +
       '<nav class="axa-tabs" role="tablist">' +
