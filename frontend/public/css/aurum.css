@@ -3592,7 +3592,7 @@ html.aurum #bottom-nav .bn-mine, html.aurum #bottom-nav .bn-more { position: rel
   html.aurum[data-theme="dark"] #bottom-nav .bn-item.active::after { background: #fff; }
   html.aurum #bottom-nav .bn-sell svg { color: var(--ax-gold); }
   html.aurum[data-theme="dark"] #bottom-nav .bn-sell svg { color: #FFBD5C; }
-  html.aurum #ai-fab { display: none !important; }
+  /* 4.22: the floating assistant is back on the phone (dashboard only) */
 
   /* iOS: 16px inputs never zoom the page */
   html.aurum input.form-control, html.aurum select.form-control, html.aurum textarea.form-control, html.aurum #global-search, html.aurum .modal input, html.aurum .modal select, html.aurum .modal textarea { font-size: 16px !important; }
@@ -4538,3 +4538,43 @@ html.aurum .axst-open svg { flex: none; }
   .axst-sheet .mh-panel.axst { inset-inline: 0; margin-inline: auto; width: min(620px, calc(100vw - 48px)); bottom: 4vh; max-height: 88vh; border-radius: 28px; }
 }
 @media (min-width: 769px) { .axst-sheet .mh-panel.axst { transform: translateY(calc(100% + 8vh)); } .axst-sheet.show .mh-panel.axst { transform: none; } }
+
+/* ════════════════════════════════════════════════════════════════════
+   63. 4.22 · زرار «المزيد» العايم على الكمبيوتر (js/deskmore.js)
+   + المساعد الذكي العايم رجع على الموبايل في لوحة التحكم
+════════════════════════════════════════════════════════════════════ */
+#ax-more-fab { display: none; }
+@media (min-width: 769px) {
+  #ax-more-fab.show { position: fixed; z-index: 150; bottom: calc(22px + env(safe-area-inset-bottom, 0px)); inset-inline-end: calc(84px + env(safe-area-inset-left, 0px));
+    display: inline-flex; align-items: center; gap: 8px; height: 52px; padding: 0 18px 0 16px; border: 0; border-radius: 99px; cursor: pointer;
+    background: var(--ax-hero-bg, #002055); color: var(--ax-hero-gold, #fff); font: 800 14.5px var(--ax-font, system-ui);
+    box-shadow: 0 0 0 1px rgba(233, 182, 80, .45), 0 12px 30px rgba(0, 0, 0, .35); transition: transform .2s cubic-bezier(.34, 1.56, .64, 1), box-shadow .2s;
+    animation: axMoreIn .35s cubic-bezier(.34, 1.56, .64, 1); }
+  #ax-more-fab.show:hover { transform: translateY(-3px); }
+  #ax-more-fab.show:active { transform: scale(.95); }
+  #ax-more-fab.on { box-shadow: 0 0 0 2px var(--ax-hero-gold, #fff), 0 12px 30px rgba(0, 0, 0, .35); }
+  #ax-more-fab.on svg { transform: rotate(45deg); }
+  #ax-more-fab svg { transition: transform .25s ease; flex: none; }
+  html[data-theme="light"] #ax-more-fab.show { box-shadow: 0 0 0 1px rgba(0, 32, 85, .25), 0 12px 30px rgba(0, 32, 85, .3); }
+
+  /* «المزيد» as a floating panel right above the button */
+  #mh-more.mh-desk .mh-scrim { background: rgba(4, 10, 24, .22); }
+  #mh-more.mh-desk .mh-panel { inset-inline: auto; inset-inline-end: calc(18px + env(safe-area-inset-left, 0px)); bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+    width: 430px; max-height: min(76vh, 760px); border-radius: 26px; padding: 14px 16px 16px; border: 1px solid var(--ax-line);
+    transform: translateY(14px) scale(.97); opacity: 0; transform-origin: bottom left; transition: transform .26s cubic-bezier(.22, 1, .36, 1), opacity .18s ease; }
+  [dir="ltr"] #mh-more.mh-desk .mh-panel { transform-origin: bottom right; }
+  #mh-more.mh-desk.show .mh-panel { transform: none; opacity: 1; }
+  #mh-more.mh-desk .mh-grip { display: none; }
+  #mh-more.mh-desk .mh-quick button, #mh-more.mh-desk .mh-all button { transition: background .15s, border-color .15s, transform .12s; }
+  #mh-more.mh-desk .mh-quick button:hover, #mh-more.mh-desk .mh-all button:hover { border-color: var(--tc, var(--ax-line-2)); background: color-mix(in srgb, var(--tc, #888) 8%, var(--ax-surface)); }
+  html.aurum.mh-lock:has(#mh-more.mh-desk.show), html.aurum.mh-lock:has(#mh-more.mh-desk.show) body { overflow: auto !important; }
+}
+@keyframes axMoreIn { from { opacity: 0; transform: scale(.6); } to { opacity: 1; transform: none; } }
+
+@media (max-width: 768px) {
+  html.aurum #ai-fab.visible { display: flex !important; }
+  html.aurum #ai-fab { inset-inline-end: calc(16px + env(safe-area-inset-left, 0px)) !important; bottom: calc(86px + env(safe-area-inset-bottom, 0px)) !important; z-index: 139 !important;
+    transition: bottom .32s cubic-bezier(.2, .9, .3, 1), transform .2s ease, opacity .25s ease !important; }
+  html.aurum.bn-hide #ai-fab { bottom: calc(18px + env(safe-area-inset-bottom, 0px)) !important; transition: bottom .42s cubic-bezier(.45, 0, .7, .3) !important; }
+  html.aurum.mh-lock #ai-fab { opacity: 0; pointer-events: none; }
+}
