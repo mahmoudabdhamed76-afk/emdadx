@@ -4545,8 +4545,8 @@ html.aurum .axst-open svg { flex: none; }
 ════════════════════════════════════════════════════════════════════ */
 #ax-more-fab { display: none; }
 @media (min-width: 769px) {
-  #ax-more-fab.show { position: fixed; z-index: 150; bottom: calc(22px + env(safe-area-inset-bottom, 0px)); inset-inline-end: calc(92px + env(safe-area-inset-left, 0px));
-    display: inline-flex; align-items: center; gap: 8px; height: 52px; padding: 0 18px 0 16px; border: 0; border-radius: 99px; cursor: pointer;
+  #ax-more-fab.show { position: fixed; z-index: 150; bottom: calc(22px + env(safe-area-inset-bottom, 0px)); inset-inline-end: calc(78px + env(safe-area-inset-left, 0px));
+    display: inline-flex; align-items: center; gap: 7px; height: 46px; padding: 0 16px 0 14px; border: 0; border-radius: 99px; cursor: pointer;
     background: var(--ax-hero-bg, #002055); color: var(--ax-hero-gold, #fff); font: 800 14.5px var(--ax-font, system-ui);
     box-shadow: 0 0 0 1px rgba(233, 182, 80, .45), 0 12px 30px rgba(0, 0, 0, .35); transition: transform .2s cubic-bezier(.34, 1.56, .64, 1), box-shadow .2s;
     animation: axMoreIn .35s cubic-bezier(.34, 1.56, .64, 1); }
@@ -4585,7 +4585,7 @@ html.aurum .axst-open svg { flex: none; }
    صغيرين، وفوقه «مساعدك الذكي» بيتكتب حرف حرف مع النطة (js/aibot.js).
 ════════════════════════════════════════════════════════════════════ */
 #ai-fab.axbot, html.aurum #ai-fab.axbot {
-  width: 60px !important; height: 60px !important; padding: 0 !important; border: 0 !important; border-radius: 50% !important;
+  width: 48px !important; height: 48px !important; padding: 0 !important; border: 0 !important; border-radius: 50% !important;
   background: transparent !important; box-shadow: none !important; overflow: visible !important; animation: none !important; color: inherit !important;
   -webkit-tap-highlight-color: transparent; }
 html.aurum #ai-fab.axbot::before, #ai-fab.axbot::before { display: none !important; }
@@ -4597,28 +4597,28 @@ html.aurum #ai-fab.axbot::before, #ai-fab.axbot::before { display: none !importa
   background:
     radial-gradient(circle at 30% 22%, rgba(255, 255, 255, .42), transparent 38%),
     linear-gradient(138deg, #10E4EC 0%, #2FE39A 36%, #DDEB3B 62%, #FFB21F 84%, #FF9417 100%);
-  box-shadow: -7px -2px 22px rgba(16, 228, 236, .5), 8px 6px 24px rgba(255, 160, 30, .55),
+  box-shadow: -5px -2px 16px rgba(16, 228, 236, .5), 6px 5px 18px rgba(255, 160, 30, .55),
     inset 0 -7px 12px rgba(160, 70, 0, .18), inset 0 4px 8px rgba(255, 255, 255, .4);
   animation: axSquash 4.6s ease-in-out infinite; transition: filter .2s; }
-.axbot-gl { position: absolute; border-radius: 50%; border: 2.6px solid transparent; pointer-events: none; }
-.axbot-gl1 { width: 30px; height: 30px; top: 5px; left: 5px; border-top-color: rgba(255, 255, 255, .55); transform: rotate(-38deg); }
-.axbot-gl2 { width: 30px; height: 30px; top: 5px; right: 5px; border-top-color: rgba(255, 255, 255, .45); transform: rotate(40deg); }
-.axbot-gl3 { width: 34px; height: 34px; bottom: 4px; right: 6px; border-bottom-color: rgba(255, 236, 160, .55); transform: rotate(-28deg); }
-.axbot-bot { position: relative; z-index: 1; width: 52px; height: 52px; margin-top: 2px; filter: drop-shadow(0 3px 4px rgba(90, 40, 0, .22)); overflow: visible; }
+.axbot-gl { position: absolute; border-radius: 50%; border: 2px solid transparent; pointer-events: none; }
+.axbot-gl1 { width: 24px; height: 24px; top: 4px; left: 4px; border-top-color: rgba(255, 255, 255, .55); transform: rotate(-38deg); }
+.axbot-gl2 { width: 24px; height: 24px; top: 4px; right: 4px; border-top-color: rgba(255, 255, 255, .45); transform: rotate(40deg); }
+.axbot-gl3 { width: 27px; height: 27px; bottom: 3px; right: 5px; border-bottom-color: rgba(255, 236, 160, .55); transform: rotate(-28deg); }
+.axbot-bot { position: relative; z-index: 1; width: 41px; height: 41px; margin-top: 1px; filter: drop-shadow(0 3px 4px rgba(90, 40, 0, .22)); overflow: visible; }
 .axbot-ant { animation: axAnt 2.3s ease-in-out infinite; transform-origin: 32px 11px; transform-box: view-box; }
 .axbot-face { animation: axFace 4.6s ease-in-out infinite; transform-origin: 32px 32px; transform-box: view-box; }
-.axbot-shd { position: absolute; left: 50%; bottom: -9px; width: 42px; height: 9px; margin-left: -21px; border-radius: 50%; pointer-events: none;
+.axbot-shd { position: absolute; left: 50%; bottom: -7px; width: 34px; height: 7px; margin-left: -17px; border-radius: 50%; pointer-events: none;
   background: radial-gradient(closest-side, rgba(0, 0, 0, .42), transparent); animation: axShd 4.6s ease-in-out infinite; }
 
 /* «مساعدك الذكي» — small pill above, hops with the orb and types itself */
-.axbot-tag { position: absolute; left: -2px; bottom: calc(100% + 9px); transform-origin: 30px 100%; display: inline-flex; align-items: center; gap: 2px;
-  height: 24px; padding: 0 10px; border-radius: 99px; white-space: nowrap; pointer-events: none;
-  background: rgba(10, 14, 22, .9); color: #fff; font: 800 11.5px/1 var(--ax-font, system-ui);
+.axbot-tag { position: absolute; left: -2px; bottom: calc(100% + 7px); transform-origin: 24px 100%; display: inline-flex; align-items: center; gap: 2px;
+  height: 21px; padding: 0 8px; border-radius: 99px; white-space: nowrap; pointer-events: none;
+  background: rgba(10, 14, 22, .9); color: #fff; font: 800 10.5px/1 var(--ax-font, system-ui);
   box-shadow: 0 0 0 1px rgba(63, 229, 150, .45), 0 6px 16px rgba(0, 0, 0, .35), 0 0 14px rgba(16, 228, 236, .25);
   transition: opacity .2s, transform .25s cubic-bezier(.34, 1.56, .64, 1); }
-.axbot-tag::after { content: ''; position: absolute; left: 27px; top: 100%; border: 5px solid transparent; border-top-color: rgba(10, 14, 22, .9); }
+.axbot-tag::after { content: ''; position: absolute; left: 19px; top: 100%; border: 5px solid transparent; border-top-color: rgba(10, 14, 22, .9); }
 .axbot-txt { background: linear-gradient(90deg, #5CF2C2, #E9F25A, #FFC04A); -webkit-background-clip: text; background-clip: text; color: transparent; }
-.axbot-caret { width: 2px; height: 12px; border-radius: 2px; background: #5CF2C2; opacity: 0; }
+.axbot-caret { width: 2px; height: 11px; border-radius: 2px; background: #5CF2C2; opacity: 0; }
 .axbot-tag.typing .axbot-caret { opacity: 1; animation: axCaret .5s steps(2) infinite; }
 .axbot-tag.empty { opacity: 0; transform: scale(.6) translateY(6px); transition-duration: .12s; }
 html[data-theme="light"] .axbot-tag { background: #fff; color: #0B1630; box-shadow: 0 0 0 1px rgba(18, 161, 80, .35), 0 6px 16px rgba(0, 32, 85, .2); }
@@ -4627,10 +4627,10 @@ html[data-theme="light"] .axbot-txt { background: linear-gradient(90deg, #0A9A8F
 
 @keyframes axHop {
   0%, 6% { transform: translateY(0); }
-  15% { transform: translateY(-17px); }
-  21% { transform: translateY(-21px); }
+  15% { transform: translateY(-13px); }
+  21% { transform: translateY(-16px); }
   29% { transform: translateY(0); }
-  34% { transform: translateY(-7px); }
+  34% { transform: translateY(-5px); }
   39% { transform: translateY(0); }
   43% { transform: translateY(-2.5px); }
   47%, 100% { transform: translateY(0); }
@@ -4659,10 +4659,10 @@ html[data-theme="light"] .axbot-txt { background: linear-gradient(90deg, #0A9A8F
 @keyframes axCaret { 50% { opacity: 0; } }
 
 @media (max-width: 768px) {
-  #ai-fab.axbot, html.aurum #ai-fab.axbot { width: 58px !important; height: 58px !important; }
+  #ai-fab.axbot, html.aurum #ai-fab.axbot { width: 46px !important; height: 46px !important; }
 }
 @media (prefers-reduced-motion: reduce) {
   .axbot-jump, .axbot-orb, .axbot-shd, .axbot-face, .axbot-ant { animation: none !important; }
 }
 [dir="ltr"] .axbot-tag { left: auto; right: -2px; transform-origin: calc(100% - 30px) 100%; }
-[dir="ltr"] .axbot-tag::after { left: auto; right: 27px; }
+[dir="ltr"] .axbot-tag::after { left: auto; right: 19px; }
