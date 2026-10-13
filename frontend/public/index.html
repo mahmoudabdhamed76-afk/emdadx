@@ -12,7 +12,7 @@
 
 <!-- PWA: install to home screen with company logo -->
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#000000">
+<meta name="theme-color" content="#121212">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -32,7 +32,7 @@
   var t = 'dark', rail = false;
   try { t = localStorage.getItem('theme') || 'dark'; rail = localStorage.getItem('ax_rail') === '1'; } catch (e) {}
   d.setAttribute('data-theme', t === 'light' ? 'light' : 'dark');
-  try { var tc = document.querySelector('meta[name="theme-color"]'); if (tc) tc.setAttribute('content', t === 'light' ? '#1B1E18' : '#000000'); } catch (e) {}
+  try { var tc = document.querySelector('meta[name="theme-color"]'); if (tc) tc.setAttribute('content', t === 'light' ? '#002055' : '#121212'); } catch (e) {}
   d.classList.add('aurum');
   if (rail) d.classList.add('ax-rail');
   /* 4.9 · no splash: the login form shows at once. Only when this device was
@@ -9474,38 +9474,38 @@ audio::-webkit-media-controls-panel { background: rgba(15,23,42,.9); }
 <style>
 /* ═══ 4.27 · شاشة الترحيب — EMDADX بحركة موشن جرافيك (مرة واحدة كل فتحة) ═══ */
 #axw { position: fixed; inset: 0; z-index: 2147483000; display: grid; place-items: center; overflow: hidden; color: #fff; cursor: pointer;
-  background: radial-gradient(120% 75% at 50% 42%, #1A1A1A 0%, #0A0A0A 55%, #000000 100%);
+  background: radial-gradient(120% 75% at 50% 42%, #0B3E94 0%, #002055 52%, #000F2E 100%);
   transition: opacity .55s ease, transform .7s cubic-bezier(.4, 0, .2, 1), filter .55s ease; -webkit-tap-highlight-color: transparent; }
 #axw.out { opacity: 0; transform: scale(1.08); filter: blur(6px); pointer-events: none; }
 #axw .axw-orb { position: absolute; border-radius: 50%; filter: blur(60px); opacity: .55; pointer-events: none; }
-#axw .axw-o1 { width: 60vmax; height: 60vmax; background: #2A2A2A; left: -22vmax; top: -18vmax; animation: axwDrift 6s ease-in-out infinite alternate; }
-#axw .axw-o2 { width: 46vmax; height: 46vmax; background: #E5FEB3; right: -20vmax; bottom: -16vmax; opacity: .35; animation: axwDrift 7s ease-in-out infinite alternate-reverse; }
+#axw .axw-o1 { width: 60vmax; height: 60vmax; background: #1F63E0; left: -22vmax; top: -18vmax; animation: axwDrift 6s ease-in-out infinite alternate; }
+#axw .axw-o2 { width: 46vmax; height: 46vmax; background: #D79613; right: -20vmax; bottom: -16vmax; opacity: .35; animation: axwDrift 7s ease-in-out infinite alternate-reverse; }
 #axw .axw-grid { position: absolute; inset: 0; opacity: .08; pointer-events: none;
   background-image: linear-gradient(rgba(255,255,255,.6) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.6) 1px, transparent 1px);
   background-size: 44px 44px; -webkit-mask-image: radial-gradient(circle at 50% 45%, #000 0, transparent 62%); mask-image: radial-gradient(circle at 50% 45%, #000 0, transparent 62%); }
 #axw .axw-in { position: relative; text-align: center; padding: 0 16px; }
-#axw .axw-ring { position: absolute; left: 50%; top: 42%; width: 120px; height: 120px; margin: -60px 0 0 -60px; border-radius: 50%; border: 2px solid rgba(229, 254, 179, .55);
+#axw .axw-ring { position: absolute; left: 50%; top: 42%; width: 120px; height: 120px; margin: -60px 0 0 -60px; border-radius: 50%; border: 2px solid rgba(242, 178, 51, .55);
   opacity: 0; animation: axwRing 1.6s cubic-bezier(.2, .7, .3, 1) .95s forwards; pointer-events: none; }
 #axw .axw-word { display: flex; justify-content: center; direction: ltr; gap: .01em;
   font: 900 clamp(58px, 17vw, 140px)/1 "Helvetica Neue", "Arial Black", Arial, sans-serif; letter-spacing: -.02em; }
 #axw .axw-word span { display: inline-block; opacity: 0; transform: translateY(70%) rotate(10deg) scale(.9); filter: blur(12px);
   animation: axwIn .75s cubic-bezier(.2, .9, .25, 1.18) forwards, axwGlint .9s ease forwards;
   animation-delay: calc(.12s + var(--i) * .08s), calc(1.15s + var(--i) * .07s); }
-#axw .axw-word .x { color: #E5FEB3; transform: scale(0) rotate(-200deg); filter: none; text-shadow: 0 0 28px rgba(229, 254, 179, .55);
+#axw .axw-word .x { color: #F2B233; transform: scale(0) rotate(-200deg); filter: none; text-shadow: 0 0 28px rgba(242, 178, 51, .55);
   animation: axwX .95s cubic-bezier(.2, .9, .3, 1.35) .62s forwards, axwPulse 1.6s ease-in-out 1.7s infinite; }
 #axw .axw-sub { margin-top: 18px; font: 500 clamp(13px, 3.6vw, 16px)/1.6 "IBM Plex Sans Arabic", "Cairo", system-ui, sans-serif; color: rgba(255, 255, 255, .82);
   opacity: 0; transform: translateY(10px); letter-spacing: .02em; animation: axwSub .7s ease 1.05s forwards; }
-#axw .axw-sub b { color: #E5FEB3; font-weight: 700; }
+#axw .axw-sub b { color: #F2B233; font-weight: 700; }
 #axw .axw-bar { position: relative; width: 128px; height: 3px; margin: 34px auto 0; border-radius: 3px; background: rgba(255, 255, 255, .18); overflow: hidden;
   opacity: 0; animation: axwSub .4s ease 1.1s forwards; }
-#axw .axw-bar i { position: absolute; inset: 0; transform-origin: left; transform: scaleX(0); background: linear-gradient(90deg, #fff, #E5FEB3); border-radius: inherit;
+#axw .axw-bar i { position: absolute; inset: 0; transform-origin: left; transform: scaleX(0); background: linear-gradient(90deg, #fff, #F2B233); border-radius: inherit;
   animation: axwLoad 1.35s cubic-bezier(.6, 0, .3, 1) 1.15s forwards; }
 #axw .axw-skip { position: absolute; bottom: calc(26px + env(safe-area-inset-bottom, 0px)); left: 0; right: 0; text-align: center;
   font: 500 12px "IBM Plex Sans Arabic", "Cairo", system-ui, sans-serif; color: rgba(255, 255, 255, .45); opacity: 0; animation: axwSub .5s ease 1.6s forwards; }
 @keyframes axwIn { to { opacity: 1; transform: none; filter: blur(0); } }
 @keyframes axwX { 0% { opacity: 0; transform: scale(0) rotate(-200deg); } 60% { opacity: 1; transform: scale(1.25) rotate(12deg); } 100% { opacity: 1; transform: scale(1) rotate(0); } }
-@keyframes axwGlint { 0% { color: #fff; } 45% { color: #EEFECD; text-shadow: 0 0 22px rgba(238, 254, 205, .8); } 100% { color: #fff; text-shadow: none; } }
-@keyframes axwPulse { 0%, 100% { text-shadow: 0 0 18px rgba(229, 254, 179, .45); } 50% { text-shadow: 0 0 34px rgba(229, 254, 179, .9); } }
+@keyframes axwGlint { 0% { color: #fff; } 45% { color: #FFE3A3; text-shadow: 0 0 22px rgba(255, 220, 140, .8); } 100% { color: #fff; text-shadow: none; } }
+@keyframes axwPulse { 0%, 100% { text-shadow: 0 0 18px rgba(242, 178, 51, .45); } 50% { text-shadow: 0 0 34px rgba(242, 178, 51, .9); } }
 @keyframes axwSub { to { opacity: 1; transform: none; } }
 @keyframes axwLoad { to { transform: scaleX(1); } }
 @keyframes axwRing { 0% { opacity: .9; transform: scale(.3); } 100% { opacity: 0; transform: scale(4.2); } }
@@ -9531,7 +9531,7 @@ audio::-webkit-media-controls-panel { background: rgba(15,23,42,.9); }
   var seen = false; try { seen = sessionStorage.getItem('axw') === '1'; sessionStorage.setItem('axw', '1'); } catch (e) {}
   if (seen) { w.parentNode.removeChild(w); return; }
   var tc = document.querySelector('meta[name="theme-color"]'), old = tc ? tc.getAttribute('content') : null;
-  if (tc) tc.setAttribute('content', '#000000');
+  if (tc) tc.setAttribute('content', '#002055');
   var done = false;
   function bye() {
     if (done) return; done = true;
@@ -9703,7 +9703,7 @@ audio::-webkit-media-controls-panel { background: rgba(15,23,42,.9); }
 
     <footer class="app-footer">
       <div>جميع الحقوق محفوظة © 2026 إمداد إكس</div>
-      <div class="version">الإصدار 4.28.1</div>
+      <div class="version">الإصدار 4.27</div>
     </footer>
   </div>
 </div>
