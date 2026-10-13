@@ -4923,3 +4923,23 @@ html.aurum .pxs-c svg, html.aurum[data-theme="light"] .pxs-c svg { stroke: #1112
 html.aurum .pxs-cap-dot, html.aurum[data-theme="light"] .pxs-cap-dot { background: #E5FEB3 !important; box-shadow: 0 0 10px #E5FEB3 !important; }
 html.aurum .mh-av { background: var(--pw-primary) !important; color: #111211 !important; }
 html.aurum .lgn-wrap ~ *, html.aurum .lgn-foot { color: rgba(229, 254, 179, .45) !important; }
+
+/* 4.28.1 · الليلي أسود صافي (من غير أي خضرة في الخلفيات) — الأخضر الفاتح للأزرار والنشط بس */
+html.aurum { --pw-night: #000000; --pw-card: #141414; }
+html.aurum[data-theme="dark"] {
+  --ax-bg: #000000; --ax-side: #0A0A0A; --ax-surface: #141414; --ax-surface-2: #1C1C1C; --ax-surface-3: #222222;
+  --ax-line: #242424; --ax-line-2: #333333; --ax-faint: #757575; --ax-deep: #141414; --ax-input: #141414;
+  --ax-hover: rgba(255, 255, 255, .05); --ax-active: rgba(255, 255, 255, .08); --ax-ripple: rgba(255, 255, 255, .12);
+}
+@media (max-width: 768px) {
+  html.aurum[data-theme="dark"] .topbar { background: linear-gradient(150deg, #1A1A1A 0%, #141414 60%, #0E0E0E 100%) !important; }
+  html.aurum[data-theme="dark"] .topbar::after { background: none !important; }
+  html.aurum[data-theme="dark"] .mh-dot, html.aurum[data-theme="dark"] .topbar #notif-btn .notif-dot { box-shadow: 0 0 0 2px #141414 !important; }
+}
+html.aurum[data-theme="dark"] .pxs { --bg: #0E0E0E; box-shadow: 0 0 0 1px #242424; }
+html.aurum[data-theme="dark"] .pxs-g1 { background: radial-gradient(circle, rgba(255, 255, 255, .07), transparent 70%) !important; }
+html.aurum[data-theme="dark"] .ax-hero { background: linear-gradient(135deg, #141414 0%, #141414 100%) !important; border-color: #242424 !important; }
+html.aurum .lgn-wrap { background: #000000 !important; }
+html.aurum .lgn-card { background: #141414 !important; box-shadow: 0 0 0 1px #242424, 0 40px 90px rgba(0, 0, 0, .6) !important; }
+html.aurum #login-page .lgn-input, html.aurum #login-page .lgn-input:focus, html.aurum .lgn-chip { background: #0A0A0A !important; border-color: #2A2A2A !important; }
+html.aurum[data-theme="dark"] ::-webkit-scrollbar-thumb { background: #2A2A2A; }

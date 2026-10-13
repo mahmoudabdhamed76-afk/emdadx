@@ -12,7 +12,7 @@
 
 <!-- PWA: install to home screen with company logo -->
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#111211">
+<meta name="theme-color" content="#000000">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -32,7 +32,7 @@
   var t = 'dark', rail = false;
   try { t = localStorage.getItem('theme') || 'dark'; rail = localStorage.getItem('ax_rail') === '1'; } catch (e) {}
   d.setAttribute('data-theme', t === 'light' ? 'light' : 'dark');
-  try { var tc = document.querySelector('meta[name="theme-color"]'); if (tc) tc.setAttribute('content', t === 'light' ? '#1B1E18' : '#111211'); } catch (e) {}
+  try { var tc = document.querySelector('meta[name="theme-color"]'); if (tc) tc.setAttribute('content', t === 'light' ? '#1B1E18' : '#000000'); } catch (e) {}
   d.classList.add('aurum');
   if (rail) d.classList.add('ax-rail');
   /* 4.9 · no splash: the login form shows at once. Only when this device was
@@ -9474,11 +9474,11 @@ audio::-webkit-media-controls-panel { background: rgba(15,23,42,.9); }
 <style>
 /* ═══ 4.27 · شاشة الترحيب — EMDADX بحركة موشن جرافيك (مرة واحدة كل فتحة) ═══ */
 #axw { position: fixed; inset: 0; z-index: 2147483000; display: grid; place-items: center; overflow: hidden; color: #fff; cursor: pointer;
-  background: radial-gradient(120% 75% at 50% 42%, #23271E 0%, #161815 52%, #0C0D0B 100%);
+  background: radial-gradient(120% 75% at 50% 42%, #1A1A1A 0%, #0A0A0A 55%, #000000 100%);
   transition: opacity .55s ease, transform .7s cubic-bezier(.4, 0, .2, 1), filter .55s ease; -webkit-tap-highlight-color: transparent; }
 #axw.out { opacity: 0; transform: scale(1.08); filter: blur(6px); pointer-events: none; }
 #axw .axw-orb { position: absolute; border-radius: 50%; filter: blur(60px); opacity: .55; pointer-events: none; }
-#axw .axw-o1 { width: 60vmax; height: 60vmax; background: #3A4A1C; left: -22vmax; top: -18vmax; animation: axwDrift 6s ease-in-out infinite alternate; }
+#axw .axw-o1 { width: 60vmax; height: 60vmax; background: #2A2A2A; left: -22vmax; top: -18vmax; animation: axwDrift 6s ease-in-out infinite alternate; }
 #axw .axw-o2 { width: 46vmax; height: 46vmax; background: #E5FEB3; right: -20vmax; bottom: -16vmax; opacity: .35; animation: axwDrift 7s ease-in-out infinite alternate-reverse; }
 #axw .axw-grid { position: absolute; inset: 0; opacity: .08; pointer-events: none;
   background-image: linear-gradient(rgba(255,255,255,.6) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.6) 1px, transparent 1px);
@@ -9531,7 +9531,7 @@ audio::-webkit-media-controls-panel { background: rgba(15,23,42,.9); }
   var seen = false; try { seen = sessionStorage.getItem('axw') === '1'; sessionStorage.setItem('axw', '1'); } catch (e) {}
   if (seen) { w.parentNode.removeChild(w); return; }
   var tc = document.querySelector('meta[name="theme-color"]'), old = tc ? tc.getAttribute('content') : null;
-  if (tc) tc.setAttribute('content', '#111211');
+  if (tc) tc.setAttribute('content', '#000000');
   var done = false;
   function bye() {
     if (done) return; done = true;
@@ -9703,7 +9703,7 @@ audio::-webkit-media-controls-panel { background: rgba(15,23,42,.9); }
 
     <footer class="app-footer">
       <div>جميع الحقوق محفوظة © 2026 إمداد إكس</div>
-      <div class="version">الإصدار 4.28</div>
+      <div class="version">الإصدار 4.28.1</div>
     </footer>
   </div>
 </div>
