@@ -4752,3 +4752,174 @@ html.aurum .axa-slip .axa-ledger .big mark.axa-num { padding: 0 .36em; }
 html.aurum .axa-slip .axa-rows .axa-rowb > em:empty { display: none; }
 html.aurum .axa-heard { margin: -2px 0 8px; font-size: 12px; opacity: .85; }
 html.aurum .axa-slip mark.axa-num { white-space: normal !important; display: inline !important; line-height: 1.7 !important; }
+
+/* ════════════════════════════════════════════════════════════════════
+   68. 4.28 · الهوية البصرية الجديدة — نفس أسلوب PrintWatch
+   ------------------------------------------------------------------
+   كل الألوان هنا Design Tokens (CSS Variables) — غيّر الرقم هنا يتغير
+   في البرنامج كله. الأخضر الفاتح للأزرار الرئيسية والعناصر النشطة
+   والقايمة المحددة؛ ألوان التنبيهات (نجاح/تحذير/خطأ) زي ما هي.
+════════════════════════════════════════════════════════════════════ */
+html.aurum {
+  --pw-primary: #E5FEB3;          /* Pastel Lime Green */
+  --pw-secondary: #EEFECD;
+  --pw-primary-rgb: 229, 254, 179;
+  --pw-on-primary: #111211;
+  --pw-night: #111211;            /* خلفية الوضع الليلي */
+  --pw-card: #191B18;             /* الكروت وحقول الإدخال */
+  --pw-text: #FFFFFF;
+  --pw-text-2: #A3A79F;
+  --ax-radius: 22px; --ax-radius-sm: 14px; --ax-radius-lg: 28px;
+}
+html.aurum[data-theme="dark"] {
+  --ax-bg: var(--pw-night);
+  --ax-side: #141513;
+  --ax-surface: var(--pw-card);
+  --ax-surface-2: #20231F;
+  --ax-surface-3: #262924;
+  --ax-line: #262923;
+  --ax-line-2: #353A31;
+  --ax-text: var(--pw-text);
+  --ax-muted: var(--pw-text-2);
+  --ax-faint: #767B71;
+  --ax-ink: var(--pw-primary);
+  --ax-on-ink: var(--pw-on-primary);
+  --ax-deep: var(--pw-card);
+  --ax-on-deep: #FFFFFF;
+  --ax-deep-muted: var(--pw-text-2);
+  --ax-gold: var(--pw-primary);
+  --ax-gold-2: var(--pw-secondary);
+  --ax-gold-soft: rgba(229, 254, 179, .10);
+  --ax-primary: var(--pw-primary);
+  --ax-primary-hover: var(--pw-secondary);
+  --ax-primary-ink: var(--pw-on-primary);
+  --ax-primary-rgb: 229, 254, 179;
+  --ax-hover: rgba(229, 254, 179, .055);
+  --ax-active: rgba(229, 254, 179, .10);
+  --ax-input: var(--pw-card);
+  --ax-ripple: rgba(229, 254, 179, .16);
+  --ax-shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 12px 28px -16px rgba(0, 0, 0, .75);
+  --ax-shadow-lift: 0 2px 8px rgba(0, 0, 0, .45), 0 22px 46px -18px rgba(0, 0, 0, .8);
+}
+html.aurum[data-theme="light"] {
+  --ax-bg: #F2F4EC;
+  --ax-side: #FFFFFF;
+  --ax-surface: #FFFFFF;
+  --ax-surface-2: #F3F6EC;
+  --ax-surface-3: #E8EDDD;
+  --ax-line: #E0E5D6;
+  --ax-line-2: #C5CCB7;
+  --ax-text: #151713;
+  --ax-muted: #585D52;
+  --ax-faint: #82877B;
+  --ax-ink: #1B1E18;              /* النشط في النهاري: كبسولة غامقة بكلام أخضر فاتح */
+  --ax-on-ink: var(--pw-primary);
+  --ax-deep: #1B1E18;             /* الهيدر واللوحات الغامقة */
+  --ax-on-deep: #FFFFFF;
+  --ax-deep-muted: var(--pw-text-2);
+  --ax-gold: #4E6B0E;
+  --ax-gold-2: #6A8A1F;
+  --ax-gold-soft: rgba(229, 254, 179, .55);
+  --ax-primary: var(--pw-primary);
+  --ax-primary-hover: #D9F79A;
+  --ax-primary-ink: #151713;
+  --ax-primary-rgb: 120, 160, 40;
+  --ax-hover: rgba(27, 30, 24, .045);
+  --ax-active: rgba(27, 30, 24, .07);
+  --ax-input: #FFFFFF;
+  --ax-ripple: rgba(27, 30, 24, .1);
+  --ax-shadow: 0 1px 2px rgba(27, 30, 24, .06), 0 10px 26px -14px rgba(27, 30, 24, .2);
+  --ax-shadow-lift: 0 2px 6px rgba(27, 30, 24, .08), 0 20px 42px -16px rgba(27, 30, 24, .28);
+  --ax-shadow-lg: 0 24px 60px -12px rgba(27, 30, 24, .3);
+}
+html.aurum[data-theme] { --ax-hero-gold: var(--pw-primary); }
+
+/* ── الأزرار الرئيسية: أخضر فاتح في الوضعين + Hover/Active ناعم ── */
+html.aurum .btn-primary, html.aurum button.btn-primary, html.aurum .lgn-btn {
+  background: var(--pw-primary) !important; color: var(--pw-on-primary) !important; border: 0 !important;
+  box-shadow: 0 8px 22px -10px rgba(var(--pw-primary-rgb), .55), inset 0 -2px 0 rgba(0, 0, 0, .06) !important;
+  transition: background .18s ease, transform .14s ease, box-shadow .2s ease !important; }
+html.aurum .btn-primary:hover, html.aurum .lgn-btn:hover { background: var(--pw-secondary) !important; transform: translateY(-1px) !important; box-shadow: 0 12px 26px -10px rgba(var(--pw-primary-rgb), .7) !important; }
+html.aurum .btn-primary:active, html.aurum .lgn-btn:active { transform: scale(.97) !important; }
+html.aurum[data-theme="light"] .btn-primary, html.aurum[data-theme="light"] button.btn-primary { box-shadow: 0 0 0 1px rgba(78, 107, 14, .28), 0 8px 18px -10px rgba(78, 107, 14, .45) !important; }
+html.aurum .btn, html.aurum button.btn { transition: background .18s ease, border-color .18s ease, color .18s ease, transform .14s ease, box-shadow .2s ease !important; }
+html.aurum .btn:active { transform: scale(.97); }
+html.aurum .btn-secondary:hover, html.aurum .btn-outline:hover { border-color: var(--ax-gold) !important; }
+html.aurum :focus-visible { outline: 2px solid var(--ax-gold); outline-offset: 2px; }
+html.aurum input:focus, html.aurum select:focus, html.aurum textarea:focus, html.aurum .form-control:focus {
+  border-color: var(--ax-gold) !important; box-shadow: 0 0 0 3px rgba(var(--pw-primary-rgb), .22) !important; }
+html.aurum[data-theme="light"] input:focus, html.aurum[data-theme="light"] select:focus, html.aurum[data-theme="light"] textarea:focus, html.aurum[data-theme="light"] .form-control:focus {
+  box-shadow: 0 0 0 3px rgba(229, 254, 179, .9) !important; }
+
+/* ── الكروت: حواف ناعمة وخط رفيع ── */
+html.aurum .card, html.aurum .stat-card, html.aurum .table-wrap, html.aurum .kpi { border-radius: var(--ax-radius) !important; }
+html.aurum[data-theme="dark"] .card, html.aurum[data-theme="dark"] .stat-card, html.aurum[data-theme="dark"] .table-wrap { border: 1px solid var(--ax-line) !important; }
+html.aurum .stat-card, html.aurum .card { transition: border-color .2s ease, transform .2s ease, box-shadow .2s ease; }
+html.aurum .stat-card:hover { border-color: rgba(var(--pw-primary-rgb), .35) !important; }
+
+/* ── Sidebar بأسلوب PrintWatch: كبسولة خضرا للقسم المفتوح ── */
+html.aurum { --mkc: 229, 254, 179; --mkt: #111211; }
+html.aurum[data-theme="dark"] { --mkc: 229, 254, 179; }
+html.aurum .sidebar { border-inline-start: 1px solid var(--ax-line) !important; }
+html.aurum .nav-item { border-radius: 14px !important; transition: background .18s ease, color .18s ease, transform .18s ease !important; }
+html.aurum .nav-item:hover:not(.active) { background: var(--ax-hover) !important; color: var(--ax-text) !important; transform: translateX(-2px); }
+[dir="ltr"] html.aurum .nav-item:hover:not(.active) { transform: translateX(2px); }
+html.aurum .nav-item.active { transform: none !important; border-radius: 14px !important; background-image: none !important; background: var(--pw-primary) !important; color: #111211 !important; animation: pwPill .32s cubic-bezier(.2, .9, .3, 1.2) both; box-shadow: 0 10px 22px -12px rgba(var(--pw-primary-rgb), .7) !important; }
+html.aurum .nav-item.active .icon, html.aurum .nav-item.active .icon svg { color: #111211 !important; }
+@keyframes pwPill { from { opacity: .4; transform: scale(.94); } to { opacity: 1; transform: none; } }
+
+/* ── الشريط العلوي على الموبايل (كان كحلي) ── */
+@media (max-width: 768px) {
+  html.aurum .topbar, html.aurum[data-theme="dark"] .topbar { background: linear-gradient(150deg, #1E211B 0%, #191B18 60%, #151714 100%) !important;
+    box-shadow: 0 1px 0 rgba(255, 255, 255, .05), 0 12px 30px -16px rgba(0, 0, 0, .7) !important; }
+  html.aurum .topbar::after { background: radial-gradient(120% 90% at 0% 0%, rgba(229, 254, 179, .12), transparent 55%) !important; }
+  html.aurum .mh-dot, html.aurum .topbar #notif-btn .notif-dot { box-shadow: 0 0 0 2px #191B18 !important; }
+}
+
+/* ── الشريط السفلي ── */
+html.aurum #bottom-nav .bn-item { transition: color .18s ease, transform .15s ease !important; }
+html.aurum #bottom-nav .bn-item:active { transform: scale(.92); }
+html.aurum #bottom-nav .bn-item.active, html.aurum #bottom-nav .bn-item.active svg { color: var(--ax-gold) !important; }
+html.aurum[data-theme="dark"] #bottom-nav .bn-item.active, html.aurum[data-theme="dark"] #bottom-nav .bn-item.active svg { color: var(--pw-primary) !important; }
+html.aurum #bottom-nav .bn-item.active::after, html.aurum[data-theme="dark"] #bottom-nav .bn-item.active::after { background: var(--pw-primary) !important; height: 4px !important; border-radius: 0 0 4px 4px !important; }
+html.aurum[data-theme="light"] #bottom-nav .bn-item.active::after { background: #6A8A1F !important; }
+html.aurum #bottom-nav .bn-sell svg, html.aurum[data-theme="dark"] #bottom-nav .bn-sell svg { color: var(--ax-gold) !important; }
+
+/* ── تسجيل الدخول ── */
+html.aurum .lgn-wrap { background: radial-gradient(110% 70% at 50% 0%, #1E2219 0%, #111211 60%) !important; }
+html.aurum .lgn-b1 { border-top-color: rgba(229, 254, 179, .45) !important; border-inline-end-color: rgba(229, 254, 179, .12) !important; }
+html.aurum .lgn-b2 { border-bottom-color: rgba(163, 167, 159, .35) !important; border-inline-start-color: rgba(163, 167, 159, .1) !important; }
+html.aurum .lgn-b3 { border-color: rgba(229, 254, 179, .08) !important; }
+html.aurum .lgn-r1 { border-top-color: rgba(229, 254, 179, .8) !important; border-inline-end-color: rgba(229, 254, 179, .2) !important; }
+html.aurum .lgn-r2 { border-bottom-color: rgba(163, 167, 159, .6) !important; border-inline-start-color: rgba(163, 167, 159, .15) !important; }
+html.aurum .lgn-card { background: #191B18 !important; box-shadow: 0 0 0 1px #262923, 0 40px 90px rgba(0, 0, 0, .55) !important; }
+html.aurum .lgn-title { color: #FFFFFF !important; }
+html.aurum .lgn-sub, html.aurum .lgn-chip { color: #A3A79F !important; }
+html.aurum #login-page .lgn-input { background: #111211 !important; border: 1px solid #2B2F27 !important; color: #FFFFFF !important; }
+html.aurum #login-page .lgn-input::placeholder { color: #767B71 !important; }
+html.aurum #login-page .lgn-input:focus { background: #111211 !important; border-color: var(--pw-primary) !important; box-shadow: 0 0 0 3px rgba(229, 254, 179, .18) !important; }
+html.aurum .lgn-chip { background: #111211 !important; border-color: #2B2F27 !important; }
+
+/* ── لوحة التحكم (الهيرو) والزرار العايم واللمسات اللي كانت دهبي/كحلي ── */
+html.aurum .ax-hero { border-color: rgba(229, 254, 179, .16) !important; background: radial-gradient(700px 320px at 12% 0%, rgba(229, 254, 179, .08), transparent 60%), linear-gradient(135deg, var(--ax-hero-bg) 0%, var(--ax-hero-bg-2) 100%) !important; }
+html.aurum .ax-hero::after { background: linear-gradient(90deg, transparent, rgba(229, 254, 179, .6), transparent) !important; }
+html.aurum .ax-arc-gold { stroke: rgba(229, 254, 179, .45) !important; }
+html.aurum .ax-arc-blue { stroke: rgba(163, 167, 159, .35) !important; }
+html.aurum #ai-fab:not(.axbot), html.aurum #ax-more-fab.show { box-shadow: 0 0 0 1px rgba(229, 254, 179, .4), 0 12px 30px rgba(0, 0, 0, .35) !important; }
+html.aurum #ax-more-fab.show { background: #191B18 !important; color: var(--pw-primary) !important; }
+html.aurum .axs-tab.on, html.aurum .tab.active, html.aurum .tabs .tab.active { background: var(--ax-ink) !important; color: var(--ax-on-ink) !important; border-color: transparent !important; }
+html.aurum .tab, html.aurum .axs-tab { transition: background .18s ease, color .18s ease !important; }
+html.aurum ::selection { background: rgba(229, 254, 179, .45); color: #111211; }
+html.aurum[data-theme="dark"] ::-webkit-scrollbar-thumb { background: #2B2F27; border-radius: 99px; }
+html.aurum .page-title { letter-spacing: -.01em; }
+/* اللوحة الحية + صورة المستخدم بنفس الهوية */
+html.aurum[data-theme="light"] .pxs, html.aurum[data-theme="dark"] .pxs { --bg: #151714; }
+html.aurum[data-theme="dark"] .pxs { box-shadow: 0 0 0 1px #262923; }
+html.aurum .pxs-g1, html.aurum[data-theme="light"] .pxs-g1 { background: radial-gradient(circle, rgba(229, 254, 179, .22), transparent 70%) !important; }
+html.aurum .pxs-g2, html.aurum[data-theme="light"] .pxs-g2 { background: radial-gradient(circle, rgba(163, 167, 159, .22), transparent 70%) !important; }
+html.aurum .pxs-c, html.aurum[data-theme="light"] .pxs-c { border-color: rgba(229, 254, 179, .16) !important; }
+html.aurum .pxs-c.on, html.aurum[data-theme="light"] .pxs-c.on { background: #E5FEB3 !important; border-color: #EEFECD !important; box-shadow: 0 0 14px rgba(229, 254, 179, .45) !important; }
+html.aurum .pxs-c svg, html.aurum[data-theme="light"] .pxs-c svg { stroke: #111211; }
+html.aurum .pxs-cap-dot, html.aurum[data-theme="light"] .pxs-cap-dot { background: #E5FEB3 !important; box-shadow: 0 0 10px #E5FEB3 !important; }
+html.aurum .mh-av { background: var(--pw-primary) !important; color: #111211 !important; }
+html.aurum .lgn-wrap ~ *, html.aurum .lgn-foot { color: rgba(229, 254, 179, .45) !important; }
