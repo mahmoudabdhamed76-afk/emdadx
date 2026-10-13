@@ -4943,3 +4943,27 @@ html.aurum .lgn-wrap { background: #000000 !important; }
 html.aurum .lgn-card { background: #141414 !important; box-shadow: 0 0 0 1px #242424, 0 40px 90px rgba(0, 0, 0, .6) !important; }
 html.aurum #login-page .lgn-input, html.aurum #login-page .lgn-input:focus, html.aurum .lgn-chip { background: #0A0A0A !important; border-color: #2A2A2A !important; }
 html.aurum[data-theme="dark"] ::-webkit-scrollbar-thumb { background: #2A2A2A; }
+
+/* 4.28.1 · الوضع الليلي: خلفية سودا صافية (من غير أي لون أخضر) — الأخضر الفاتح للأزرار والنشط بس */
+html.aurum { --pw-night: #000000; --pw-card: #121212; }
+html.aurum[data-theme="dark"] {
+  --ax-bg: #000000; --ax-side: #0A0A0A; --ax-surface: #121212; --ax-surface-2: #1A1A1A; --ax-surface-3: #1F1F1F;
+  --ax-line: #232323; --ax-line-2: #333333; --ax-deep: #121212; --ax-input: #121212; --ax-faint: #757575;
+  --ax-hover: rgba(255, 255, 255, .05); --ax-active: rgba(255, 255, 255, .08); --ax-ripple: rgba(255, 255, 255, .12);
+}
+html.aurum[data-theme="dark"] body, html.aurum[data-theme="dark"] { background-color: #000 !important; }
+@media (max-width: 768px) {
+  html.aurum[data-theme="dark"] .topbar { background: linear-gradient(150deg, #161616 0%, #101010 60%, #0B0B0B 100%) !important; }
+  html.aurum[data-theme="dark"] .topbar::after { background: none !important; }
+  html.aurum[data-theme="dark"] .mh-dot, html.aurum[data-theme="dark"] .topbar #notif-btn .notif-dot { box-shadow: 0 0 0 2px #121212 !important; }
+}
+html.aurum[data-theme="dark"] .ax-hero { background: linear-gradient(135deg, #121212 0%, #121212 100%) !important; }
+html.aurum[data-theme="dark"] .pxs { --bg: #0D0D0D; box-shadow: 0 0 0 1px #232323; }
+html.aurum[data-theme="dark"] .pxs-g1 { background: radial-gradient(circle, rgba(255, 255, 255, .06), transparent 70%) !important; }
+html.aurum[data-theme="dark"] .pxs-g2 { background: radial-gradient(circle, rgba(255, 255, 255, .04), transparent 70%) !important; }
+html.aurum[data-theme="dark"] .pxs-c { border-color: rgba(255, 255, 255, .1) !important; }
+html.aurum .lgn-wrap { background: #000 !important; }
+html.aurum .lgn-card { background: #121212 !important; box-shadow: 0 0 0 1px #232323, 0 40px 90px rgba(0, 0, 0, .6) !important; }
+html.aurum #login-page .lgn-input, html.aurum #login-page .lgn-input:focus, html.aurum .lgn-chip { background: #000 !important; border-color: #2A2A2A !important; }
+html.aurum #ax-more-fab.show { background: #121212 !important; }
+html.aurum[data-theme="dark"] ::-webkit-scrollbar-thumb { background: #2A2A2A; }
