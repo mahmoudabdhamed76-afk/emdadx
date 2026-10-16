@@ -21,6 +21,7 @@ const auth  = require('./src/auth');
 const store = require('./src/store');
 const portal = require('./src/portal');
 const market = require('./src/market');
+const adsMod = require('./src/ads');
 try { market.init(require('./db').DATA_DIR); } catch (e) { console.warn('[market] init', e.message); }
 
 const PORT     = Number(process.env.PORT) || 8787;
@@ -67,6 +68,8 @@ function notifyDataChanged(meta = {}) {
   store.markDirty();
   broadcast('data_changed', { changedAt: new Date().toISOString(), ...meta });
 }
+/* 4.29 · Smart Ads Manager (its own tables + /api/ads routes) */
+const ads = adsMod.create({ db, readBody: (...a) => readBody(...a), sendJSON: (...a) => sendJSON(...a), broadcast });
 setInterval(() => {
   const now = Date.now(), dead = [];
   for (const [id, client] of _clients) { try { client.res.write(`: ping ${now}\n\n`); } catch (_) { dead.push(id); } }
@@ -255,6 +258,9 @@ const server = http.createServer(async (req, res) => {
       /* a weak password (e.g. the first admin/admin): reading is fine, nothing gets written until it's changed */
       if (req.method !== 'GET' && pathname !== '/api/password' && mustChange(me.id))
         return sendJSON(res, 403, { error: 'must_change', message: 'غيّر كلمة السر الأول — دي سهلة التخمين' });
+
+      /* ads: everyone reads their feed + records views/clicks; only admins manage */
+      if (pathname === '/api/ads' || pathname.startsWith('/api/ads/')) return await ads.handle(req, res, pathname, me);
 
       /* live dollar / gold prices for the header tape */
       if (pathname === '/api/market' && req.method === 'GET') {

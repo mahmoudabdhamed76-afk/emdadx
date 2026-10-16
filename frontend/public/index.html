@@ -23,6 +23,7 @@
 <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
 
 <link rel="stylesheet" href="fonts/fonts.css">
+<link rel="stylesheet" href="css/ads.css">
 <script src="vendor/chart.umd.js"></script>
 <script src="vendor/modern-screenshot.js"></script>
 <script>
@@ -9703,7 +9704,7 @@ audio::-webkit-media-controls-panel { background: rgba(15,23,42,.9); }
 
     <footer class="app-footer">
       <div>جميع الحقوق محفوظة © 2026 إمداد إكس</div>
-      <div class="version">الإصدار 4.27</div>
+      <div class="version">الإصدار 4.29</div>
     </footer>
   </div>
 </div>
@@ -10353,6 +10354,7 @@ const SyncEngine = (() => {
       try {
         const msg = JSON.parse(e.data);
         if (msg.event === 'connected') { DB._serverVersion = msg.version || 0; return; }
+        if (msg.event === 'ads_changed') { try { window.dispatchEvent(new CustomEvent('ax:ads-changed')); } catch(_) {} return; }
         if (msg.event === 'data_changed') {
           const isSelf = msg.source === _CLIENT_ID;
           if (isSelf) return;   // our own save — its HTTP reply already updated the version
@@ -26228,6 +26230,8 @@ function exportSuppliersCSV() {
 <script src="js/navsmart.js"></script>
 <script src="js/deskmore.js"></script>
 <script src="js/aibot.js"></script>
+<script src="js/adscore.js"></script>
+<script src="js/adsadmin.js"></script>
 <script src="js/settingsx.js"></script>
 </body>
 </html>
