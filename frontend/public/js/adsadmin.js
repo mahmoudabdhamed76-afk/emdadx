@@ -39,15 +39,18 @@
     if (started || !window.SmartAds) return;
     if (!me()) return;
     started = true;
-    SmartAds.init({ api: API, brand: 'EMDADX', user: me, page: function () { try { return typeof currentPage !== 'undefined' ? currentPage : ''; } catch (e) { return ''; } }, blocked: blocked, bottomOffset: bottomNavH });
+    SmartAds.init({ api: API, brand: 'EMDADX', user: me, page: function () { try { return typeof currentPage !== 'undefined' ? currentPage : ''; } catch (e) { return ''; } }, blocked: blocked, bottomOffset: bottomNavH, go: function (p) { try { if (typeof navigate === 'function') navigate(p); } catch (e) {} } });
   }
   setInterval(function () { if (!started) start(); else if (!me() && window.SmartAds) SmartAds.close(); }, 1500);
 
   /* ════════ 2 · the settings section (admin) ════════ */
-  var state = { ads: [], defaultWa: '', loaded: false };
+  var state = { ads: [], defaultWa: '', loaded: false, filter: 'all' };
+  var KIND = { promo: ['ترويجي', '📣'], guide: ['إرشادي', '🆕'] };
+  var ANIM = { bounce: 'نطّة (Bounce)', zoom: 'تكبير (Zoom)', slide: 'انزلاق (Slide)', flip: 'قلب (Flip)', drop: 'وقوع من فوق (Drop)', fade: 'ظهور هادي (Fade)' };
+  var DAYS = ['الأحد', 'الاتنين', 'التلات', 'الأربع', 'الخميس', 'الجمعة', 'السبت'];
   var STATUS = { draft: ['مسودة', 'd'], active: ['نشط', 'a'], paused: ['متوقف', 'p'], archived: ['مؤرشف', 'r'] };
   var FORMAT = { popup: ['Popup', 'نافذة عند فتح البرنامج'], banner: ['Banner', 'شريط أعلى / أسفل الصفحة'], card: ['Floating Card', 'بطاقة عايمة صغيرة'] };
-  var FREQ = { once: 'مرة واحدة بس', every: 'كل دخول', daily: 'مرة في اليوم', days: 'كل كام يوم' };
+  var FREQ = { once: 'مرة واحدة بس', every: 'كل دخول', daily: 'كام مرة في اليوم', days: 'كل كام يوم' };
   var PRESETS = [
     { n: 'كحلي EMDADX', bg: '#0F2250', accent: '#25D366', text: '#FFFFFF' },
     { n: 'أسود فخم', bg: '#121212', accent: '#F2B233', text: '#FFFFFF' },
@@ -75,7 +78,7 @@
     return '<div class="axad-row' + (a.status === 'archived' ? ' arch' : '') + '" data-id="' + esc(a.id) + '">' +
       '<div class="axad-ic" style="--c:' + esc(a.theme && a.theme.accent || '#25D366') + '">' + esc(a.icon || '📢') + '</div>' +
       '<div class="axad-main"><b>' + esc(a.name || a.title) + '</b>' +
-        '<small><span class="axad-st s-' + st[1] + '">' + st[0] + '</span> · ' + esc(FORMAT[a.format] ? FORMAT[a.format][0] : a.format) + ' · ' + esc(FREQ[a.frequency] || '') + ' · أولوية ' + esc(a.priority) + ' · ' + esc(when) + '</small>' +
+        '<small><span class="axad-st s-' + st[1] + '">' + st[0] + '</span> <span class="axad-kd k-' + esc(a.kind || 'promo') + '">' + (KIND[a.kind] || KIND.promo)[1] + ' ' + (KIND[a.kind] || KIND.promo)[0] + '</span> · ' + esc(FORMAT[a.format] ? FORMAT[a.format][0] : a.format) + ' · ' + esc(a.frequency === 'daily' ? (a.perDay || 1) + ' مرة في اليوم' : (FREQ[a.frequency] || '')) + (a.timeFrom || a.timeTo ? ' · ' + esc((a.timeFrom || '00:00') + '–' + (a.timeTo || '24:00')) : '') + (a.durationSec ? ' · ' + esc(a.durationSec) + ' ث' : '') + ' · أولوية ' + esc(a.priority) + ' · ' + esc(when) + '</small>' +
         '<div class="axad-mini"><span>👁 ' + num(s.view) + ' ظهور</span><span>👆 ' + num(s.click) + ' ضغطة</span><span>📈 ' + (s.ctr || 0) + '% CTR</span><span>✕ ' + num(s.close) + ' إغلاق</span><span>👥 ' + num(s.reach) + ' شخص</span></div></div>' +
       '<div class="axad-acts">' +
         (a.status === 'archived' ? '' : '<label class="axad-sw" title="' + (on ? 'إيقاف' : 'تشغيل') + '"><input type="checkbox" ' + (on ? 'checked' : '') + ' onchange="AXAds.toggle(\'' + esc(a.id) + '\', this.checked)"><i></i></label>') +
@@ -90,11 +93,13 @@
   }
   function draw() {
     var root = document.getElementById('axad-root'); if (!root) return;
-    var list = state.ads.slice();
+    var list = state.ads.filter(function (a) { return state.filter === 'all' || (a.kind || 'promo') === state.filter; });
+    var cnt = function (k) { return state.ads.filter(function (a) { return k === 'all' || (a.kind || 'promo') === k; }).length; };
     root.innerHTML = statsHtml() +
-      '<div class="axad-bar"><button type="button" class="btn btn-primary" onclick="AXAds.edit()">＋ إعلان جديد</button>' +
+      '<div class="axad-tabs" role="tablist">' + [['all', 'الكل'], ['promo', '📣 الترويجية'], ['guide', '🆕 الإرشادية']].map(function (t) { return '<button type="button" class="' + (state.filter === t[0] ? 'on' : '') + '" onclick="AXAds.filter(\'' + t[0] + '\')">' + t[1] + ' <i>' + cnt(t[0]) + '</i></button>'; }).join('') + '</div>' +
+      '<div class="axad-bar"><div class="axad-new"><button type="button" class="btn btn-primary" onclick="AXAds.edit(null, \'promo\')">＋ إعلان ترويجي</button><button type="button" class="btn btn-secondary" onclick="AXAds.edit(null, \'guide\')">🆕 إعلان إرشادي (تحديث / معلومة)</button></div>' +
         '<div class="axad-defwa"><label>رقم واتساب الافتراضي</label><input class="form-control" id="axad-defwa" inputmode="tel" placeholder="مثلاً 01012345678" value="' + esc(state.defaultWa) + '"><button type="button" class="btn btn-secondary btn-sm" onclick="AXAds.saveDefault()">حفظ</button></div></div>' +
-      '<p class="axad-hint">الإعلان «المسودة» بيظهر لك أنت بس في المعاينة. أول ما تشغّله بيوصل لكل الأجهزة المفتوحة على طول. أي إعلان يتقفل بسهولة ومش بيجبر حد يتفاعل معاه.</p>' +
+      '<p class="axad-hint"><b>الإرشادي</b> للتحديثات والمعلومات الجديدة: قايمة نقط وزرار «تمام، فهمت» وزرار يوديه للصفحة الجديدة. اكتب أي كلمة بين نجمتين زي <b>*شهرين*</b> عشان تطلع كبيرة ومميزة. الإعلان «المسودة» بيظهر لك أنت بس في المعاينة. أول ما تشغّله بيوصل لكل الأجهزة المفتوحة على طول. أي إعلان يتقفل بسهولة ومش بيجبر حد يتفاعل معاه.</p>' +
       (list.length ? '<div class="axad-list">' + list.map(rowHtml).join('') + '</div>' : '<div class="axad-empty">مفيش إعلانات لسه — دوس «＋ إعلان جديد».</div>');
   }
   function reload() {
@@ -105,10 +110,14 @@
   /* ════════ editor ════════ */
   var cur = null, device = 'phone', pvTimer = 0;
   function byId(id) { return state.ads.find(function (a) { return a.id === id; }) || null; }
-  function blankAd() {
-    return { name: '', title: '', text: '', desc: '', icon: '📢', format: 'popup', position: 'center', pages: 'all', theme: { bg: '#0F2250', accent: '#25D366', text: '#FFFFFF', glass: true },
-      startAt: '', endAt: '', frequency: 'daily', everyDays: 3, maxShows: 0, delaySec: 2, priority: 5, audience: { mode: 'all', users: [], roles: [] },
-      cta: { label: 'تواصل معنا عبر واتساب', wa: '', msg: '' }, cta2: { label: '', url: '' }, status: 'draft' };
+  function blankAd(kind) {
+    var g = kind === 'guide';
+    return { kind: g ? 'guide' : 'promo', name: '', title: g ? 'تحديث جديد في البرنامج 🎉' : '', text: '', desc: '', icon: g ? '🆕' : '📢', format: 'popup', position: 'center', pages: 'all', anim: g ? 'drop' : 'bounce',
+      theme: g ? { bg: '#0F2250', accent: '#38BDF8', text: '#FFFFFF', glass: true } : { bg: '#0F2250', accent: '#25D366', text: '#FFFFFF', glass: true },
+      startAt: '', endAt: '', timeFrom: '', timeTo: '', weekdays: [], frequency: g ? 'once' : 'daily', everyDays: 3, perDay: 1, gapMin: 60, maxShows: 0, delaySec: 2, durationSec: 0, priority: g ? 2 : 5,
+      audience: { mode: 'all', users: [], roles: [] }, badge: { value: '', label: '' },
+      guide: { version: '', items: [], okLabel: 'تمام، فهمت', actionLabel: '', actionPage: '' },
+      cta: { label: g ? '' : 'تواصل معنا عبر واتساب', wa: '', msg: '' }, cta2: { label: '', url: '' }, status: 'draft' };
   }
   function opt(v, label, sel) { return '<option value="' + esc(v) + '"' + (v === sel ? ' selected' : '') + '>' + esc(label) + '</option>'; }
   function pages() { try { return (typeof NAV_ITEMS !== 'undefined' ? NAV_ITEMS : []).map(function (n) { return { k: n.key, l: n.label }; }); } catch (e) { return []; } }
@@ -118,24 +127,36 @@
     var roles = []; users().forEach(function (u) { if (u.role && roles.indexOf(u.role) < 0) roles.push(u.role); });
     var RL = { admin: 'المدير', user: 'موظف', sales: 'مبيعات', accountant: 'محاسب', viewer: 'مشاهدة' };
     return '<div class="axad-ed">' +
-      '<form class="axad-form" id="axad-form" onsubmit="return false" oninput="AXAds.pv()" onchange="AXAds.pv()">' +
+      '<form class="axad-form k-' + esc(a.kind || 'promo') + '" id="axad-form" onsubmit="return false" oninput="AXAds.pv()" onchange="AXAds.pv()">' +
+      '<div class="axad-kind">' + Object.keys(KIND).map(function (k) { return '<label class="' + ((a.kind || 'promo') === k ? 'on' : '') + '"><input type="radio" name="kind" value="' + k + '"' + ((a.kind || 'promo') === k ? ' checked' : '') + '><b>' + KIND[k][1] + ' إعلان ' + KIND[k][0] + '</b><small>' + (k === 'guide' ? 'تحديث تم أو معلومة جديدة في البرنامج' : 'عرض أو خدمة بزرار واتساب') + '</small></label>'; }).join('') + '</div>' +
       sec('المحتوى', '✍️',
         f('اسم داخلي (ليك أنت بس)', '<input class="form-control" name="name" maxlength="80" value="' + esc(a.name) + '" placeholder="مثلاً: عرض أكتوبر">') +
         '<div class="axad-2">' + f('الأيقونة', '<input class="form-control axad-emo" name="icon" maxlength="8" value="' + esc(a.icon) + '">') +
           f('الأولوية (1 = الأهم)', '<input class="form-control" type="number" name="priority" min="1" max="99" value="' + esc(a.priority) + '">') + '</div>' +
         '<div class="axad-emos">' + ['📢', '🚀', '🎁', '🔥', '⭐', '💡', '🏥', '🏭', '📦', '💬', '🎉', '👑'].map(function (e) { return '<button type="button" onclick="AXAds.emo(\'' + e + '\')">' + e + '</button>'; }).join('') + '</div>' +
-        f('العنوان', '<input class="form-control" name="title" maxlength="140" required value="' + esc(a.title) + '">') +
+        f('العنوان — اكتب الكلمة المميزة بين نجمتين *كده*', '<input class="form-control" name="title" maxlength="140" required value="' + esc(a.title) + '">') +
         f('النص', '<textarea class="form-control" name="text" rows="2" maxlength="400">' + esc(a.text) + '</textarea>') +
-        f('وصف إضافي (بيظهر لما يدوس الزرار التاني لو مفيش لينك)', '<textarea class="form-control" name="desc" rows="2" maxlength="1200">' + esc(a.desc) + '</textarea>')) +
+        '<div class="axad-2">' + f('رقم كبير بدل الأيقونة (اختياري) — مثلاً 2', '<input class="form-control" name="badgeV" maxlength="6" value="' + esc((a.badge || {}).value || '') + '">') + f('تحت الرقم — مثلاً «شهر متبقي»', '<input class="form-control" name="badgeL" maxlength="24" value="' + esc((a.badge || {}).label || '') + '">') + '</div>' +
+        '<div class="only-promo">' + f('وصف إضافي (بيظهر لما يدوس الزرار التاني لو مفيش لينك)', '<textarea class="form-control" name="desc" rows="2" maxlength="1200">' + esc(a.desc) + '</textarea>') + '</div>') +
+      '<div class="only-guide">' + sec('التحديث / المعلومة', '🆕',
+        '<div class="axad-2">' + f('رقم الإصدار (اختياري)', '<input class="form-control" name="gVer" maxlength="20" value="' + esc((a.guide || {}).version || '') + '" placeholder="4.30">') + f('كلام زرار القفل', '<input class="form-control" name="gOk" maxlength="30" value="' + esc((a.guide || {}).okLabel || 'تمام، فهمت') + '">') + '</div>' +
+        f('النقط (كل سطر نقطة — لحد 8)', '<textarea class="form-control" name="gItems" rows="4">' + esc(((a.guide || {}).items || []).join('\n')) + '</textarea>') +
+        '<div class="axad-2">' + f('زرار يوديه لصفحة (اختياري)', '<input class="form-control" name="gAct" maxlength="30" value="' + esc((a.guide || {}).actionLabel || '') + '" placeholder="جرّب الميزة">') +
+          f('الصفحة', '<select class="form-control" name="gPage">' + opt('', '— من غير —', (a.guide || {}).actionPage || '') + pages().map(function (p) { return opt(p.k, p.l, (a.guide || {}).actionPage || ''); }).join('') + '</select>') + '</div>') + '</div>' +
       sec('الشكل والمكان', '🎨',
         '<div class="axad-fmt">' + Object.keys(FORMAT).map(function (k) { return '<label class="' + (a.format === k ? 'on' : '') + '"><input type="radio" name="format" value="' + k + '"' + (a.format === k ? ' checked' : '') + '><b>' + FORMAT[k][0] + '</b><small>' + FORMAT[k][1] + '</small></label>'; }).join('') + '</div>' +
         f('مكانه', '<select class="form-control" name="position">' + opt('center', 'في النص (Popup)', a.position) + opt('top', 'فوق (Banner)', a.position) + opt('bottom', 'تحت (Banner)', a.position) + opt('bottom-end', 'تحت على الشمال (بطاقة)', a.position) + opt('bottom-start', 'تحت على اليمين (بطاقة)', a.position) + '</select>') +
         '<div class="axad-presets">' + PRESETS.map(function (p, i) { return '<button type="button" title="' + esc(p.n) + '" style="--b:' + p.bg + ';--a:' + p.accent + '" onclick="AXAds.preset(' + i + ')"></button>'; }).join('') + '</div>' +
         '<div class="axad-3">' + f('الخلفية', '<input type="color" name="bg" value="' + esc(a.theme.bg) + '">') + f('لون الزرار', '<input type="color" name="accent" value="' + esc(a.theme.accent) + '">') + f('لون الكلام', '<input type="color" name="tc" value="' + esc(a.theme.text) + '">') + '</div>' +
-        '<label class="axad-chk"><input type="checkbox" name="glass"' + (a.theme.glass === false ? '' : ' checked') + '> زجاج خفيف (Glassmorphism)</label>') +
+        '<label class="axad-chk"><input type="checkbox" name="glass"' + (a.theme.glass === false ? '' : ' checked') + '> زجاج خفيف (Glassmorphism)</label>' +
+        f('حركة الظهور', '<select class="form-control" name="anim">' + Object.keys(ANIM).map(function (k) { return opt(k, ANIM[k], a.anim || 'bounce'); }).join('') + '</select><button type="button" class="btn btn-secondary btn-sm axad-replay" onclick="AXAds.pv(true)">▶ شوف الحركة تاني</button>')) +
       sec('الظهور', '⏱',
         '<div class="axad-2">' + f('يبدأ من', '<input class="form-control" type="date" name="startAt" value="' + esc(a.startAt) + '">') + f('لحد', '<input class="form-control" type="date" name="endAt" value="' + esc(a.endAt) + '">') + '</div>' +
+        '<div class="axad-2">' + f('من الساعة (فاضي = طول اليوم)', '<input class="form-control" type="time" name="timeFrom" value="' + esc(a.timeFrom || '') + '">') + f('لحد الساعة', '<input class="form-control" type="time" name="timeTo" value="' + esc(a.timeTo || '') + '">') + '</div>' +
+        f('في أيام (من غير اختيار = كل الأيام)', '<div class="axad-pages axad-wd">' + DAYS.map(function (d, i) { return '<label><input type="checkbox" name="wd" value="' + i + '"' + ((a.weekdays || []).indexOf(i) >= 0 ? ' checked' : '') + '>' + d + '</label>'; }).join('') + '</div>') +
         f('بيظهر', '<select class="form-control" name="frequency">' + Object.keys(FREQ).map(function (k) { return opt(k, FREQ[k], a.frequency); }).join('') + '</select>') +
+        '<div class="axad-2 only-daily">' + f('كام مرة في اليوم', '<input class="form-control" type="number" name="perDay" min="1" max="24" value="' + esc(a.perDay || 1) + '">') + f('بين كل مرة والتانية (دقيقة)', '<input class="form-control" type="number" name="gapMin" min="0" max="1440" value="' + esc(a.gapMin == null ? 60 : a.gapMin) + '">') + '</div>' +
+        f('مدة الإعلان: يختفي لوحده بعد كام ثانية (0 = لحد ما يتقفل)', '<input class="form-control" type="number" name="durationSec" min="0" max="600" value="' + esc(a.durationSec || 0) + '">') +
         '<div class="axad-3">' + f('كل كام يوم', '<input class="form-control" type="number" name="everyDays" min="1" max="365" value="' + esc(a.everyDays) + '">') +
           f('أقصى عدد مرات للشخص (0 = مفتوح)', '<input class="form-control" type="number" name="maxShows" min="0" max="1000" value="' + esc(a.maxShows) + '">') +
           f('يستنى كام ثانية قبل ما يظهر', '<input class="form-control" type="number" name="delaySec" min="0" max="120" value="' + esc(a.delaySec) + '">') + '</div>' +
@@ -143,13 +164,13 @@
         f('مين يشوفه', '<select class="form-control" name="aud">' + opt('all', 'الكل', a.audience.mode) + opt('users', 'مستخدمين محددين', a.audience.mode) + opt('roles', 'حسب الصلاحية', a.audience.mode) + '</select>' +
           '<div class="axad-pages axad-users' + (a.audience.mode === 'users' ? '' : ' hide') + '">' + users().map(function (u) { return '<label><input type="checkbox" name="user" value="' + esc(u.id) + '"' + (a.audience.users.indexOf(u.id) >= 0 ? ' checked' : '') + '>' + esc(u.name) + '</label>'; }).join('') + '</div>' +
           '<div class="axad-pages axad-roles' + (a.audience.mode === 'roles' ? '' : ' hide') + '">' + roles.map(function (r) { return '<label><input type="checkbox" name="role" value="' + esc(r) + '"' + (a.audience.roles.indexOf(r) >= 0 ? ' checked' : '') + '>' + esc(RL[r] || r) + '</label>'; }).join('') + '</div>')) +
-      sec('زرار واتساب', '💬',
+      '<div class="only-promo">' + sec('زرار واتساب', '💬',
         f('كلام الزرار', '<input class="form-control" name="ctaLabel" maxlength="40" value="' + esc(a.cta.label) + '">') +
         f('رقم واتساب لهذا الإعلان (فاضي = الرقم الافتراضي)', '<input class="form-control" name="wa" inputmode="tel" value="' + esc(a.cta.wa) + '" placeholder="' + esc(state.defaultWa || '01012345678') + '"><small class="axad-wa-hint" id="axad-wa-hint"></small>') +
         f('الرسالة الجاهزة (العميل بيراجعها قبل ما يبعت)', '<textarea class="form-control" name="msg" rows="2" maxlength="500">' + esc(a.cta.msg) + '</textarea>')) +
       sec('الزرار التاني', '🔗',
         f('كلامه (فاضي = مفيش زرار)', '<input class="form-control" name="cta2Label" maxlength="40" value="' + esc(a.cta2.label) + '">') +
-        f('لينك (اختياري — https فقط)', '<input class="form-control" name="cta2Url" inputmode="url" dir="ltr" value="' + esc(a.cta2.url) + '" placeholder="https://">')) +
+        f('لينك (اختياري — https فقط)', '<input class="form-control" name="cta2Url" inputmode="url" dir="ltr" value="' + esc(a.cta2.url) + '" placeholder="https://">')) + '</div>' +
       '</form>' +
       '<aside class="axad-pv"><div class="axad-dev"><button type="button" data-d="phone" class="' + (device === 'phone' ? 'on' : '') + '" onclick="AXAds.device(\'phone\')">📱 موبايل</button><button type="button" data-d="desktop" class="' + (device === 'desktop' ? 'on' : '') + '" onclick="AXAds.device(\'desktop\')">🖥 كمبيوتر</button></div>' +
         '<div class="axad-frame ' + device + '" id="axad-frame"><div class="axad-fake"><i></i><i></i><i></i><i></i></div></div>' +
@@ -164,6 +185,7 @@
     var all = F.elements.allPages && F.elements.allPages.checked;
     var chk = function (n) { return Array.prototype.slice.call(F.querySelectorAll('input[name="' + n + '"]:checked')).map(function (x) { return x.value; }); };
     var fmt = (F.querySelector('input[name="format"]:checked') || {}).value || 'popup';
+    var kind = (F.querySelector('input[name="kind"]:checked') || {}).value || 'promo';
     var a = Object.assign({}, cur, {
       name: g('name'), icon: g('icon'), priority: +g('priority') || 5, title: g('title'), text: g('text'), desc: g('desc'),
       format: fmt, position: g('position'),
@@ -171,7 +193,11 @@
       startAt: g('startAt'), endAt: g('endAt'), frequency: g('frequency'), everyDays: +g('everyDays') || 1, maxShows: +g('maxShows') || 0, delaySec: +g('delaySec') || 0,
       pages: all ? 'all' : (chk('page').length ? chk('page') : 'all'),
       audience: { mode: g('aud'), users: chk('user'), roles: chk('role') },
-      cta: { label: g('ctaLabel'), wa: g('wa'), msg: g('msg') }, cta2: { label: g('cta2Label'), url: g('cta2Url') }
+      cta: { label: g('ctaLabel'), wa: g('wa'), msg: g('msg') }, cta2: { label: g('cta2Label'), url: g('cta2Url') },
+      kind: kind, anim: g('anim') || 'bounce', timeFrom: g('timeFrom'), timeTo: g('timeTo'), weekdays: chk('wd').map(Number),
+      perDay: +g('perDay') || 1, gapMin: +g('gapMin') || 0, durationSec: +g('durationSec') || 0,
+      badge: { value: g('badgeV'), label: g('badgeL') },
+      guide: { version: g('gVer'), okLabel: g('gOk'), items: g('gItems').split('\n').map(function (x) { return x.trim(); }).filter(Boolean).slice(0, 8), actionLabel: g('gAct'), actionPage: g('gPage') }
     });
     /* keep the position in step with the format */
     if (fmt === 'popup') a.position = 'center';
@@ -183,9 +209,12 @@
     pvTimer = 0;
     var F = document.getElementById('axad-form'), fr = document.getElementById('axad-frame'); if (!F || !fr || !window.SmartAds) return;
     var a = read();
+    F.classList.toggle('k-guide', a.kind === 'guide'); F.classList.toggle('k-promo', a.kind !== 'guide');
+    F.classList.toggle('f-daily', a.frequency === 'daily');
+    Array.prototype.forEach.call(F.querySelectorAll('.axad-kind label'), function (l) { l.classList.toggle('on', !!l.querySelector('input:checked')); });
     if (F.elements.position) F.elements.position.value = a.position;
     Array.prototype.forEach.call(F.querySelectorAll('.axad-fmt label'), function (l) { l.classList.toggle('on', !!l.querySelector('input:checked')); });
-    var pgBox = F.querySelector('.axad-pages:not(.axad-users):not(.axad-roles)'); if (pgBox) pgBox.classList.toggle('off', a.pages === 'all' && F.elements.allPages.checked);
+    var pgBox = F.querySelector('.axad-pages:not(.axad-users):not(.axad-roles):not(.axad-wd)'); if (pgBox) pgBox.classList.toggle('off', a.pages === 'all' && F.elements.allPages.checked);
     F.querySelector('.axad-users').classList.toggle('hide', a.audience.mode !== 'users');
     F.querySelector('.axad-roles').classList.toggle('hide', a.audience.mode !== 'roles');
     var h = document.getElementById('axad-wa-hint'), link = SmartAds.waLink(a, state.defaultWa);
@@ -193,9 +222,10 @@
     var old = fr.querySelector('.sad'); if (old) old.remove();
     fr.appendChild(SmartAds.render(a, state.defaultWa));
   }
-  function edit(id) {
+  function edit(id, kind) {
     if (!isAdmin()) return;
-    cur = id ? JSON.parse(JSON.stringify(byId(id) || blankAd())) : blankAd();
+    cur = id ? JSON.parse(JSON.stringify(byId(id) || blankAd())) : blankAd(kind);
+    cur = Object.assign(blankAd(cur.kind), cur);
     var foot = '<button class="btn btn-primary" onclick="AXAds.save(\'active\')">حفظ ونشر</button>' +
       '<button class="btn btn-secondary" onclick="AXAds.save(\'' + (cur.id && cur.status !== 'draft' ? cur.status : 'draft') + '\')">' + (cur.id && cur.status !== 'draft' ? 'حفظ' : 'حفظ كمسودة') + '</button>' +
       '<button class="btn btn-secondary" onclick="closeModal()">إلغاء</button>';
@@ -214,7 +244,8 @@
   /* ════════ actions ════════ */
   window.AXAds = {
     reload: reload, edit: edit, save: save,
-    pv: function () { if (!pvTimer) pvTimer = setTimeout(paint, 90); },
+    pv: function (now) { if (now) { paint(); return; } if (!pvTimer) pvTimer = setTimeout(paint, 90); },
+    filter: function (k) { state.filter = k; draw(); },
     device: function (d) { device = d; var fr = document.getElementById('axad-frame'); if (fr) fr.className = 'axad-frame ' + d; document.querySelectorAll('.axad-dev button').forEach(function (b) { b.classList.toggle('on', b.dataset.d === d); }); paint(); },
     emo: function (e) { var F = document.getElementById('axad-form'); if (F) { F.elements.icon.value = e; paint(); } },
     preset: function (i) { var p = PRESETS[i], F = document.getElementById('axad-form'); if (!p || !F) return; F.elements.bg.value = p.bg; F.elements.accent.value = p.accent; F.elements.tc.value = p.text; paint(); },

@@ -21,6 +21,11 @@ const STATUSES = ['draft', 'active', 'paused', 'archived'];
 const FREQ = ['once', 'every', 'daily', 'days'];
 const POSITIONS = ['top', 'bottom', 'center', 'bottom-start', 'bottom-end'];
 const EVENTS = ['view', 'click', 'cta2', 'close'];
+const KINDS = ['promo', 'guide'];
+const ANIMS = ['bounce', 'zoom', 'slide', 'flip', 'drop', 'fade'];
+function hhmm(v) { v = String(v || '').trim(); return /^([01]\d|2[0-3]):[0-5]\d$/.test(v) ? v : ''; }
+/* the day in Cairo (DST aware), for start / end dates */
+function cairoDay(ms) { try { return new Intl.DateTimeFormat('en-CA', { timeZone: 'Africa/Cairo', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(ms || Date.now())); } catch (e) { return new Date((ms || Date.now()) + 3 * 3600e3).toISOString().slice(0, 10); } }
 
 function str(v, max) { return String(v == null ? '' : v).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '').trim().slice(0, max); }
 function int(v, lo, hi, def) { const n = Math.round(Number(v)); return Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : def; }
@@ -70,7 +75,19 @@ function clean(b, prev) {
     priority: int(g('priority', 5), 1, 99, 5),
     audience: { mode: pick(aud.mode, ['all', 'users', 'roles'], 'all'), users: ids(aud.users, 500), roles: ids(aud.roles, 10) },
     cta: { label: str(cta.label, 40), wa: waNumber(cta.wa), msg: str(cta.msg, 500) },
-    cta2: { label: str(cta2.label, 40), url: link(cta2.url) }
+    cta2: { label: str(cta2.label, 40), url: link(cta2.url) },
+    /* 4.30 */
+    kind: pick(g('kind', 'promo'), KINDS, 'promo'),
+    anim: pick(g('anim', 'bounce'), ANIMS, 'bounce'),
+    durationSec: int(g('durationSec', 0), 0, 600, 0),
+    timeFrom: hhmm(g('timeFrom', '')), timeTo: hhmm(g('timeTo', '')),
+    weekdays: (Array.isArray(g('weekdays', [])) ? g('weekdays', []) : []).map(Number).filter((d, i, a) => d >= 0 && d <= 6 && Number.isInteger(d) && a.indexOf(d) === i).slice(0, 7),
+    perDay: int(g('perDay', 1), 1, 24, 1),
+    gapMin: int(g('gapMin', 60), 0, 1440, 60),
+    badge: (function () { const b0 = Object.assign({}, prev.badge || {}, b.badge && typeof b.badge === 'object' ? b.badge : {}); return { value: str(b0.value, 6), label: str(b0.label, 24) }; })(),
+    guide: (function () { const g0 = Object.assign({}, prev.guide || {}, b.guide && typeof b.guide === 'object' ? b.guide : {});
+      return { version: str(g0.version, 20), items: (Array.isArray(g0.items) ? g0.items : String(g0.items || '').split('\n')).map(x => str(x, 140)).filter(Boolean).slice(0, 8),
+        okLabel: str(g0.okLabel, 30), actionLabel: str(g0.actionLabel, 30), actionPage: /^[\w-]{1,40}$/.test(String(g0.actionPage || '')) ? String(g0.actionPage) : '' }; })()
   };
   if (ad.endAt && ad.startAt && ad.endAt < ad.startAt) ad.endAt = ad.startAt;
   return ad;
@@ -113,6 +130,17 @@ function create(opts) {
     }), 'draft', 'system');
     meta('seeded', '1');
   }
+  if (!meta('seeded_guide')) {
+    insert(clean({
+      name: 'إعلان إرشادي — تحديث جديد', kind: 'guide', anim: 'drop',
+      title: 'تحديث جديد في EMDADX 🎉', text: 'ضفنا *مميزات جديدة* تسهّل شغلك — دي أهمها:', icon: '🆕',
+      format: 'popup', position: 'center', frequency: 'once', priority: 2,
+      theme: { bg: '#0F2250', accent: '#38BDF8', text: '#FFFFFF', glass: true },
+      guide: { version: '4.30', items: ['«كشف مركز» في التحصيل: كل اللي على أي مركز — مسدد ولا لأ', 'المساعد الذكي بقى بيفهم كلامك العادي، زي «عندي كام ورقة؟»', 'إعلانات بنظام جديد: Popup وBanner وبطاقات عايمة بواتساب'], okLabel: 'تمام، فهمت', actionLabel: 'جرّب كشف مركز', actionPage: 'payments' },
+      cta: { label: '', wa: '', msg: '' }, cta2: { label: '', url: '' }
+    }), 'draft', 'system');
+    meta('seeded_guide', '1');
+  }
 
   function statsAll() {
     const out = {};
@@ -150,15 +178,17 @@ function create(opts) {
     const deny = () => sendJSON(res, 403, { error: 'forbidden', message: 'إدارة الإعلانات للمدير بس' });
     const parts = pathname.replace(/\/+$/, '').split('/');          // ['', 'api', 'ads', id?, action?]
     const id = parts[3] || '', action = parts[4] || '';
-    const today = new Date(Date.now() + 2 * 3600e3).toISOString().slice(0, 10);   // Cairo-ish day for date windows
+    const today = cairoDay();
 
     /* what this user should see now (+ their own history so the page can apply «once / daily / every N days») */
     if (id === 'feed' && req.method === 'GET') {
       const rows = db.prepare("SELECT * FROM ads WHERE status = 'active' ORDER BY priority ASC, updated_at DESC").all();
       const hist = {};
-      for (const r of db.prepare("SELECT ad_id, COUNT(*) AS n, MAX(at) AS last FROM ad_events WHERE user_id = ? AND type = 'view' GROUP BY ad_id").all(me.id)) hist[r.ad_id] = { views: r.n, last: r.last };
+      for (const r of db.prepare("SELECT ad_id, COUNT(*) AS n, MAX(at) AS last FROM ad_events WHERE user_id = ? AND type = 'view' GROUP BY ad_id").all(me.id)) hist[r.ad_id] = { views: r.n, last: r.last, recent: [] };
+      /* the last 48 h of views, so the page can count «today» in the viewer's own day */
+      for (const r of db.prepare("SELECT ad_id, at FROM ad_events WHERE user_id = ? AND type = 'view' AND at > ? ORDER BY at DESC LIMIT 400").all(me.id, Date.now() - 48 * 3600e3)) if (hist[r.ad_id] && hist[r.ad_id].recent.length < 30) hist[r.ad_id].recent.push(r.at);
       const ads = rows.map(row2ad).filter(a => eligible(a, me, today)).filter(a => !(a.maxShows && hist[a.id] && hist[a.id].views >= a.maxShows))
-        .map(a => { const h = hist[a.id] || { views: 0, last: 0 }; const o = Object.assign({}, a); delete o.audience; delete o.name; o.seen = h; return o; });
+        .map(a => { const h = hist[a.id] || { views: 0, last: 0, recent: [] }; const o = Object.assign({}, a); delete o.audience; delete o.name; o.seen = h; return o; });
       return sendJSON(res, 200, { ads, defaultWa: meta('defaultWa') || '', serverDay: today });
     }
     if (id === 'event' && req.method === 'POST') {
@@ -232,4 +262,4 @@ function create(opts) {
   return { handle, clean, waNumber, link };
 }
 
-module.exports = { create, clean, waNumber, link };
+module.exports = { create, clean, waNumber, link, cairoDay };

@@ -4848,3 +4848,21 @@ html.aurum .axa-slip mark.axa-num { white-space: normal !important; display: inl
   .axad-fmt { grid-template-columns: minmax(0, 1fr); }
   .axad-frame.phone { width: 260px; height: 480px; }
 }
+
+/* §69 · 4.30 ads admin — kinds, filter tabs, guide fields */
+.axad-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin: 4px 0 10px; }
+.axad-tabs button { border: 1px solid var(--ax-line, #2a2a2a); background: transparent; color: inherit; padding: 6px 14px; border-radius: 99px; font: inherit; font-size: 13px; cursor: pointer; }
+.axad-tabs button.on { background: var(--ax-accent, #25D366); border-color: transparent; color: #06140b; font-weight: 700; }
+.axad-tabs button i { font-style: normal; opacity: .7; margin-inline-start: 4px; font-size: 11.5px; }
+.axad-new { display: flex; gap: 8px; flex-wrap: wrap; }
+.axad-kd { display: inline-block; padding: 1px 8px; border-radius: 99px; font-size: 11px; background: rgba(37,211,102,.14); }
+.axad-kd.k-guide { background: rgba(56,189,248,.16); }
+.axad-kind { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 8px; margin-bottom: 12px; }
+.axad-kind label { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border-radius: 12px; border: 1.5px solid var(--ax-line, #2a2a2a); cursor: pointer; transition: border-color .2s, background .2s; }
+.axad-kind label.on { border-color: var(--ax-accent, #25D366); background: rgba(37,211,102,.08); }
+.axad-kind input { position: absolute; opacity: 0; pointer-events: none; }
+.axad-kind small { opacity: .7; font-size: 11.5px; }
+.axad-form.k-guide .only-promo, .axad-form.k-promo .only-guide { display: none; }
+.axad-form .only-daily { display: none; }
+.axad-form.f-daily .only-daily { display: grid; }
+.axad-replay { margin-top: 6px; }
