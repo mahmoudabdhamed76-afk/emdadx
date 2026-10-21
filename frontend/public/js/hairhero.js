@@ -14,16 +14,16 @@
     payments:    ['vault',     'الفلوس في الخزنة'],
     aging:       ['sieve',     'الديون متقسمة حسب عمرها'],
     transfers:   ['relay',     'الفلوس بتتنقل خطوة بخطوة'],
-    cheques:     ['format',    'كل شيك في ميعاده'],
+    cheques:     ['ax:cheques',   'الشيك بيتمضي ويتصرف'],
     debts:       ['settle',    'المديونية بتترتب وتتقفل'],
-    suppliers:   ['patch',     'خطوط التوريد كلها'],
+    suppliers:   ['ax:suppliers', 'البضاعة جاية من المورد'],
     purchases:   ['basket',    'اللي اشتريته داخل السلة'],
     inventory:   ['cabinet',   'المخازن ورفوفها'],
     stock:       ['drawer',    'جرد درج درج'],
     expenses:    ['loupe',     'كل مصروف تحت العدسة'],
     reports:     ['plot',      'الأرقام بتتكلم'],
     monthly:     ['stack',     'الشهر طبقة فوق طبقة'],
-    profit:      ['rebuild',   'المكسب بيطلع لفوق'],
+    profit:      ['ax:profit',    'المكسب بيعلى عمود ورا عمود'],
     aiassistant: ['query',     'اسأل وهو يرد'],
     approvals:   ['lockers',   'كل طلب مستني مفتاحه'],
     requests:    ['branches',  'الأفكار والطلبات بتتفرع'],
@@ -36,8 +36,7 @@
   var cur = null;                      // { fig, box, page }
   var lib = null;
 
-  function on() { try { return localStorage.getItem(KEY) !== '0'; } catch (e) { return true; } }
-  function setOn(v) { try { localStorage.setItem(KEY, v ? '1' : '0'); } catch (e) {} }
+  function on() { return true; }                 // 4.32 · always on, no close button
   function page() { try { return typeof currentPage !== 'undefined' ? currentPage : ''; } catch (e) { return ''; } }
   function color(p) {
     try { var it = (typeof NAV_ITEMS !== 'undefined' ? NAV_ITEMS : []).filter(function (n) { return n.key === p; })[0]; return (it && it.color) || '#10b981'; } catch (e) { return '#10b981'; }
@@ -51,11 +50,12 @@
   }
 
   function mount() {
-    var pc = document.getElementById('page-content'); if (!pc || !lib) return;
+    var pc = document.getElementById('page-content'); if (!pc) return;
     var p = page(), m = MAP[p];
     if (cur && cur.page === p && cur.box.isConnected) return;     // already there
     drop();
-    if (!m || typeof lib[m[0]] !== 'function') return;
+    var make = m && (m[0].indexOf('ax:') === 0 ? (window.AXFigs || {})[m[0].slice(3)] : lib && lib[m[0]]);
+    if (typeof make !== 'function') return;
     /* the first header of the page — the figure sits beside its title */
     var head = pc.querySelector('.page-header');
     if (head && head.closest('.modal, .sad')) head = null;
@@ -76,22 +76,14 @@
     wrap.className = 'hlx ax-hl-off' + (on() ? '' : ' off');
     var cap = document.createElement('small'); cap.className = 'hlx-cap'; cap.textContent = m[1];
     var box = document.createElement('div'); box.className = 'hlx-fig';
-    var tg = document.createElement('button'); tg.type = 'button'; tg.className = 'hlx-tg';
-    tg.title = on() ? 'إخفاء الرسمة' : 'عرض الرسمة'; tg.setAttribute('aria-label', tg.title);
-    tg.textContent = on() ? '×' : '✨';
-    tg.addEventListener('click', function (e) {
-      e.stopPropagation(); setOn(!on());
-      document.querySelectorAll('.hlx').forEach(function (x) { x.remove(); });
-      drop(); mount();
-    });
-    wrap.appendChild(box); wrap.appendChild(cap); wrap.appendChild(tg);
+    wrap.appendChild(box); wrap.appendChild(cap);
     /* right beside the section's name, not pushed to the far side */
     var first = head.firstElementChild;
     if (first && first !== wrap) head.insertBefore(wrap, first.nextSibling); else head.appendChild(wrap);
     cur = { fig: null, box: wrap, page: p, made: made };
     if (!on()) return;
     try {
-      cur.fig = lib[m[0]](box, { play: !reduced(), intensity: 0.65, label: m[1] });
+      cur.fig = make(box, { play: !reduced(), intensity: 0.65, label: m[1] });
     } catch (e) { wrap.remove(); cur = null; }
   }
 
@@ -108,9 +100,10 @@
     soon();
   }
 
-  function ready(L) { lib = L; watch(); }
-  if (window.Hairline) ready(window.Hairline);
-  else window.addEventListener('hairline:ready', function () { ready(window.Hairline); }, { once: true });
+  /* start right away (our own figures need nothing); the library joins when it lands */
+  if (window.Hairline) lib = window.Hairline;
+  window.addEventListener('hairline:ready', function () { lib = window.Hairline; soon(); }, { once: true });
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', watch); else watch();
 
   window.AXHair = { mount: mount, map: MAP };
 })();

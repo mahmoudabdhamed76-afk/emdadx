@@ -4892,3 +4892,23 @@ html .page-header.hlx-head > .hlx ~ * { margin-inline-start: auto; }
   .hlx-tg { opacity: .6; }
 }
 @media (prefers-reduced-motion: reduce) { html .page-header.hlx-head { animation: none; } }
+
+/* §71 · 4.32 EMDADX own figures (same hairline language) + moving side-menu icons */
+.axfig { display: block; position: relative; aspect-ratio: 5/4; touch-action: pan-y; user-select: none; -webkit-user-select: none;
+  --f-plate: var(--hairline-plate, #08090a); --f-hi: var(--hairline-hi, #d0d6e0); --f-edge: #5b5d64; --f-mid: #3e3e44; --f-lo: #29292d; }
+[data-theme="light"] .axfig { --f-edge: #a4a4ac; --f-mid: #c3c3c9; --f-lo: #e0e0e4; }
+.axfig > svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.axfig path { fill: none; stroke-width: var(--hairline-stroke, 1); vector-effect: non-scaling-stroke; stroke-linejoin: round; stroke-linecap: round; }
+.axfig .f-p { fill: var(--f-plate); stroke: none; }
+.axfig .f-hi { stroke: var(--f-hi); }
+.axfig .f-edge { stroke: var(--f-edge); }
+.axfig .f-mid { stroke: var(--f-mid); }
+.axfig .f-lo { stroke: var(--f-lo); }
+.hlx-tg { display: none !important; }
+/* side menu */
+html.aurum .nav-item .icon.axmi-box svg.axmi, .nav-item .icon.axmi-box svg.axmi { width: 24px !important; height: 24px !important; overflow: visible; }
+svg.axmi path, svg.axmi circle, svg.axmi rect { vector-effect: non-scaling-stroke; }
+svg.axmi .mf { fill: var(--ax-surface, #121212); stroke: none; }
+svg.axmi .mfs { fill: currentColor; stroke: none; }
+svg.axmi .mhi { stroke-width: 1.6; }
+.nav-item.active svg.axmi .mf { fill: currentColor; fill-opacity: .12; }
