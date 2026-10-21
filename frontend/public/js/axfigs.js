@@ -193,6 +193,95 @@
     }, function (c) { var T = 5.5, u = (c % T) / T; return u < 0.75 ? ease(u / 0.75) : 1 - ease((u - 0.75) / 0.25); });
   }
 
+
+  /* ═════════ 3 · لوحة التحكم: أعمدة البيع — كل عمود = عملية بيع الشهر ده ═════════
+     اللي اتحصّلت بتعلى واحدة ورا التانية وتنوّر وعليها ✓، الباقي واطي، والفاضي مجرد خانة.
+     الماوس / الصباع بيرفع الأعمدة اللي تحته زي Terrain. */
+  function salesTerrain(el, o) {
+    o = o || {};
+    var total = Math.max(0, o.total | 0), paid = Math.max(0, Math.min(total, o.paid | 0));
+    var n = Math.max(6, Math.min(9, Math.ceil(Math.sqrt(Math.max(total, 36)))));
+    var per = total > n * n ? Math.ceil(total / (n * n)) : 1;            // each pillar may stand for a few sales
+    var bars = Math.ceil(total / per), lit = Math.round(paid / per);
+    if (paid > 0 && lit === 0) lit = 1;
+    var S = 13, P = iso(S, 0, 0), half = n / 2, FP = 0.7;
+    var svg = document.createElementNS(NS, 'svg'); svg.setAttribute('role', 'img');
+    svg.setAttribute('aria-label', o.label || (paid + ' من ' + total + ' عملية بيع اتحصّلت'));
+    el.classList.add('axfig'); el.appendChild(svg);
+    /* the order the paid ones rise in: back → front, a little shuffled */
+    var cells = [];
+    for (var j = 0; j < n; j++) for (var i = 0; i < n; i++) cells.push({ i: i, j: j, k: cells.length, h: 0.1, v: 0 });
+    var picked = cells.map(function (c) { var dx = c.i - (n - 1) / 2, dy = c.j - (n - 1) / 2; return { c: c, d: dx * dx + dy * dy + ((c.k * 53) % 11) / 4 }; }).sort(function (a, b) { return a.d - b.d; }).slice(0, bars).map(function (x) { return x.c; });
+    var order = picked.map(function (c) { return { c: c, r: c.i + c.j + Math.random() * 1.6 }; }).sort(function (a, b) { return a.r - b.r; }).map(function (x) { return x.c; });
+    order.forEach(function (c, idx) { c.sale = true; c.paid = idx < lit; c.rank = idx; c.tall = 1.5 + ((c.k * 37) % 7) / 10; });
+    var pool = [], raf = 0, last = 0, clock = 0, dead = false, vis = true, ptr = null, shown = -1;
+    var play = o.play !== false && !reduced();
+    var STEP = Math.max(0.07, Math.min(0.3, 2.4 / Math.max(1, lit))), RISE = lit * STEP, HOLD = 3.2, FALL = 0.9, CYCLE = RISE + HOLD + FALL + 0.6;
+    function sync(list) {
+      for (var a = 0; a < list.length; a++) {
+        var q = pool[a]; if (!q) { q = pool[a] = document.createElementNS(NS, 'path'); svg.appendChild(q); }
+        if (q._c !== list[a][0]) { q._c = list[a][0]; q.setAttribute('class', 'f-' + list[a][0]); }
+        if (q._d !== list[a][1]) { q._d = list[a][1]; q.setAttribute('d', list[a][1]); }
+      }
+      for (var b = list.length; b < pool.length; b++) if (pool[b]._d !== '') { pool[b]._d = ''; pool[b].setAttribute('d', ''); }
+    }
+    function target(c, t) {
+      var h = c.sale ? (c.paid ? 0.34 : 0.34) : 0.1;
+      if (c.paid) {
+        var up = play ? (t < RISE + HOLD ? Math.max(0, Math.min(1, (t - c.rank * STEP) / 0.35)) : Math.max(0, 1 - (t - RISE - HOLD) / FALL)) : 1;
+        h += up * c.tall;
+      }
+      if (ptr) { var dx = (c.i - half + 0.5) - ptr[0], dy = (c.j - half + 0.5) - ptr[1]; h += 2.4 * Math.exp(-(dx * dx + dy * dy) / 2.4); }
+      return h;
+    }
+    function count(t) {
+      if (!play) return paid;
+      if (t >= RISE + HOLD) return t >= RISE + HOLD + FALL ? 0 : paid;
+      var k = Math.max(0, Math.min(lit, Math.floor(t / STEP + 0.6)));
+      return k >= lit ? paid : Math.min(paid, k * per);
+    }
+    function draw(full) {
+      var out = [];
+      box(P, out, -half - 0.45, -half - 0.45, -0.7, n + 0.9, n + 0.9, 0.7);
+      for (var a = 0; a < cells.length; a++) {
+        var c = cells[a], x = c.i - half + (1 - FP) / 2, y = c.j - half + (1 - FP) / 2, h = full ? (c.paid ? c.tall + 2.6 : 2.6) + 0.34 : c.h;
+        if (!c.sale) { out.push(['lo', pts([P(x, y, 0), P(x + FP, y, 0), P(x + FP, y + FP, 0), P(x, y + FP, 0)]) + 'Z']); continue; }
+        var on = c.paid && h > 0.9;
+        var m0 = out.length; box(P, out, x, y, 0, FP, FP, Math.round(h * 20) / 20, on);
+        if (on) for (var e2 = m0 + 1; e2 < out.length; e2++) out[e2][0] = 'hi';
+        if (on) out.push(['hi', pts([P(x + 0.18, y + 0.36, h), P(x + 0.32, y + 0.52, h), P(x + 0.56, y + 0.16, h)])]);
+      }
+      return out;
+    }
+    /* frame once at the tallest it can get */
+    sync(draw(true));
+    try { var bb = svg.getBBox(), W = bb.width * 1.08, H = bb.height * 1.08; if (W / H > 1.25) H = W / 1.25; else W = H * 1.25;
+      svg.setAttribute('viewBox', [f2(bb.x + bb.width / 2 - W / 2), f2(bb.y + bb.height / 2 - H / 2 + H * 0.02), f2(W), f2(H)].join(' ')); } catch (e) {}
+    function frame(now) {
+      raf = 0; if (dead) return;
+      var dt = Math.min(0.05, last ? (now - last) / 1000 : 0.016); last = now; clock += dt;
+      var t = clock % CYCLE, moving = play;
+      for (var a = 0; a < cells.length; a++) { var c = cells[a], g = target(c, t); c.v += ((g - c.h) * 90 - c.v * 15) * dt; c.h += c.v * dt; if (Math.abs(c.v) > 0.002 || Math.abs(g - c.h) > 0.002) moving = true; }
+      sync(draw(false));
+      var k = count(t); if (k !== shown) { shown = k; if (o.onCount) o.onCount(k); }
+      if (vis && moving) raf = requestAnimationFrame(frame); else last = 0;
+    }
+    function kick() { if (!raf && !dead) raf = requestAnimationFrame(frame); }
+    function at(e) {
+      try {
+        var m = svg.getScreenCTM(); if (!m) return; var pt = svg.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY; var q = pt.matrixTransform(m.inverse());
+        var a = q.x / (K * S), b = q.y / (0.5 * S);                       // a = x − y, b = x + y on the floor
+        ptr = [(a + b) / 2, (b - a) / 2]; kick();
+      } catch (er) {}
+    }
+    function leave() { ptr = null; kick(); }
+    el.addEventListener('pointermove', at); el.addEventListener('pointerdown', at); el.addEventListener('pointerleave', leave); el.addEventListener('pointercancel', leave);
+    var io = null; try { io = new IntersectionObserver(function (en) { vis = en[0].isIntersecting; if (vis) kick(); }); io.observe(el); } catch (e) {}
+    cells.forEach(function (c) { c.h = play ? (c.sale ? 0.34 : 0.1) : target(c, 0); });
+    kick();
+    return { destroy: function () { dead = true; if (raf) cancelAnimationFrame(raf); if (io) io.disconnect(); el.removeEventListener('pointermove', at); el.removeEventListener('pointerdown', at); el.removeEventListener('pointerleave', leave); el.removeEventListener('pointercancel', leave); if (svg.parentNode) svg.parentNode.removeChild(svg); el.classList.remove('axfig'); }, update: function () {} };
+  }
+
   /* ═════════ 2 · small moving icons for the side menu ═════════ */
   var O = [12, 13.2];
   function Q(x, y, z) { return [O[0] + (x - y) * K, O[1] + (x + y) * 0.5 - z]; }
@@ -293,5 +382,5 @@
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', wire); else wire();
 
-  window.AXFigs = { cheques: cheques, suppliers: suppliers, profit: profit, icon: icon, keys: Object.keys(ICONS) };
+  window.AXFigs = { cheques: cheques, suppliers: suppliers, profit: profit, salesTerrain: salesTerrain, icon: icon, keys: Object.keys(ICONS) };
 })();

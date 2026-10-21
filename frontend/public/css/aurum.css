@@ -4912,3 +4912,16 @@ svg.axmi .mf { fill: var(--ax-surface, #121212); stroke: none; }
 svg.axmi .mfs { fill: currentColor; stroke: none; }
 svg.axmi .mhi { stroke-width: 1.6; }
 .nav-item.active svg.axmi .mf { fill: currentColor; fill-opacity: .12; }
+
+/* §72 · 4.33 dashboard: sales pillars instead of the checkbox wall */
+html.aurum .pxs-wall-wrap.pxs-terr { left: 0 !important; right: 0 !important; top: 0 !important; height: 64% !important; display: flex; align-items: center; justify-content: center; transform-style: flat; pointer-events: auto; }
+.pxs-terr-fig { width: min(500px, 50%); margin-top: -6px; touch-action: pan-y;
+  --hairline-plate: #151231; --hairline-hi: #A99BFF; --hairline-stroke: 1;
+  filter: drop-shadow(0 0 22px rgba(139, 124, 246, .22)); cursor: crosshair; }
+.pxs-terr-fig.axfig { --f-edge: #6d5fd6; --f-mid: #3b3470; --f-lo: #2c2758; }
+[data-theme="light"] .pxs-terr-fig { --hairline-plate: #ffffff; filter: none; }
+[data-theme="light"] .pxs-terr-fig.axfig { --f-edge: #8f86d9; --f-mid: #c9c3ef; --f-lo: #e4e0f8; --hairline-hi: #6d5fd6; }
+@media (max-width: 600px) {
+  html.aurum .pxs-wall-wrap.pxs-terr { height: 62% !important; padding-top: 30px; }
+  .pxs-terr-fig { width: 250px; }
+}
