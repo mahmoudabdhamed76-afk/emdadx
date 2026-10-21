@@ -7,7 +7,6 @@
   'use strict';
   /* القسم → الرسمة + سطر قصير بيوصفها */
   var MAP = {
-    dashboard:   ['terrain',   'نبض الشغل كله في مكان واحد'],
     issuances:   ['slow',      'الورق ماشي على السير للمراكز'],
     forecast:    ['phosphor',  'مين هيسحب امتى'],
     customers:   ['hub',       'كل المراكز متوصلة بيك'],
@@ -86,11 +85,13 @@
       drop(); mount();
     });
     wrap.appendChild(box); wrap.appendChild(cap); wrap.appendChild(tg);
-    head.appendChild(wrap);
+    /* right beside the section's name, not pushed to the far side */
+    var first = head.firstElementChild;
+    if (first && first !== wrap) head.insertBefore(wrap, first.nextSibling); else head.appendChild(wrap);
     cur = { fig: null, box: wrap, page: p, made: made };
     if (!on()) return;
     try {
-      cur.fig = lib[m[0]](box, { play: !reduced(), intensity: 0.65, label: m[1] });
+      cur.fig = lib[m[0]](box, { play: !reduced(), intensity: 0.65, label: m[1], theme: 'light' });
     } catch (e) { wrap.remove(); cur = null; }
   }
 
