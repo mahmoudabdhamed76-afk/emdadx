@@ -91,7 +91,7 @@
     cur = { fig: null, box: wrap, page: p, made: made };
     if (!on()) return;
     try {
-      cur.fig = lib[m[0]](box, { play: !reduced(), intensity: 0.65, label: m[1], theme: 'light' });
+      cur.fig = lib[m[0]](box, { play: !reduced(), intensity: 0.65, label: m[1] });
     } catch (e) { wrap.remove(); cur = null; }
   }
 
