@@ -4866,3 +4866,28 @@ html.aurum .axa-slip mark.axa-num { white-space: normal !important; display: inl
 .axad-form .only-daily { display: none; }
 .axad-form.f-daily .only-daily { display: grid; }
 .axad-replay { margin-top: 6px; }
+
+/* §70 · 4.31 section figures (Hairline) — the page header becomes a card with a live line drawing */
+html .page-header.hlx-head, html.aurum .page-header.hlx-head { position: relative !important; display: flex !important; align-items: center !important; justify-content: space-between !important; gap: 14px !important; flex-wrap: nowrap !important;
+  padding: 14px 18px !important; border-radius: 20px !important; border: 1px solid var(--ax-line, rgba(127,127,127,.18)) !important;
+  background: radial-gradient(120% 140% at 0% 50%, color-mix(in srgb, var(--hlx-c) 13%, transparent), transparent 60%), var(--ax-surface, #121212) !important;
+  overflow: hidden; min-height: 132px; animation: hlxIn .6s cubic-bezier(.2,.8,.2,1) both; }
+html .page-header.hlx-head > :first-child { min-width: 0; flex: 1 1 auto; }
+.hlx { position: relative; flex: 0 0 auto; width: 190px; display: flex; flex-direction: column; align-items: center; gap: 2px; margin-inline-start: auto; }
+.hlx-fig { width: 100%; --hairline-plate: var(--ax-surface, #121212); --hairline-hi: var(--hlx-c); --hairline-stroke: 1; cursor: crosshair; }
+[data-theme="light"] .hlx-fig { --hairline-plate: var(--ax-surface, #fff); }
+.hlx-cap { font-size: 11px; opacity: .62; white-space: nowrap; letter-spacing: .1px; color: var(--hlx-c); filter: saturate(.9); }
+.hlx-tg { position: absolute; top: -4px; inset-inline-end: -6px; width: 24px; height: 24px; border-radius: 50%; border: 1px solid var(--ax-line, rgba(127,127,127,.25)); background: var(--ax-surface-2, #1a1a1a); color: inherit; font-size: 13px; line-height: 1; cursor: pointer; opacity: 0; transition: opacity .2s; display: grid; place-items: center; padding: 0; }
+.hlx:hover .hlx-tg, .hlx-tg:focus-visible { opacity: .85; }
+.hlx.off { width: auto; }
+.hlx.off .hlx-fig, .hlx.off .hlx-cap { display: none; }
+.hlx.off .hlx-tg { position: static; opacity: .7; }
+html .page-header.hlx-head:has(.hlx.off) { min-height: 0; }
+@keyframes hlxIn { from { opacity: 0; transform: translateY(8px) scale(.985); } to { opacity: 1; transform: none; } }
+@media (max-width: 768px) {
+  html .page-header.hlx-head, html.aurum .page-header.hlx-head { padding: 12px 14px !important; min-height: 104px; border-radius: 18px !important; flex-direction: row !important; align-items: center !important; }
+  .hlx { width: 124px; }
+  .hlx-cap { font-size: 10px; }
+  .hlx-tg { opacity: .55; }
+}
+@media (prefers-reduced-motion: reduce) { html .page-header.hlx-head { animation: none; } }
