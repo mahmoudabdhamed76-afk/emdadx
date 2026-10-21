@@ -4913,15 +4913,78 @@ svg.axmi .mfs { fill: currentColor; stroke: none; }
 svg.axmi .mhi { stroke-width: 1.6; }
 .nav-item.active svg.axmi .mf { fill: currentColor; fill-opacity: .12; }
 
-/* §72 · 4.33 dashboard: sales pillars instead of the checkbox wall */
-html.aurum .pxs-wall-wrap.pxs-terr { left: 0 !important; right: 0 !important; top: 0 !important; height: 64% !important; display: flex; align-items: center; justify-content: center; transform-style: flat; pointer-events: auto; }
-.pxs-terr-fig { width: min(500px, 50%); margin-top: -6px; touch-action: pan-y;
-  --hairline-plate: #151231; --hairline-hi: #A99BFF; --hairline-stroke: 1;
-  filter: drop-shadow(0 0 22px rgba(139, 124, 246, .22)); cursor: crosshair; }
-.pxs-terr-fig.axfig { --f-edge: #6d5fd6; --f-mid: #3b3470; --f-lo: #2c2758; }
-[data-theme="light"] .pxs-terr-fig { --hairline-plate: #ffffff; filter: none; }
-[data-theme="light"] .pxs-terr-fig.axfig { --f-edge: #8f86d9; --f-mid: #c9c3ef; --f-lo: #e4e0f8; --hairline-hi: #6d5fd6; }
+/* §72 · 4.34 dashboard: Hairline Terrain fills the top area (EmdadX violet) + sparks + a live event card — same as Ozarex 4.44 */
+html.aurum .pxs-wall-wrap.pxs-terr { left: 0 !important; right: 0 !important; top: 0 !important; height: 80% !important; transform-style: flat; pointer-events: auto; overflow: hidden;
+  -webkit-mask-image: linear-gradient(to bottom, #000 58%, transparent 100%); mask-image: linear-gradient(to bottom, #000 58%, transparent 100%); }
+.pxs-terr-fig { position: absolute; left: 50%; top: 50%; width: max(94%, 760px); transform: translate(-50%, -47%) scaleX(1.14); touch-action: pan-y; cursor: crosshair;
+  --hairline-plate: #100d24; --hairline-hi: #B9ADFF; --hairline-edge: #6d5fd6; --hairline-mid: #352e6a; --hairline-lo: #231e4a; --hairline-stroke: 1;
+  filter: drop-shadow(0 0 26px rgba(123, 108, 246, .22)); }
+[data-theme="light"] .pxs-terr-fig { --hairline-plate: #ffffff; --hairline-hi: #5B4BE0; --hairline-edge: #9a90e6; --hairline-mid: #cfc9f3; --hairline-lo: #e6e2fa; filter: none; }
+.pxs-sp { position: absolute; z-index: 2; border-radius: 50%; background: #A99BFF; box-shadow: 0 0 10px #8F7DFF, 0 0 3px #fff; pointer-events: none;
+  animation: pxsSpark 2.4s cubic-bezier(.2,.6,.3,1) forwards; }
+@keyframes pxsSpark { 0% { opacity: 0; transform: translate(0, 0) scale(.6); } 15% { opacity: 1; } 100% { opacity: 0; transform: translate(var(--dx, 0), var(--rise, -100px)) scale(1.1); } }
+.pxs-ev { position: absolute; z-index: 4; left: 50%; top: 7%; display: flex; gap: 10px; align-items: center; direction: rtl; white-space: nowrap; max-width: calc(100% - 24px);
+  padding: 9px 14px; border-radius: 14px; color: #fff; font-size: 13px; font-weight: 600; line-height: 1.5;
+  background: rgba(14, 11, 32, .84); border: 1px solid rgba(169, 155, 255, .5); box-shadow: 0 8px 30px rgba(108, 84, 255, .32), 0 0 0 4px rgba(169, 155, 255, .08);
+  -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); opacity: 0; transform: translate(-50%, 10px) scale(.92); pointer-events: none; }
+.pxs-ev.in { animation: pxsEvIn .55s cubic-bezier(.2,1.4,.4,1) forwards; }
+.pxs-ev.out { animation: pxsEvOut .45s ease forwards; }
+@keyframes pxsEvIn { from { opacity: 0; transform: translate(-50%, 14px) scale(.9); } to { opacity: 1; transform: translate(-50%, 0) scale(1); } }
+@keyframes pxsEvOut { from { opacity: 1; transform: translate(-50%, 0) scale(1); } to { opacity: 0; transform: translate(-50%, -12px) scale(.96); } }
+.pxs-ev > i { width: 30px; height: 30px; flex: 0 0 30px; border-radius: 9px; background: rgba(169, 155, 255, .16); display: grid; place-items: center; font-style: normal; }
+.pxs-ev > span { overflow: hidden; text-overflow: ellipsis; }
+.pxs-ev small { display: block; color: #c3b9ff; font-weight: 500; font-size: 11px; }
+.pxs-ev b { color: #B9ADFF; }
+.pxs-ev::after { content: ''; position: absolute; left: 50%; bottom: -7px; width: 12px; height: 12px; background: inherit; border-right: 1px solid rgba(169, 155, 255, .5); border-bottom: 1px solid rgba(169, 155, 255, .5); transform: translateX(-50%) rotate(45deg); }
+[data-theme="light"] .pxs-ev { background: rgba(255, 255, 255, .92); color: #120d33; }
+[data-theme="light"] .pxs-ev small { color: #5B4BE0; } [data-theme="light"] .pxs-ev b { color: #5B4BE0; }
 @media (max-width: 600px) {
-  html.aurum .pxs-wall-wrap.pxs-terr { height: 62% !important; padding-top: 30px; }
-  .pxs-terr-fig { width: 250px; }
+  html.aurum .pxs-wall-wrap.pxs-terr { height: 70% !important; }
+  .pxs-terr-fig { width: 600px; transform: translate(-50%, -44%) scaleX(1.08); }
+  .pxs-ev { top: 5%; font-size: 12px; padding: 8px 11px; }
+}
+@media (prefers-reduced-motion: reduce) { .pxs-sp { display: none; } }
+
+/* ════════════════════════════════════════════════════════════════════
+   «اسأل المساعد» — the floating assistant became a pill with a twinkling sparkle
+   (replaces the bouncing robot orb). It floats, the sparkle turns and glints,
+   a light sweeps across it, and a soft ring breathes around it.
+════════════════════════════════════════════════════════════════════ */
+#ai-fab.axask, html.aurum #ai-fab.axask {
+  width: auto !important; height: auto !important; min-width: 0 !important; padding: 0 !important; border: 0 !important; border-radius: 99px !important;
+  background: transparent !important; box-shadow: none !important; overflow: visible !important; color: inherit !important; animation: axaskIn .7s cubic-bezier(.2, 1.3, .4, 1) both, axaskFloat 3.4s .7s ease-in-out infinite !important;
+  -webkit-tap-highlight-color: transparent; }
+html.aurum #ai-fab.axask::before, #ai-fab.axask::before { display: none !important; }
+.axask-pill { position: relative; display: inline-flex; align-items: center; gap: 10px; height: 52px; padding: 0 22px 0 20px; border-radius: 99px; overflow: hidden; white-space: nowrap;
+  background: #F3F4EF; border: 2px solid #C3D3BC; color: #3F6B2B;
+  box-shadow: 0 10px 26px rgba(30, 60, 20, .18), 0 2px 6px rgba(30, 60, 20, .1); transition: transform .2s cubic-bezier(.34, 1.56, .64, 1), box-shadow .2s; }
+.axask-pill::after { content: ''; position: absolute; inset: -2px; border-radius: inherit; pointer-events: none; box-shadow: 0 0 0 0 rgba(120, 170, 95, .45); animation: axaskRing 3.4s ease-out infinite; }
+.axask-t { font: 800 17px/1 var(--ax-font, 'IBM Plex Sans Arabic', system-ui); letter-spacing: .1px; color: inherit; position: relative; z-index: 1; }
+.axask-ic { width: 26px; height: 26px; flex: 0 0 26px; overflow: visible; position: relative; z-index: 1; }
+.axask-ic path { fill: currentColor; transform-box: fill-box; transform-origin: center; }
+.axask-s1 { animation: axaskStar 3.4s ease-in-out infinite; }
+.axask-s2 { animation: axaskTw 1.7s ease-in-out infinite; }
+.axask-s3 { animation: axaskTw 1.7s .85s ease-in-out infinite; }
+.axask-shine { position: absolute; top: -20%; bottom: -20%; width: 38%; left: -45%; pointer-events: none; transform: skewX(-18deg);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .85), transparent); animation: axaskShine 4.2s 1.2s ease-in-out infinite; }
+#ai-fab.axask:hover .axask-pill { transform: translateY(-2px) scale(1.03); box-shadow: 0 14px 32px rgba(30, 60, 20, .24), 0 2px 6px rgba(30, 60, 20, .12); }
+#ai-fab.axask:active .axask-pill { transform: scale(.94); }
+html[data-theme="dark"] .axask-pill { background: rgba(18, 22, 16, .92); border-color: rgba(150, 200, 125, .45); color: #B6E58C;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, .45), 0 0 18px rgba(140, 200, 100, .14); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+html[data-theme="dark"] .axask-shine { background: linear-gradient(90deg, transparent, rgba(200, 255, 170, .28), transparent); }
+@media (max-width: 768px) {
+  .axask-pill { height: 46px; padding: 0 17px 0 15px; gap: 8px; }
+  .axask-t { font-size: 15px; }
+  .axask-ic { width: 22px; height: 22px; flex-basis: 22px; }
+}
+@keyframes axaskIn { from { opacity: 0; transform: translateY(16px) scale(.8); } to { opacity: 1; transform: none; } }
+@keyframes axaskFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+@keyframes axaskStar { 0%, 100% { transform: rotate(0) scale(1); } 20% { transform: rotate(90deg) scale(1.18); } 35% { transform: rotate(90deg) scale(.92); } 50% { transform: rotate(90deg) scale(1); } }
+@keyframes axaskTw { 0%, 100% { opacity: .35; transform: scale(.6); } 50% { opacity: 1; transform: scale(1.15); } }
+@keyframes axaskShine { 0% { left: -45%; } 45%, 100% { left: 125%; } }
+@keyframes axaskRing { 0% { box-shadow: 0 0 0 0 rgba(120, 170, 95, .45); } 70%, 100% { box-shadow: 0 0 0 12px rgba(120, 170, 95, 0); } }
+@media (prefers-reduced-motion: reduce) { #ai-fab.axask, .axask-ic path, .axask-shine, .axask-pill::after { animation: none !important; } }
+/* the pill is wider than the old orb: on the computer «المزيد» steps aside while the pill shows */
+@media (min-width: 769px) {
+  html:has(#ai-fab.axask.visible) #ax-more-fab.show { inset-inline-end: calc(18px + var(--axask-w, 186px) + 12px + env(safe-area-inset-left, 0px)); transition: inset-inline-end .3s ease; }
 }

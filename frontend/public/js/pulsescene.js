@@ -174,6 +174,9 @@
       } catch (e) {}
       return { key: 'm-' + k, label: META[k].title, value: c.value || '—', level: (LEVEL[c.level] || LEVEL.info)[0], delta: d, go: META[k].go };
     });
+    /* 4.34 · (unused now — the strip is gone) «X من Y» item */
+    if (state.inv) items.unshift({ key: 'm-sold', label: 'عملية بيع اتحصّلت ' + (state.inv.recent ? 'مؤخراً' : 'الشهر ده'), value: state.inv.paid + ' من ' + state.inv.total,
+      level: state.inv.total && state.inv.paid >= state.inv.total ? 'ok' : 'info', delta: null, go: 'invoices' });
     return AXTicker.withEvents(items, 4);
   }
 
@@ -371,6 +374,34 @@
   }
 
   /* ── mount ── */
+  /* 4.34 · what rides with the pillars: sparks rising, and a card with a real latest event every few seconds */
+  function sceneFx(stage, host) {
+    var ICON = { sold: '✅', pay: '💵', iss: '📄', in: '📦', exp: '🧾', sup: '🏭', inv: '🧾' };
+    var vis = true, alive = true, live = 0, si = 0, ci = 0, cardT = 0, hideT = 0, evs = [];
+    try { evs = window.AXTicker ? AXTicker.events(6) : []; } catch (e) {}
+    if (state.inv && state.inv.total) evs.unshift({ icon: 'sold', when: '', label: 'المبيعات', html: '<b>' + state.inv.paid + ' من ' + state.inv.total + '</b> عملية بيع اتحصّلت ' + (state.inv.recent ? 'مؤخراً' : 'الشهر ده') });
+    var card = document.createElement('div'); card.className = 'pxs-ev ax-hl-off'; card.setAttribute('aria-live', 'polite'); host.appendChild(card);
+    function spark() {
+      if (!vis || !alive || live > 34) return;
+      var W = host.clientWidth, H = host.clientHeight; if (!W) return;
+      var d = document.createElement('i'), sz = 2 + Math.random() * 3.6;
+      d.className = 'pxs-sp';
+      d.style.cssText = 'left:' + (W * (0.3 + Math.random() * 0.4)).toFixed(0) + 'px;top:' + (H * (0.3 + Math.random() * 0.45)).toFixed(0) + 'px;width:' + sz.toFixed(1) + 'px;height:' + sz.toFixed(1) + 'px;--dx:' + ((Math.random() - 0.5) * 40).toFixed(0) + 'px;--rise:' + (-60 - Math.random() * 90).toFixed(0) + 'px;animation-duration:' + (1.6 + Math.random() * 1.6).toFixed(2) + 's';
+      live++; d.addEventListener('animationend', function () { live--; d.remove(); }); host.appendChild(d);
+    }
+    function showCard() {
+      if (!vis || !alive || !evs.length) return;
+      var e = evs[ci++ % evs.length];
+      card.innerHTML = '<i>' + (ICON[e.icon] || '•') + '</i><span><small>' + (e.label || (e.when ? 'حدث جديد · ' + e.when : 'آخر حركة')) + '</small>' + e.html + '</span>';
+      card.classList.remove('out'); void card.offsetWidth; card.classList.add('in');
+      clearTimeout(hideT); hideT = setTimeout(function () { card.classList.remove('in'); card.classList.add('out'); }, 2600);
+    }
+    si = setInterval(spark, 140);
+    cardT = setInterval(showCard, 5200); setTimeout(showCard, 1400);
+    var io = null; try { io = new IntersectionObserver(function (en) { vis = en[0].isIntersecting; }); io.observe(stage); } catch (e) {}
+    return function () { alive = false; clearInterval(si); clearInterval(cardT); clearTimeout(hideT); if (io) io.disconnect(); };
+  }
+
   function mount() {
     var grid = document.getElementById('pulse-grid');
     if (!grid || typeof gsap === 'undefined') return;
@@ -383,9 +414,10 @@
     var intro = !reduce && (Date.now() - state.lastIntro > 20000);
     if (intro) state.lastIntro = Date.now();
     var G = Graph(sec);
-    /* 4.33 · the wall of checkboxes became a field of pillars — one per sale this month */
-    var TERR = !!(window.AXFigs && AXFigs.salesTerrain);
+    /* 4.34 · the wall of checkboxes became Hairline's Terrain — a field of pillars that plays on its own */
+    var TERR = true;
     if (state.terr) { try { state.terr.destroy(); } catch (e) {} state.terr = null; }
+    if (state.fxStop) { try { state.fxStop(); } catch (e) {} state.fxStop = null; }
     var W = TERR ? null : fillWall(sec);
     var stage = sec.querySelector('.pxs-stage');
     if (W) gsap.set(W.wall, { rotationX: 40, rotationZ: -8, y: 0, transformOrigin: '50% 0%' });
@@ -401,12 +433,14 @@
         if (W) loops.push(gsap.to('.pxs-wall', { y: -12, rotationZ: -8.8, duration: 6, ease: 'sine.inOut', yoyo: true, repeat: -1 }));
       }
 
-      /* 2 · sales pillars (4.33) — the paid ones rise one by one, the caption counts with them */
+      /* 2 · pillars (4.34) — the paid ones rise one by one, the caption counts with them */
       if (TERR) {
         var ww = sec.querySelector('.pxs-wall-wrap'); ww.classList.add('pxs-terr'); ww.innerHTML = '';
         var fbox = document.createElement('div'); fbox.className = 'pxs-terr-fig'; ww.appendChild(fbox);
-        var capN = sec.querySelector('.pxs-cap-n');
-        state.terr = AXFigs.salesTerrain(fbox, { total: state.inv.total, paid: state.inv.paid, play: !reduce, onCount: function (k) { capN.textContent = k; } });
+        var capEl = sec.querySelector('.pxs-cap'); if (capEl) capEl.remove();      // 4.34 · the event card shows it now
+        if (!reduce) state.fxStop = sceneFx(sec.querySelector('.pxs-stage'), ww);
+        var go = function () { if (!fbox.isConnected || state.terr) return; try { state.terr = window.Hairline.terrain(fbox, { play: !reduce, intensity: 0.75, label: 'أعمدة بتعلى وتنزل' }); } catch (e) {} };
+        if (window.Hairline) go(); else window.addEventListener('hairline:ready', go, { once: true });
       }
       if (W) {
       var total = W.cells.length;
@@ -492,9 +526,8 @@
       } else { gsap.set([G.head, G.headGlow, G.runner], { autoAlpha: 0 }); }
 
       /* 4 · شريط النبض (js/ticker.js) — the strip on top of this panel */
-      if (window.AXTicker) {
-        AXTicker.create(sec.querySelector('.pxs-tkhost'), { id: 'dash', variant: 'bar', label: 'شريط النبض: كل الأرقام وآخر الحركات', items: tickerItems() });
-      }
+      /* 4.34 · the «مباشر» strip is gone from the scene — the event card over the pillars took its place */
+      var tkh = sec.querySelector('.pxs-tkhost'); if (tkh) tkh.remove();
       /* the panel is the first thing on the dashboard, the cash flow follows (hero after it) —
          aurum.js moves the cash flow in the same render, so settle the order right after */
       Promise.resolve().then(function () {
