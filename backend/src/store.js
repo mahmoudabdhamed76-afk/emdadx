@@ -53,8 +53,20 @@ function userByName(name) {
 
 /* full replace (admin restore / reset) */
 function full(blob) {
-  const clean = Object.assign({}, blob);
+  if (!blob || typeof blob !== 'object' || Array.isArray(blob)) {
+    const err = new Error('bad_request'); err.status = 400; throw err;
+  }
+  /* Object.create(null): a "__proto__" key in a restore file must not become Object.prototype */
+  const clean = Object.assign(Object.create(null), blob);
   delete clean.__version;
+  for (const k of Object.keys(clean)) if (BAD_KEY.test(k)) delete clean[k];
+  if (clean.settings && typeof clean.settings === 'object' && !Array.isArray(clean.settings)) {
+    const s = Object.assign(Object.create(null), clean.settings);
+    for (const k of Object.keys(s)) if (BAD_KEY.test(k)) delete s[k];
+    if (s.companyLogo) { const logo = safeLogo(s.companyLogo); if (logo) s.companyLogo = logo; else delete s.companyLogo; }
+    if (s._portal) s._portal = cleanPortal(s._portal);
+    clean.settings = s;
+  }
   bridge.importBlob(clean);
   MEM = bridge.exportBlob();
   MEM.users = (MEM.users || []).map(strip);
@@ -145,6 +157,33 @@ function sanitize(w) {
 }
 
 /* ── the main entry: apply a change sent by a device ── */
+/* company logos are interpolated into <img src="...">. Only a base64 image data URL is stored. */
+const LOGO_RE = /^data:image\/(?:png|jpeg|jpg|gif|webp|svg\+xml);(?:charset=[A-Za-z0-9._-]+;)?base64,[A-Za-z0-9+/=\r\n]+$/;
+function safeLogo(v) {
+  const s = String(v == null ? '' : v).trim();
+  if (s.length < 32 || s.length > 3000000) return '';
+  return LOGO_RE.test(s) ? s : '';
+}
+/* customer statement links are unguessable hex. Anything else is dropped (it is rendered into HTML). */
+function cleanPortal(v) {
+  const out = Object.create(null);
+  if (!v || typeof v !== 'object' || Array.isArray(v)) return out;
+  for (const k of Object.keys(v)) {
+    if (BAD_KEY.test(k)) continue;
+    const tok = String(v[k] == null ? '' : v[k]);
+    if (/^[a-f0-9]{32,64}$/.test(tok)) out[k] = tok;
+  }
+  return out;
+}
+function cleanSpecialSettings(w) {
+  if (w.keys && w.keys.companyLogo && own(w.keys.companyLogo, 'a')) {
+    w.keys.companyLogo.a = safeLogo(w.keys.companyLogo.a) || null;
+  }
+  if (w.keys && w.keys._portal && own(w.keys._portal, 'a')) {
+    w.keys._portal.a = cleanPortal(w.keys._portal.a);
+  }
+}
+
 function apply(u, w) {
   const d = data();
   w = sanitize(w);
@@ -171,6 +210,7 @@ function apply(u, w) {
     if (why && (s.approvalsOff || !level)) why = why.filter(x => x.t === 'closed');
     if (why && why.length) throw new Refused('needs_approval', 'التعديل ده محتاج موافقة المدير', { why });
   }
+  cleanSpecialSettings(w);
 
   /* what will be written */
   const touched = {};   // blobKey → Set(ids)

@@ -148,7 +148,31 @@ function failed(req, username) {
   [clientIp(req) + '|' + n, '*|' + n].forEach(k => { const t = tries.get(k) || []; t.push(now); if (t.length > 50) t.shift(); tries.set(k, t); });
 }
 function succeeded(req, username) { const n = uname(username); tries.delete(clientIp(req) + '|' + n); }
-setInterval(() => { const now = Date.now(); for (const k of tries.keys()) recent(k, now); }, WIN).unref();
+/* every login POST from one address, any username. The counters above are per name,
+   so a flood of random names would otherwise each run scrypt until the queue fills. */
+const LOGIN_MAX = 60, LOGIN_IPS = 20000;
+const loginPosts = new Map();
+function loginLimited(req) {
+  const now = Date.now(), ip = clientIp(req) || '?';
+  let t = loginPosts.get(ip);
+  if (!t) {
+    if (loginPosts.size >= LOGIN_IPS) return 1;
+    t = [];
+  }
+  while (t.length && now - t[0] >= WIN) t.shift();
+  if (t.length >= LOGIN_MAX) { loginPosts.set(ip, t); return Math.max(1, Math.ceil((WIN - (now - t[0])) / 60000)); }
+  t.push(now);
+  loginPosts.set(ip, t);
+  return 0;
+}
+setInterval(() => {
+  const now = Date.now();
+  for (const k of tries.keys()) recent(k, now);
+  for (const [k, t] of loginPosts) {
+    while (t.length && now - t[0] >= WIN) t.shift();
+    if (!t.length) loginPosts.delete(k);
+  }
+}, WIN).unref();
 
 /* password checks off the main thread, at most 4 at a time — a login flood can't freeze the app */
 let running = 0; const waiting = [];
@@ -169,5 +193,5 @@ async function verifyPasswordAsync(pw, stored) {
 module.exports = {
   COOKIE, hashPassword, isHash, verifyPassword, verifyPasswordAsync, migratePasswords, storedHash,
   loadSessions, createSession, dropSession, dropUserSessions, dropSessionById, listSessions,
-  tokenOf, sessionUserId, cookieHeader, clientIp, throttled, failed, succeeded, sha, isHttps
+  tokenOf, sessionUserId, cookieHeader, clientIp, throttled, loginLimited, failed, succeeded, sha, isHttps
 };
