@@ -14,11 +14,14 @@ const http = require('node:http');
 const fs   = require('node:fs');
 const path = require('node:path');
 const url  = require('node:url');
+const crypto = require('node:crypto');
 
 const { db, DB_FILE } = require('./db');
 const { exportBlob, defaultBlob } = require('./src/bridge');
 const auth  = require('./src/auth');
 const store = require('./src/store');
+/* a real scrypt hash so a login for an unknown name costs the same as a wrong password */
+const DUMMY_HASH = auth.hashPassword('emdadx-unknown-user');
 const portal = require('./src/portal');
 const market = require('./src/market');
 const adsMod = require('./src/ads');
@@ -85,7 +88,22 @@ function secHeaders(req) {
   const h = {
     'X-Content-Type-Options': 'nosniff',
     'X-Frame-Options': 'DENY',
-    'Content-Security-Policy': "frame-ancestors 'none'; object-src 'none'; base-uri 'self'",
+    'Cross-Origin-Resource-Policy': 'same-origin',
+    /* inline scripts/styles are how the app is built; external scripts and object/embed are not */
+    'Content-Security-Policy': [
+      "default-src 'self'",
+      "script-src 'self' 'unsafe-inline'",
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+      "img-src 'self' data: blob:",
+      "font-src 'self' data: https://fonts.gstatic.com",
+      "connect-src 'self' https://open.er-api.com https://api.ipify.org",
+      "media-src 'self' https://server8.mp3quran.net",
+      "worker-src 'self' blob:",
+      "object-src 'none'",
+      "base-uri 'self'",
+      "form-action 'self'",
+      "frame-ancestors 'none'"
+    ].join('; '),
     'Referrer-Policy': 'same-origin',
     'Permissions-Policy': 'camera=(self), microphone=(self), geolocation=(self), payment=()'
   };
@@ -124,12 +142,30 @@ const MIME = {
   '.jpeg': 'image/jpeg', '.ico': 'image/x-icon', '.woff2': 'font/woff2', '.woff': 'font/woff', '.webp': 'image/webp',
   '.map': 'application/json; charset=utf-8'
 };
-function serveStatic(res, filePath) {
+/* stay inside PUBLIC: path.resolve treats a second absolute segment as the whole path,
+   and a one-pass ".." strip can be walked around. realpath stops symlink escapes. */
+function resolveStatic(pathname) {
+  if (pathname.includes('\0')) return null;
+  const rel = (pathname === '/' ? 'index.html' : pathname.replace(/^\/+/, ''));
+  const norm = path.normalize(rel);
+  if (!norm || norm === '..' || norm.startsWith('..' + path.sep) || path.isAbsolute(norm)) return null;
+  const root = fs.realpathSync(path.resolve(PUBLIC));
+  const filePath = path.resolve(root, norm);
+  if (filePath !== root && !filePath.startsWith(root + path.sep)) return null;
+  let st;
+  try { st = fs.statSync(filePath); } catch (e) { return null; }
+  if (!st.isFile()) return null;
+  let real;
+  try { real = fs.realpathSync(filePath); } catch (e) { return null; }
+  if (real !== root && !real.startsWith(root + path.sep)) return null;
+  return real;
+}
+function serveStatic(req, res, filePath) {
   fs.readFile(filePath, (err, data) => {
-    if (err) { res.writeHead(404); res.end('Not found'); return; }
+    if (err) { res.writeHead(404, secHeaders(req)); res.end('Not found'); return; }
     const ext = path.extname(filePath).toLowerCase();
     const isHtml = ext === '.html';
-    res.writeHead(200, Object.assign(secHeaders(res.req), {
+    res.writeHead(200, Object.assign(secHeaders(req), {
       'Content-Type':   MIME[ext] || 'application/octet-stream',
       'Content-Length': data.length,
       'Cache-Control':  isHtml ? 'no-cache, no-store, must-revalidate'
@@ -178,8 +214,26 @@ function opDone(id) {
 }
 
 /* who is calling */
+const _sseTickets = new Map();
+function issueSseTicket(userId) {
+  const now = Date.now();
+  if (_sseTickets.size > 4000) { for (const [k, v] of _sseTickets) if (v.exp < now) _sseTickets.delete(k); }
+  const ticket = crypto.randomBytes(32).toString('hex');
+  _sseTickets.set(ticket, { userId, exp: now + 120000 });
+  return ticket;
+}
+/* a 2-minute ticket for the live stream only — the 365-day session token stays out of the URL */
+function sseUserId(req) {
+  const u = String(req.url || '');
+  if (!u.includes('/api/events')) return null;
+  const m = u.match(/[?&]k=([a-f0-9]{64})(?:&|$)/);
+  if (!m) return null;
+  const row = _sseTickets.get(m[1]);
+  if (!row || row.exp < Date.now()) { _sseTickets.delete(m[1]); return null; }
+  return row.userId;
+}
 function currentUser(req) {
-  const id = auth.sessionUserId(req);
+  const id = sseUserId(req) || auth.sessionUserId(req);
   if (!id) return null;
   const u = store.user(id);
   return u && u.disabled !== true ? u : null;
@@ -197,7 +251,7 @@ const server = http.createServer(async (req, res) => {
   const parsed = url.parse(req.url, true);
   let pathname = parsed.pathname || '/';
 
-  if (req.method === 'OPTIONS') { res.writeHead(204); return res.end(); }
+  if (req.method === 'OPTIONS') { res.writeHead(204, secHeaders(req)); return res.end(); }
 
   // Strip APP_PATH prefix
   if (APP_PATH) {
@@ -213,7 +267,7 @@ const server = http.createServer(async (req, res) => {
     if (pathname === '/sw.js') {
       const swPath = path.join(PUBLIC, 'sw.js');
       if (fs.existsSync(swPath)) {
-        res.writeHead(200, { 'Content-Type': 'application/javascript; charset=utf-8', 'Cache-Control': 'no-cache, no-store, must-revalidate', 'Service-Worker-Allowed': '/' });
+        res.writeHead(200, Object.assign(secHeaders(req), { 'Content-Type': 'application/javascript; charset=utf-8', 'Cache-Control': 'no-cache, no-store, must-revalidate', 'Service-Worker-Allowed': '/' }));
         return res.end(fs.readFileSync(swPath));
       }
     }
@@ -228,10 +282,12 @@ const server = http.createServer(async (req, res) => {
       const wait = auth.throttled(req, name);
       if (wait) return sendJSON(res, 429, { error: 'too_many', message: 'محاولات كتير غلط — استنى ' + wait + ' دقيقة وجرّب تاني' });
       const u = store.userByName(name);
+      /* always run scrypt, so a missing name is not faster than a wrong password */
+      const stored = (u && auth.storedHash(u.id)) || DUMMY_HASH;
       let ok = false;
-      try { ok = !!u && u.disabled !== true && await auth.verifyPasswordAsync(pw, auth.storedHash(u.id)); }
+      try { ok = await auth.verifyPasswordAsync(pw, stored); }
       catch (e) { return sendJSON(res, 503, { error: 'busy', message: 'السيرفر مشغول — جرّب كمان ثانية' }); }
-      if (!ok) { auth.failed(req, name); return sendJSON(res, 401, { error: 'bad_login', message: 'اسم المستخدم أو كلمة السر غلط' }); }
+      if (!u || u.disabled === true || !ok) { auth.failed(req, name); return sendJSON(res, 401, { error: 'bad_login', message: 'اسم المستخدم أو كلمة السر غلط' }); }
       auth.succeeded(req, name);
       if (!auth.isHash(auth.storedHash(u.id))) auth.migratePasswords();
       const token = auth.createSession(u.id, req);
@@ -256,7 +312,7 @@ const server = http.createServer(async (req, res) => {
       const admin = me.role === 'admin';
       const adminOnly = () => sendJSON(res, 403, { error: 'forbidden', message: 'للمدير بس' });
       /* a weak password (e.g. the first admin/admin): reading is fine, nothing gets written until it's changed */
-      if (req.method !== 'GET' && pathname !== '/api/password' && mustChange(me.id))
+      if (req.method !== 'GET' && pathname !== '/api/password' && pathname !== '/api/sse-ticket' && mustChange(me.id))
         return sendJSON(res, 403, { error: 'must_change', message: 'غيّر كلمة السر الأول — دي سهلة التخمين' });
 
       /* ads: everyone reads their feed + records views/clicks; only admins manage */
@@ -299,10 +355,13 @@ const server = http.createServer(async (req, res) => {
         return sendJSON(res, 200, { ok: true, version: _dataVersion });
       }
 
-      /* live updates */
+      /* live updates — the stream itself is GET /api/events; the ticket is not the session token */
+      if (pathname === '/api/sse-ticket' && req.method === 'POST') {
+        return sendJSON(res, 200, { ticket: issueSseTicket(me.id) });
+      }
       if (pathname === '/api/events' && req.method === 'GET') {
         const clientId = (++_clientSeq).toString();
-        res.writeHead(200, { 'Content-Type': 'text/event-stream; charset=utf-8', 'Cache-Control': 'no-cache, no-store', 'Connection': 'keep-alive', 'X-Accel-Buffering': 'no' });
+        res.writeHead(200, Object.assign(secHeaders(req), { 'Content-Type': 'text/event-stream; charset=utf-8', 'Cache-Control': 'no-cache, no-store', 'Connection': 'keep-alive', 'X-Accel-Buffering': 'no' }));
         res.write(`data: ${JSON.stringify({ event: 'connected', clientId, version: _dataVersion })}\n\n`);
         /* at most 6 live streams per user — the oldest one is closed */
         const mine = [..._clients].filter(([, c]) => c.userId === me.id);
@@ -327,7 +386,7 @@ const server = http.createServer(async (req, res) => {
           if (!p) return sendJSON(res, 404, { error: 'not_found' });
           buf = fs.readFileSync(p); name = parsed.query.file;
         } else { buf = store.gzBlob(); name = 'emdadx-' + new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-') + '.json.gz'; }
-        res.writeHead(200, { 'Content-Type': 'application/gzip', 'Content-Length': buf.length, 'Content-Disposition': 'attachment; filename="' + name + '"', 'Cache-Control': 'no-store' });
+        res.writeHead(200, Object.assign(secHeaders(req), { 'Content-Type': 'application/gzip', 'Content-Length': buf.length, 'Content-Disposition': 'attachment; filename="' + name + '"', 'Cache-Control': 'no-store' }));
         return res.end(buf);
       }
       if (pathname === '/api/backup/now' && req.method === 'POST') {
@@ -391,11 +450,13 @@ const server = http.createServer(async (req, res) => {
     }
 
     /* ── static files ── */
-    let rel = pathname === '/' ? '/index.html' : pathname;
-    rel = rel.replace(/\.\./g, '');
-    const filePath = path.join(PUBLIC, rel);
-    if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) return serveStatic(res, filePath);
-    return serveStatic(res, path.join(PUBLIC, 'index.html'));
+    const filePath = resolveStatic(pathname === '/' ? '/index.html' : pathname);
+    if (filePath) return serveStatic(req, res, filePath);
+    /* a missing script/style must not come back as HTML (the browser would run it as JS) */
+    if (path.extname(pathname)) { res.writeHead(404, secHeaders(req)); return res.end('Not found'); }
+    const home = resolveStatic('/index.html');
+    if (home) return serveStatic(req, res, home);
+    res.writeHead(404, secHeaders(req)); return res.end('Not found');
 
   } catch (e) {
     if (e && e.status) { if (!res.headersSent) sendJSON(res, e.status, { error: e.message }); else res.destroy(); return; }

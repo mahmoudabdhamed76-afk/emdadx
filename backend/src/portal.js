@@ -84,15 +84,16 @@ function notFound() {
 /* → true when handled */
 function handle(req, res, pathname, data) {
   const m = /^\/p\/([A-Za-z0-9]+)\/?$/.exec(pathname);
-  if (!m || req.method !== 'GET') return false;
+  if (!m || (req.method !== 'GET' && req.method !== 'HEAD')) return false;
   const d = data();
   const c = findCenter(d, m[1]);
   const html = c ? page(d, c) : notFound();
   res.writeHead(c ? 200 : 404, {
     'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex, nofollow',
-    'Referrer-Policy': 'no-referrer', 'X-Content-Type-Options': 'nosniff', 'X-Frame-Options': 'DENY'
+    'Referrer-Policy': 'no-referrer', 'X-Content-Type-Options': 'nosniff', 'X-Frame-Options': 'DENY',
+    'Content-Security-Policy': "default-src 'none'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; font-src 'self'; script-src 'unsafe-inline'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
   });
-  res.end(html);
+  if (req.method !== 'HEAD') res.end(html); else res.end();
   return true;
 }
 
