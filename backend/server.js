@@ -279,6 +279,8 @@ const server = http.createServer(async (req, res) => {
     if (pathname === '/api/login' && req.method === 'POST') {
       const b = (await readBody(req, 0.02)) || {};
       const name = String(b.username || '').slice(0, 64), pw = String(b.password || '').slice(0, 256);
+      const pace = auth.loginLimited(req);
+      if (pace) return sendJSON(res, 429, { error: 'too_many', message: 'محاولات كتير — استنى ' + pace + ' دقيقة وجرّب تاني' });
       const wait = auth.throttled(req, name);
       if (wait) return sendJSON(res, 429, { error: 'too_many', message: 'محاولات كتير غلط — استنى ' + wait + ' دقيقة وجرّب تاني' });
       const u = store.userByName(name);
