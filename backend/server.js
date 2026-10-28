@@ -20,6 +20,35 @@ const { exportBlob, defaultBlob } = require('./src/bridge');
 const auth  = require('./src/auth');
 const store = require('./src/store');
 const portal = require('./src/portal');
+/* 4.36 · الموظفين + متابعة العملاء + حالات المرضى (ported from Ozarex 4.60 → 4.95) */
+const cases = require('./src/cases');     // حالات المرضى (/k/ للمركز، /v/ للمريض، /h/ الباركود الثابت)
+const tiles = require('./src/tiles');     // the map's tiles through our server
+const webpush = require('./src/webpush'); // push notifications (no outside service)
+const staff = require('./src/staff');     // the employees' own app (/staff) + the manager's side
+const adminIds = () => ((store.data() || {}).users || []).filter(u => u && u.role === 'admin' && !u.disabled).map(u => u.id);
+/* the employees pick the center they're working at from the ERP's own customers */
+staff.setSource({
+  centers: () => ((store.data() || {}).customers || []).filter(c => c && c.id && c.name && !c.archived && !c.disabled)
+    .map(c => ({ key: 'main:' + c.id, id: c.id, branch: 'main', name: String(c.name).slice(0, 120), address: String(c.address || '').slice(0, 160) })),
+  branches: () => []
+});
+staff.setNotify({
+  center: (cid, msg) => portal.notifyCenter(cid, msg),
+  admins: adminIds,
+  event: (name, payload) => { try { broadcast(name, payload); } catch (e) {} }
+});
+portal.setNotify({
+  admins: adminIds,
+  event: (name, payload) => { try { broadcast(name, payload); } catch (e) {} },
+  push: webpush,
+  staff: { createTask: (b, who) => staff.createTask(b, who), activeEmps: () => staff.activeEmps(), techs: () => staff.techs(), taskByReq: id => staff.taskByReq(id), staffPhoto: id => staff.staffPhoto(id), toEmps: (ids, msg) => staff.toEmps(ids, msg) }
+});
+/* a center with no WhatsApp number set → its phone from the ERP, else the company's */
+cases.setLookup(cid => {
+  const d = store.data() || {}, c = (d.customers || []).find(x => x && x.id === cid);
+  if (c && c.phone) return c.phone;
+  const st = d.settings || {}; return st.companyPhone || st.companyWhatsapp || '';
+});
 const market = require('./src/market');
 const adsMod = require('./src/ads');
 try { market.init(require('./db').DATA_DIR); } catch (e) { console.warn('[market] init', e.message); }
@@ -218,8 +247,19 @@ const server = http.createServer(async (req, res) => {
       }
     }
     if (pathname === '/api/version' && req.method === 'GET') return sendJSON(res, 200, { version: _dataVersion });
-    /* a center's own read-only page (token link) */
-    if (pathname.startsWith('/p/') && portal.handle(req, res, pathname, store.data)) return;
+    if (pathname.startsWith('/tiles/') && tiles.handle(req, res, pathname)) return;   // the map's tiles through our server
+    if ((pathname.startsWith('/k/') || pathname.startsWith('/v/') || pathname.startsWith('/h/')) && await cases.handle(req, res, pathname)) return;   // حالات المرضى
+    /* a center's own page (token link: /p/<long>, /c/<8>, or the shortest /<6 letters with a digit>) */
+    if ((pathname.startsWith('/p/') || pathname.startsWith('/c/') || /^\/[A-Za-z0-9]{6}(\/[a-z.]+(\/[A-Za-z0-9_-]+)?)?\/?$/.test(pathname)) && portal.handle(req, res, pathname, () => store.data())) return;
+
+    /* الموظفين: the employee's own page (/staff) and its API — his own login, never the ERP's */
+    if (pathname === '/staff/') { res.writeHead(302, { Location: APP_PATH + '/staff' }); return res.end(); }
+    if (pathname === '/staff') return serveStatic(res, path.join(PUBLIC, 'staff.html'));
+    if (pathname === '/staff-sw.js') {
+      try { const data = await fs.promises.readFile(path.join(PUBLIC, 'staff-sw.js')); res.writeHead(200, { 'Content-Type': 'application/javascript; charset=utf-8', 'Cache-Control': 'no-cache, no-store, must-revalidate', 'Service-Worker-Allowed': '/staff' }); return res.end(data); } catch (_) {}
+    }
+    if (pathname === '/staff/manifest.json') return sendJSON(res, 200, { name: 'حضور وانصراف', short_name: 'حضوري', start_url: '../staff', scope: '../', display: 'standalone', background_color: '#0c0809', theme_color: '#0c0809', lang: 'ar', dir: 'rtl', icons: [{ src: '../icons/icon-192.png', sizes: '192x192', type: 'image/png' }, { src: '../icons/icon-512.png', sizes: '512x512', type: 'image/png' }] }, { 'Cache-Control': 'public, max-age=3600' });
+    if (pathname.startsWith('/staff/api/')) return await staff.handlePublic(req, res, pathname, { sendJSON, readBody, settings: () => (store.data() || {}).settings || {} });
 
     /* ── login / logout / who am I ── */
     if (pathname === '/api/login' && req.method === 'POST') {
@@ -258,6 +298,27 @@ const server = http.createServer(async (req, res) => {
       /* a weak password (e.g. the first admin/admin): reading is fine, nothing gets written until it's changed */
       if (req.method !== 'GET' && pathname !== '/api/password' && mustChange(me.id))
         return sendJSON(res, 403, { error: 'must_change', message: 'غيّر كلمة السر الأول — دي سهلة التخمين' });
+
+      /* الموظفين / متابعة العملاء / حالات المرضى — the manager's side (admin only) */
+      if (pathname === '/api/portal/cases' || pathname.startsWith('/api/portal/cases/')) { if (!admin) return adminOnly(); return await cases.adminApi(req, res, pathname, me); }
+      if (pathname.startsWith('/api/portal/')) { if (!admin) return adminOnly(); return await portal.adminApi(req, res, pathname, me, { sendJSON, readBody }); }
+      if (pathname === '/api/staff' || pathname.startsWith('/api/staff/')) { if (!admin) return adminOnly(); return await staff.handleAdmin(req, res, pathname, me, { sendJSON, readBody }); }
+      /* push notifications on this device (any signed-in user) */
+      if (pathname === '/api/push/key' && req.method === 'GET') return sendJSON(res, 200, { key: webpush.publicKey(), devices: webpush.countFor(me.id) });
+      if (pathname === '/api/push/subscribe' && req.method === 'POST') {
+        const b = (await readBody(req, 0.02)) || {};
+        try { webpush.subscribe(me, b.subscription, req.headers['user-agent']); } catch (e) { return sendJSON(res, 400, { error: 'bad_request', message: 'الاشتراك ده مش صالح' }); }
+        return sendJSON(res, 200, { ok: true, devices: webpush.countFor(me.id) });
+      }
+      if (pathname === '/api/push/unsubscribe' && req.method === 'POST') {
+        const b = (await readBody(req, 0.02)) || {};
+        webpush.unsubscribe(b.endpoint);
+        return sendJSON(res, 200, { ok: true, devices: webpush.countFor(me.id) });
+      }
+      if (pathname === '/api/push/test' && req.method === 'POST') {
+        const r = await webpush.send([me.id], { title: '🔔 الإشعارات شغّالة', body: 'هيوصلك هنا طلبات المراكز وحضور الموظفين وطلبات الصيانة', url: './?go=clients', tag: 'test' });
+        return sendJSON(res, 200, { ok: r.ok > 0, devices: r.devices, sent: r.ok });
+      }
 
       /* ads: everyone reads their feed + records views/clicks; only admins manage */
       if (pathname === '/api/ads' || pathname.startsWith('/api/ads/')) return await ads.handle(req, res, pathname, me);
@@ -418,6 +479,6 @@ server.on('error', (e) => { console.error('Server error:', e); process.exit(1); 
 server.maxConnections = 3000;
 /* 4.20 · slow / half-open requests get dropped instead of piling up */
 server.headersTimeout = 15000;      // the request line + headers must arrive within 15 s
-server.requestTimeout = 120000;     // a whole request (even a big restore upload) within 2 min
+server.requestTimeout = 900000;     // a whole request within 15 min (a big case PDF from a center on a slow upload line)
 server.keepAliveTimeout = 10000;
 server.timeout = 0;                 // live streams (SSE) stay open; they have their own heartbeat
