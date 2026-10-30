@@ -24,9 +24,10 @@
     }
     return b;
   }
+  function isDash() { return typeof currentPage !== 'undefined' && currentPage === 'dashboard'; }
   function sync() {
     var b = fab();
-    var on = MQ.matches && logged() && !!window.AXM;
+    var on = MQ.matches && logged() && !!window.AXM && isDash();
     b.classList.toggle('show', on);
     b.classList.toggle('on', on && isOpen());
   }

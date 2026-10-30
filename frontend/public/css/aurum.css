@@ -5785,7 +5785,7 @@ html.aurum[data-theme="light"] .debtor-row .debtor-amount { color: #DC2626; }
 /* شريط النبض والشريط العلوي في الوضع النهاري */
 @media (min-width: 769px) {
   html.aurum #home-fab {
-    inset-inline-end: calc(188px + env(safe-area-inset-left, 0px)) !important;
+    inset-inline-end: calc(78px + env(safe-area-inset-left, 0px)) !important;
     bottom: calc(22px + env(safe-area-inset-bottom, 0px)) !important;
     width: 46px !important;
     height: 46px !important;
