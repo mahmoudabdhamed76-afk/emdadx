@@ -5463,26 +5463,60 @@ html.aurum[data-theme="light"] .pxs {
   box-shadow: 0 18px 42px -18px rgba(11, 22, 48, .14), 0 2px 6px rgba(11, 22, 48, .05);
 }
 html.aurum[data-theme="light"] .pxs-stage {
-  background: linear-gradient(180deg, #E8EEFA 0%, #F1F5FD 50%, #FFFFFF 100%);
+  background: linear-gradient(180deg, #DCE6F7 0%, #E8EFFC 52%, #FFFFFF 100%);
 }
 html.aurum[data-theme="light"] .pxs-g1 {
-  background: radial-gradient(circle, rgba(79, 70, 229, .14), transparent 70%);
+  background: radial-gradient(circle, rgba(79, 70, 229, .18), transparent 70%);
 }
 html.aurum[data-theme="light"] .pxs-g2 {
-  background: radial-gradient(circle, rgba(13, 148, 136, .12), transparent 70%);
+  background: radial-gradient(circle, rgba(13, 148, 136, .15), transparent 70%);
 }
 html.aurum[data-theme="light"] .pxs-g3 {
-  background: radial-gradient(ellipse, color-mix(in srgb, var(--gc) 18%, transparent), transparent 70%);
-  opacity: .45;
+  background: radial-gradient(ellipse, color-mix(in srgb, var(--gc) 20%, transparent), transparent 70%);
+  opacity: .5;
 }
 html.aurum[data-theme="light"] .pxs-terr-fig {
   --hairline-plate: #FFFFFF;
-  --hairline-hi: #3730A3;
+  --hairline-hi: #312E81;
   --hairline-edge: #4F46E5;
   --hairline-mid: #6366F1;
-  --hairline-lo: #A5B4FC;
-  --hairline-stroke: 1.35;
-  filter: drop-shadow(0 12px 24px rgba(67, 56, 202, .16));
+  --hairline-lo: #818CF8;
+  --hairline-stroke: 1.4;
+  filter: drop-shadow(0 14px 28px rgba(49, 46, 129, .18));
+}
+/* قاعدة المجسم ثلاثي الأبعاد والمكعبات في الوضع النهاري */
+html.aurum[data-theme="light"] .pxs-terr-fig svg > g > g:first-child path.sil {
+  fill: #E0E7FF !important;
+  stroke: #4338CA !important;
+  stroke-width: 1.6px !important;
+}
+html.aurum[data-theme="light"] .pxs-terr-fig svg > g > g:first-child path.nf {
+  stroke: #6366F1 !important;
+  stroke-width: 1.25px !important;
+}
+html.aurum[data-theme="light"] .pxs-terr-fig svg > g > g:not(:first-child) path.sil {
+  fill: #FFFFFF !important;
+  stroke: #4F46E5 !important;
+  stroke-width: 1.35px !important;
+}
+html.aurum[data-theme="light"] .pxs-terr-fig svg > g > g:not(:first-child) path.nf {
+  stroke: #818CF8 !important;
+  stroke-width: 1.2px !important;
+}
+html.aurum[data-theme="light"] .pxs-terr-fig svg path.sil.hi {
+  fill: #EEF2FF !important;
+  stroke: #312E81 !important;
+  stroke-width: 1.8px !important;
+}
+html.aurum[data-theme="light"] .pxs-terr-fig svg > g > g:has(path.sil.hi) path.nf {
+  stroke: #4338CA !important;
+  stroke-width: 1.45px !important;
+}
+html.aurum[data-theme="light"] .pxs-terr-fig svg .dot {
+  fill: #312E81 !important;
+}
+html.aurum[data-theme="light"] .pxs-terr-fig svg .dot.m {
+  fill: #4F46E5 !important;
 }
 html.aurum[data-theme="light"] .pxs-sp {
   background: #4F46E5;
@@ -5648,6 +5682,16 @@ html.aurum[data-theme="light"] .ax-cf-stat {
 }
 html.aurum[data-theme="light"] .ax-cf-stat span { color: #334155; font-weight: 700; }
 html.aurum[data-theme="light"] .ax-cf-stat b { color: #0B1630; }
+html.aurum[data-theme="light"] .ax-cf-stat b.ok { color: #047857 !important; }
+html.aurum[data-theme="light"] .ax-cf-stat b.bad { color: #B91C1C !important; }
+html.aurum[data-theme="light"] .ax-cf-stat:has(b.ok) {
+  background: linear-gradient(135deg, #F0FDF4 0%, #FFFFFF 100%);
+  border-color: #86EFAC;
+}
+html.aurum[data-theme="light"] .ax-cf-stat:has(b.bad) {
+  background: linear-gradient(135deg, #FEF2F2 0%, #FFFFFF 100%);
+  border-color: #FECACA;
+}
 html.aurum[data-theme="light"] .ax-cf-stat small { color: #475569; font-weight: 600; }
 html.aurum[data-theme="light"] .ax-cf-net.pos {
   background: linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%);

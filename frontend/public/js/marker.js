@@ -81,6 +81,11 @@
     el.removeAttribute('data-mk');
   }
 
+  var LIGHT_DASH_SKIP = '.pxs, #cashflow-container, .ax-cf, .ax-hero, .kpi-v3, .dash-card';
+  function isLightDash(el) {
+    return document.documentElement.getAttribute('data-theme') === 'light' && el && el.closest && el.closest(LIGHT_DASH_SKIP);
+  }
+
   /* ════════ text & pills ════════ */
   function judge(el) {
     var txt = el.textContent;
@@ -90,6 +95,7 @@
     for (var i = 0; i < el.children.length; i++) if (el.children[i].classList.contains('ax-hl-in')) inner = el.children[i];
     var tgtOld = inner || el, was = tgtOld.classList.contains('ax-hl');
     strip(tgtOld); el.classList.remove('ax-hl-host');
+    if (isLightDash(el)) return;
     var only = Array.prototype.every.call(el.childNodes, function (c) {
       return c.nodeType === 3 || c === inner || (c.nodeType === 1 && !c.textContent.trim());
     });
@@ -121,6 +127,7 @@
     if (b.getAttribute('data-mkt') === key) return;
     b.setAttribute('data-mkt', key);
     strip(b);
+    if (isLightDash(b)) return;
     var t = clean(b.textContent);
     if (!t || t.length > 36 || !WORDISH.test(t)) return;
     var cs = getComputedStyle(b), bg = rgba(cs.backgroundColor);

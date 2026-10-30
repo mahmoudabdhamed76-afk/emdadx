@@ -1,6 +1,6 @@
 'use strict';
 
-const CACHE      = 'emdadx-v4.39-light-dash-fix';
+const CACHE      = 'emdadx-v4.40-light-harmony';
 // relative to the SW scope, so it also works when the app lives under APP_PATH
 const APP_SHELL  = ['./', './index.html', './manifest.json', './css/aurum.css', './css/ads.css', './js/aurum.js', './js/glowchart.js', './js/stockhub.js', './js/stockcount.js', './js/debts.js', './js/business.js', './js/custody.js', './js/axcore.js', './js/rules.js', './js/forecast.js', './js/purchases.js', './js/xlsx.js', './js/credit.js', './js/monthly.js', './js/notify.js', './js/approvals.js', './js/security.js', './js/aging.js', './js/cheques.js', './js/profit.js', './js/purchase.js', './js/requests.js', './js/isscards.js', './js/users.js', './js/assistant.js', './js/papermeter.js', './js/ticker.js', './js/pulsescene.js', './js/mhome.js', './js/marker.js', './js/picker.js', './js/auditx.js', './js/fxtape.js', './js/forcepw.js', './js/centerstmt.js', './js/navsmart.js', './js/deskmore.js', './js/aibot.js', './js/adscore.js', './js/adsadmin.js', './js/axfigs.js', './js/hairhero.js', './vendor/hairline.js', './js/settingsx.js', './vendor/gsap.min.js', './js/pushx.js', './js/staffadmin.js', './js/clients.js', './vendor/qrcode.js', './vendor/leaflet/leaflet.js', './vendor/leaflet/leaflet.css',
                     './fonts/fonts.css', './vendor/chart.umd.js', './vendor/modern-screenshot.js',
@@ -57,6 +57,22 @@ self.addEventListener('fetch', e => {
         done = true; clearTimeout(t); resolve(res);
       }).catch(() => fromCache().then(r => { if (!done) { done = true; clearTimeout(t); resolve(r || Response.error()); } }));
     }));
+    return;
+  }
+
+  // App CSS & JS: network-first so UI/theme fixes appear on first load; fallback to cache offline
+  if ((url.pathname.endsWith('.css') || url.pathname.endsWith('.js')) && !url.pathname.includes('/vendor/')) {
+    e.respondWith(
+      fetch(e.request)
+        .then(res => {
+          if (res && res.status === 200 && res.type !== 'opaque') {
+            const clone = res.clone();
+            caches.open(CACHE).then(c => c.put(e.request, clone));
+          }
+          return res;
+        })
+        .catch(() => caches.match(e.request).then(r => r || caches.match(e.request, { ignoreSearch: true })))
+    );
     return;
   }
 

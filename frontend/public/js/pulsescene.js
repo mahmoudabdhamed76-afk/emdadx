@@ -20,13 +20,15 @@
   var state = { active: 'paper', lastIntro: 0, ctx: null, obs: null, io: null };
 
   var META = {
-    paper:     { title: 'الورق',          color: '#7CF0C5', icon: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h6"/>', go: 'stock',     graph: 'رصيد الورق' },
-    ink:       { title: 'الحبر',          color: '#FF7EB6', icon: '<path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/>',                                  go: 'stock',     graph: 'رصيد الحبر' },
-    invoices:  { title: 'الفواتير',       color: '#A99BFF', icon: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8"/>', go: 'invoices', graph: 'نسبة تحصيل الفواتير' },
-    collect:   { title: 'تحصيل اليوم',    color: '#6FB6FF', icon: '<path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>',                   go: 'payments',  graph: 'التحصيل اليومي' },
-    suppliers: { title: 'عليك للموردين',  color: '#FFC46B', icon: '<path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"/>',                                        go: 'suppliers', graph: 'المستحق للموردين' },
-    treasury:  { title: 'الخزنة',         color: '#5CE89A', icon: '<rect x="2" y="6" width="20" height="14" rx="3"/><path d="M16 13h4M2 10h20"/>',          go: 'payments',  graph: 'رصيد الخزنة' }
+    paper:     { title: 'الورق',          color: '#7CF0C5', lightColor: '#0D9488', icon: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h6"/>', go: 'stock',     graph: 'رصيد الورق' },
+    ink:       { title: 'الحبر',          color: '#FF7EB6', lightColor: '#DB2777', icon: '<path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/>',                                  go: 'stock',     graph: 'رصيد الحبر' },
+    invoices:  { title: 'الفواتير',       color: '#A99BFF', lightColor: '#4F46E5', icon: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8"/>', go: 'invoices', graph: 'نسبة تحصيل الفواتير' },
+    collect:   { title: 'تحصيل اليوم',    color: '#6FB6FF', lightColor: '#2563EB', icon: '<path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>',                   go: 'payments',  graph: 'التحصيل اليومي' },
+    suppliers: { title: 'عليك للموردين',  color: '#FFC46B', lightColor: '#D97706', icon: '<path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"/>',                                        go: 'suppliers', graph: 'المستحق للموردين' },
+    treasury:  { title: 'الخزنة',         color: '#5CE89A', lightColor: '#15803D', icon: '<rect x="2" y="6" width="20" height="14" rx="3"/><path d="M16 13h4M2 10h20"/>',          go: 'payments',  graph: 'رصيد الخزنة' }
   };
+  function isLight() { return document.documentElement.getAttribute('data-theme') === 'light'; }
+  function colorOf(k) { var m = META[k] || META.paper; return (isLight() && m.lightColor) ? m.lightColor : m.color; }
   var ORDER = ['paper', 'ink', 'invoices', 'collect', 'suppliers', 'treasury'];
   var LEVEL = { success: ['ok', 'آمن'], warning: ['warn', 'متابعة'], danger: ['bad', 'تنبيه'], info: ['info', ''], purple: ['info', ''] };
 
@@ -214,7 +216,7 @@
       '</div>' +
       '<div class="pxs-tiles" role="tablist" aria-label="اختار المؤشر">' + ORDER.map(function (k) {
         var c = cards[k] || {}, L = LEVEL[c.level] || LEVEL.info;
-        return '<button class="pxs-tile lv-' + L[0] + '" role="tab" data-k="' + k + '" style="--c:' + META[k].color + '">' +
+        return '<button class="pxs-tile lv-' + L[0] + '" role="tab" data-k="' + k + '" style="--c:' + colorOf(k) + '">' +
           '<span class="pxs-ti">' + ico(META[k].icon) + '</span>' +
           '<span class="pxs-tt">' + META[k].title + '</span>' +
           '<b class="pxs-tv" data-v="' + (c.value || '—') + '">' + (c.value || '—') + '</b>' +
@@ -484,10 +486,10 @@
       var tip = sec.querySelector('.pxs-graph');
       function select(k, animate) {
         state.active = k;
-        var m = META[k], raw = series(k), pct = toPct(k, raw), c = state.cards[k] || {};
-        sec.querySelectorAll('.pxs-tile').forEach(function (t) { var on = t.dataset.k === k; t.classList.toggle('on', on); t.setAttribute('aria-selected', on); });
-        sec.style.setProperty('--gc', m.color);
-        G.color(m.color);
+        var m = META[k], col = colorOf(k), raw = series(k), pct = toPct(k, raw), c = state.cards[k] || {};
+        sec.querySelectorAll('.pxs-tile').forEach(function (t) { var on = t.dataset.k === k; t.classList.toggle('on', on); t.setAttribute('aria-selected', on); t.style.setProperty('--c', colorOf(t.dataset.k)); });
+        sec.style.setProperty('--gc', col);
+        G.color(col);
         tip.querySelector('.pxs-gname').textContent = m.graph + ' · آخر ' + DAYS + ' يوم';
         tip.querySelector('.pxs-gval').textContent = c.value || '—';
         var a = raw[0], b = raw[raw.length - 1];
@@ -628,6 +630,11 @@
     window.renderDashboard = w;
   }
   window.AXPulse = { mount: mount };
+  try {
+    new MutationObserver(function () {
+      if (state.select && document.getElementById('pxs')) state.select(state.active || 'paper', false);
+    }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  } catch (e) {}
   wrap();
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', wrap);
   window.addEventListener('load', function () {
