@@ -5444,108 +5444,339 @@ html[dir=rtl] .rd-man { transform: translateX(50%); }
 }
 
 /* ════════════════════════════════════════════════════════════════════
-   72. 4.38 · إصلاح وتطوير الوضع النهاري والليلي الشامل
-   - لوحة النبض (.pxs) وشريط النبض (.axtk) في الوضع النهاري بقت فاتحة ومتناسقة وواضحة
+   72. 4.39 · إصلاح وتطوير الوضع النهاري والليلي الشامل وتناسق لوحة التحكم
+   - لوحة النبض (.pxs) والأعمدة ثلاثية الأبعاد (.pxs-terr-fig) والرسم البياني والكروت في الوضع النهاري بقت عالية التباين ومتناسقة 100% زي الوضع الداكن
+   - إلغاء لطخات القلم الفسفوري العشوائية في لوحة التحكم بالوضع النهاري
+   - توحيد تصميم ملخص يومك (.ax-hero) والتدفق النقدي (.ax-cf) وكروت لوحة التحكم في الوضع النهاري
    - كروت مهام الموظفين (.tkc) وخريطة الموظفين في الوضع الليلي بقت داكنة ومريحة للعين
 ════════════════════════════════════════════════════════════════════ */
 html.aurum[data-theme="light"] {
   --axg: linear-gradient(90deg, #065F46, #0F766E 55%, #9A3412);
 }
+
+/* 1) لوحة النبض الرئيسية (.pxs) والأعمدة ثلاثية الأبعاد في الوضع النهاري */
 html.aurum[data-theme="light"] .pxs {
   --bg: #FFFFFF;
   color: #0B1630;
-  background: linear-gradient(180deg, #F8FAFC 0%, #FFFFFF 100%);
-  border: 1px solid rgba(11, 22, 48, .1);
-  box-shadow: 0 20px 48px -22px rgba(11, 22, 48, .14), 0 1px 3px rgba(11, 22, 48, .05);
+  background: #FFFFFF;
+  border: 1px solid #CBD5E1;
+  box-shadow: 0 18px 42px -18px rgba(11, 22, 48, .14), 0 2px 6px rgba(11, 22, 48, .05);
+}
+html.aurum[data-theme="light"] .pxs-stage {
+  background: linear-gradient(180deg, #E8EEFA 0%, #F1F5FD 50%, #FFFFFF 100%);
+}
+html.aurum[data-theme="light"] .pxs-g1 {
+  background: radial-gradient(circle, rgba(79, 70, 229, .14), transparent 70%);
+}
+html.aurum[data-theme="light"] .pxs-g2 {
+  background: radial-gradient(circle, rgba(13, 148, 136, .12), transparent 70%);
+}
+html.aurum[data-theme="light"] .pxs-g3 {
+  background: radial-gradient(ellipse, color-mix(in srgb, var(--gc) 18%, transparent), transparent 70%);
+  opacity: .45;
 }
 html.aurum[data-theme="light"] .pxs-terr-fig {
-  --hairline-plate: #F1F5F9;
-  --hairline-edge: #CBD5E1;
-  --hairline-edge-w: 1px;
+  --hairline-plate: #FFFFFF;
+  --hairline-hi: #3730A3;
+  --hairline-edge: #4F46E5;
+  --hairline-mid: #6366F1;
+  --hairline-lo: #A5B4FC;
+  --hairline-stroke: 1.35;
+  filter: drop-shadow(0 12px 24px rgba(67, 56, 202, .16));
+}
+html.aurum[data-theme="light"] .pxs-sp {
+  background: #4F46E5;
+  box-shadow: 0 0 10px rgba(79, 70, 229, .65), 0 0 3px #4338CA;
+}
+html.aurum[data-theme="light"] .pxs-ev {
+  background: rgba(255, 255, 255, .96);
+  color: #0B1630;
+  border: 1.5px solid #6366F1;
+  box-shadow: 0 12px 28px -6px rgba(67, 56, 202, .22), 0 0 0 4px rgba(99, 102, 241, .10);
+}
+html.aurum[data-theme="light"] .pxs-ev > i {
+  background: #EEF2FF;
+  border: 1px solid #C7D2FE;
+}
+html.aurum[data-theme="light"] .pxs-ev small { color: #4338CA; font-weight: 700; }
+html.aurum[data-theme="light"] .pxs-ev b { color: #3730A3; }
+html.aurum[data-theme="light"] .pxs-ev::after {
+  border-right-color: #6366F1;
+  border-bottom-color: #6366F1;
 }
 html.aurum[data-theme="light"] .pxs-cap {
   color: #1E293B;
-  background: rgba(255, 255, 255, .88);
-  border-color: rgba(11, 22, 48, .1);
-  box-shadow: 0 4px 14px rgba(11, 22, 48, .06);
+  background: rgba(255, 255, 255, .92);
+  border: 1px solid #CBD5E1;
+  box-shadow: 0 4px 14px rgba(11, 22, 48, .08);
 }
+html.aurum[data-theme="light"] .pxs-cap b { color: #0B1630; }
+
+/* 2) الرسم البياني داخل لوحة النبض (.pxs-graph) في الوضع النهاري */
 html.aurum[data-theme="light"] .pxs-graph {
-  background: linear-gradient(to top, #FFFFFF 12%, rgba(255, 255, 255, .86) 58%, transparent);
+  background: linear-gradient(to top, #FFFFFF 18%, rgba(255, 255, 255, .88) 62%, transparent);
 }
-html.aurum[data-theme="light"] .pxs-glbl { color: #475569; }
-html.aurum[data-theme="light"] .pxs-gval { color: #0B1630; }
-html.aurum[data-theme="light"] .pxs-gval small,
-html.aurum[data-theme="light"] .pxs-gd { color: #64748B; }
-html.aurum[data-theme="light"] .pxs-gd.good { color: #0F8A43; }
-html.aurum[data-theme="light"] .pxs-gd.bad { color: #C81E1E; }
-html.aurum[data-theme="light"] .pxs-axd { fill: #64748B; }
-html.aurum[data-theme="light"] .pxs-cross { stroke: rgba(11, 22, 48, .32); }
+html.aurum[data-theme="light"] .pxs-gname {
+  color: #334155 !important;
+  font-weight: 700;
+  font-size: 13.5px;
+}
+html.aurum[data-theme="light"] .pxs-gval {
+  color: #0B1630 !important;
+  text-shadow: none !important;
+}
+html.aurum[data-theme="light"] .pxs-gdelta {
+  background: #E2E8F0;
+  color: #1E293B;
+  border: 1px solid #CBD5E1;
+  font-weight: 800;
+}
+html.aurum[data-theme="light"] .pxs-gdelta.up {
+  background: #DCFCE7;
+  color: #15803D !important;
+  border-color: #86EFAC;
+}
+html.aurum[data-theme="light"] .pxs-gdelta.down {
+  background: #FEE2E2;
+  color: #B91C1C !important;
+  border-color: #FCA5A5;
+}
+html.aurum[data-theme="light"] .pxs-hair {
+  stroke: #CBD5E1 !important;
+  stroke-width: 1;
+  stroke-dasharray: 4 4;
+}
+html.aurum[data-theme="light"] .pxs-ax,
+html.aurum[data-theme="light"] .pxs-axd {
+  fill: #334155 !important;
+  font-weight: 700;
+}
+html.aurum[data-theme="light"] .pxs-line {
+  stroke: color-mix(in srgb, var(--gc) 72%, #0B1630) !important;
+  stroke-width: 3;
+}
+html.aurum[data-theme="light"] .pxs-lglow {
+  stroke: color-mix(in srgb, var(--gc) 78%, #0B1630) !important;
+  opacity: .28;
+}
+html.aurum[data-theme="light"] .pxs-runner {
+  stroke: #0B1630 !important;
+  opacity: .75;
+}
+html.aurum[data-theme="light"] .pxs-head {
+  fill: #0B1630 !important;
+}
+html.aurum[data-theme="light"] .pxs-now {
+  fill: color-mix(in srgb, var(--gc) 72%, #0B1630) !important;
+  stroke: #FFFFFF !important;
+  stroke-width: 3;
+}
+html.aurum[data-theme="light"] .pxs-cross { stroke: rgba(11, 22, 48, .35); }
 html.aurum[data-theme="light"] .pxs-tip {
   color: #0B1630;
-  background: rgba(255, 255, 255, .96);
-  box-shadow: 0 0 0 1px rgba(11, 22, 48, .12), 0 14px 32px -8px rgba(11, 22, 48, .22);
+  background: rgba(255, 255, 255, .98);
+  box-shadow: 0 0 0 1px #CBD5E1, 0 14px 32px -8px rgba(11, 22, 48, .22);
 }
 html.aurum[data-theme="light"] .pxs-tip-d,
 html.aurum[data-theme="light"] .pxs-tip-c { color: #475569; }
-html.aurum[data-theme="light"] .pxs-tip-c.good { color: #0F8A43; }
-html.aurum[data-theme="light"] .pxs-tip-c.bad { color: #C81E1E; }
-html.aurum[data-theme="light"] .pxs-ticker {
-  background: linear-gradient(to top, rgba(241, 245, 249, .96), rgba(248, 250, 252, .82));
-  border-top: 1px solid rgba(11, 22, 48, .08);
-}
+html.aurum[data-theme="light"] .pxs-tip-c.good { color: #15803D; font-weight: 700; }
+html.aurum[data-theme="light"] .pxs-tip-c.bad { color: #B91C1C; font-weight: 700; }
+
+/* 3) الكروت الستة أسفل لوحة النبض (.pxs-tiles) بألوان غنية ومتناسقة في الوضع النهاري */
 html.aurum[data-theme="light"] .pxs-tiles {
-  background: #F1F5F9;
-  border-top: 1px solid rgba(11, 22, 48, .08);
+  background: #EEF2F8;
+  border-top: 1px solid #CBD5E1;
+  padding: 14px;
 }
+html.aurum[data-theme="light"] .pxs-tile[data-k="paper"]     { --c: #0D9488 !important; }
+html.aurum[data-theme="light"] .pxs-tile[data-k="ink"]       { --c: #DB2777 !important; }
+html.aurum[data-theme="light"] .pxs-tile[data-k="invoices"]  { --c: #4F46E5 !important; }
+html.aurum[data-theme="light"] .pxs-tile[data-k="collect"]   { --c: #2563EB !important; }
+html.aurum[data-theme="light"] .pxs-tile[data-k="suppliers"] { --c: #D97706 !important; }
+html.aurum[data-theme="light"] .pxs-tile[data-k="treasury"],
+html.aurum[data-theme="light"] .pxs-tile[data-k="cash"]      { --c: #15803D !important; }
 html.aurum[data-theme="light"] .pxs-tile {
   color: #0B1630;
   background: #FFFFFF;
-  box-shadow: 0 2px 6px rgba(11, 22, 48, .04), inset 0 0 0 1px rgba(11, 22, 48, .07);
+  border: 1px solid #CBD5E1;
+  box-shadow: 0 2px 6px rgba(11, 22, 48, .05);
 }
-html.aurum[data-theme="light"] .pxs-tile:hover { background: #F8FAFC; }
+html.aurum[data-theme="light"] .pxs-tile:hover {
+  background: #F8FAFC;
+  border-color: #94A3B8;
+}
 html.aurum[data-theme="light"] .pxs-tile.on {
-  background: #FFFFFF;
-  box-shadow: inset 0 0 0 1.8px var(--c), 0 10px 26px -12px var(--c);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--c) 8%, #FFFFFF) 0%, #FFFFFF 100%);
+  border-color: var(--c);
+  box-shadow: 0 0 0 1.5px var(--c), 0 10px 24px -10px color-mix(in srgb, var(--c) 45%, transparent);
 }
-html.aurum[data-theme="light"] .pxs-tt { color: #475569; font-weight: 600; }
-html.aurum[data-theme="light"] .pxs-ts { color: #475569; }
-html.aurum[data-theme="light"] .pxs-ts i { background: #94A3B8; }
-html.aurum[data-theme="light"] .lv-ok .pxs-ts { color: #0F8A43; font-weight: 700; }
-html.aurum[data-theme="light"] .lv-warn .pxs-ts { color: #B86B00; font-weight: 700; }
-html.aurum[data-theme="light"] .lv-bad .pxs-ts { color: #C81E1E; font-weight: 700; }
+html.aurum[data-theme="light"] .pxs-ti {
+  background: color-mix(in srgb, var(--c) 14%, #FFFFFF);
+  color: var(--c);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c) 24%, transparent);
+}
+html.aurum[data-theme="light"] .pxs-go {
+  background: color-mix(in srgb, var(--c) 14%, #FFFFFF);
+  color: var(--c);
+  border: 1px solid color-mix(in srgb, var(--c) 28%, transparent);
+}
+html.aurum[data-theme="light"] .pxs-tt { color: #334155; font-weight: 700; }
+html.aurum[data-theme="light"] .pxs-tv { color: #0B1630; font-weight: 800; }
+html.aurum[data-theme="light"] .pxs-ts { color: #475569; font-weight: 600; }
+html.aurum[data-theme="light"] .pxs-ts i { background: #64748B; }
+html.aurum[data-theme="light"] .lv-ok .pxs-ts { color: #15803D; font-weight: 700; }
+html.aurum[data-theme="light"] .lv-ok .pxs-ts i { background: #16A34A; box-shadow: 0 0 0 3px rgba(22, 163, 74, .18); }
+html.aurum[data-theme="light"] .lv-warn .pxs-ts { color: #B45309; font-weight: 700; }
+html.aurum[data-theme="light"] .lv-warn .pxs-ts i { background: #D97706; box-shadow: 0 0 0 3px rgba(217, 119, 6, .18); }
+html.aurum[data-theme="light"] .lv-bad .pxs-ts { color: #B91C1C; font-weight: 700; }
+html.aurum[data-theme="light"] .lv-bad .pxs-ts i { background: #DC2626; box-shadow: 0 0 0 3px rgba(220, 38, 38, .18); }
 
-/* شريط النبض في الوضع النهاري */
+/* 4) إلغاء لطخات القلم الفسفوري العشوائية في لوحة التحكم بالوضع النهاري للحفاظ على التناسق */
+html.aurum[data-theme="light"] :is(.pxs, .ax-cf-stats, .ax-cf-foot, .ax-hero, .kpi-v3, .dash-card) .ax-hl {
+  background-image: none !important;
+  color: inherit !important;
+  -webkit-text-fill-color: currentColor !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* 5) التدفق النقدي (.ax-cf) وملخص يومك (.ax-hero) وباقي كروت لوحة التحكم في الوضع النهاري */
+html.aurum[data-theme="light"] .ax-cf-stat {
+  background: #F8FAFC;
+  border: 1px solid #CBD5E1;
+  box-shadow: 0 2px 5px rgba(11, 22, 48, .04);
+}
+html.aurum[data-theme="light"] .ax-cf-stat span { color: #334155; font-weight: 700; }
+html.aurum[data-theme="light"] .ax-cf-stat b { color: #0B1630; }
+html.aurum[data-theme="light"] .ax-cf-stat small { color: #475569; font-weight: 600; }
+html.aurum[data-theme="light"] .ax-cf-net.pos {
+  background: linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%);
+  border: 1px solid #6EE7B7;
+}
+html.aurum[data-theme="light"] .ax-cf-net.pos span { color: #065F46; }
+html.aurum[data-theme="light"] .ax-cf-net.pos b { color: #047857 !important; }
+html.aurum[data-theme="light"] .ax-cf-net.pos small { color: #065F46; }
+html.aurum[data-theme="light"] .ax-cf-net.neg {
+  background: linear-gradient(135deg, #FEF2F2 0%, #FEE2E2 100%);
+  border: 1px solid #FCA5A5;
+}
+html.aurum[data-theme="light"] .ax-cf-net.neg b { color: #B91C1C !important; }
+html.aurum[data-theme="light"] .axc-hair { stroke: #CBD5E1; }
+html.aurum[data-theme="light"] .axc-tick { fill: #334155; font-weight: 700; }
+
+/* ملخص يومك (.ax-hero) متناسق مع الوضع النهاري */
+html.aurum[data-theme="light"] .ax-hero {
+  background: linear-gradient(135deg, #FFFFFF 0%, #F1F5FD 100%) !important;
+  color: #0B1630 !important;
+  border: 1px solid #CBD5E1 !important;
+  box-shadow: 0 12px 32px -12px rgba(11, 22, 48, .12), 0 2px 6px rgba(11, 22, 48, .04) !important;
+}
+html.aurum[data-theme="light"] .ax-eyebrow { color: #4F46E5 !important; font-weight: 700 !important; }
+html.aurum[data-theme="light"] .ax-hero-title { color: #0B1630 !important; }
+html.aurum[data-theme="light"] .ax-hero-date { color: #475569 !important; font-weight: 600; }
+html.aurum[data-theme="light"] .ax-hero-date i { background: #6366F1 !important; }
+html.aurum[data-theme="light"] .ax-today { border-color: #CBD5E1 !important; }
+html.aurum[data-theme="light"] .ax-fig { border-color: #CBD5E1 !important; }
+html.aurum[data-theme="light"] .ax-fig span,
+html.aurum[data-theme="light"] .ax-fig em { color: #475569 !important; font-weight: 600; }
+html.aurum[data-theme="light"] .ax-fig b { color: #0B1630 !important; }
+html.aurum[data-theme="light"] .ax-fig.ax-neg b { color: #DC2626 !important; }
+html.aurum[data-theme="light"] .ax-act {
+  background: #F8FAFC !important;
+  color: #0B1630 !important;
+  border: 1px solid #CBD5E1 !important;
+  box-shadow: 0 1px 2px rgba(11, 22, 48, .04);
+}
+html.aurum[data-theme="light"] .ax-act:hover {
+  background: #EEF2FF !important;
+  border-color: #6366F1 !important;
+  color: #3730A3 !important;
+}
+html.aurum[data-theme="light"] .ax-act-main {
+  background: #002055 !important;
+  color: #FFFFFF !important;
+  border-color: #002055 !important;
+}
+html.aurum[data-theme="light"] .ax-act-main:hover {
+  background: #0A2D6E !important;
+  color: #FFFFFF !important;
+}
+html.aurum[data-theme="light"] .ax-act-sep { background: #CBD5E1 !important; }
+html.aurum[data-theme="light"] .ax-target {
+  background: #F8FAFC !important;
+  border: 1px solid #CBD5E1 !important;
+  color: #0B1630 !important;
+}
+html.aurum[data-theme="light"] .ax-target-head { color: #334155 !important; font-weight: 700; }
+html.aurum[data-theme="light"] .ax-link { color: #4F46E5 !important; font-weight: 700; }
+html.aurum[data-theme="light"] .ax-ring-track { stroke: #E2E8F0 !important; }
+html.aurum[data-theme="light"] .ax-ring-pace { stroke: #0B1630 !important; }
+html.aurum[data-theme="light"] .ax-ring-center span { color: #475569 !important; font-weight: 600; }
+html.aurum[data-theme="light"] .ax-target-state {
+  background: #EEF2F8 !important;
+  color: #0B1630 !important;
+  border: 1px solid #CBD5E1;
+}
+html.aurum[data-theme="light"] .ax-target-meta > div { color: #475569 !important; }
+html.aurum[data-theme="light"] .ax-target-meta b { color: #0B1630 !important; }
+html.aurum[data-theme="light"] .ax-target-meta .ax-target-hint { border-top-color: #CBD5E1 !important; color: #334155 !important; }
+html.aurum[data-theme="light"] .ax-target-hint b { color: #4F46E5 !important; }
+html.aurum[data-theme="light"] .ax-target-hint.ax-ok { color: #15803D !important; }
+html.aurum[data-theme="light"] .ax-target-empty { color: #475569 !important; }
+html.aurum[data-theme="light"] .ax-target-empty b { color: #0B1630 !important; }
+
+/* كروت التنبيهات والمديونيات في لوحة التحكم بالوضع النهاري */
+html.aurum[data-theme="light"] .alert-row {
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+}
+html.aurum[data-theme="light"] .alert-row:hover { background: #F1F5F9; }
+html.aurum[data-theme="light"] .alert-row.alert-warning .alert-icon { background: #FEF3C7; color: #B45309; }
+html.aurum[data-theme="light"] .alert-row.alert-danger  .alert-icon { background: #FEE2E2; color: #B91C1C; }
+html.aurum[data-theme="light"] .alert-row.alert-info    .alert-icon { background: #EEF2FF; color: #4338CA; }
+html.aurum[data-theme="light"] .alert-row.alert-success .alert-icon { background: #DCFCE7; color: #15803D; }
+html.aurum[data-theme="light"] .debtor-row .debtor-avatar { background: #EEF2FF; color: #4338CA; }
+html.aurum[data-theme="light"] .debtor-row .debtor-amount { color: #DC2626; }
+
+/* شريط النبض والشريط العلوي في الوضع النهاري */
+@media (min-width: 769px) {
+  html.aurum[data-theme="light"] .topbar {
+    background: rgba(255, 255, 255, .94) !important;
+    border-bottom: 1px solid #CBD5E1 !important;
+    box-shadow: 0 4px 16px -8px rgba(11, 22, 48, .08) !important;
+  }
+}
 html.aurum[data-theme="light"] .axtk { color: #0B1630; }
 html.aurum[data-theme="light"] .axtk--bar {
   background: #FFFFFF;
-  border: 1px solid rgba(11, 22, 48, .09);
+  border: 1px solid #CBD5E1;
   box-shadow: var(--ax-shadow);
 }
 html.aurum[data-theme="light"] .pxs-tkhost .axtk--bar {
   background: #F1F5F9;
   border: 0;
-  border-bottom: 1px solid rgba(11, 22, 48, .08);
+  border-bottom: 1px solid #CBD5E1;
 }
 html.aurum[data-theme="light"] .topbar .fx-tape .axtk--bar {
-  background: #FFFFFF;
-  box-shadow: inset 0 0 0 1px rgba(11, 22, 48, .1), 0 2px 6px rgba(11, 22, 48, .04);
+  background: #F8FAFC;
+  box-shadow: inset 0 0 0 1px #CBD5E1, 0 1px 3px rgba(11, 22, 48, .04);
 }
-html.aurum[data-theme="light"] .axtk-sep { background: rgba(11, 22, 48, .18); }
+html.aurum[data-theme="light"] .axtk-sep { background: #94A3B8; }
 html.aurum[data-theme="light"] .axtk-it:hover,
-html.aurum[data-theme="light"] .axtk-ev:hover { background: rgba(11, 22, 48, .05); }
-html.aurum[data-theme="light"] .axtk-it em { color: #475569; font-weight: 600; }
+html.aurum[data-theme="light"] .axtk-ev:hover { background: rgba(11, 22, 48, .06); }
+html.aurum[data-theme="light"] .axtk-it em { color: #334155; font-weight: 700; }
 html.aurum[data-theme="light"] .axtk-it b { color: #0B1630; }
 html.aurum[data-theme="light"] .axtk-it small,
-html.aurum[data-theme="light"] .topbar .fx-tape .axtk-it small { color: #64748B; }
-html.aurum[data-theme="light"] .axtk-d.good { color: #0F8A43; background: rgba(15, 138, 67, .12); }
-html.aurum[data-theme="light"] .axtk-d.bad { color: #C81E1E; background: rgba(200, 30, 30, .12); }
+html.aurum[data-theme="light"] .topbar .fx-tape .axtk-it small { color: #475569; font-weight: 600; }
+html.aurum[data-theme="light"] .axtk-d.good { color: #15803D; background: #DCFCE7; }
+html.aurum[data-theme="light"] .axtk-d.bad { color: #B91C1C; background: #FEE2E2; }
 html.aurum[data-theme="light"] .axtk-d.flat { color: #64748B; }
-html.aurum[data-theme="light"] .axtk-ev { background: rgba(11, 22, 48, .05); color: #334155; }
+html.aurum[data-theme="light"] .axtk-ev { background: #EEF2F8; color: #1E293B; }
 html.aurum[data-theme="light"] .axtk-ev b { color: #0B1630; }
-html.aurum[data-theme="light"] .axtk-ev small { color: #64748B; }
+html.aurum[data-theme="light"] .axtk-ev small { color: #475569; }
 html.aurum[data-theme="light"] .axtk-live {
   color: #0B1630;
-  box-shadow: inset 1px 0 0 rgba(11, 22, 48, .08) !important;
+  box-shadow: inset 1px 0 0 #CBD5E1 !important;
 }
 
 /* كروت مهام الموظفين والخريطة في الوضع الليلي */
