@@ -45,7 +45,13 @@
     if (document.getElementById('cl-css')) return;
     var s = document.createElement('style'); s.id = 'cl-css';
     s.textContent = [
-      '.cl{--cl-c:var(--ax-card,rgba(255,255,255,.045));--cl-l:var(--ax-line,rgba(255,255,255,.09));--cl-a:#14b8a6}',
+      '.cl{--cl-c:var(--ax-surface,rgba(255,255,255,.045));--cl-l:var(--ax-line,rgba(255,255,255,.09));--cl-a:#14b8a6}',
+      'html[data-theme="light"] .cl .cl-g,html[data-theme="light"] .cl .cl-st div,html[data-theme="light"] .cl .cl-rq,html[data-theme="light"] .cl .cl-tb,html[data-theme="light"] .cl .cl-q{box-shadow:0 2px 8px rgba(11,22,48,.04)}',
+      'html[data-theme="light"] .cl .cl-b.d b{color:#dc2626}html[data-theme="light"] .cl .cl-wa{color:#16a34a!important}',
+      'html[data-theme="light"] .cl .cl-tg.new{background:rgba(220,38,38,.12);color:#dc2626}html[data-theme="light"] .cl .cl-tg.ok{background:rgba(217,119,6,.14);color:#b45309}html[data-theme="light"] .cl .cl-tg.sent{background:rgba(22,163,74,.14);color:#15803d}html[data-theme="light"] .cl .cl-tg.road{background:rgba(37,99,235,.14);color:#1d4ed8}html[data-theme="light"] .cl .cl-tg.no{background:rgba(100,116,139,.14);color:#475569}',
+      '.cl-cm{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;margin-inline-start:6px;vertical-align:middle}',
+      '.cl-cm.g{background:rgba(34,197,94,.14);color:#22c55e}.cl-cm.y{background:rgba(245,158,11,.15);color:#f59e0b}.cl-cm.r{background:rgba(239,68,68,.15);color:#ef4444}.cl-cm.p{background:rgba(59,130,246,.15);color:#3b82f6}',
+      'html[data-theme="light"] .cl-cm.g{color:#15803d}html[data-theme="light"] .cl-cm.y{color:#b45309}html[data-theme="light"] .cl-cm.r{color:#b91c1c}html[data-theme="light"] .cl-cm.p{color:#1d4ed8}',
       '.cl-hd{display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:14px}.cl-hd h2{margin:0;font-size:24px}.cl-hd p{margin:4px 0 0;opacity:.7;font-size:13.5px;max-width:560px}',
       '.cl-tb{display:flex;gap:6px;padding:5px;border-radius:16px;background:var(--cl-c);border:1px solid var(--cl-l);margin-bottom:14px}',
       '.cl-tb button{flex:1;border:0;background:transparent;color:inherit;font:inherit;font-weight:700;font-size:14.5px;padding:11px 10px;border-radius:12px;cursor:pointer;opacity:.7;display:flex;align-items:center;justify-content:center;gap:8px}',
@@ -82,32 +88,43 @@
   }
 
   /* ── data ── */
+  function promises() { return S()._promises || {}; }
+  function savePromises(p) { S()._promises = p; if (typeof DB !== 'undefined' && DB.save) DB.save(); }
   function rows() {
-    var m = today().slice(0, 7), L = links(), byC = {};
+    var m = today().slice(0, 7), L = links(), byC = {}, X = window.AXCore, td = today(), pr = promises();
     A('issuances').forEach(function (i) {
       var x = byC[i.customerId] || (byC[i.customerId] = { n: 0, val: 0, last: '' });
       if (String(i.date || '').slice(0, 7) === m) { x.n++; x.val += Number(i.total) || 0; }
       if (String(i.date || '') > x.last) x.last = String(i.date || '');
     });
-    return A('customers').filter(function (c) { return c && !c.archived; }).map(function (c) { var x = byC[c.id] || { n: 0, val: 0, last: '' }; return { c: c, tok: L[c.id] || '', n: x.n, val: x.val, last: x.last, bal: Number(c.balance) || 0 }; });
+    return A('customers').filter(function (c) { return c && !c.archived; }).map(function (c) {
+      var x = byC[c.id] || { n: 0, val: 0, last: '' }, bal = Number(c.balance) || 0;
+      var od = (bal > 0.5 && X && X.aging) ? (X.aging(D(), c.id, td).oldestDays || 0) : 0;
+      return { c: c, tok: L[c.id] || '', n: x.n, val: x.val, last: x.last, bal: bal, od: od, prom: pr[c.id] || null };
+    });
   }
 
   /* ── the centers tab ── */
   function rowHtml(r) {
     var c = r.c, ph = phoneOf(c), op = ui.open[c.id];
+    var cm = r.bal <= 0.5 || r.od < 14 ? '<span class="cl-cm g" title="ملتزم بالسداد">🟢 ملتزم</span>'
+      : r.od <= 45 ? '<span class="cl-cm y" title="متأخر ' + r.od + ' يوم">🟡 ' + r.od + ' يوم</span>'
+      : '<span class="cl-cm r" title="متأخر ' + r.od + ' يوم">🔴 متأخر ' + r.od + 'ي</span>';
+    if (r.prom && r.prom.date >= today() && r.bal > 0.5) cm += '<span class="cl-cm p" title="' + esc(r.prom.note || 'وعد دفع') + '">📅 وعد ' + esc(r.prom.date.slice(5).replace('-', '/')) + '</span>';
     return '<div class="cl-r' + (op ? ' op' : '') + '" data-c="' + c.id + '"><div class="cl-rh" onclick="AXClients.toggle(\'' + c.id + '\')"><span class="cl-av">' + esc(String(c.name || '?').trim().charAt(0)) + '</span>' +
-      '<div class="cl-n"><b>' + esc(c.name) + '</b><small>' + (r.n ? '🚚 ' + r.n + ' صرف الشهر ده' : (r.last ? 'آخر صرف ' + esc(r.last) : 'مفيش صرف لسه')) + '</small></div>' +
+      '<div class="cl-n"><b>' + esc(c.name) + cm + '</b><small>' + (r.n ? '🚚 ' + r.n + ' صرف الشهر ده' : (r.last ? 'آخر صرف ' + esc(r.last) : 'مفيش صرف لسه')) + '</small></div>' +
       '<div class="cl-b ' + (r.bal > 0.5 ? 'd' : '') + '"><b>' + num(Math.max(0, r.bal)) + '</b><small>' + (r.bal > 0.5 ? 'عليه' : 'مسدد') + '</small></div></div>' +
       '<div class="cl-rb">' + (r.tok
         ? '<div class="cl-l"><input readonly value="' + esc(url(r.tok)) + '" onclick="this.select()"><button class="btn btn-secondary btn-sm" onclick="AXClients.copy(\'' + c.id + '\')">نسخ</button></div>' +
           '<div class="cl-a"><a class="btn btn-secondary btn-sm" href="' + esc(url(r.tok)) + '" target="_blank" rel="noopener">👁 فتح</a>' +
           (ph ? '<button class="btn btn-secondary btn-sm cl-wa" onclick="AXClients.wa(\'' + c.id + '\')">واتساب</button>' : '') +
           '<button class="btn btn-secondary btn-sm" onclick="AXClients.qr(\'' + c.id + '\')">▦ باركود</button>' +
+          (r.bal > 0.5 ? '<button class="btn btn-secondary btn-sm" onclick="AXClients.promise(\'' + c.id + '\')">📅 وعد دفع</button>' : '') +
           '<button class="btn btn-secondary btn-sm" onclick="AXClients.reset(\'' + c.id + '\')" title="امسح طلبات الورق أو الصيانة من صفحة المركز">🧹 ريست</button>' +
           '<button class="btn btn-secondary btn-sm" onclick="AXClients.cases(\'' + c.id + '\')" title="لينك منفصل بباسوورد يرفع منه المركز PDF الحالات ويطلع باركود للمريض">📁 حالات المرضى</button>' +
           '<button class="btn btn-ghost btn-sm" onclick="AXClients.rotate(\'' + c.id + '\')">↻ لينك جديد</button>' +
           '<button class="btn btn-ghost btn-sm" onclick="AXClients.stop(\'' + c.id + '\')">⏸ إيقاف</button></div>'
-        : '<div class="cl-a"><button class="btn btn-primary btn-sm" onclick="AXClients.make(\'' + c.id + '\')">🔗 اعمل لينك للمركز ده</button><button class="btn btn-secondary btn-sm" onclick="AXClients.cases(\'' + c.id + '\')">📁 حالات المرضى</button></div>') +
+        : '<div class="cl-a"><button class="btn btn-primary btn-sm" onclick="AXClients.make(\'' + c.id + '\')">🔗 اعمل لينك للمركز ده</button>' + (r.bal > 0.5 ? '<button class="btn btn-secondary btn-sm" onclick="AXClients.promise(\'' + c.id + '\')">📅 وعد دفع</button>' : '') + '<button class="btn btn-secondary btn-sm" onclick="AXClients.cases(\'' + c.id + '\')">📁 حالات المرضى</button></div>') +
       '</div></div>';
   }
   function group(key, title, list, extra) {
@@ -197,8 +214,10 @@
   function render() {
     var root = document.getElementById('cl-root'); if (!root) return; css();
     var all = rows(), on = all.filter(function (r) { return r.tok; }).length;
+    var hCnt = (lsGet('ax_pop_hist') || []).length;
     root.innerHTML =
-      '<div class="cl-hd"><div><h2>متابعة العملاء</h2><p>لينك لكل مركز ومستشفى يتابع منه حسابه وسحبه كل شهر ويطلب ورق — من غير ما يدخل البرنامج.</p></div></div>' +
+      '<div class="cl-hd"><div style="flex:1;min-width:220px"><h2>متابعة العملاء</h2><p>لينك لكل مركز ومستشفى يتابع منه حسابه وسحبه كل شهر ويطلب ورق — من غير ما يدخل البرنامج.</p></div>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-secondary btn-sm" onclick="AXClients.hist()">🔔 سجل التنبيهات' + (hCnt ? ' (' + hCnt + ')' : '') + '</button></div></div>' +
       '<div class="cl-tb"><button class="' + (ui.tab === 'req' ? 'on' : '') + '" onclick="AXClients.tab(\'req\')">📦 الطلبات' + (ui.newCount ? '<em>' + ui.newCount + '</em>' : '') + '</button>' +
       '<button class="' + (ui.tab === 'centers' ? 'on' : '') + '" onclick="AXClients.tab(\'centers\')">🏥 المراكز <span style="opacity:.7;font-weight:500">' + on + '/' + all.length + '</span></button></div>' +
       '<div id="cl-body">' + (ui.tab === 'req' ? reqHtml() : centersHtml()) + '</div>';
@@ -282,8 +301,96 @@
     ].join('\n');
     document.head.appendChild(s);
   }
+  function logPop(m) {
+    if (!m || m._fromHist) return;
+    try {
+      var list = lsGet('ax_pop_hist') || [];
+      var copy = JSON.parse(JSON.stringify(m));
+      copy._at = new Date().toISOString().slice(0, 16).replace('T', ' ');
+      list.unshift(copy);
+      if (list.length > 35) list = list.slice(0, 35);
+      lsSet('ax_pop_hist', list);
+    } catch (e) {}
+  }
+  function histOpen(idx) {
+    var list = lsGet('ax_pop_hist') || [], item = list[idx];
+    if (!item) return;
+    if (typeof closeModal === 'function') closeModal();
+    var copy = Object.assign({}, item, { _fromHist: true });
+    setTimeout(function () { showPop(copy); }, 180);
+  }
+  function histModal() {
+    var list = lsGet('ax_pop_hist') || [];
+    var icOf = function (k) { return k === 'due' ? '⏰' : k === 'pay' ? '💳' : k === 'maint' ? '🛠' : k === 'stock' ? '📦' : '📬'; };
+    var ttOf = function (m) {
+      if (m.kind === 'due') return 'تذكير تحصيل — ' + (m.center || '') + ' (' + num(m.amount) + ' ' + (m.cur || 'ج') + ')';
+      if (m.kind === 'pay') return 'تحويل — ' + (m.center || '') + ' (' + num(m.amount) + ')';
+      if (m.kind === 'maint') return 'طلب صيانة — ' + (m.center || '');
+      if (m.kind === 'stock') return 'تقرير المخزن اليومي (' + ((m.list || []).length) + ' صنف)';
+      return 'طلب ورق — ' + (m.center || '');
+    };
+    var body = !list.length ? '<div class="cl-emp"><i>🔕</i>لسه مفيش تنبيهات ظهرت على الجهاز ده.</div>'
+      : '<div style="display:flex;flex-direction:column;gap:8px;max-height:60vh;overflow:auto">' + list.map(function (m, i) {
+          return '<div style="display:flex;align-items:center;gap:10px;padding:11px 13px;border-radius:14px;background:var(--ax-surface-2,rgba(127,127,127,.08));border:1px solid var(--ax-line,rgba(127,127,127,.15))">' +
+            '<span style="font-size:22px">' + icOf(m.kind) + '</span>' +
+            '<div style="flex:1;min-width:0"><b style="display:block;font-size:14px">' + esc(ttOf(m)) + '</b><small style="opacity:.65;font-size:12px">' + esc(m._at || '') + '</small></div>' +
+            '<button class="btn btn-secondary btn-sm" onclick="AXClients.histOpen(' + i + ')">عرض</button></div>';
+        }).join('') + '</div>';
+    var foot = (list.length ? '<button class="btn btn-ghost" id="cl-hst-clr">🗑 مسح السجل</button>' : '') + '<button class="btn btn-primary" onclick="closeModal()">قفل</button>';
+    if (typeof openModal === 'function') openModal('🔔 سجل التنبيهات الأخيرة', body, foot);
+    var clr = document.getElementById('cl-hst-clr');
+    if (clr) clr.onclick = function () { lsSet('ax_pop_hist', []); if (typeof closeModal === 'function') closeModal(); T('اتمسح سجل التنبيهات', 'info'); render(); };
+  }
+  function addDays(n) {
+    var d = new Date(); d.setDate(d.getDate() + n);
+    return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+  }
+  function promiseModal(cid) {
+    var c = A('customers').filter(function (x) { return x.id === cid; })[0]; if (!c) return;
+    var cur = promises()[cid] || {};
+    var d1 = addDays(1), d3 = addDays(3), d7 = addDays(7);
+    var body = '<p class="ax-modal-lead">حدّد ميعاد وعد الدفع أو أجّل التذكير للمركز <b>' + esc(c.name) + '</b>. التذكير هيقف لحد اليوم ده ويطلعلك الصبح فيه.</p>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">' +
+      '<button type="button" class="btn btn-secondary btn-sm" data-pd="' + d1 + '">⏰ غداً (' + d1.slice(5) + ')</button>' +
+      '<button type="button" class="btn btn-secondary btn-sm" data-pd="' + d3 + '">📅 بعد 3 أيام (' + d3.slice(5) + ')</button>' +
+      '<button type="button" class="btn btn-secondary btn-sm" data-pd="' + d7 + '">🗓 الأسبوع القادم (' + d7.slice(5) + ')</button></div>' +
+      '<div class="form-group"><label>تاريخ وعد الدفع / التذكير</label><input type="date" class="form-control" id="cl-pr-dt" value="' + esc(cur.date || d3) + '" min="' + today() + '"></div>' +
+      '<div class="form-group"><label>ملاحظة (اختياري)</label><input class="form-control" id="cl-pr-nt" value="' + esc(cur.note || '') + '" placeholder="مثلاً: وعد يحوّل إنستاباي يوم الخميس"></div>';
+    var foot = '<button class="btn btn-primary" id="cl-pr-go">💾 حفظ الميعاد</button>' + (cur.date ? '<button class="btn btn-ghost" id="cl-pr-rm">إلغاء الوعد</button>' : '') + '<button class="btn btn-ghost" onclick="closeModal()">قفل</button>';
+    if (typeof openModal === 'function') openModal('📅 وعد دفع / تأجيل — ' + esc(c.name), body, foot);
+    [].forEach.call(document.querySelectorAll('[data-pd]'), function (b) {
+      b.onclick = function () { var inp = document.getElementById('cl-pr-dt'); if (inp) inp.value = b.dataset.pd; };
+    });
+    var go = document.getElementById('cl-pr-go');
+    if (go) go.onclick = function () {
+      var dt = (document.getElementById('cl-pr-dt') || {}).value;
+      var nt = String((document.getElementById('cl-pr-nt') || {}).value || '').trim();
+      if (!dt) return T('اختار التاريخ', 'error');
+      var p = Object.assign({}, promises()); p[cid] = { date: dt, note: nt, by: (currentUser && currentUser.name) || '' };
+      savePromises(p); if (typeof closeModal === 'function') closeModal();
+      T('📅 اتحفظ وعد الدفع يوم ' + dt + ' — التذكير هيطلعلك في ميعاده'); render();
+    };
+    var rm = document.getElementById('cl-pr-rm');
+    if (rm) rm.onclick = function () {
+      var p = Object.assign({}, promises()); delete p[cid]; savePromises(p);
+      if (typeof closeModal === 'function') closeModal(); T('اتلغى وعد الدفع', 'info'); render();
+    };
+  }
+  function waDue(cid, m) {
+    var c = A('customers').filter(function (x) { return x.id === cid; })[0];
+    if (!c) { if (window.AXAging) AXAging.whatsapp(cid); return; }
+    var ph = phoneOf(c);
+    if (!ph) { if (window.AXAging) AXAging.whatsapp(cid); return; }
+    var tok = links()[cid], linkTxt = tok ? '\n\n🔗 تقدروا تراجعوا كشف الحساب والفواتير أو تبعتوا إيصال التحويل مباشرة من اللينك الخاص بيكم:\n' + url(tok) : '';
+    var cur = (m && m.cur) || ((S().currency || 'جنيه') === 'جنيه' ? 'ج.م' : S().currency);
+    var amt = num((m && m.amount) || c.balance || 0);
+    var lastTxt = (m && m.last) ? '\n• آخر دفعة مسجلة: ' + num(m.last.amount) + ' ' + cur + ' بتاريخ ' + String(m.last.date || '').split('-').reverse().join('/') : '';
+    var txt = 'السلام عليكم ' + c.name + ' 🌿\nتحية طيبة من *' + company() + '*\n\nنود تذكيركم بالرصيد المستحق حالياً على حسابكم:\n• المبلغ المستحق: *' + amt + ' ' + cur + '*' + lastTxt + linkTxt + '\n\nشكراً لتعاونكم الدائم معنا 🙏';
+    window.open('https://wa.me/' + ph + '?text=' + encodeURIComponent(txt), '_blank');
+  }
   function showPop(m) {
     popCss();
+    logPop(m);
     var ov = document.querySelector('.clp-ov');
     if (ov) { POPQ.push(m); var mo = ov.querySelector('.clp-more'); if (mo) { mo.textContent = '+' + POPQ.length + ' إشعار كمان'; mo.style.display = ''; } return; }
     ov = document.createElement('div'); ov.className = 'clp-ov ax-hl-off';
@@ -296,7 +403,7 @@
       (items.length ? '<ul>' + items.map(function (x, i) { return '<li style="animation-delay:' + (0.7 + i * 0.08).toFixed(2) + 's"><b>' + num(x.qty) + '</b><span>' + esc(x.name) + '</span></li>'; }).join('') + '</ul>' : '<p class="mt2">' + esc(m.text || '') + '</p>') +
       (m.contact ? '<p class="mt2">👤 ' + esc(m.contact) + '</p>' : '') + (m.note ? '<p class="mt2">📝 ' + esc(m.note) + '</p>' : '') +
       '') + '<span class="clp-more" style="display:none"></span>' +
-      '<div class="clp-bt"><button class="clp-ok" type="button">حسنا</button>' + (pay ? '<div class="clp-two">' + (typeof openPaymentForm === 'function' ? '<button class="clp-b2" data-x="preg" type="button">💰 سجّل تحصيل</button>' : '') + '<button class="clp-b2" data-x="pno" type="button" style="color:#F87171;border-color:rgba(239,68,68,.3);background:rgba(239,68,68,.12)">رفض</button></div><button class="clp-go" type="button">افتح الطلبات ←</button>' : mnt ? '<div class="clp-two clp-as"><span class="clp-wait">بنحمّل الموظفين…</span></div><button class="clp-go" type="button">افتح الطلبات ←</button>' : stk ? '<button class="clp-go" data-go="inv" type="button">افتح المخزن ←</button>' : due ? '<div class="clp-two"><button class="clp-b2" data-x="pay" type="button">💵 تحصيل</button>' + (m.phone ? '<button class="clp-b2 wa" data-x="wa" type="button">واتساب</button>' : '') + '<button class="clp-b2" data-x="stmt" type="button">📒 كشف الحساب</button></div>' : '<button class="clp-go" type="button">افتح الطلبات ←</button>') + '</div></div>';
+      '<div class="clp-bt"><button class="clp-ok" type="button">حسنا</button>' + (pay ? '<div class="clp-two">' + (typeof openPaymentForm === 'function' ? '<button class="clp-b2" data-x="preg" type="button">💰 سجّل تحصيل</button>' : '') + '<button class="clp-b2" data-x="pno" type="button" style="color:#F87171;border-color:rgba(239,68,68,.3);background:rgba(239,68,68,.12)">رفض</button></div><button class="clp-go" type="button">افتح الطلبات ←</button>' : mnt ? '<div class="clp-two clp-as"><span class="clp-wait">بنحمّل الموظفين…</span></div><button class="clp-go" type="button">افتح الطلبات ←</button>' : stk ? '<button class="clp-go" data-go="inv" type="button">افتح المخزن ←</button>' : due ? '<div class="clp-two"><button class="clp-b2" data-x="pay" type="button">💵 تحصيل</button>' + (m.phone ? '<button class="clp-b2 wa" data-x="wa" type="button">💬 واتساب</button>' : '') + '<button class="clp-b2" data-x="stmt" type="button">📒 كشف الحساب</button><button class="clp-b2" data-x="prom" type="button">📅 تأجيل</button></div>' : '<button class="clp-go" type="button">افتح الطلبات ←</button>') + '</div></div>';
     document.body.appendChild(ov);
     if (mnt) loadEmps(function (L) {
       var box = ov.querySelector('.clp-as'); if (!box) return;
@@ -309,7 +416,7 @@
     };
     ov.querySelector('.clp-ok').onclick = function () { close(); };
     [].forEach.call(ov.querySelectorAll('.clp-b2'), function (b) { b.onclick = function () { var x = b.dataset.x; close(function () {
-      try { if (x === 'preg') payReg(m.id, m); else if (x === 'pno') setSt(m.id, 'no'); else if (x === 'pay' && typeof openPaymentForm === 'function') openPaymentForm(m.cid); else if (x === 'wa' && window.AXAging) AXAging.whatsapp(m.cid); else if (x === 'stmt' && typeof viewCustomerStatement === 'function') viewCustomerStatement(m.cid); } catch (e) {}
+      try { if (x === 'preg') payReg(m.id, m); else if (x === 'pno') setSt(m.id, 'no'); else if (x === 'pay' && typeof openPaymentForm === 'function') openPaymentForm(m.cid); else if (x === 'wa') waDue(m.cid, m); else if (x === 'stmt' && typeof viewCustomerStatement === 'function') viewCustomerStatement(m.cid); else if (x === 'prom') promiseModal(m.cid); } catch (e) {}
       if (POPQ.length) setTimeout(function () { showPop(POPQ.shift()); }, 400); }); }; });
     var goB = ov.querySelector('.clp-go'); if (goB && goB.dataset.go === 'inv') { goB.onclick = function () { close(function () { if (typeof navigate === 'function') navigate('inventory'); }); }; goB = null; }
     if (goB) goB.onclick = function () { POPQ = []; close(function () { ui.tab = 'req'; ui.rq = null; if (isPage()) render(); else if (typeof navigate === 'function') navigate('clients'); }); };
@@ -325,10 +432,14 @@
   function canDue() { try { if (isAdmin()) return true; return typeof can === 'function' && can('payments'); } catch (e) { return false; } }
   function owing() {
     var X = window.AXCore; if (!X || !X.aging) return [];
-    var t = today();
+    var t = today(), pr = promises();
     return A('customers').filter(function (c) { return c && !c.archived && (Number(c.balance) || 0) > 0.5; }).map(function (c) {
-      var a = X.aging(D(), c.id, t); return { c: c, a: a };
-    }).filter(function (x) { return x.a.balance > 0.5 && x.a.oldestDays >= DUE.min; }).sort(function (x, y) { return y.a.oldestDays - x.a.oldestDays; });
+      var a = X.aging(D(), c.id, t); return { c: c, a: a, prom: pr[c.id] || null };
+    }).filter(function (x) {
+      if (!(x.a.balance > 0.5 && x.a.oldestDays >= DUE.min)) return false;
+      if (x.prom && x.prom.date && x.prom.date > t) return false; // snoozed until promise date
+      return true;
+    }).sort(function (x, y) { return y.a.oldestDays - x.a.oldestDays; });
   }
   function nowMin() { var d = new Date(); return d.getHours() * 60 + d.getMinutes(); }
   function plan() {
@@ -342,15 +453,17 @@
     return p;
   }
   function dueMsg(x) {
-    var a = x.a, cur = (S().currency || 'جنيه') === 'جنيه' ? 'ج' : S().currency;
-    return { kind: 'due', cid: x.c.id, center: x.c.name, amount: a.balance, days: a.oldestDays, cur: cur, last: a.lastPay, phone: phoneOf(x.c) };
+    var a = x.a, cur = (S().currency || 'جنيه') === 'جنيه' ? 'ج' : S().currency, pr = promises()[x.c.id];
+    return { kind: 'due', cid: x.c.id, center: x.c.name, amount: a.balance, days: a.oldestDays, cur: cur, last: a.lastPay, phone: phoneOf(x.c), prom: pr || null };
   }
   function dueBody(m) {
     var d = m.days, dt = d >= 60 ? 'hot' : '';
     var dtx = d === 1 ? 'يوم' : d === 2 ? 'يومين' : d <= 10 ? d + ' أيام' : d + ' يوم';
+    var pr = m.prom || (m.cid && promises()[m.cid]);
+    var prHtml = pr && pr.date ? '<div style="margin:4px 0 8px"><span class="late" style="background:rgba(59,130,246,.18);color:#60A5FA;border-color:rgba(59,130,246,.35);margin:0">📅 ميعاد وعد الدفع: ' + esc(pr.date) + (pr.note ? ' · ' + esc(pr.note) : '') + '</span></div>' : '';
     return '<h3>⏰ تذكير تحصيل</h3><p class="ctr">' + esc(m.center) + '</p>' +
       '<div class="amt">' + num(m.amount) + ' <small>' + esc(m.cur || 'ج') + '</small></div>' +
-      '<span class="late ' + dt + '">متأخر من ' + dtx + '</span>' +
+      '<span class="late ' + dt + '">متأخر من ' + dtx + '</span>' + prHtml +
       (m.last ? '<p class="mt2">آخر دفعة: ' + num(m.last.amount) + ' يوم ' + esc(String(m.last.date || '').split('-').reverse().join('/')) + '</p>' : '<p class="mt2">مفيش دفعات متسجلة</p>');
   }
   function phStrip(id, n, cls) {
@@ -644,7 +757,7 @@
   };
   window.AXClients = {
     render: render, make: make, makeAll: makeAll, shortAll: shortAll, rotate: rotate, stop: stop, copy: copy, wa: wa,
-    st: setSt, del: del, _pop: showPop, assign: assign, dueTry: dueTry, dueToggle: dueToggle, dueTick: dueTick, qr: qrModal, qrPrint: qrPrint, qrPng: qrPng, reset: resetModal, cases: casesModal, payReg: payReg, payInfo: payInfo, stockShow: stockShow, stockToggle: stockToggle, waReq: waReq, issue: issue, count: function () { return ui.newCount; }, refresh: refreshCount,
+    st: setSt, del: del, _pop: showPop, assign: assign, dueTry: dueTry, dueToggle: dueToggle, dueTick: dueTick, qr: qrModal, qrPrint: qrPrint, qrPng: qrPng, reset: resetModal, cases: casesModal, payReg: payReg, payInfo: payInfo, stockShow: stockShow, stockToggle: stockToggle, waReq: waReq, issue: issue, promise: promiseModal, hist: histModal, histOpen: histOpen, count: function () { return ui.newCount; }, refresh: refreshCount,
     tab: function (t) { ui.tab = t; if (t === 'req') ui.rq = null; render(); },
     rf: function (f) { ui.rf = f; render(); },
     grp: function (k) { ui.grp[k] = !ui.grp[k]; render(); },

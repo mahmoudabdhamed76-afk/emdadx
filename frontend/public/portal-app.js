@@ -46,18 +46,21 @@
   function tag(o) { var s = (ST[o.kind] || ST.order)[o.status] || [o.status, 'nw']; return '<span class="tg ' + s[1] + '">' + s[0] + '</span>'; }
 
   /* ── shell ── */
+  function isDark() { return document.documentElement.getAttribute('data-theme') === 'dark'; }
+  (function initTheme() { var th = ls('pc_theme') || 'light'; document.documentElement.setAttribute('data-theme', th); })();
   function shell() {
     var c = P.company || {}, logo = c.logo ? '<img class="lg" src="' + esc(c.logo) + '" alt="">' : '<span class="lg t">' + esc(String(c.name || 'O').charAt(0)) + '</span>';
     var h = new Date().getHours(), hi = h < 12 ? 'صباح الخير' : h < 17 ? 'نهارك سعيد' : 'مساء الخير';
     var badge = (activeMaint() ? 1 : 0) + (openOrder() ? 1 : 0);
     $('app').innerHTML = '<div class="w">' +
-      '<div class="top">' + logo + '<div style="min-width:0"><b>' + esc(P.center.name) + '</b><span>' + hi + ' 👋 · حسابكم عند ' + esc(c.name) + '</span></div><button class="ib" id="bell" aria-label="الطلبات">🔔' + (badge ? '<i></i>' : '') + '</button></div>' +
+      '<div class="top">' + logo + '<div style="min-width:0;flex:1"><b>' + esc(P.center.name) + '</b><span>' + hi + ' 👋 · حسابكم عند ' + esc(c.name) + '</span></div><button class="ib" id="thb" aria-label="تغيير المظهر" style="margin-inline-start:0">' + (isDark() ? '☀️' : '🌙') + '</button><button class="ib" id="bell" aria-label="الطلبات" style="margin-inline-start:0">🔔' + (badge ? '<i></i>' : '') + '</button></div>' +
       '<section class="view" id="v-home"></section><section class="view" id="v-acct"></section><section class="view" id="v-inv"></section><section class="view" id="v-help"></section>' +
       '<p style="text-align:center;color:var(--faint);font-size:11.5px;margin-top:18px">الصفحة دي لحسابكم بس، والأرقام بتتحدّث أول بأول.' + (c.phone ? ' للاستفسار: ' + esc(c.phone) : '') + '</p></div>' +
       '<nav class="nav"><div class="in"><button data-t="home"><i>🏠</i>الرئيسية</button><button data-t="acct"><i>📊</i>حسابي</button><button class="fab" id="fab" aria-label="طلب جديد">＋</button><button data-t="inv"><i>🧾</i>الفواتير</button><button data-t="help"><i>🛠</i>الصيانة' + (activeMaint() ? '<span class="bd">1</span>' : '') + '</button></div></nav>' +
       '<div class="sh" id="sh"><div class="bk"></div><div class="pn" id="shp"></div></div><div class="toast" id="toast"></div>';
     [].forEach.call(document.querySelectorAll('.nav [data-t]'), function (b) { b.onclick = function () { go(b.dataset.t); }; });
     $('fab').onclick = pickSheet;
+    $('thb').onclick = function () { var nx = isDark() ? 'light' : 'dark'; document.documentElement.setAttribute('data-theme', nx); ls('pc_theme', nx); $('thb').textContent = nx === 'dark' ? '☀️' : '🌙'; };
     $('bell').onclick = function () { go('home'); setTimeout(function () { var x = $('recent'); if (x) x.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 60); };
     $('sh').querySelector('.bk').onclick = closeSheet;
   }

@@ -392,7 +392,8 @@ function handle(req, res, pathname, data) {
   const isOrder = sub === 'order' || sub === 'maint';
   if (POSTS.includes(sub) ? req.method !== 'POST' : req.method !== 'GET') return false;
   /* a short code is guessable only by trying a lot — too many wrong ones from one address → wait */
-  const ip = String(req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim(), now = Date.now();
+  const xf = req.headers['x-forwarded-for'];
+  const ip = (xf ? String(xf).split(',').pop().trim() : (req.socket && req.socket.remoteAddress) || ''), now = Date.now();
   const miss = MISS.get(ip);
   if (miss && miss.n >= 30 && now - miss.t < 600e3) { res.writeHead(429, { 'Content-Type': 'text/plain; charset=utf-8', 'Retry-After': '600' }); res.end('حاولت كتير — جرّب بعد شوية'); return true; }
   /* data() → every branch: [{ id, name, data }] (or plain datasets, older callers) */

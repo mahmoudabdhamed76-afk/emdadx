@@ -158,3 +158,14 @@ table{width:100%;border-collapse:collapse;font-size:13px}th{font-weight:700;colo
 @media (max-width:380px){.bk2 .st b{font-size:15px}.hero .v{font-size:25px}.ring{width:88px;height:88px}.qa i{width:40px;height:40px}.kp b{font-size:15px}}
 @media print{.nav,.qa,.ban,.sh,.btn,.top .ib{display:none!important}.view{display:block!important}.card,.hero{box-shadow:none;border:1px solid #ddd}.hero{background:#fff;color:#000}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+/* 4.96 · الوضع الليلي لصفحة المركز */
+html[data-theme="dark"]{color-scheme:dark;--bg:#0B1120;--card:#111827;--soft:#1E293B;--line:rgba(148,163,184,.16);--ink:#F8FAFC;--mut:#94A3B8;--faint:#64748B;--sh:0 10px 30px -12px rgba(0,0,0,.65),0 0 0 1px rgba(148,163,184,.1)}
+html[data-theme="dark"] .card,html[data-theme="dark"] .qa button,html[data-theme="dark"] .top .ib,html[data-theme="dark"] .top .lg,html[data-theme="dark"] .fld,html[data-theme="dark"] .ol select,html[data-theme="dark"] .ol input,html[data-theme="dark"] .ol .rm,html[data-theme="dark"] .sh .x,html[data-theme="dark"] .pick button,html[data-theme="dark"] .cp,html[data-theme="dark"] .chips button,html[data-theme="dark"] .dv button,html[data-theme="dark"] .lvw .tech.ov,html[data-theme="dark"] .done>div{background:var(--card);color:var(--ink);border-color:var(--line)}
+html[data-theme="dark"] .nav{background:rgba(17,24,39,.92);border-top-color:var(--line)}
+html[data-theme="dark"] .done{background:rgba(11,17,32,.84)}
+html[data-theme="dark"] .re,html[data-theme="dark"] .ban{background:linear-gradient(135deg,rgba(14,159,154,.16),rgba(30,41,59,.9))!important;border-color:rgba(20,184,166,.3)!important;color:var(--ink)}
+html[data-theme="dark"] .warn{background:rgba(245,158,11,.15);border-color:rgba(245,158,11,.32);color:#FDE68A}
+html[data-theme="dark"] .qa i{background:rgba(255,255,255,.07)!important}
+html[data-theme="dark"] .bars{border-bottom-color:var(--line)}
+html[data-theme="dark"] .stars button:not(.on){color:#334155}
+html[data-theme="dark"] .tg.ok{background:rgba(34,197,94,.18);color:#4ADE80}html[data-theme="dark"] .tg.pt{background:rgba(245,158,11,.18);color:#FBBF24}html[data-theme="dark"] .tg.no{background:rgba(239,68,68,.18);color:#F87171}html[data-theme="dark"] .tg.nw{background:rgba(59,130,246,.18);color:#60A5FA}html[data-theme="dark"] .tg.rd{background:rgba(168,85,247,.18);color:#C084FC}

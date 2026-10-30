@@ -57,7 +57,7 @@ const json = o => JSON.stringify(o).replace(/</g, '\\u003c').replace(/\u2028/g, 
 function hashPass(p) { const salt = crypto.randomBytes(16); return salt.toString('hex') + ':' + crypto.scryptSync(String(p), salt, 32).toString('hex'); }
 function passOk(p, h) { try { const [s, k] = String(h).split(':'); const a = crypto.scryptSync(String(p), Buffer.from(s, 'hex'), 32), b = Buffer.from(k, 'hex'); return a.length === b.length && crypto.timingSafeEqual(a, b); } catch (e) { return false; } }
 const isHttps = req => String(req.headers['x-forwarded-proto'] || '').split(',')[0].trim() === 'https' || !!(req.socket && req.socket.encrypted);
-const ipOf = req => String(req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim();
+const ipOf = req => { const xf = req.headers['x-forwarded-for']; return (xf ? String(xf).split(',').pop().trim() : (req.socket && req.socket.remoteAddress) || ''); };
 const fileOf = tok => path.join(DIR, tok + '.bin');
 /* the patient's mobile → its last 10 digits (01xxxxxxxxx / +201xxxxxxxxx / 1xxxxxxxxx all match) → keyed hash */
 function last10(p) { const d = String(p || '').replace(/[٠-٩]/g, c => String(c.charCodeAt(0) - 0x660)).replace(/\D/g, ''); return d.length >= 8 ? d.slice(-10) : ''; }

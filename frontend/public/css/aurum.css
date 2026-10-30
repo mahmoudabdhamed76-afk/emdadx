@@ -5442,3 +5442,155 @@ html[dir=rtl] .rd-man { transform: translateX(50%); }
   .stf-road .tkc-a { margin-top: 8px; }
   .stf-road .tkc-b { padding: 5px 12px; font-size: 12px; }
 }
+
+/* ════════════════════════════════════════════════════════════════════
+   72. 4.38 · إصلاح وتطوير الوضع النهاري والليلي الشامل
+   - لوحة النبض (.pxs) وشريط النبض (.axtk) في الوضع النهاري بقت فاتحة ومتناسقة وواضحة
+   - كروت مهام الموظفين (.tkc) وخريطة الموظفين في الوضع الليلي بقت داكنة ومريحة للعين
+════════════════════════════════════════════════════════════════════ */
+html.aurum[data-theme="light"] {
+  --axg: linear-gradient(90deg, #065F46, #0F766E 55%, #9A3412);
+}
+html.aurum[data-theme="light"] .pxs {
+  --bg: #FFFFFF;
+  color: #0B1630;
+  background: linear-gradient(180deg, #F8FAFC 0%, #FFFFFF 100%);
+  border: 1px solid rgba(11, 22, 48, .1);
+  box-shadow: 0 20px 48px -22px rgba(11, 22, 48, .14), 0 1px 3px rgba(11, 22, 48, .05);
+}
+html.aurum[data-theme="light"] .pxs-terr-fig {
+  --hairline-plate: #F1F5F9;
+  --hairline-edge: #CBD5E1;
+  --hairline-edge-w: 1px;
+}
+html.aurum[data-theme="light"] .pxs-cap {
+  color: #1E293B;
+  background: rgba(255, 255, 255, .88);
+  border-color: rgba(11, 22, 48, .1);
+  box-shadow: 0 4px 14px rgba(11, 22, 48, .06);
+}
+html.aurum[data-theme="light"] .pxs-graph {
+  background: linear-gradient(to top, #FFFFFF 12%, rgba(255, 255, 255, .86) 58%, transparent);
+}
+html.aurum[data-theme="light"] .pxs-glbl { color: #475569; }
+html.aurum[data-theme="light"] .pxs-gval { color: #0B1630; }
+html.aurum[data-theme="light"] .pxs-gval small,
+html.aurum[data-theme="light"] .pxs-gd { color: #64748B; }
+html.aurum[data-theme="light"] .pxs-gd.good { color: #0F8A43; }
+html.aurum[data-theme="light"] .pxs-gd.bad { color: #C81E1E; }
+html.aurum[data-theme="light"] .pxs-axd { fill: #64748B; }
+html.aurum[data-theme="light"] .pxs-cross { stroke: rgba(11, 22, 48, .32); }
+html.aurum[data-theme="light"] .pxs-tip {
+  color: #0B1630;
+  background: rgba(255, 255, 255, .96);
+  box-shadow: 0 0 0 1px rgba(11, 22, 48, .12), 0 14px 32px -8px rgba(11, 22, 48, .22);
+}
+html.aurum[data-theme="light"] .pxs-tip-d,
+html.aurum[data-theme="light"] .pxs-tip-c { color: #475569; }
+html.aurum[data-theme="light"] .pxs-tip-c.good { color: #0F8A43; }
+html.aurum[data-theme="light"] .pxs-tip-c.bad { color: #C81E1E; }
+html.aurum[data-theme="light"] .pxs-ticker {
+  background: linear-gradient(to top, rgba(241, 245, 249, .96), rgba(248, 250, 252, .82));
+  border-top: 1px solid rgba(11, 22, 48, .08);
+}
+html.aurum[data-theme="light"] .pxs-tiles {
+  background: #F1F5F9;
+  border-top: 1px solid rgba(11, 22, 48, .08);
+}
+html.aurum[data-theme="light"] .pxs-tile {
+  color: #0B1630;
+  background: #FFFFFF;
+  box-shadow: 0 2px 6px rgba(11, 22, 48, .04), inset 0 0 0 1px rgba(11, 22, 48, .07);
+}
+html.aurum[data-theme="light"] .pxs-tile:hover { background: #F8FAFC; }
+html.aurum[data-theme="light"] .pxs-tile.on {
+  background: #FFFFFF;
+  box-shadow: inset 0 0 0 1.8px var(--c), 0 10px 26px -12px var(--c);
+}
+html.aurum[data-theme="light"] .pxs-tt { color: #475569; font-weight: 600; }
+html.aurum[data-theme="light"] .pxs-ts { color: #475569; }
+html.aurum[data-theme="light"] .pxs-ts i { background: #94A3B8; }
+html.aurum[data-theme="light"] .lv-ok .pxs-ts { color: #0F8A43; font-weight: 700; }
+html.aurum[data-theme="light"] .lv-warn .pxs-ts { color: #B86B00; font-weight: 700; }
+html.aurum[data-theme="light"] .lv-bad .pxs-ts { color: #C81E1E; font-weight: 700; }
+
+/* شريط النبض في الوضع النهاري */
+html.aurum[data-theme="light"] .axtk { color: #0B1630; }
+html.aurum[data-theme="light"] .axtk--bar {
+  background: #FFFFFF;
+  border: 1px solid rgba(11, 22, 48, .09);
+  box-shadow: var(--ax-shadow);
+}
+html.aurum[data-theme="light"] .pxs-tkhost .axtk--bar {
+  background: #F1F5F9;
+  border: 0;
+  border-bottom: 1px solid rgba(11, 22, 48, .08);
+}
+html.aurum[data-theme="light"] .topbar .fx-tape .axtk--bar {
+  background: #FFFFFF;
+  box-shadow: inset 0 0 0 1px rgba(11, 22, 48, .1), 0 2px 6px rgba(11, 22, 48, .04);
+}
+html.aurum[data-theme="light"] .axtk-sep { background: rgba(11, 22, 48, .18); }
+html.aurum[data-theme="light"] .axtk-it:hover,
+html.aurum[data-theme="light"] .axtk-ev:hover { background: rgba(11, 22, 48, .05); }
+html.aurum[data-theme="light"] .axtk-it em { color: #475569; font-weight: 600; }
+html.aurum[data-theme="light"] .axtk-it b { color: #0B1630; }
+html.aurum[data-theme="light"] .axtk-it small,
+html.aurum[data-theme="light"] .topbar .fx-tape .axtk-it small { color: #64748B; }
+html.aurum[data-theme="light"] .axtk-d.good { color: #0F8A43; background: rgba(15, 138, 67, .12); }
+html.aurum[data-theme="light"] .axtk-d.bad { color: #C81E1E; background: rgba(200, 30, 30, .12); }
+html.aurum[data-theme="light"] .axtk-d.flat { color: #64748B; }
+html.aurum[data-theme="light"] .axtk-ev { background: rgba(11, 22, 48, .05); color: #334155; }
+html.aurum[data-theme="light"] .axtk-ev b { color: #0B1630; }
+html.aurum[data-theme="light"] .axtk-ev small { color: #64748B; }
+html.aurum[data-theme="light"] .axtk-live {
+  color: #0B1630;
+  box-shadow: inset 1px 0 0 rgba(11, 22, 48, .08) !important;
+}
+
+/* كروت مهام الموظفين والخريطة في الوضع الليلي */
+html.aurum[data-theme="dark"] .card.stf-mapcard.lt {
+  background: var(--ax-surface) !important;
+  color: var(--ax-text) !important;
+  border-color: var(--ax-line) !important;
+}
+html.aurum[data-theme="dark"] .card.stf-mapcard.lt .card-header { border-bottom-color: var(--ax-line); }
+html.aurum[data-theme="dark"] .card.stf-mapcard.lt .card-title { color: var(--ax-text) !important; -webkit-text-fill-color: var(--ax-text) !important; }
+html.aurum[data-theme="dark"] .card.stf-mapcard.lt .stf-chip { background: var(--ax-surface-2); color: var(--ax-text); border-color: var(--ax-line-2); }
+html.aurum[data-theme="dark"] .card.stf-mapcard.lt .stf-chip.g { background: rgba(47, 191, 113, .14); color: #4ADE80; border-color: rgba(47, 191, 113, .3); }
+html.aurum[data-theme="dark"] .card.stf-mapcard.lt .stf-chip.r { background: rgba(232, 93, 93, .14); color: #F87171; border-color: rgba(232, 93, 93, .3); }
+html.aurum[data-theme="dark"] .tkc {
+  background: linear-gradient(180deg, rgba(229, 35, 47, .12), var(--ax-surface) 72%);
+  border-color: rgba(248, 113, 113, .32);
+  color: var(--ax-text);
+}
+html.aurum[data-theme="dark"] .tkc.st-going,
+html.aurum[data-theme="dark"] .tkc.st-arrived,
+html.aurum[data-theme="dark"] .tkc.st-working {
+  background: linear-gradient(180deg, rgba(30, 154, 76, .14), var(--ax-surface) 75%);
+  border-color: rgba(74, 222, 128, .35);
+}
+html.aurum[data-theme="dark"] .tkc.st-done {
+  background: linear-gradient(180deg, rgba(30, 154, 76, .18), var(--ax-surface) 80%);
+  border-color: #22C55E;
+}
+html.aurum[data-theme="dark"] .tkc.st-cancel {
+  background: var(--ax-surface-2);
+  border-color: var(--ax-line);
+}
+html.aurum[data-theme="dark"] .tkc .lb { color: var(--ax-muted); }
+html.aurum[data-theme="dark"] .tkc .lb b,
+html.aurum[data-theme="dark"] .tkc .big { color: var(--ax-text); -webkit-text-fill-color: var(--ax-text); }
+html.aurum[data-theme="dark"] .tkc-s { color: var(--ax-muted); }
+html.aurum[data-theme="dark"] .tkc-s b,
+html.aurum[data-theme="dark"] .tkc-x { color: var(--ax-text); }
+html.aurum[data-theme="dark"] .tkc-x code { background: rgba(255, 255, 255, .1); color: #E2E8F0; }
+html.aurum[data-theme="dark"] .tkc-b { background: var(--ax-surface-2); border-color: var(--ax-line-2); color: var(--ax-text); }
+html.aurum[data-theme="dark"] .tkc-b.x { color: #F87171; }
+html.aurum[data-theme="dark"] .tkc .stq-t { background: var(--ax-surface-3); }
+html.aurum[data-theme="dark"] .tkc .stq > div { color: var(--ax-faint); }
+html.aurum[data-theme="dark"] .tkc .stq i { background: var(--ax-surface-2); }
+html.aurum[data-theme="dark"] .tkc .stq .ok span,
+html.aurum[data-theme="dark"] .tkc .stq .cur span { color: var(--ax-text); }
+html.aurum[data-theme="dark"] .tkc .stq em { color: var(--ax-muted); }
+

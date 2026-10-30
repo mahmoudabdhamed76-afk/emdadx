@@ -14,6 +14,7 @@ const http = require('node:http');
 const fs   = require('node:fs');
 const path = require('node:path');
 const url  = require('node:url');
+const zlib = require('node:zlib');
 
 const { db, DB_FILE } = require('./db');
 const { exportBlob, defaultBlob } = require('./src/bridge');
@@ -121,14 +122,35 @@ function secHeaders(req) {
   if (req && auth.isHttps && auth.isHttps(req)) h['Strict-Transport-Security'] = 'max-age=31536000';
   return h;
 }
+function sameOrigin(req) {
+  const host = String(req.headers['x-forwarded-host'] || req.headers.host || '').split(',')[0].trim().toLowerCase();
+  if (!host) return true;
+  const src = req.headers.origin || req.headers.referer;
+  if (!src) return true;
+  try { return new URL(src).host.toLowerCase() === host; } catch (_) { return false; }
+}
 function sendJSON(res, status, obj, extraHeaders) {
   if (res.headersSent || res.writableEnded) return;
-  const body = JSON.stringify(obj);
-  res.writeHead(status, Object.assign(secHeaders(res.req), {
-    'Content-Type':   'application/json; charset=utf-8',
-    'Content-Length': Buffer.byteLength(body),
-    'Cache-Control':  'no-store'
-  }, extraHeaders || {}));
+  const body = Buffer.from(JSON.stringify(obj), 'utf8');
+  const accept = String((res.req && res.req.headers && res.req.headers['accept-encoding']) || '');
+  const headers = Object.assign(secHeaders(res.req), {
+    'Content-Type':  'application/json; charset=utf-8',
+    'Cache-Control': 'no-store',
+    'Vary':          'Accept-Encoding'
+  }, extraHeaders || {});
+  if (body.length > 1024 && /\bgzip\b/.test(accept)) {
+    zlib.gzip(body, (err, gz) => {
+      if (res.headersSent || res.writableEnded) return;
+      const out = (!err && gz) ? gz : body;
+      if (!err && gz) headers['Content-Encoding'] = 'gzip';
+      headers['Content-Length'] = out.length;
+      res.writeHead(status, headers);
+      res.end(out);
+    });
+    return;
+  }
+  headers['Content-Length'] = body.length;
+  res.writeHead(status, headers);
   res.end(body);
 }
 function readBody(req, limitMb) {
@@ -153,22 +175,46 @@ const MIME = {
   '.jpeg': 'image/jpeg', '.ico': 'image/x-icon', '.woff2': 'font/woff2', '.woff': 'font/woff', '.webp': 'image/webp',
   '.map': 'application/json; charset=utf-8'
 };
+const COMPRESSIBLE = new Set(['.html', '.js', '.css', '.json', '.svg', '.map']);
 function serveStatic(res, filePath) {
-  fs.readFile(filePath, (err, data) => {
-    if (err) { res.writeHead(404); res.end('Not found'); return; }
+  fs.stat(filePath, (stErr, st) => {
+    if (stErr || !st.isFile()) { res.writeHead(404); res.end('Not found'); return; }
     const ext = path.extname(filePath).toLowerCase();
     const isHtml = ext === '.html';
-    res.writeHead(200, Object.assign(secHeaders(res.req), {
-      'Content-Type':   MIME[ext] || 'application/octet-stream',
-      'Content-Length': data.length,
-      'Cache-Control':  isHtml ? 'no-cache, no-store, must-revalidate'
-                      : (ext === '.woff2' || ext === '.woff') ? 'public, max-age=31536000, immutable'
-                      : 'no-cache',
-      'Pragma': 'no-cache', 'Expires': '0',
+    const etag = 'W/"' + st.size.toString(36) + '-' + Math.floor(st.mtimeMs).toString(36) + '"';
+    const baseHeaders = Object.assign(secHeaders(res.req), {
+      'Content-Type':  MIME[ext] || 'application/octet-stream',
+      'Cache-Control': isHtml ? 'no-cache, no-store, must-revalidate'
+                     : (ext === '.woff2' || ext === '.woff') ? 'public, max-age=31536000, immutable'
+                     : 'no-cache',
+      'ETag': etag,
+      'Vary': 'Accept-Encoding',
       'X-Content-Type-Options': 'nosniff',
       'Referrer-Policy': 'same-origin'
-    }));
-    res.end(data);
+    });
+    if (!isHtml && res.req && res.req.headers && res.req.headers['if-none-match'] === etag) {
+      res.writeHead(304, baseHeaders);
+      res.end();
+      return;
+    }
+    fs.readFile(filePath, (err, data) => {
+      if (err) { res.writeHead(404); res.end('Not found'); return; }
+      const accept = String((res.req && res.req.headers && res.req.headers['accept-encoding']) || '');
+      if (COMPRESSIBLE.has(ext) && data.length > 1024 && /\bgzip\b/.test(accept)) {
+        zlib.gzip(data, (gzErr, gz) => {
+          if (res.headersSent || res.writableEnded) return;
+          const out = (!gzErr && gz) ? gz : data;
+          if (!gzErr && gz) baseHeaders['Content-Encoding'] = 'gzip';
+          baseHeaders['Content-Length'] = out.length;
+          res.writeHead(200, baseHeaders);
+          res.end(out);
+        });
+        return;
+      }
+      baseHeaders['Content-Length'] = data.length;
+      res.writeHead(200, baseHeaders);
+      res.end(data);
+    });
   });
 }
 /* an internal snapshot in the database (kept 20) — taken at most every 10 minutes */
@@ -291,6 +337,8 @@ const server = http.createServer(async (req, res) => {
 
     /* ── everything below needs a logged-in user ── */
     if (pathname.startsWith('/api/')) {
+      if (req.method !== 'GET' && !sameOrigin(req))
+        return sendJSON(res, 403, { error: 'csrf', message: 'الطلب ده جاي من مصدر غير موثوق' });
       const me = currentUser(req);
       if (!me) return sendJSON(res, 401, { error: 'login', message: 'سجّل دخول الأول' });
       const admin = me.role === 'admin';
@@ -332,7 +380,9 @@ const server = http.createServer(async (req, res) => {
       /* data */
       if (pathname === '/api/data' && req.method === 'GET') {
         const blob = store.publicData();
-        return sendJSON(res, 200, Object.assign({}, blob, { __version: _dataVersion }));
+        const lite = parsed.query && parsed.query.lite === '1';
+        const auditLog = lite ? (blob.auditLog || []).slice(0, 100) : (!admin ? (blob.auditLog || []).slice(0, 200) : blob.auditLog);
+        return sendJSON(res, 200, Object.assign({}, blob, { auditLog, __version: _dataVersion }));
       }
       if (pathname === '/api/ops' && req.method === 'POST') {
         const b = await readBody(req, 15);
@@ -452,11 +502,13 @@ const server = http.createServer(async (req, res) => {
     }
 
     /* ── static files ── */
-    let rel = pathname === '/' ? '/index.html' : pathname;
-    rel = rel.replace(/\.\./g, '');
-    const filePath = path.join(PUBLIC, rel);
-    if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) return serveStatic(res, filePath);
-    return serveStatic(res, path.join(PUBLIC, 'index.html'));
+    const PUBLIC_ROOT = path.resolve(PUBLIC);
+    const rel = pathname === '/' ? '/index.html' : pathname;
+    const filePath = path.resolve(PUBLIC_ROOT, '.' + decodeURIComponent(rel));
+    if ((filePath === PUBLIC_ROOT || filePath.startsWith(PUBLIC_ROOT + path.sep)) && fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
+      return serveStatic(res, filePath);
+    }
+    return serveStatic(res, path.join(PUBLIC_ROOT, 'index.html'));
 
   } catch (e) {
     if (e && e.status) { if (!res.headersSent) sendJSON(res, e.status, { error: e.message }); else res.destroy(); return; }
