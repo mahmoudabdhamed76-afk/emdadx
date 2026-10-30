@@ -9471,7 +9471,7 @@ audio::-webkit-media-controls-panel { background: rgba(15,23,42,.9); }
 .sk-keys { display: flex; gap: 4px; }
 
 </style>
-<link rel="stylesheet" href="css/aurum.css?v=4.40">
+<link rel="stylesheet" href="css/aurum.css?v=4.41">
 <style>
 /* ═══ 4.27 · شاشة الترحيب — EMDADX بحركة موشن جرافيك (مرة واحدة كل فتحة) ═══ */
 #axw { position: fixed; inset: 0; z-index: 2147483000; display: grid; place-items: center; overflow: hidden; color: #fff; cursor: pointer;
@@ -10438,11 +10438,11 @@ function updateHomeFab() {
   document.querySelectorAll('#bottom-nav .bn-item').forEach(b => {
     b.classList.toggle('active', b.dataset.page === currentPage);
   });
-  // AI FAB — on dashboard only
+  // AI FAB — visible on all pages
   const aiFab = document.getElementById('ai-fab');
   if (aiFab) {
     aiFab.style.display = '';
-    aiFab.classList.toggle('visible', currentPage === 'dashboard');
+    aiFab.classList.add('visible');
     if (aiFab.classList.contains('axask')) requestAnimationFrame(() => { const w = aiFab.offsetWidth; if (w) document.documentElement.style.setProperty('--axask-w', Math.round(w) + 'px'); });
   }
 }
