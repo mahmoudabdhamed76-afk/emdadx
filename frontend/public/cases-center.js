@@ -344,10 +344,10 @@
     var dash = $('qrd-body-dashboard');
     if (dash && !$('qrdD')) {
       var d = document.createElement('section'); d.id = 'qrdD'; d.className = 'qrdd';
-      d.innerHTML = '<div class="qrdd-kp"><div class="qrdd-k1"><small>فتح باركود المركز النهارده</small><b id="dK1">0</b><em id="dK1t">—</em><svg class="qrdd-sp" viewBox="0 0 200 44" preserveAspectRatio="none"><path id="dSpA" fill="rgba(255,255,255,.22)"/><path id="dSpL" fill="none" stroke="#fff" stroke-width="2.4"/></svg></div>' +
+      d.innerHTML = '<div class="qrdd-kp"><div class="qrdd-k1"><small>مسح باركود المركز النهارده</small><b id="dK1">0</b><em id="dK1t">—</em><svg class="qrdd-sp" viewBox="0 0 200 44" preserveAspectRatio="none"><path id="dSpA" fill="rgba(255,255,255,.22)"/><path id="dSpL" fill="none" stroke="#fff" stroke-width="2.4"/></svg></div>' +
         '<div class="qrdd-k2" style="--b:#ECFDF5;--c:#059669">' + dSvg('eye') + '<b id="dK2">0</b><small>مرة اتفتحت نتيجة</small></div>' +
         '<div class="qrdd-k2" style="--b:#FFF7ED;--c:#EA580C">' + dSvg('cal') + '<b id="dK3">0</b><small>طلبات جديدة</small></div></div>' +
-        '<div class="qrdd-ch"><div class="qrdd-t"><b>فتح الباركود على مدار اليوم</b><small id="dChT">النهارده</small></div><div class="qrdd-bars" id="dBars"></div><div class="qrdd-bx"><span>12ص</span><span>6ص</span><span>12م</span><span>6م</span><span>11م</span></div></div>' +
+        '<div class="qrdd-ch"><div class="qrdd-t"><b>مسح الباركود على مدار اليوم</b><small id="dChT">النهارده</small></div><div class="qrdd-bars" id="dBars"></div><div class="qrdd-bx"><span>12ص</span><span>6ص</span><span>12م</span><span>6م</span><span>11م</span></div></div>' +
         '<div class="qrdd-qa"><button type="button" data-dq="pdf" style="--c:#E11D48">' + dSvg('file') + 'ارفع PDF</button><button type="button" data-dq="dicom" style="--c:#4F46E5">' + dSvg('lung') + 'DICOM</button><button type="button" data-dq="qr" style="--c:var(--qrd-a,#0F766E)">' + dSvg('qr') + 'الباركود الثابت</button></div>';
       var h2 = dash.querySelector('.hero2'); if (h2 && h2.nextSibling) dash.insertBefore(d, h2.nextSibling); else dash.insertBefore(d, dash.firstChild);
       d.addEventListener('click', function (e) {
@@ -382,15 +382,15 @@
     var D = ui.dash; if (D) { today = D.qr.today; yc = D.qr.yday; hrs = D.hours.slice(); views = D.views.total; reqs = D.req.total; }
     var set = function (id, v) { var e = $(id); if (e && e.dataset.v !== String(v)) { e.dataset.v = v; count(e, v); } };
     set('dK1', today); set('dK2', views); set('dK3', reqs);
-    var t = $('dK1t'); if (t) t.textContent = yc ? (today >= yc ? '▲ ' : '▼ ') + Math.abs(Math.round((today - yc) / yc * 100)) + '% عن امبارح' : (q.total ? 'الإجمالي ' + n0(q.total) + ' مرة' : 'لسه مفيش فتح');
+    var t = $('dK1t'); if (t) t.textContent = yc ? (today >= yc ? '▲ ' : '▼ ') + Math.abs(Math.round((today - yc) / yc * 100)) + '% عن امبارح' : (q.total ? 'الإجمالي ' + n0(q.total) + ' مرة' : 'لسه مفيش مسح');
     var mx = Math.max.apply(null, hrs.concat([1])), now = new Date().getHours();
     var chb = $('qrdD') && $('qrdD').querySelector('.qrdd-ch');
     var mm = ui.mMode || 'today', sig = chb && D ? chartStyle() + mm + D.hours.join(',') + '|' + D.days.map(function (d) { return d.qr; }).join(',') + '|' + D.qr.today + '|' + D.qr.yday : '';
     if (chb && D && chb.dataset.sig !== sig) {
       chb.dataset.sig = sig;
       chb.classList.toggle('is-line', chartStyle() === 'line');
-      if (chartStyle() === 'line') { chb.innerHTML = '<div class="qrdd-t"><b>فتح الباركود</b>' + modeSeg(mm, 'data-mm') + '</div>' + trendChart(D, mm, true); }
-      else { chb.innerHTML = '<div class="qrdd-t"><b>فتح الباركود</b>' + modeSeg(mm, 'data-mm') + '</div>' + lxChart(mm === 'today' ? D : D, mm); }
+      if (chartStyle() === 'line') { chb.innerHTML = '<div class="qrdd-t"><b>مسح الباركود</b>' + modeSeg(mm, 'data-mm') + '</div>' + trendChart(D, mm, true); }
+      else { chb.innerHTML = '<div class="qrdd-t"><b>مسح الباركود</b>' + modeSeg(mm, 'data-mm') + '</div>' + lxChart(mm === 'today' ? D : D, mm); }
       [].forEach.call(chb.querySelectorAll('[data-mm]'), function (b) { b.onclick = function () { ui.mMode = b.dataset.mm; dHome(); }; });
     }
     if ($('dBars')) $('dBars').innerHTML = hrs.map(function (n, h) { return '<i class="' + (h === now ? 'h' : '') + (n ? ' v' : '') + '" style="height:' + Math.max(6, Math.round(n / mx * 100)) + '%" title="' + h + ':00 — ' + n + '"></i>'; }).join('');
@@ -463,7 +463,7 @@
       '<section class="hero2"><div class="hl"><button class="clogo' + (ui.logo ? ' img' : '') + '" id="lgo" type="button" title="لوجو المركز"><span data-logo>' + logoTag() + '</span><em>' + (ui.logo ? 'غيّر' : '+ لوجو') + '</em></button>' +
           '<div><small>QR Patient</small><h1>' + esc(C.center) + '</h1><p>ارفع PDF الحالة واطبع الباركود — والمريض يفتح نتيجته من موبايله.</p></div></div>' +
         '<div class="hs"><div><b id="s1">0</b><span>النهارده</span></div><div><b id="s2">0</b><span>الشهر ده</span></div><div><b id="s3">0</b><span>مرة اتفتحت</span></div><div><b id="s4">0</b><span>على الجهاز ده</span></div></div></section>' +
-      '<section class="qrc" id="qrStats" aria-label="إحصائيات فتح الباركود"><div class="qrc-loading">📊 جاري تحميل إحصائيات فتح الباركود…</div></section>' +
+      '<section class="qrc" id="qrStats" aria-label="إحصائيات مسح الباركود"><div class="qrc-loading">📊 جاري تحميل إحصائيات مسح الباركود…</div></section>' +
       '<div class="kgrid"><div class="kmain">' +
         '<div id="mwda"></div><div class="upz"><div class="drop" id="drop"><span class="beam"></span>' +
           '<div class="pis"><button class="pi pdf" id="pkP" type="button" title="ارفع PDF"><span class="pg"><svg viewBox="0 0 48 56"><path d="M8 2h22l12 12v36a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4V6a4 4 0 0 1 4-4z" fill="#fff"/><path d="M30 2v12h12" fill="#FECACA"/><rect x="0" y="28" width="34" height="16" rx="4" fill="#E11D48"/><text x="17" y="40" text-anchor="middle" font-size="11" font-weight="800" fill="#fff" font-family="Arial,sans-serif">PDF</text></svg></span><b>PDF</b><small>تقرير / نتيجة</small></button>' +
@@ -534,27 +534,27 @@
     function group(kind, label, number, symbol) {
       var log = rows.filter(function (r) { return r.kind === kind; });
       var times = log.length ? log.map(function (r) {
-        return '<li><span>◷ فتح الرابط</span><time datetime="' + esc(String(r.at || '').replace(' ', 'T')) +
+        return '<li><span>◷ مسح الباركود</span><time datetime="' + esc(String(r.at || '').replace(' ', 'T')) +
           '">' + esc(visitTime(r.at)) + '</time></li>';
-      }).join('') : '<li class="qrd-qr-empty">مفيش مواعيد فتح مسجلة حديثًا للقسم ده.</li>';
+      }).join('') : '<li class="qrd-qr-empty">مفيش مواعيد مسح مسجلة حديثًا للقسم ده.</li>';
       var tail = number > log.length ? '<p class="qrd-qr-history-note">بنحتفظ بآخر ' + log.length +
         ' زيارة تفصيليًا هنا، والعدد الإجمالي محفوظ كامل.</p>' : '';
       return '<details class="qrd-qr-accordion" data-qr-kind="' + kind + '"' + (previouslyOpen[kind] ? ' open' : '') + '>' +
         '<summary><span class="qrd-qr-symbol">' + symbol + '</span><span class="qrd-qr-label"><b>' + label +
-        '</b><small>اضغط لعرض أوقات الفتح</small></span><strong>' + n0(number) +
+        '</b><small>اضغط لعرض أوقات المسح</small></span><strong>' + n0(number) +
         ' <small>مرة</small></strong><span class="qrd-qr-chevron" aria-hidden="true">⌄</span></summary>' +
         '<div class="qrd-qr-opened"><ol class="qrd-qr-times">' + times + '</ol>' + tail + '</div></details>';
     }
     root.innerHTML =
-      '<div class="qrc-head"><div class="qrc-head-icon">▦</div><div class="qrc-head-copy"><small>QR ANALYTICS</small><h2>فتح روابط الباركود</h2>' +
-        '<p>عداد الفتحات والمواعيد، من غير موقع أو بيانات زائر.</p></div><span class="qrc-tag"><i></i> مباشر</span></div>' +
-      '<div class="qrd-qr-totals"><div><span>إجمالي الفتحات</span><strong>' + n0(q.total) + '</strong></div>' +
-        '<div><span>فتحات اليوم</span><strong>' + n0(q.today) + '</strong></div></div>' +
+      '<div class="qrc-head"><div class="qrc-head-icon">▦</div><div class="qrc-head-copy"><small>QR ANALYTICS</small><h2>مسح الباركود</h2>' +
+        '<p>عداد مرات المسح والمواعيد، من غير موقع أو بيانات زائر.</p></div><span class="qrc-tag"><i></i> مباشر</span></div>' +
+      '<div class="qrd-qr-totals"><div><span>إجمالي مرات المسح</span><strong>' + n0(q.total) + '</strong></div>' +
+        '<div><span>مرات المسح اليوم</span><strong>' + n0(q.today) + '</strong></div></div>' +
       '<div class="qrd-qr-groups">' +
         group('fixed', 'باركود المركز الثابت', q.fixed, '▦') +
         group('report', 'روابط نتائج الأشعة', q.report, '🩻') +
       '</div>' +
-      '<p class="qrd-qr-note">العداد بيحسب فتح الرابط من الكاميرا أو مباشرة؛ افتح أي قائمة لعرض المواعيد المسجلة.</p>';
+      '<p class="qrd-qr-note">العداد بيحسب مسح الباركود من الكاميرا أو مباشرة؛ افتح أي قائمة لعرض المواعيد المسجلة.</p>';
   }
   /* ── option 2: the fixed barcode on every report ── */
   /* 5.01 · the look of the patient's pages (A «نَفَس» / C «دفا») — the patient can switch to night mode himself */
@@ -1097,7 +1097,7 @@
     var step = Math.max(1, Math.ceil(mx / 4)), top = step * 4, now = new Date().getHours();
     var grid = [4, 3, 2, 1, 0].map(function (k) { return '<div class="lx-gl" style="bottom:' + (k * 25) + '%"><span>' + n0(step * k) + '</span></div>'; }).join('');
     var bars = cols.map(function (c, j) {
-      var tip = mode === 'today' ? (((j % 12) || 12) + (j < 12 ? ' ص' : ' م') + ' — ' + c[0] + ' فتح') : (function () { var d = D.days[j], dt = new Date(d.day + 'T12:00:00'); return DAYW[dt.getDay()] + ' ' + (+d.day.slice(8)) + '/' + (+d.day.slice(5, 7)) + ' — باركود ' + d.qr + ' · نتائج ' + d.views; })();
+      var tip = mode === 'today' ? (((j % 12) || 12) + (j < 12 ? ' ص' : ' م') + ' — ' + c[0] + ' مسح') : (function () { var d = D.days[j], dt = new Date(d.day + 'T12:00:00'); return DAYW[dt.getDay()] + ' ' + (+d.day.slice(8)) + '/' + (+d.day.slice(5, 7)) + ' — باركود ' + d.qr + ' · نتائج ' + d.views; })();
       return '<div class="lx-col' + (mode === 'today' && j === now ? ' now' : '') + '" data-tip="' + esc(tip) + '">' + c.map(function (v, k) { return '<i class="s' + k + '" style="height:' + (v ? Math.max(3, v / top * 100) : 0) + '%"></i>'; }).join('') + '</div>';
     }).join('');
     if (mode !== 'today') xl = D.days.map(function (d, j) { return (D.days.length > 10 ? j % 3 : 0) ? '' : (+d.day.slice(8)) + '/' + (+d.day.slice(5, 7)); });
@@ -1118,9 +1118,9 @@
   }
   function trendChart(D, mode, small) {
     var vals, labs, tips, now = new Date().getHours(), i;
-    if (mode === 'today') { vals = D.hours.slice(0, now + 1); labs = ['12ص', '', 'دلوقتي']; tips = vals.map(function (v, h) { return ((h % 12) || 12) + (h < 12 ? ' ص' : ' م') + ' — ' + v + ' فتح'; }); }
+    if (mode === 'today') { vals = D.hours.slice(0, now + 1); labs = ['12ص', '', 'دلوقتي']; tips = vals.map(function (v, h) { return ((h % 12) || 12) + (h < 12 ? ' ص' : ' م') + ' — ' + v + ' مسح'; }); }
     else { var DD = D.days.slice(mode === '7' ? -7 : -30); vals = DD.map(function (d) { return d.qr; }); var f = function (d) { return (+d.day.slice(8)) + '/' + (+d.day.slice(5, 7)); };
-      labs = [f(DD[0]), f(DD[Math.floor(DD.length / 2)]), 'النهارده']; tips = DD.map(function (d) { var dt = new Date(d.day + 'T12:00:00'); return DAYW[dt.getDay()] + ' ' + f(d) + ' — ' + d.qr + ' فتح'; }); }
+      labs = [f(DD[0]), f(DD[Math.floor(DD.length / 2)]), 'النهارده']; tips = DD.map(function (d) { var dt = new Date(d.day + 'T12:00:00'); return DAYW[dt.getDay()] + ' ' + f(d) + ' — ' + d.qr + ' مسح'; }); }
     var total = vals.reduce(function (a, b) { return a + b; }, 0), n = vals.length;
     var half = Math.floor(n / 2), a = vals.slice(0, half).reduce(function (x, y) { return x + y; }, 0), b = vals.slice(n - half).reduce(function (x, y) { return x + y; }, 0);
     var ch = mode === 'today' ? pct(D.qr.today, D.qr.yday) : pct(b, a), show = mode === 'today' ? !!D.qr.yday : !!a;
@@ -1131,7 +1131,7 @@
     var dash = mode !== 'today' && P.length > 1 ? 'M' + S[S.length - 1][0].toFixed(1) + ' ' + S[S.length - 1][1].toFixed(1) + ' L' + last[0].toFixed(1) + ' ' + last[1].toFixed(1) : '';
     var gid = 'tg' + (++trendChart.n || (trendChart.n = 1));
     var hov = '<div class="tc-hov">' + vals.map(function (v, k) { return '<i data-tip="' + esc(tips[k]) + '"></i>'; }).join('') + '</div>';
-    return '<div class="tc' + (small ? ' sm' : '') + '"><div class="tc-hd"><b>' + n0(total) + '</b><p><span>' + (mode === 'today' ? 'فتحة النهارده' : n0(D.qr.today) + ' النهارده') + '</span>' +
+    return '<div class="tc' + (small ? ' sm' : '') + '"><div class="tc-hd"><b>' + n0(total) + '</b><p><span>' + (mode === 'today' ? 'مسح النهارده' : n0(D.qr.today) + ' النهارده') + '</span>' +
         (show ? '<em class="' + (ch >= 0 ? 'up' : 'dn') + '">' + (ch >= 0 ? '↗ ' : '↘ ') + Math.abs(ch) + '%</em>' : '') + '</p></div>' +
       '<div class="tc-plot"><svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="' + gid + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--tc)" stop-opacity=".42"/><stop offset="1" stop-color="var(--tc)" stop-opacity="0"/></linearGradient></defs>' +
         (area ? '<path class="tc-a" d="' + area + '" fill="url(#' + gid + ')"/>' : '') + (lineD ? '<path class="tc-l" d="' + lineD + '" fill="none" stroke="var(--tc)" stroke-width="2.6" vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round"/>' : '') +
@@ -1143,8 +1143,8 @@
     var host = $('qrd-body-settings'); if (!host) return; var el = $('chSet');
     if (!el) { el = document.createElement('section'); el.id = 'chSet'; el.className = 'lx-card ch-set'; host.insertBefore(el, host.firstChild); }
     var st = chartStyle();
-    el.innerHTML = '<div class="lx-ch"><div><h3>📈 شكل رسم فتح الباركود</h3><small>بيتطبّق على لوحة التحكم في الكمبيوتر والموبايل (على الجهاز ده)</small></div></div><div class="ch-opts">' +
-      '<button type="button" data-chs="line" class="' + (st === 'line' ? 'on' : '') + '"><svg viewBox="0 0 120 50"><defs><linearGradient id="chp1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FB923C" stop-opacity=".5"/><stop offset="1" stop-color="#FB923C" stop-opacity="0"/></linearGradient></defs><path d="M0 34 C12 30 16 38 26 28 S44 22 54 30 S74 16 84 22 S100 10 110 12 L110 50 L0 50Z" fill="url(#chp1)"/><path d="M0 34 C12 30 16 38 26 28 S44 22 54 30 S74 16 84 22 S100 10 110 12" fill="none" stroke="#FB923C" stroke-width="2.4"/><path d="M110 12 L118 30" stroke="#FDBA74" stroke-width="2" stroke-dasharray="2 3"/><circle cx="118" cy="30" r="2.6" fill="#fff"/></svg><b>خط — زي البورصة</b><small>اتجاه الفتح والنسبة</small></button>' +
+    el.innerHTML = '<div class="lx-ch"><div><h3>📈 شكل رسم مسح الباركود</h3><small>بيتطبّق على لوحة التحكم في الكمبيوتر والموبايل (على الجهاز ده)</small></div></div><div class="ch-opts">' +
+      '<button type="button" data-chs="line" class="' + (st === 'line' ? 'on' : '') + '"><svg viewBox="0 0 120 50"><defs><linearGradient id="chp1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FB923C" stop-opacity=".5"/><stop offset="1" stop-color="#FB923C" stop-opacity="0"/></linearGradient></defs><path d="M0 34 C12 30 16 38 26 28 S44 22 54 30 S74 16 84 22 S100 10 110 12 L110 50 L0 50Z" fill="url(#chp1)"/><path d="M0 34 C12 30 16 38 26 28 S44 22 54 30 S74 16 84 22 S100 10 110 12" fill="none" stroke="#FB923C" stroke-width="2.4"/><path d="M110 12 L118 30" stroke="#FDBA74" stroke-width="2" stroke-dasharray="2 3"/><circle cx="118" cy="30" r="2.6" fill="#fff"/></svg><b>خط — زي البورصة</b><small>اتجاه المسح والنسبة</small></button>' +
       '<button type="button" data-chs="bars" class="' + (st === 'bars' ? 'on' : '') + '"><svg viewBox="0 0 120 50">' + [10, 18, 14, 26, 22, 34, 30, 40].map(function (h, k) { return '<rect x="' + (4 + k * 14.5) + '" y="' + (48 - h) + '" width="9" height="' + h + '" rx="2" fill="' + (k === 7 ? '#F59E0B' : '#14B8A6') + '"/>'; }).join('') + '</svg><b>أعمدة</b><small>العدد في كل ساعة أو يوم</small></button></div>';
     [].forEach.call(el.querySelectorAll('[data-chs]'), function (b) { b.onclick = function () { try { localStorage.setItem('qrd-chart', b.dataset.chs); } catch (e) {} chartSettings(); dashX(); dHome(); toast(b.dataset.chs === 'line' ? '📈 الرسم بقى خط زي البورصة' : '📊 الرسم بقى أعمدة'); }; });
   }
@@ -1153,7 +1153,7 @@
     if (!D) { el.innerHTML = '<div class="lx-stats">' + [1, 2, 3, 4].map(function () { return '<div class="lx-st sk"></div>'; }).join('') + '</div>'; return; }
     var qd = pct(D.qr.today, D.qr.yday), R = D.req;
     var reqLine = [['حجز', R.bookings], ['نتائج', R.results], ['شكاوى', R.complaints], ['تقارير', R.reports]].filter(function (x) { return x[1]; }).map(function (x) { return x[0] + ' ' + x[1]; }).join(' · ') || 'مفيش طلبات مستنية';
-    var stats = lxStat({ l: 'فتح الباركود الثابت النهارده', v: D.qr.today, i: 'qr', c: '#0D9488', sp: D.days.map(function (d) { return d.qr; }),
+    var stats = lxStat({ l: 'مسح الباركود الثابت النهارده', v: D.qr.today, i: 'qr', c: '#0D9488', sp: D.days.map(function (d) { return d.qr; }),
         d: D.qr.yday ? (Math.abs(qd) + '% ' + (qd >= 0 ? 'زيادة' : 'أقل') + ' عن امبارح (' + n0(D.qr.yday) + ')') : 'الإجمالي ' + n0(D.qr.total) + ' مرة', tone: D.qr.yday ? (qd >= 0 ? 'up' : 'dn') : '', ti: D.qr.yday ? (qd >= 0 ? 'trend' : 'trendD') : '' }) +
       lxStat({ l: 'مرات فتح النتائج النهارده', v: D.views.today, i: 'eye', c: '#6366F1', sp: D.days.map(function (d) { return d.views; }), d: 'الإجمالي ' + n0(D.views.total) + ' مرة · امبارح ' + n0(D.views.yday) }) +
       lxStat({ l: 'الحالات المرفوعة', v: D.cases.total, i: 'file', c: '#D97706', sp: casesPerDay(), d: 'النهارده ' + n0(D.cases.today) + ' · الشهر ده ' + n0(D.cases.month) + (D.cases.unseen ? ' · ' + n0(D.cases.unseen) + ' لسه متفتحتش' : '') }) +
@@ -1166,7 +1166,7 @@
         '<td><span class="lx-via ' + (e.via === 'fixed' ? 'f' : 'q') + '">' + v[0] + ' ' + v[1] + '</span></td><td class="mut">' + esc(e.dev || '—') + '</td><td class="mut">' + when(e.at) + '</td></tr>';
     }).join('');
     el.innerHTML = '<div class="lx-stats">' + stats + '</div>' +
-      '<div class="lx-row"><section class="lx-card lx-chart' + (chartStyle() === 'line' ? ' is-line' : '') + '"><div class="lx-ch"><div><h3>فتح الباركود الثابت</h3><small>' + (mode === 'today' ? 'النهارده بالساعة' : 'آخر ' + mode + ' يوم') + '</small></div>' + modeSeg(mode, 'data-lxm') + '</div>' +
+      '<div class="lx-row"><section class="lx-card lx-chart' + (chartStyle() === 'line' ? ' is-line' : '') + '"><div class="lx-ch"><div><h3>مسح الباركود الثابت</h3><small>' + (mode === 'today' ? 'النهارده بالساعة' : 'آخر ' + mode + ' يوم') + '</small></div>' + modeSeg(mode, 'data-lxm') + '</div>' +
         (chartStyle() === 'line' ? trendChart(D, mode) : (mode !== 'today' ? '<div class="lx-lg"><span><i class="s0"></i>الباركود الثابت</span><span><i class="s1"></i>فتح النتائج</span></div>' : '') + lxChart(D)) + '</section>' +
       '<section class="lx-card lx-follow"><div class="lx-ch"><div><h3>محتاج متابعة</h3><small>الطلبات اللي لسه مارديتش عليها</small></div></div><div class="lx-fl">' +
         follow.map(function (f) { return '<button type="button" data-page-nav="' + f[0] + '" style="--c:' + f[4] + '"><span class="lx-fi">' + ic(f[1]) + '</span><b>' + f[2] + '</b><em class="' + (f[3] ? 'on' : '') + '">' + n0(f[3]) + '</em></button>'; }).join('') +
@@ -1516,7 +1516,7 @@
   }
   function reportMonthPages(R, m) {
     var c = R.cur, p = R.prev, pm = monthName(p.month);
-    var kp = [['الحالات المرفوعة', c.cases, p.cases, '#4F46E5'], ['مرات فتح النتائج', c.views, p.views, '#0D9488'], ['فتح الباركود الثابت', c.qr, p.qr, '#0891B2'], ['طلبات الحجز', c.bookings, p.bookings, '#7C3AED'],
+    var kp = [['الحالات المرفوعة', c.cases, p.cases, '#4F46E5'], ['مرات فتح النتائج', c.views, p.views, '#0D9488'], ['مسح الباركود الثابت', c.qr, p.qr, '#0891B2'], ['طلبات الحجز', c.bookings, p.bookings, '#7C3AED'],
       ['طلبات النتائج', c.asks, p.asks, '#D97706'], ['الشكاوى', c.complaints, p.complaints, '#E11D48', true], ['طلبات التقارير', c.reports, p.reports, '#B45309'], ['رضا المرضى', c.rated ? c.stars.toFixed(1) + ' ★' : '—', 0, '#F59E0B']];
     var openRate = c.cases ? Math.round(c.opened / c.cases * 100) : 0, top = R.exams[0], hoursSl = [0, 0, 0, 0, 0, 0, 0, 0]; R.hours.forEach(function (v, h) { hoursSl[Math.floor(h / 3)] += v; });
     var peak = hoursSl.indexOf(Math.max.apply(null, hoursSl));
@@ -1535,11 +1535,11 @@
       '<div class="rp-kp rp-kp8">' + kp.map(function (k) { return '<div style="--c:' + k[3] + '"><small>' + k[0] + '</small><b>' + k[1] + '</b>' + (k[0] === 'رضا المرضى' ? '<em class="z">' + (c.rated ? c.rated + ' تقييم' : '') + '</em>' : delta(+k[1], k[2], k[4])) + '</div>'; }).join('') + '</div>' +
       '<div class="rp-box"><h2>💡 ملخص الشهر</h2><ul>' + ins.map(function (t) { return '<li>' + t + '</li>'; }).join('') + '</ul></div>' +
       '<div class="rp-box"><h2>الحالات المرفوعة كل يوم</h2>' + rpCols(ser('cases'), '#4F46E5', lbl) + '</div>' +
-      '<div class="rp-box"><h2>فتح الباركود الثابت كل يوم</h2>' + rpCols(ser('qr'), '#0891B2', lbl) + '</div>';
+      '<div class="rp-box"><h2>مسح الباركود الثابت كل يوم</h2>' + rpCols(ser('qr'), '#0891B2', lbl) + '</div>';
     var p2 = rpHead('التقرير الشهري — ' + monthName(m), 'التفاصيل') +
       '<div class="rp-two"><div class="rp-box"><h2>أكتر الفحوصات</h2>' + (R.exams.length ? rpBars(R.exams.map(function (e) { return [e.e, e.n]; }), '#4F46E5', c.cases) : '<p class="rp-mut">—</p>') + '</div>' +
       '<div class="rp-box"><h2>الحجوزات حسب الفحص</h2>' + (R.bookExams.length ? rpBars(R.bookExams.map(function (e) { return [e.e, e.n]; }), '#7C3AED', c.bookings) : '<p class="rp-mut">مفيش حجوزات</p>') + '</div></div>' +
-      '<div class="rp-two"><div class="rp-box"><h2>أوقات فتح الباركود</h2>' + rpBars(SLN.map(function (n, i) { return [n, hoursSl[i]]; }), '#0891B2', c.qr) + '</div>' +
+      '<div class="rp-two"><div class="rp-box"><h2>أوقات مسح الباركود</h2>' + rpBars(SLN.map(function (n, i) { return [n, hoursSl[i]]; }), '#0891B2', c.qr) + '</div>' +
       '<div class="rp-box"><h2>أسباب الشكاوى</h2>' + (R.subj.length ? rpBars(R.subj.map(function (e) { return [e.e, e.n]; }), '#E11D48', c.complaints) : '<p class="rp-mut">مفيش شكاوى 👏</p>') +
         '<div class="rp-st" style="margin-top:12px"><div class="rp-sb"><i style="width:' + (c.complaints ? c.compDone / c.complaints * 100 : 100) + '%"></i></div><p><span class="ok">● اتحلّت ' + c.compDone + '</span><span class="wa">● مستنية ' + (c.complaints - c.compDone) + '</span></p></div></div></div>' +
       '<div class="rp-box"><h2>⭐ رضا المرضى</h2>' + (c.rated ? '<div class="rp-two rp-rate"><div>' + rpBars([5, 4, 3, 2, 1].map(function (k) { return [k + ' نجوم', c.dist[k - 1]]; }), '#F59E0B', c.rated) + '</div><div>' +
