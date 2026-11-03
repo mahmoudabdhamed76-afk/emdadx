@@ -214,11 +214,12 @@
     homeRecent.innerHTML = '<div class="qrd-home-recent-head"><div><small>نشاط المرضى</small><h2>👁 آخر مرات الفتح</h2></div>' +
       '<button type="button" data-page-nav="activity" class="btn g sm">عرض السجل كله ←</button></div>' +
       '<div id="qrdHomeRecent" class="qrd-recent-rows"></div>';
-    homeGrid.appendChild(homeRecent);
+    homeGrid.insertBefore(homeRecent, homeGrid.firstChild);
     move('bookings', '#bookings'); move('results', '#asks');
     move('upload', '.kmain .upz'); move('upload', '#mwda'); move('upload', '#qu');
     move('cases', '.kmain .card.list');
-    move('qr', '#fx'); move('qr', '.kside .opt:has(.how)');
+    move('qr', '#fx');
+    var how = document.querySelector('.kside .how'); if (how) move('qr', how.closest('.opt'));
     move('design', '#thm');
     move('activity', '#recentViews');
     move('settings', '#disk');
@@ -348,26 +349,39 @@
     [[$('s1'), a], [$('s2'), b], [$('s3'), v], [$('s4'), Object.keys(ui.local).length]].forEach(function (x) { if (x[0] && x[0].dataset.v !== String(x[1])) { x[0].dataset.v = x[1]; count(x[0], x[1]); } });
   }
 
-  /* QR analytics: counts, timestamps and kind ONLY. No location tracking. */
+  /* Compact QR open summary with native, keyboard-accessible expandable visit lists. */
   function qrPanel() {
     var root = $('qrStats'), q = ui.qr;
     if (!root || !q) return;
-    var L = q.recent || [];
-    var recent = L.length ? L.slice(0, 5).map(function (x, i) {
-      return '<div class="qrc-visit" style="animation-delay:' + i * 40 + 'ms">' +
-        '<span class="qrc-visit-icon">' + (x.kind === 'report' ? '🩻' : '▦') + '</span>' +
-        '<div><b>' + (x.kind === 'report' ? 'فتح باركود نتيجة أشعة' : 'فتح باركود المركز') + '</b><small>زيارة لرابط الباركود</small></div>' +
-        '<time>' + esc(when(x.at)) + '</time></div>';
-    }).join('') : '<p class="qrc-empty">لسه مفيش زيارات جديدة. أول فتح للرابط هيظهر هنا.</p>';
+    var previouslyOpen = {};
+    [].forEach.call(root.querySelectorAll('details[data-qr-kind]'), function (d) {
+      previouslyOpen[d.dataset.qrKind] = d.open;
+    });
+    var rows = q.recent || [];
+    function group(kind, label, number, symbol) {
+      var log = rows.filter(function (r) { return r.kind === kind; });
+      var times = log.length ? log.map(function (r) {
+        return '<li><span>◷ فتح الرابط</span><time datetime="' + esc(String(r.at || '').replace(' ', 'T')) +
+          '">' + esc(when(r.at) || r.at) + '</time></li>';
+      }).join('') : '<li class="qrd-qr-empty">مفيش مواعيد فتح مسجلة حديثًا للقسم ده.</li>';
+      var tail = number > log.length ? '<p class="qrd-qr-history-note">بنحتفظ بآخر ' + log.length +
+        ' زيارة تفصيليًا هنا، والعدد الإجمالي محفوظ كامل.</p>' : '';
+      return '<details class="qrd-qr-accordion" data-qr-kind="' + kind + '"' + (previouslyOpen[kind] ? ' open' : '') + '>' +
+        '<summary><span class="qrd-qr-symbol">' + symbol + '</span><span class="qrd-qr-label"><b>' + label +
+        '</b><small>اضغط لعرض أوقات الفتح</small></span><strong>' + n0(number) +
+        ' <small>مرة</small></strong><span class="qrd-qr-chevron" aria-hidden="true">⌄</span></summary>' +
+        '<div class="qrd-qr-opened"><ol class="qrd-qr-times">' + times + '</ol>' + tail + '</div></details>';
+    }
     root.innerHTML =
-      '<div class="qrc-head"><div class="qrc-head-icon">▦</div><div class="qrc-head-copy"><small>QR ANALYTICS</small><h2>عداد فتح الباركود</h2><p>متابعة فتح روابط الباركود للمركز والنتائج، بدون تسجيل أي موقع.</p></div><span class="qrc-tag"><i></i> تحديث لحظي</span></div>' +
-      '<div class="qrc-metrics">' +
-        '<div class="qrc-stat"><span>▦ إجمالي الفتحات</span><strong>' + n0(q.total) + '</strong><small>من بداية تشغيل العداد</small></div>' +
-        '<div class="qrc-stat"><span>▣ فتحات النهارده</span><strong>' + n0(q.today) + '</strong><small>زيارات اليوم</small></div>' +
-        '<div class="qrc-stat"><span>▦ باركود المركز</span><strong>' + n0(q.fixed) + '</strong><small>فتح الرابط الثابت</small></div>' +
-        '<div class="qrc-stat"><span>🩻 باركود النتائج</span><strong>' + n0(q.report) + '</strong><small>فتح روابط نتائج منفصلة</small></div>' +
-      '</div><div class="qrc-lower"><div class="qrc-latest"><h3>◷ آخر عمليات فتح الباركود</h3>' + recent + '</div>' +
-        '<p class="qrc-disclosure">🔒 بدون تحديد موقع — بنتابع فقط تاريخ فتح رابط الباركود ونوعه. العدّاد بيحسب فتح الرابط حتى لو من غير كاميرا.</p></div>';
+      '<div class="qrc-head"><div class="qrc-head-icon">▦</div><div class="qrc-head-copy"><small>QR ANALYTICS</small><h2>فتح روابط الباركود</h2>' +
+        '<p>عداد الفتحات والمواعيد، من غير موقع أو بيانات زائر.</p></div><span class="qrc-tag"><i></i> مباشر</span></div>' +
+      '<div class="qrd-qr-totals"><div><span>إجمالي الفتحات</span><strong>' + n0(q.total) + '</strong></div>' +
+        '<div><span>فتحات اليوم</span><strong>' + n0(q.today) + '</strong></div></div>' +
+      '<div class="qrd-qr-groups">' +
+        group('fixed', 'باركود المركز الثابت', q.fixed, '▦') +
+        group('report', 'روابط نتائج الأشعة', q.report, '🩻') +
+      '</div>' +
+      '<p class="qrd-qr-note">العداد بيحسب فتح الرابط من الكاميرا أو مباشرة؛ افتح أي قائمة لعرض المواعيد المسجلة.</p>';
   }
   /* ── option 2: the fixed barcode on every report ── */
   /* 5.01 · the look of the patient's pages (A «نَفَس» / C «دفا») — the patient can switch to night mode himself */
@@ -640,6 +654,7 @@
   function bookings() {
     var el = $('bookings'); if (!el) return;
     var L = ui.bookings || [];
+    updateNavCount('bookings', L.length);
     if (!L.length) {
       el.innerHTML = '<div class="asks bookings"><div class="ah"><span class="ping">📅</span><div><b>طلبات حجز أشعة</b><small>طلبات المواعيد الواردة من المرضى</small></div><em>0</em></div>' +
         '<p class="qrd-rail-empty">✅ مفيش طلبات حجز جديدة حاليًا</p></div>'; return;
@@ -660,6 +675,7 @@
   /* ── 4.92 · patients who didn't find their result and asked on WhatsApp ── */
   function asks() {
     var el = $('asks'); if (!el) return; var L = ui.asks || [];
+    updateNavCount('results', L.length);
     if (!L.length) {
       el.innerHTML = '<div class="asks"><div class="ah"><span class="ping">📨</span><div><b>طلبات نتيجة الأشعة</b><small>طلبات المساعدة في العثور على النتائج</small></div><em>0</em></div>' +
         '<p class="qrd-rail-empty">✅ مفيش طلبات نتيجة معلّقة</p></div>'; return;
@@ -728,9 +744,18 @@
     return '<div class="ve"><span class="vi">' + v[0] + '</span><div><b>' + (withName ? esc(e.patient || '') + (e.exam ? ' <small>· ' + esc(e.exam) + '</small>' : '') : esc(e.dev || 'جهاز')) + '</b><small>' + when(e.at) + ' · ' + v[1] + (withName ? (e.dev ? ' · ' + esc(e.dev) : '') : (SRC[e.src] ? ' · ' + SRC[e.src] : '')) + '</small></div></div>';
   }
   function recent() {
-    var el = $('rec'); if (!el) return; var L = ui.recent.slice(0, 6);
-    el.innerHTML = L.length ? L.map(function (e, i) { return '<div class="rx" data-vt="' + esc(e.token) + '" style="animation-delay:' + i * 40 + 'ms">' + entryRow(e, true) + '</div>'; }).join('') : '<p class="rmt">لسه محدش فتح حالته — أول ما مريض يفتح هتلاقيه هنا لايف.</p>';
-    [].forEach.call(el.querySelectorAll('[data-vt]'), function (x) { x.onclick = function () { viewsModal(x.dataset.vt); }; });
+    function paint(el, L) {
+      if (!el) return;
+      el.innerHTML = L.length ? L.map(function (e, i) {
+        return '<button type="button" class="rx qrd-activity-button" data-vt="' + esc(e.token) +
+          '" style="animation-delay:' + i * 35 + 'ms">' + entryRow(e, true) + '</button>';
+      }).join('') : '<p class="rmt">لسه مفيش فتح لنتائج الأشعة — هتظهر هنا لحظيًا لما أي مريض يفتح نتيجته.</p>';
+      [].forEach.call(el.querySelectorAll('[data-vt]'), function (x) {
+        x.onclick = function () { viewsModal(x.dataset.vt); };
+      });
+    }
+    paint($('qrdHomeRecent'), ui.recent.slice(0, 7));
+    paint($('rec'), ui.recent.slice(0, 30));
   }
   function viewsModal(tok) {
     var r = itemOf(tok); if (!r) return;
