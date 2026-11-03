@@ -12,6 +12,10 @@
   var C = window.CD || {}, BASE = '/k/' + C.code, $ = function (id) { return document.getElementById(id); }, K = window.OZK;
   var ui = { logo: C.logo || '', logoImg: null, recent: [], vwOpen: '', asks: [], bookings: [], tickets: [], qr: null, page: 'dashboard', dicomMounted: false, layout: C.layout === 'violet' ? 'violet' : 'teal', wa: C.wa || '', prefill: null, list: [], local: {}, q: '', f: 'all', queue: [], live: false, es: null, fixed: !!C.fixedOn, dir: null, dirName: '', seen: {}, watchT: 0, pend: {}, auto: false, lastScan: 0 };
   var QID = 0;
+  /* 5.13 · night mode for the center's QR page (remembered on this computer) */
+  function qrdDarkGet() { try { var v = localStorage.getItem('qrd-dark'); if (v === '1') return true; if (v === '0') return false; } catch (e) {} return false; }
+  function qrdDarkSet(on) { document.documentElement.classList.toggle('qrd-dark', on); var b = document.getElementById('dkT'); if (b) { b.innerHTML = ic(on ? 'sun' : 'moon') + '<span>' + (on ? 'نهاري' : 'ليلي') + '</span>'; b.setAttribute('aria-pressed', String(on)); } }
+  document.documentElement.classList.toggle('qrd-dark', qrdDarkGet());
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function toast(t) { var el = $('toast'); if (!el) return; el.textContent = t; el.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(function () { el.classList.remove('on'); }, 3000); }
   function mb(n) { return n >= 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB'; }
@@ -43,6 +47,8 @@
     search: '<circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>',
     file: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/>',
     check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>', shield: '<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/>',
+    phone: '<path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/>',
+    moon: '<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>', sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
     bolt: '<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>'
   };
   function ic(n, c) { return '<svg class="i' + (c ? ' ' + c : '') + '" viewBox="0 0 24 24">' + (ICO[n] || '') + '</svg>'; }
@@ -318,7 +324,7 @@
         '<div class="qrdd-k2" style="--b:#FFF7ED;--c:#EA580C">' + dSvg('cal') + '<b id="dK3">0</b><small>طلبات جديدة</small></div></div>' +
         '<div class="qrdd-ch"><div class="qrdd-t"><b>فتح الباركود على مدار اليوم</b><small id="dChT">النهارده</small></div><div class="qrdd-bars" id="dBars"></div><div class="qrdd-bx"><span>12ص</span><span>6ص</span><span>12م</span><span>6م</span><span>11م</span></div></div>' +
         '<div class="qrdd-qa"><button type="button" data-dq="pdf" style="--c:#E11D48">' + dSvg('file') + 'ارفع PDF</button><button type="button" data-dq="dicom" style="--c:#4F46E5">' + dSvg('lung') + 'DICOM</button><button type="button" data-dq="qr" style="--c:var(--qrd-a,#0F766E)">' + dSvg('qr') + 'الباركود الثابت</button></div>';
-      dash.insertBefore(d, dash.firstChild);
+      var h2 = dash.querySelector('.hero2'); if (h2 && h2.nextSibling) dash.insertBefore(d, h2.nextSibling); else dash.insertBefore(d, dash.firstChild);
       d.addEventListener('click', function (e) {
         var b = e.target.closest('[data-dq]'); if (!b) return; var k = b.dataset.dq;
         if (k === 'qr') return navigatePage('qr', true);
@@ -371,6 +377,11 @@
       '<div class="qrd-layout-switch" role="group" aria-label="شكل لوحة التحكم">' +
       '<button type="button" id="dashTeal" aria-pressed="false" title="التصميم الطبي التركواز">🌿 تركواز</button>' +
       '<button type="button" id="dashViolet" aria-pressed="false" title="التصميم البنفسجي العصري">💜 بنفسجي</button></div>');
+    if (header && !$('dkT')) {
+      header.insertAdjacentHTML('afterbegin', '<button type="button" class="ib dkt" id="dkT" title="وضع ليلي / نهاري"></button>');
+      $('dkT').onclick = function () { var on = !document.documentElement.classList.contains('qrd-dark'); qrdDarkSet(on); try { localStorage.setItem('qrd-dark', on ? '1' : '0'); } catch (e) {} };
+      qrdDarkSet(qrdDarkGet());
+    }
     setDashboardLayout(ui.layout);
     [['dashTeal','teal'],['dashViolet','violet']].forEach(function (x) {
       var b = $(x[0]); if (!b) return;
@@ -781,41 +792,54 @@
   }
 
   /* Complaint and report inboxes; uploaded photos are only served to an authenticated center. */
+  /* ════ 5.13 · one compact, searchable list style for every request section ════ */
+  function qxHue(t) { var h = 0; String(t || '').split('').forEach(function (c) { h = (h * 31 + c.charCodeAt(0)) % 360; }); return h; }
+  function qxAv(name) { return '<span class="qx-av" style="--h:' + qxHue(name) + '">' + esc(String(name || '؟').trim().charAt(0)) + '</span>'; }
+  function qxShell(key, cols, rows, empty, countLabel) {
+    return '<section class="qx" data-qx="' + key + '"><div class="qx-bar"><label class="qx-s">' + ic('search') + '<input type="search" placeholder="ابحث بالاسم أو الموبايل أو التفاصيل" data-qx-q></label>' +
+      '<span class="qx-n" data-qx-n>' + rows.length + ' ' + countLabel + '</span></div>' +
+      (rows.length ? '<div class="qx-h">' + cols.map(function (c) { return '<span>' + c + '</span>'; }).join('') + '</div><div class="qx-list">' + rows.join('') + '</div><p class="qx-none" hidden>مفيش نتايج للبحث ده</p>'
+        : '<div class="qx-empty"><span>✅</span><b>' + empty + '</b><small>أول ما يوصل طلب جديد هيظهر هنا لحظيًا</small></div>') + '</section>';
+  }
+  function qxWire(el, countLabel) {
+    var q = el.querySelector('[data-qx-q]'); if (!q) return;
+    q.oninput = function () {
+      var v = q.value.trim().toLowerCase(), n = 0;
+      [].forEach.call(el.querySelectorAll('.qx-r'), function (r) { var ok = !v || r.textContent.toLowerCase().indexOf(v) > -1; r.hidden = !ok; if (ok) n++; });
+      var c = el.querySelector('[data-qx-n]'); if (c) c.textContent = n + ' ' + countLabel; var none = el.querySelector('.qx-none'); if (none) none.hidden = !!n;
+    };
+    [].forEach.call(el.querySelectorAll('.qx-note'), function (x) { x.onclick = function () { x.classList.toggle('open'); }; });
+  }
   function serviceTickets() {
-    var rows=ui.tickets||[];
-    function paint(kind,target,title,emptyText,description) {
-      var el=$(target);if(!el)return;
-      var L=rows.filter(function(x){return x.kind===kind;});
-      updateNavCount(kind==='complaint'?'complaints':'reports',L.length);
-      el.innerHTML='<section class="asks qrd-service-tickets"><div class="ah"><span class="ping">'+
-        (kind==='complaint'?'📝':'📤')+'</span><div><b>'+title+'</b><small>'+description+
-        '</small></div><em>'+L.length+'</em></div>'+
-        (L.length?L.map(function(t){
-          var imgs=(t.files||[]).map(function(file){
-            var imgUrl=BASE+'/ticket-image/'+Number(t.id)+'?i='+Number(file.index);
-            return '<a class="qrd-ticket-photo" target="_blank" rel="noopener noreferrer" href="'+imgUrl+'">'+
-              '<img loading="lazy" src="'+imgUrl+'" alt="صورة أرفقها المريض" referrerpolicy="no-referrer">'+
-              '<span>📷 '+esc(file.name||'عرض الصورة')+'</span></a>';
-          }).join('');
-          return '<article class="qrd-ticket" data-ticket="'+Number(t.id)+'"><div class="qrd-ticket-top">'+
-            '<div><b>'+esc(t.name)+'</b><small>'+esc(t.subject||(kind==='complaint'?'شكوى مريض':'طلب تقرير أشعة'))+
-            ' · '+esc(when(t.at))+'</small></div><span class="qrd-ticket-status">جديد</span></div>'+
-            '<p class="qrd-ticket-body">'+esc(t.message)+'</p>'+
-            (imgs?'<div class="qrd-ticket-photos">'+imgs+'</div>':'')+
-            '<div class="qrd-ticket-actions"><a class="btn sm" href="tel:'+esc(t.phone)+'">📞 '+esc(t.phone)+'</a>'+
-            '<button type="button" class="btn sm g" data-ticket-done="'+Number(t.id)+'">✅ تم التواصل</button></div></article>';
-        }).join(''):'<p class="qrd-rail-empty">'+emptyText+'</p>')+'</section>';
-      [].forEach.call(el.querySelectorAll('[data-ticket-done]'),function(btn) {
-        btn.onclick=function() {
-          var id=Number(btn.dataset.ticketDone);btn.disabled=true;
-          api('POST','tickets/'+id+'/done').then(function(j) {
-            ui.tickets=j.tickets||[];serviceTickets();toast('✅ تم تسجيل التواصل مع المريض');
-          }).catch(function(err){btn.disabled=false;toast(err.message||'حصلت مشكلة');});
+    var rows = ui.tickets || [];
+    function paint(kind, target, emptyText) {
+      var el = $(target); if (!el) return;
+      var L = rows.filter(function (x) { return x.kind === kind; });
+      updateNavCount(kind === 'complaint' ? 'complaints' : 'reports', L.length);
+      var R = L.map(function (t, i) {
+        var imgs = (t.files || []).map(function (file) {
+          var u = BASE + '/ticket-image/' + Number(t.id) + '?i=' + Number(file.index);
+          return '<a class="qx-ph" target="_blank" rel="noopener noreferrer" href="' + u + '" title="' + esc(file.name || 'صورة') + '"><img loading="lazy" src="' + u + '" alt="" referrerpolicy="no-referrer"></a>';
+        }).join('');
+        return '<article class="qx-r" data-ticket="' + Number(t.id) + '" style="--i:' + Math.min(i, 12) + '">' + qxAv(t.name) +
+          '<div class="qx-who"><b>' + esc(t.name) + '</b><a class="n" href="tel:' + esc(t.phone) + '">' + esc(t.phone) + '</a></div>' +
+          '<div class="qx-what"><span class="qx-tag ' + (kind === 'complaint' ? 'r' : 'a') + '">' + esc(t.subject || (kind === 'complaint' ? 'شكوى' : 'طلب تقرير')) + '</span></div>' +
+          '<div class="qx-note" title="اضغط لعرض الكلام كله"><p>' + esc(t.message) + '</p>' + (imgs ? '<div class="qx-phs">' + imgs + '</div>' : '') + '</div>' +
+          '<time class="qx-t">' + esc(when(t.at)) + '</time>' +
+          '<div class="qx-act"><a class="ic2" href="tel:' + esc(t.phone) + '" data-tip="اتصال">' + ic('phone') + '</a><button type="button" class="btn sm g" data-ticket-done="' + Number(t.id) + '">✓ تم التواصل</button></div></article>';
+      });
+      el.innerHTML = qxShell(kind, ['المريض', kind === 'complaint' ? 'عنوان الشكوى' : 'الطلب', 'التفاصيل', 'وصلت', ''], R, emptyText, kind === 'complaint' ? 'شكوى' : 'طلب');
+      qxWire(el, kind === 'complaint' ? 'شكوى' : 'طلب');
+      [].forEach.call(el.querySelectorAll('[data-ticket-done]'), function (btn) {
+        btn.onclick = function () {
+          var id = Number(btn.dataset.ticketDone); btn.disabled = true;
+          api('POST', 'tickets/' + id + '/done').then(function (j) { ui.tickets = j.tickets || []; serviceTickets(); toast('✅ تم تسجيل التواصل مع المريض'); })
+            .catch(function (err) { btn.disabled = false; toast(err.message || 'حصلت مشكلة'); });
         };
       });
     }
-    paint('complaint','complaints','📝 شكاوى المرضى','✅ مفيش شكاوى جديدة حاليًا','الشكاوى التي أرسلها المرضى من رابط المركز');
-    paint('report','reportRequests','📤 طلبات التقارير','✅ مفيش طلبات تقرير جديدة حاليًا','صور الطلبات والتقارير المطلوب تجهيزها');
+    paint('complaint', 'complaints', 'مفيش شكاوى جديدة');
+    paint('report', 'reportRequests', 'مفيش طلبات تقرير جديدة');
   }
 
   /* Radiology appointment requests: received instantly and confirmed offline by reception. */
@@ -823,15 +847,16 @@
     var el = $('bookings'); if (!el) return;
     var L = ui.bookings || [];
     updateNavCount('bookings', L.length);
-    if (!L.length) {
-      el.innerHTML = '<div class="asks bookings"><div class="ah"><span class="ping">📅</span><div><b>طلبات حجز أشعة</b><small>طلبات المواعيد الواردة من المرضى</small></div><em>0</em></div>' +
-        '<p class="qrd-rail-empty">✅ مفيش طلبات حجز جديدة حاليًا</p></div>'; return;
-    }
-    el.innerHTML = '<div class="asks bookings"><div class="ah"><span class="ping">📅</span><div><b>طلبات حجز أشعة</b><small>في انتظار اتصال المركز بالمريض</small></div><em>' + L.length + '</em></div>' +
-      L.map(function (r, i) {
-        return '<div class="ar" style="animation-delay:' + i * 45 + 'ms" data-book="' + r.id + '"><span class="ai">📅</span><div><b>' + esc(r.name) + '</b><small class="n">' + esc(r.phone) + '</small><small>' + esc(r.exam) + ' · ' + esc(r.day) + ' · ' + esc(r.slot) + '</small>' +
-          (r.note ? '<small>📝 ' + esc(r.note) + '</small>' : '') + '</div><div class="acts"><a class="btn sm" href="tel:' + esc(r.phone) + '">📞 اتصال</a><button class="btn sm g" data-b="done">✅ تم التواصل</button></div></div>';
-      }).join('') + '</div>';
+    var R = L.map(function (r, i) {
+      return '<div class="qx-r" data-book="' + r.id + '" style="--i:' + Math.min(i, 12) + '">' + qxAv(r.name) +
+        '<div class="qx-who"><b>' + esc(r.name) + '</b><a class="n" href="tel:' + esc(r.phone) + '">' + esc(r.phone) + '</a></div>' +
+        '<div class="qx-what"><span class="qx-tag">' + esc(r.exam) + '</span><small>📅 ' + esc(r.day) + ' · ' + esc(r.slot) + '</small></div>' +
+        '<div class="qx-note">' + (r.note ? '<p>' + esc(r.note) + '</p>' : '<p class="mut">—</p>') + '</div>' +
+        '<time class="qx-t">' + esc(when(r.at)) + '</time>' +
+        '<div class="qx-act"><a class="ic2" href="tel:' + esc(r.phone) + '" data-tip="اتصال">' + ic('phone') + '</a><button class="btn sm g" data-b="done">✓ تم التواصل</button></div></div>';
+    });
+    el.innerHTML = qxShell('book', ['المريض', 'الفحص والموعد', 'ملاحظات', 'وصل', ''], R, 'مفيش طلبات حجز جديدة', 'طلب حجز');
+    qxWire(el, 'طلب حجز');
     [].forEach.call(el.querySelectorAll('[data-b="done"]'), function (b) {
       b.onclick = function () {
         var id = +b.closest('[data-book]').dataset.book; b.disabled = true;
@@ -844,12 +869,17 @@
   function asks() {
     var el = $('asks'); if (!el) return; var L = ui.asks || [];
     updateNavCount('results', L.length);
-    if (!L.length) {
-      el.innerHTML = '<div class="asks"><div class="ah"><span class="ping">📨</span><div><b>طلبات نتيجة الأشعة</b><small>طلبات المساعدة في العثور على النتائج</small></div><em>0</em></div>' +
-        '<p class="qrd-rail-empty">✅ مفيش طلبات نتيجة معلّقة</p></div>'; return;
-    }
-    el.innerHTML = '<div class="asks"><div class="ah"><span class="ping">📨</span><div><b>مرضى بيطلبوا نتايجهم</b><small>دوّروا بالباركود الثابت ومالقوش نتيجتهم</small></div><em>' + L.length + '</em></div>' +
-      L.map(function (a, i) { return '<div style="animation-delay:' + (i * 60) + 'ms" class="ar' + (ui.newAsk && K.last10(a.phone) === ui.newAsk ? ' new' : '') + '" data-id="' + a.id + '"><span class="ai">🙋</span><div><b>' + esc(a.name) + ' <span class="n" style="font-weight:600;color:var(--mut)">' + esc(a.phone) + '</span></b><small>' + when(a.at) + (a.note ? ' · ' + esc(a.note) : '') + '</small></div><div class="acts"><button class="btn sm" data-k="up">📂 ارفع حالته</button><button class="ic2 wa" data-k="wa" data-tip="واتساب">' + ic('wa') + '</button><button class="ic2" data-k="ok" data-tip="خلصت">' + ic('check') + '</button></div></div>'; }).join('') + '</div>';
+    var R = L.map(function (a, i) {
+      return '<div class="qx-r ar' + (ui.newAsk && K.last10(a.phone) === ui.newAsk ? ' new' : '') + '" data-id="' + a.id + '" style="--i:' + Math.min(i, 12) + '">' + qxAv(a.name) +
+        '<div class="qx-who"><b>' + esc(a.name) + '</b><a class="n" href="tel:' + esc(a.phone) + '">' + esc(a.phone) + '</a></div>' +
+        '<div class="qx-what"><span class="qx-tag a">طلب نتيجة</span></div>' +
+        '<div class="qx-note">' + (a.note ? '<p>' + esc(a.note) + '</p>' : '<p class="mut">—</p>') + '</div>' +
+        '<time class="qx-t">' + when(a.at) + '</time>' +
+        '<div class="qx-act"><button class="btn sm" data-k="up">📂 ارفع حالته</button><button class="ic2 wa" data-k="wa" data-tip="واتساب">' + ic('wa') + '</button><button class="ic2" data-k="ok" data-tip="خلصت">' + ic('check') + '</button></div></div>';
+    });
+    el.innerHTML = qxShell('ask', ['المريض', 'النوع', 'تفاصيل الطلب', 'وصل', ''], R, 'مفيش طلبات نتيجة معلّقة', 'طلب');
+    qxWire(el, 'طلب');
+    if (!L.length) return;
     ui.newAsk = null;
     [].forEach.call(el.querySelectorAll('[data-k]'), function (b) {
       b.onclick = function () {
