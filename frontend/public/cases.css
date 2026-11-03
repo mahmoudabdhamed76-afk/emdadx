@@ -2366,3 +2366,4 @@ html.qrd-dark .lx-col.now i.s0{background:#FFBD5C!important}
 .tc-dot{border:2.5px solid var(--tc);box-sizing:border-box;width:12px;height:12px;margin:-6px 0 0 -6px}
 html.qrd-dark .tc-dot{border-color:#fff}
 @media (max-width:900px){html.qrd-dark .qrdd-tab button.on{color:#fff!important}html.qrd-dark .qrdd-tab button.on svg{background:#2A2A2A!important}}
+.wf-ic.dc{background:#4F46E5}.wf-c{font-size:11.5px;color:var(--mut);white-space:nowrap}

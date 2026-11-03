@@ -650,16 +650,16 @@
     var walk = function (en) { pend++; if (en.isFile) en.file(function (f) { out.push(f); pend--; fin(); }, function () { pend--; fin(); }); else if (en.isDirectory) { var rd = en.createReader(), all = []; (function more() { rd.readEntries(function (L) { if (L.length) { all = all.concat(L); more(); } else { all.forEach(walk); pend--; fin(); } }, function () { pend--; fin(); }); })(); } else { pend--; fin(); } };
     ents.forEach(walk);
   }
-  function addDicom(files) {
+  function addDicom(files, dkeys) {
     files = files.filter(maybeDicom); if (!files.length) return toast('مفيش ملفات DICOM');
     if (!window.OZPacs || !window.CompressionStream) return toast('المتصفح ده قديم — افتح الصفحة من Chrome أو Edge');
-    var ph = { id: ++QID, kind: 'dicom', st: 'pack', name: files.length + ' ملف DICOM', msg2: 'بنقرا الملفات…', pct: 2 };
+    var ph = { id: ++QID, kind: 'dicom', st: 'pack', name: files.length + ' ملف DICOM', msg2: 'بنقرا الملفات…', pct: 2, dkeys: dkeys || null };
     ui.queue.push(ph); queue();
     OZPacs.pack(files, { maxMb: C.maxMb, step: function (k, a, b) { ph.pct = Math.round(a / b * (k === 'read' ? 40 : 60) + (k === 'read' ? 0 : 40)); ph.msg2 = (k === 'read' ? 'بنقرا ' : 'بنضغط الصور ') + a + ' / ' + b; var e = $('pk' + ph.id), t = $('pt' + ph.id); if (e) e.style.width = ph.pct + '%'; if (t) t.textContent = ph.msg2; } })
       .then(function (L) {
         ph.st = 'gone';
         L.forEach(function (r) {
-          var nm = String(r.patient || '').trim(), q = { id: ++QID, kind: 'dicom', file: new File([r.blob], 'DICOM - ' + (nm || 'case') + '.ozxd', { type: 'application/octet-stream' }), name: '🩻 DICOM · ' + r.count + ' صورة' + (r.series > 1 ? ' · ' + r.series + ' سيريز' : ''), size: r.blob.size, pages: r.count, thumb: r.thumb, patient: nm, phone: '', exam: r.exam || '', st: 'ready', af: '🩻 اتضغطت لـ ' + mb(r.blob.size) + (r.date ? ' · ' + r.date : '') + ' — راجع الاسم واكتب موبايل المريض', dir: false };
+          var nm = String(r.patient || '').trim(), q = { id: ++QID, kind: 'dicom', file: new File([r.blob], 'DICOM - ' + (nm || 'case') + '.ozxd', { type: 'application/octet-stream' }), name: '🩻 DICOM · ' + r.count + ' صورة' + (r.series > 1 ? ' · ' + r.series + ' سيريز' : ''), size: r.blob.size, pages: r.count, thumb: r.thumb, patient: nm, phone: '', exam: r.exam || '', st: 'ready', af: '🩻 اتضغطت لـ ' + mb(r.blob.size) + (r.date ? ' · ' + r.date : '') + ' — راجع الاسم واكتب موبايل المريض', dir: false, dkeys: dkeys || null };
           ui.queue.push(q);
         });
         queue(); beep(); toast('🩻 جاهز — اكتب موبايل المريض واحفظ');
@@ -768,6 +768,7 @@
         ui.local[r.item.token] = { key: rawKey, size: r.blob.size, thumb: q.thumb };
         ui.list.unshift(r.item); q.st = 'done'; q.token = r.item.token; q.wrapped = !!(wrapped || wrapped2); q.file = null;
         if (q.dkey) { ui.upl[q.dkey] = r.item.token; hSet('upl:' + C.code, ui.upl); dirList(); }
+        if (q.dkeys) { q.dkeys.forEach(function (k) { ui.upl[k] = r.item.token; }); hSet('upl:' + C.code, ui.upl); dirList(); }
         if (K.last10(q.phone) && ui.asks.some(function (a) { return K.last10(a.phone) === K.last10(q.phone); })) api('POST', 'ask', { phone: q.phone }).then(function (x) { ui.asks = x.asks || []; asks(); toast('✅ ' + q.patient + ' اتحفظت — وطلبه اتقفل'); }).catch(function () {});
         queue(); table(); stats(); disk();
         var open = ui.queue.filter(function (x) { return x.st !== 'gone' && x.st !== 'done'; }).length;
@@ -780,7 +781,7 @@
   /* ── watching the print server's folder (Chrome / Edge) ── */
   function watchBar() {
     var el = $('wt'); if (!el) return;
-    if (!ui.dir) { el.className = 'watch'; el.innerHTML = '<span class="wi">📂</span><div style="flex:1"><b>اربط فولدر سيرفر الطباعة</b><small>أي PDF جديد يتحفظ في الفولدر ده بيظهر هنا لوحده — مش محتاج تسحبه.</small></div><button class="btn sm" id="wpk">📂 اختار الفولدر</button>'; $('wpk').onclick = pickDir; return; }
+    if (!ui.dir) { el.className = 'watch'; el.innerHTML = '<span class="wi">📂</span><div style="flex:1"><b>اربط فولدر سيرفر الطباعة أو الـ PACS</b><small>أي PDF أو ملفات DICOM جديدة تتحفظ في الفولدر ده (أو في فولدرات جواه) بتظهر هنا لوحدها — مش محتاج تسحبها.</small></div><button class="btn sm" id="wpk">📂 اختار الفولدر</button>'; $('wpk').onclick = pickDir; return; }
     if (ui.dirNeed) { el.className = 'watch'; el.innerHTML = '<span class="wi">⏸</span><div style="flex:1"><b>فولدر «' + esc(ui.dirName) + '»</b><small>المتصفح محتاج إذنك تاني عشان يكمّل يراقب الفولدر.</small></div><button class="btn sm" id="wgo">▶ كمّل المراقبة</button><button class="btn g sm" id="wx">فك الربط</button>'; $('wgo').onclick = function () { ui.dir.requestPermission({ mode: 'read' }).then(function (p) { if (p === 'granted') { ui.dirNeed = false; startWatch(); } }); }; $('wx').onclick = unlink; return; }
     el.className = 'watch on'; el.innerHTML = '<span class="wi">👀</span><div style="flex:1"><b>بيراقب فولدر «' + esc(ui.dirName) + '»</b><small id="wls">' + (ui.lastScan ? 'آخر فحص ' + new Date(ui.lastScan).toLocaleTimeString('ar-EG', { hour: 'numeric', minute: '2-digit', second: '2-digit' }) : 'بيبدأ…') + '</small></div><label><input type="checkbox" id="wau"' + (ui.auto ? ' checked' : '') + '> احفظ لوحده لو لقيت الاسم والموبايل في الملف</label><button class="btn g sm" id="wsc">↻ افحص دلوقتي</button><button class="btn g sm" id="wx">فك الربط</button>';
     el.insertAdjacentHTML('beforeend', '<div class="wf" id="wfl"></div>'); dirList();
@@ -790,48 +791,90 @@
   /* 5.17 · everything in the watched folder, newest first, with what happened to each file */
   function dirList() {
     var el = $('wfl'); if (!el) return; var all = (ui.dirFiles || []).slice().sort(function (a, b) { return b.f.lastModified - a.f.lastModified; });
-    var inQ = {}; ui.queue.forEach(function (q) { if (q.dkey && q.st !== 'gone') inQ[q.dkey] = q.st; });
+    var inQ = {}; ui.queue.forEach(function (q) { if (q.dkey && q.st !== 'gone') inQ[q.dkey] = q.st; if (q.dkeys && (q.st !== 'gone' || q.kind === 'dicom' && q.st === 'pack')) q.dkeys.forEach(function (k) { if (q.st !== 'gone') inQ[k] = q.st; }); });
+    /* DICOM: one row per folder (a study / CD export), not one per image */
+    var G = {}, raw = all; all = [];
+    raw.forEach(function (x) {
+      if (x.kind !== 'dicom') { all.push(x); return; }
+      var g = G[x.path]; if (!g) { g = G[x.path] = { kind: 'dicom', path: x.path, files: [], size: 0, lm: 0, key: 'dg:' + x.path }; all.push(g); }
+      g.files.push(x); g.size += x.f.size; g.lm = Math.max(g.lm, x.f.lastModified);
+    });
+    all.forEach(function (x) { if (x.kind === 'dicom') { x.f = { name: (x.path || 'الفولدر الرئيسي'), size: x.size, lastModified: x.lm }; } });
+    all.sort(function (a, b) { return b.f.lastModified - a.f.lastModified; });
     var td = ymd(), f = ui.dirF || 'today', qv = (ui.dirQ || '').toLowerCase();
     var isToday = function (x) { return ymd(new Date(x.f.lastModified)) === td; };
     var nT = all.filter(isToday).length, L = all.filter(function (x) { return (f === 'all' || isToday(x)) && (!qv || x.f.name.toLowerCase().indexOf(qv) > -1); });
-    var nNew = all.filter(function (x) { return !ui.upl[x.key] && !inQ[x.key] && !ui.list.some(function (r) { return r.name === x.f.name; }); }).length, show = L.slice(0, ui.dirMore ? 400 : 30);
+    var nNew = all.filter(function (x) { if (x.kind === 'dicom') return x.files.some(function (y) { return !ui.upl[y.key] && !inQ[y.key]; }); return !ui.upl[x.key] && !inQ[x.key] && !ui.list.some(function (r) { return r.name === x.f.name; }); }).length, show = L.slice(0, ui.dirMore ? 400 : 30);
     var names = {}; ui.list.forEach(function (r) { if (r.name) names[r.name] = 1; });
-    var stOf = function (x) { if (ui.upl[x.key] || names[x.f.name]) return '<span class="lx-st2 on">✓ اترفعت</span>'; var q = inQ[x.key]; if (q === 'done') return '<span class="lx-st2 on">✓ اترفعت</span>'; if (q) return '<span class="lx-st2 nw">⏳ في الطابور</span>'; return '<button type="button" class="btn sm" data-wf="' + esc(x.key) + '">⇧ ارفع</button>'; };
-    el.innerHTML = '<div class="wf-h"><b>📁 ملفات الفولدر</b><span class="wf-n">' + all.length + ' ملف · ' + nT + ' النهارده' + (nNew ? ' · <em>' + nNew + ' لسه مترفعتش</em>' : '') + '</span>' +
+    var stOf = function (x) {
+      if (x.kind === 'dicom') { var up = x.files.filter(function (y) { return ui.upl[y.key]; }).length, iq = (x.files.filter(function (y) { return inQ[y.key]; })[0] || {}).key;
+        if (up === x.files.length) return '<span class="lx-st2 on">✓ اترفعت</span>'; if (iq) return '<span class="lx-st2 nw">' + (inQ[iq] === 'pack' ? '⏳ بنضغطها…' : '⏳ في الطابور') + '</span>';
+        return '<button type="button" class="btn sm" data-wd="' + esc(x.key) + '">🩻 ارفع' + (up ? ' الباقي (' + (x.files.length - up) + ')' : '') + '</button>'; }
+      if (ui.upl[x.key] || names[x.f.name]) return '<span class="lx-st2 on">✓ اترفعت</span>'; var q = inQ[x.key]; if (q === 'done') return '<span class="lx-st2 on">✓ اترفعت</span>'; if (q) return '<span class="lx-st2 nw">⏳ في الطابور</span>'; return '<button type="button" class="btn sm" data-wf="' + esc(x.key) + '">⇧ ارفع</button>'; };
+    el.innerHTML = '<div class="wf-h"><b>📁 ملفات الفولدر <small>PDF و DICOM</small></b><span class="wf-n">' + all.length + ' ملف · ' + nT + ' النهارده' + (nNew ? ' · <em>' + nNew + ' لسه مترفعتش</em>' : '') + '</span>' +
       '<div class="lx-seg"><button type="button" data-wff="today" class="' + (f === 'today' ? 'on' : '') + '">النهارده</button><button type="button" data-wff="all" class="' + (f === 'all' ? 'on' : '') + '">الكل</button></div>' +
       '<label class="qx-s wf-s">' + ic('search') + '<input type="search" id="wfq" placeholder="اسم الملف" value="' + esc(ui.dirQ || '') + '"></label></div>' +
       (show.length ? '<div class="lx-tw"><table class="lx-t wf-t"><thead><tr><th>الملف</th><th>الحجم</th><th>اتحفظ في الفولدر</th><th></th></tr></thead><tbody>' + show.map(function (x) {
-        return '<tr><td><div class="lx-pt"><span class="wf-ic">PDF</span><b title="' + esc(x.f.name) + '">' + esc(x.f.name) + '</b></div></td><td class="mut">' + mb(x.f.size) + '</td><td class="mut">' + when(ymd(new Date(x.f.lastModified)) + ' ' + ('0' + new Date(x.f.lastModified).getHours()).slice(-2) + ':' + ('0' + new Date(x.f.lastModified).getMinutes()).slice(-2)) + '</td><td class="lx-acts">' + stOf(x) + '</td></tr>';
+        return '<tr><td><div class="lx-pt">' + (x.kind === 'dicom' ? '<span class="wf-ic dc">DICOM</span><b title="' + esc(x.f.name) + '">' + esc(x.f.name) + '</b><span class="wf-c">' + x.files.length + ' صورة</span>' : '<span class="wf-ic">PDF</span><b title="' + esc(x.f.name) + '">' + esc(x.f.name) + '</b>') + '</div></td><td class="mut">' + mb(x.f.size) + '</td><td class="mut">' + when(ymd(new Date(x.f.lastModified)) + ' ' + ('0' + new Date(x.f.lastModified).getHours()).slice(-2) + ':' + ('0' + new Date(x.f.lastModified).getMinutes()).slice(-2)) + '</td><td class="lx-acts">' + stOf(x) + '</td></tr>';
       }).join('') + '</tbody></table></div>' + (L.length > show.length ? '<button type="button" class="btn g sm wf-more" id="wfm">اعرض كله (' + L.length + ')</button>' : '')
         : '<p class="lx-emp">' + (all.length ? 'مفيش ملفات ' + (f === 'today' ? 'النهارده — دوس «الكل»' : 'بالاسم ده') : 'الفولدر فاضي — أول ما سيرفر الطباعة يحفظ PDF هيظهر هنا') + '</p>');
     [].forEach.call(el.querySelectorAll('[data-wff]'), function (b) { b.onclick = function () { ui.dirF = b.dataset.wff; dirList(); }; });
     var qi = $('wfq'); if (qi) qi.oninput = function () { ui.dirQ = qi.value; var pos = qi.selectionStart; dirList(); var n = $('wfq'); if (n) { n.focus(); try { n.setSelectionRange(pos, pos); } catch (e) {} } };
     var mo = $('wfm'); if (mo) mo.onclick = function () { ui.dirMore = true; dirList(); };
+    [].forEach.call(el.querySelectorAll('[data-wd]'), function (b) { b.onclick = function () { var g = all.filter(function (y) { return y.key === b.dataset.wd; })[0]; if (!g) return;
+      var L = g.files.filter(function (y) { return !ui.upl[y.key]; }); L.forEach(function (y) { ui.seen[y.key] = 1; });
+      addDicom(L.map(function (y) { return y.f; }), L.map(function (y) { return y.key; })); dirList(); var qu = $('qu'); if (qu) qu.scrollIntoView({ behavior: 'smooth', block: 'start' }); }; });
     [].forEach.call(el.querySelectorAll('[data-wf]'), function (b) { b.onclick = function () { var x = all.filter(function (y) { return y.key === b.dataset.wf; })[0]; if (!x) return; add([x.f], true); dirList(); var qu = $('qu'); if (qu) qu.scrollIntoView({ behavior: 'smooth', block: 'start' }); }; });
   }
   function unlink() { clearInterval(ui.watchT); ui.dir = null; ui.dirFiles = []; ui.dirNeed = false; hSet('dir:' + C.code, undefined); watchBar(); toast('اتفك ربط الفولدر'); }
   function pickDir() {
     window.showDirectoryPicker({ mode: 'read', id: 'ozx-print' }).then(function (h) {
       ui.dir = h; ui.dirName = h.name; ui.dirNeed = false; hSet('dir:' + C.code, h);
-      return listDir(h).then(function (all) { all.forEach(function (x) { ui.seen[x.key] = 1; }); hSet('seen:' + C.code, Object.keys(ui.seen).slice(-3000)); ui.dirFiles = all; toast('👀 بيراقب «' + h.name + '» — فيه ' + all.length + ' ملف PDF ظاهرين تحت، وأي ملف جديد هيدخل لوحده'); startWatch(); });
+      return listDir(h).then(function (all) { all.forEach(function (x) { ui.seen[x.key] = 1; }); hSet('seen:' + C.code, Object.keys(ui.seen).slice(-3000)); ui.dirFiles = all; var nd = all.filter(function (x) { return x.kind === 'dicom'; }).length; toast('👀 بيراقب «' + h.name + '» — فيه ' + (all.length - nd) + ' PDF' + (nd ? ' و ' + nd + ' صورة DICOM' : '') + ' ظاهرين تحت، وأي ملف جديد هيدخل لوحده'); startWatch(); });
     }).catch(function (e) { if (e && e.name !== 'AbortError') toast('مش قادر أفتح الفولدر'); });
   }
+  /* 5.19 · PDFs and DICOM (also inside sub-folders, like a PACS / CD export) */
+  function isDcmName(n) { return /\.(dcm|dicom|dic|ima|dc3)$/i.test(n); }
+  async function dcmMagic(f) { try { var b = new Uint8Array(await f.slice(128, 132).arrayBuffer()); return b[0] === 68 && b[1] === 73 && b[2] === 67 && b[3] === 77; } catch (e) { return false; } }
   function listDir(h) {
-    var out = [];
-    return (async function () { for await (var ent of h.values()) { if (ent.kind === 'file' && /\.pdf$/i.test(ent.name)) { try { var f = await ent.getFile(); out.push({ f: f, key: f.name + '|' + f.size + '|' + f.lastModified }); } catch (e) {} } } return out; })();
+    var out = [], chk = ui.dcmChk = ui.dcmChk || {};
+    async function walk(d, path, depth) {
+      for await (var ent of d.values()) {
+        if (out.length >= 4000) return;
+        if (ent.kind === 'directory') { if (depth < 4 && !/^\./.test(ent.name)) await walk(ent, path ? path + '/' + ent.name : ent.name, depth + 1); continue; }
+        if (ent.kind !== 'file' || /^\./.test(ent.name) || /^DICOMDIR$/i.test(ent.name)) continue;
+        var pdf = /\.pdf$/i.test(ent.name), dcm = !pdf && isDcmName(ent.name), maybe = !pdf && !dcm && maybeDicom({ name: ent.name, size: 1000 });
+        if (!pdf && !dcm && !maybe) continue;
+        try {
+          var f = await ent.getFile(), key = (path ? path + '/' : '') + f.name + '|' + f.size + '|' + f.lastModified;
+          if (maybe) { if (chk[key] == null) chk[key] = f.size > 200 && await dcmMagic(f); if (!chk[key]) continue; }
+          out.push({ f: f, key: key, kind: pdf ? 'pdf' : 'dicom', path: path || '' });
+        } catch (e) {}
+      }
+    }
+    return walk(h, '', 0).then(function () { return out; });
   }
-  function startWatch() { clearInterval(ui.watchT); watchBar(); scan(); ui.watchT = setInterval(scan, 4000); }
+  function startWatch() { clearInterval(ui.watchT); watchBar(); scan(); ui.watchT = setInterval(scan, 5000); }
   function scan() {
     if (!ui.dir || ui.dirNeed || scan.busy) return; scan.busy = true;
     listDir(ui.dir).then(function (all) {
-      var fresh = [];
+      var fresh = [], dnew = [];
       all.forEach(function (x) {
         if (ui.seen[x.key]) return;
+        if (x.kind === 'dicom') { dnew.push(x); return; }
         var p = ui.pend[x.f.name], age = Date.now() - x.f.lastModified;   /* wait until the print server finished writing it (same size twice, or untouched for 5 s) */
         if (age < 5000 && (!p || p !== x.f.size)) { ui.pend[x.f.name] = x.f.size; return; }
         delete ui.pend[x.f.name]; ui.seen[x.key] = 1; fresh.push(x.f);
       });
       if (fresh.length) { hSet('seen:' + C.code, Object.keys(ui.seen).slice(-3000)); add(fresh, true); }
+      if (dnew.length) {
+        var sig = dnew.map(function (x) { return x.key; }).join(';');
+        if (ui.dPend !== sig) { ui.dPend = sig; ui.dPendT = Date.now(); }
+        else if (Date.now() - ui.dPendT > 8000 && dnew.every(function (x) { return Date.now() - x.f.lastModified > 5000; })) {
+          dnew.forEach(function (x) { ui.seen[x.key] = 1; }); hSet('seen:' + C.code, Object.keys(ui.seen).slice(-6000)); ui.dPend = '';
+          addDicom(dnew.map(function (x) { return x.f; }), dnew.map(function (x) { return x.key; })); beep(); toast('🩻 ' + dnew.length + ' ملف DICOM جديد من الفولدر — بنضغطهم');
+        }
+      }
       ui.dirFiles = all; dirList();
       ui.lastScan = Date.now(); var w = $('wls'); if (w) w.textContent = 'آخر فحص ' + new Date(ui.lastScan).toLocaleTimeString('ar-EG', { hour: 'numeric', minute: '2-digit', second: '2-digit' });
     }).catch(function (e) { if (e && e.name === 'NotAllowedError') { ui.dirNeed = true; clearInterval(ui.watchT); watchBar(); } }).then(function () { scan.busy = false; });
