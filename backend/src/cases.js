@@ -85,7 +85,7 @@ function asksOf(cid) { return db.prepare('SELECT id, name, phone, note, at FROM 
 function bookingsOf(cid) { return db.prepare("SELECT id, name, phone, exam, day, slot, note, at FROM case_booking WHERE customer_id = ? AND status = 'new' ORDER BY id DESC LIMIT 100").all(cid); }
 function bookingPhone(p) {
   let d = String(p || '').replace(/[٠-٩]/g, c => String(c.charCodeAt(0) - 0x660)).replace(/\D/g, '');
-  if (d.length === 13 && d.startsWith('20')) d = d.slice(2);
+  if (d.length === 12 && d.startsWith('20')) d = d.slice(2);
   if (d.length === 10 && d.startsWith('1')) d = '0' + d;
   return /^01[0125]\d{8}$/.test(d) ? d : '';
 }
