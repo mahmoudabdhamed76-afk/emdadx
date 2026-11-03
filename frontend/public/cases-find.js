@@ -59,14 +59,14 @@
         slot = $('bs').value, note = $('bnote').value.trim(), msg = $('bmsg'), btn = $('bgo');
       if (phone.length === 13 && phone.slice(0, 2) === '20') phone = phone.slice(2);
       if (phone.length === 10 && phone.charAt(0) === '1') phone = '0' + phone;
-      if (name.length < 3 || !/^01[0125]\\d{8}$/.test(phone) || !exam || !day || !slot) {
+      if (name.length < 3 || !/^01[0125]\d{8}$/.test(phone) || !exam || !day || !slot) {
         msg.textContent = 'كمّل الاسم ورقم موبايل مصري صحيح ونوع الأشعة واليوم المناسب.'; msg.className = 'booking-msg err'; return;
       }
       if (day < input.min || day > input.max) {
         msg.textContent = 'اختار يوم من النهارده ولحد 90 يوم قدام.'; msg.className = 'booking-msg err'; return;
       }
       btn.disabled = true; btn.textContent = 'بنبعت طلبك…'; msg.textContent = ''; msg.className = 'booking-msg';
-      fetch(location.pathname.replace(/\\/$/, '') + '/book', {
+      fetch(location.pathname.replace(/\/$/, '') + '/book', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: name, phone: phone, exam: exam, day: day, slot: slot, note: note })
       }).then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) throw Error(j.message || 'محصلش — جرّب تاني'); return j; }); })
@@ -153,5 +153,5 @@
     var b = $('wa'); if (!b) return;
     b.onclick = function () { var f = form(''); if (f) askIn(ph, f.name, f.note, b); };
   }
-  $('go').onclick = go; $('ph').onkeydown = function (e) { if (e.key === 'Enter') go(); };
+  if ($('go') && $('ph')) { $('go').onclick = go; $('ph').onkeydown = function (e) { if (e.key === 'Enter') go(); }; }
 })();
