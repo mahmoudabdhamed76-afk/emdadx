@@ -55,7 +55,7 @@
       var all = new Uint8Array(x.buf), iv = all.slice(0, 12), ct = all.slice(12);
       return crypto.subtle.importKey('raw', unb64u(KEY), { name: 'AES-GCM' }, false, ['decrypt']).then(function (k) { return crypto.subtle.decrypt({ name: 'AES-GCM', iv: iv }, k, ct); })
         .catch(function () { var e = new Error('bad'); e.bad = true; throw e; });
-    }).then(function (plain) { if (C.kind === 'dicom') showDicom(plain); else { PDF = new Uint8Array(plain); show(); } setTimeout(rateCard, 2500); })
+    }).then(function (plain) { if (C.kind === 'dicom') showDicom(plain); else { PDF = new Uint8Array(plain); show(); } rateCard(); })
       .catch(function (e) {
         if (e.bad) return box('🔑', 'مش قادر أفتح الملف', 'الباركود ده مش بتاع الحالة دي أو ناقص — امسحه تاني.');
         if (e.j && e.j.stopped) return box('⏸', 'الحالة دي اتوقفت', 'كلّم المركز لو محتاجها.');
@@ -91,13 +91,12 @@
     paint(!!done);
     setTimeout(function () { host.classList.add('in'); }, 30);
     /* 5.22 · a few seconds after the result opens: a small stars-only pop-up in the middle of the screen — one tap and it's gone */
-    var seenK = 'ozx_ratepop:' + C.token, skip = false; try { skip = !!sessionStorage.getItem(seenK); } catch (e) {}
-    if (!done && !skip) setTimeout(function () {
-      try { if (localStorage.getItem(K) || sessionStorage.getItem(seenK)) return; sessionStorage.setItem(seenK, '1'); } catch (e) {}
-      if (document.fullscreenElement || document.querySelector('.pz.max')) return;
-      try { if (sessionStorage.getItem('ozx_rated_s')) return; } catch (e) {}
-      OZK.ratePop({ url: location.pathname.replace(/\/$/, '') + '/rate', onDone: function (n) { try { localStorage.setItem(K, JSON.stringify({ s: n, t: [], n: '' })); } catch (e) {} st = n; tags = []; paint(true); } });
-    }, 6000);
+    /* 5.24 · every visit: one second after the result opens, the stars pop-up */
+    var staff = false; try { staff = !!localStorage.getItem('qrd-staff'); } catch (e) {}
+    setTimeout(function () {
+      if (document.fullscreenElement || document.querySelector('.pz.max') || document.querySelector('.rp-pop')) return;
+      OZK.ratePop({ url: location.pathname.replace(/\/$/, '') + '/rate', dry: staff, onDone: function (n) { if (staff) return; try { localStorage.setItem(K, JSON.stringify({ s: n, t: [], n: '' })); } catch (e) {} st = n; tags = []; paint(true); } });
+    }, 1000);
   }
   /* 5.00 · a DICOM case → the mini PACS right here */
   function showDicom(buf) {

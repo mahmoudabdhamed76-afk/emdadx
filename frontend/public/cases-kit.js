@@ -90,7 +90,8 @@
       b.onmouseenter = function () { btns.forEach(function (x) { x.classList.toggle('hv', +x.dataset.ps <= +b.dataset.ps); }); };
       b.onclick = function () {
         var n = +b.dataset.ps; btns.forEach(function (x) { x.disabled = true; x.classList.toggle('on', +x.dataset.ps <= n); });
-        fetch(o.url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ stars: n, tags: [], note: '', vid: vid }) })
+        /* the center's own devices see it working but never add a rating */
+        (o.dry ? Promise.resolve({ ok: true }) : fetch(o.url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ stars: n, tags: [], note: '', vid: vid }) }))
           .then(function (r) { if (!r.ok) throw new Error(); try { sessionStorage.setItem('ozx_rated_s', '1'); } catch (e) {} if (o.onDone) o.onDone(n);
             el.querySelector('.rp-pop-c').innerHTML = '<span class="rp-pop-ok">💚</span><b>شكرًا!</b><small>' + (n >= 4 ? 'فرّحتنا — ألف سلامة عليك' : 'هنهتم بملاحظتك ونتحسّن') + '</small>'; close(1400); })
           .catch(function () { close(); });
