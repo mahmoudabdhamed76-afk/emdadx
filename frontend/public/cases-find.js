@@ -97,15 +97,25 @@
     var current = modes[which] || modes.results;
     Object.keys(modes).forEach(function (name) {
       var item=modes[name], active = name === which, panel=$(item[0]), btn=$(item[1]);
-      if (panel) panel.hidden = !active;
+      if (panel) {
+        panel.hidden = !active;
+        panel.setAttribute('aria-hidden',String(!active));
+        /* Keep the chosen panel visible even if Mobile Safari delays a hidden reflow. */
+        panel.style.display = active ? 'block' : 'none';
+        if (active) { panel.style.visibility = 'visible'; panel.style.opacity = '1'; }
+      }
       if (btn) { btn.classList.toggle('on',active); btn.setAttribute('aria-selected',String(active)); }
     });
     $('patient-hint').textContent=current[2];
     try { history.replaceState(null,'',location.pathname+current[3]); }catch(e){}
     var panel=$(current[0]);
     if (panel && panel.scrollIntoView) setTimeout(function () {
-      panel.scrollIntoView({behavior:window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});
-    },70);
+      /* No transform animation while revealing a mobile panel: avoids white screens in Safari. */
+      if (window.innerWidth && window.innerWidth <= 760) {
+        panel.style.animation='none';panel.style.transform='none';panel.style.opacity='1';
+      }
+      panel.scrollIntoView({behavior:window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'nearest'});
+    },90);
     if (which==='complaint') {
       var intro=document.querySelector('.pv2-complaint-intro');
       if (intro) { intro.classList.remove('pv2-play'); void intro.offsetWidth; intro.classList.add('pv2-play'); }
