@@ -1,43 +1,69 @@
-/* ════════════════════════════════════════════════════════════════════
-   5.01 · QR Patient — شكل صفحات المريض
-   الشكل بيختاره المركز: A «نَفَس» (أبيض وتركواز) أو C «دفا» (كريمي وبرتقالي)،
-   + وضع ليلي (زرار 🌙، وبيتبع الموبايل أول مرة)،
-   + شاشة ترحيب «ألف سلامة» باسم المركز ولوجوه (مرة في كل زيارة، وبتختفي لوحدها).
-════════════════════════════════════════════════════════════════════ */
+/* Patient Portal V2 — six daylight palettes and a dismissible welcome screen. */
 (function () {
   'use strict';
-  var C = window.CD || {}, H = document.documentElement, T = ['a', 'b', 'c', 'd'].indexOf(C.theme) >= 0 ? C.theme : 'a';
-  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
-  function getDark() { try { var v = localStorage.getItem('ozx_dark'); if (v === '1') return true; if (v === '0') return false; } catch (e) {} return !!(window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches); }
-  function setDark(on) { H.classList.toggle('dk', on); var m = document.querySelector('meta[name=theme-color]'); if (m) m.content = on ? ({ a: '#061416', b: '#091C32', c: '#17110D', d: '#090D20' }[T]) : ({ a: '#F2FBFA', b: '#EDF6FF', c: '#FBF6EF', d: '#11172D' }[T]); var b = document.getElementById('dkb'); if (b) b.innerHTML = on ? '☀️' : '🌙'; }
-  H.classList.add('tx', 't' + T); setDark(getDark());
-  function logo(cls) { return C.logo ? '<img class="' + (cls || '') + '" src="' + C.logo + '" alt="">' : '<b class="' + (cls || '') + ' ini">' + esc(String(C.center || 'م').trim().charAt(0)) + '</b>'; }
-  var name = String(C.center || '').trim(), nm2 = /^مركز/.test(name) ? name : 'مركز ' + name;
-  var ECG = '<svg class="ecg" viewBox="0 0 320 60"><path d="M0 32h96l10-18 12 36 12-44 10 26h8l6-8 6 8h160" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><circle cx="146" cy="32" r="5"/></svg>';
-  function splashHtml() {
-    if (T === 'c') return '<div class="spl sc"><div class="sun"></div><div class="lg2">' + logo('') + '<div><b>' + esc(name) + '</b><small>نتيجة الأشعة على موبايلك</small></div></div>' +
-      '<h1 class="big"><span>ألف</span><span class="o">سلامة</span><span>عليك</span></h1><p class="pp">' + esc(nm2) + ' بيرحّب بيكم على مدار اليوم — وإحنا معاك لحد ما تطمّن.</p>' +
-      '<div class="hc"><span class="ht">♥</span><svg viewBox="0 0 200 40"><path d="M0 22h60l8-14 10 28 10-34 8 20h104" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg><b>نتيجتك على موبايلك</b></div>' +
-      '<div class="pills"><span>☀ الصبح</span><span>🌙 بالليل</span></div><button class="go" type="button">ادخل على نتيجتك <i>←</i></button></div>';
-    return '<div class="spl sa"><i class="bl b1"></i><i class="bl b2"></i><div class="lgw"><span class="r r3"></span><span class="r r2"></span><span class="r"></span>' + logo('') + '</div>' +
-      '<h1>ألف سلامة <i>♥</i></h1><h2>' + esc(nm2) + '</h2><p>بيرحّب بيكم على مدار اليوم<br>نتيجتك معاك على موبايلك في أي وقت</p>' + ECG +
-      '<div class="h24"><b></b>النتائج متاحة أونلاين</div><button class="go" type="button">شوف نتيجتك ←</button></div>';
+  var C = window.CD || {}, H = document.documentElement;
+  var T = ['a','b','c','d','e','f'].indexOf(C.theme) >= 0 ? C.theme : 'a';
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c];
+    });
+  }
+  H.classList.remove('dk');
+  H.classList.add('tx', 't' + T, 'patient-daylight');
+  H.style.colorScheme = 'light';
+  var colors = { a:'#F2FBFA', b:'#EDF6FF', c:'#FBF6EF', d:'#F6F3FF', e:'#F2F8FF', f:'#F3FAF5' };
+  var meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.setAttribute('content', colors[T]);
+  function logo(cls) {
+    return C.logo ? '<img class="' + (cls || '') + '" src="' + C.logo + '" alt="لوجو المركز">' :
+      '<b class="' + (cls || '') + ' ini">' + esc(String(C.center || 'م').trim().charAt(0)) + '</b>';
+  }
+  var name = String(C.center || '').trim();
+  var nm2 = /^مركز/.test(name) ? name : 'مركز ' + name;
+  function welcome() {
+    return '<div class="pv2-splash" dir="rtl">' +
+      '<div class="pv2-splash-orb o1"></div><div class="pv2-splash-orb o2"></div>' +
+      '<div class="pv2-welcome-logo">' + logo('') + '</div>' +
+      '<span class="pv2-splash-eyebrow">✦ بوابة المريض الإلكترونية</span>' +
+      '<h1>ألف سلامة <span>عليك ♥</span></h1>' +
+      '<p class="pv2-welcome-name">' + esc(nm2) + '</p>' +
+      '<p class="pv2-splash-sub">احجز أشعتك أو اطّمن على نتيجتك<br>بخطوات بسيطة من موبايلك</p>' +
+      '<div class="pv2-welcome-steps"><span>📅 حجز الأشعة</span><span>🩻 نتائج الفحوصات</span></div>' +
+      '<button type="button" class="pv2-enter">ابدأ الآن <span aria-hidden="true">←</span></button>' +
+      '<small class="pv2-welcome-foot">خدمة سهلة · خصوصية بياناتك</small>' +
+    '</div>';
   }
   function splash() {
-    if (C.missing) return;
-    var key = 'ozx_spl:' + (C.pub || C.token || ''), back = '';
-    try { back = sessionStorage.getItem('ozx_back') || ''; if (sessionStorage.getItem(key) || (C.token && back)) return; sessionStorage.setItem(key, '1'); } catch (e) {}
-    var o = document.createElement('div'); o.className = 'splw'; o.innerHTML = splashHtml(); document.body.appendChild(o);
+    if (C.missing || !C.pub || C.token) return;
+    var key = 'ozx_spl_v2:' + C.pub;
+    try {
+      if (sessionStorage.getItem(key)) return;
+      sessionStorage.setItem(key, '1');
+    } catch (e) {}
+    if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    var o = document.createElement('div');
+    o.className = 'splw pv2-splw';
+    o.setAttribute('role', 'dialog');
+    o.setAttribute('aria-label', 'أهلاً بيك في بوابة المركز');
+    o.innerHTML = welcome();
+    document.body.appendChild(o);
+    var prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
-    var gone = false, close = function () { if (gone) return; gone = true; o.classList.add('out'); document.body.style.overflow = ''; setTimeout(function () { o.remove(); }, 650); };
-    o.addEventListener('click', close); setTimeout(close, 3400);
+    var done = false;
+    var close = function () {
+      if (done) return;
+      done = true;
+      o.classList.add('out');
+      document.body.style.overflow = prev;
+      setTimeout(function () { if (o.parentNode) o.parentNode.removeChild(o); }, 400);
+    };
+    var b = o.querySelector('.pv2-enter');
+    if (b) b.onclick = close;
+    o.addEventListener('click', function (e) { if (e.target === o) close(); });
+    setTimeout(close, 2400);
   }
-  function toggle() {
-    var b = document.createElement('button'); b.id = 'dkb'; b.type = 'button'; b.title = 'وضع ليلي'; b.innerHTML = H.classList.contains('dk') ? '☀️' : '🌙';
-    b.onclick = function () { var on = !H.classList.contains('dk'); setDark(on); try { localStorage.setItem('ozx_dark', on ? '1' : '0'); } catch (e) {} };
-    var top = document.querySelector('.v .top'); if (top) { b.className = 'in'; top.appendChild(b); } else document.body.appendChild(b);
-  }
-  function mount() { toggle(); splash(); }
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mount); else setTimeout(mount, 0);
+  function mount() { splash(); }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mount);
+  else setTimeout(mount, 0);
   window.OZSkin = { theme: T, logo: logo, nm2: nm2 };
 })();
