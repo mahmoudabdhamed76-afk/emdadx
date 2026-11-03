@@ -668,6 +668,15 @@
 
   /* ── 4.90 · حالات المرضى: لينك منفصل بباسوورد لكل مركز (/k/xxxxxxxx) ── */
   function casesUrl(code) { return base().replace(/\/$/, '') + '/k/' + code; }
+  function themeChoice(key, name, hint) {
+    var current = (typeof window !== 'undefined' && window.__qrPatientSelectedTheme) || 'a';
+    /* Current selected value is provided by the modal before it renders its choices. */
+    var active = current === key;
+    return '<button type="button" data-csth="' + key + '" class="btn btn-sm ' +
+      (active ? 'btn-primary' : 'btn-secondary') + '" aria-pressed="' + active +
+      '" style="display:flex;flex-direction:column;gap:2px;align-items:center;justify-content:center;min-width:0;min-height:66px;border-radius:13px;border-width:2px;white-space:normal;text-align:center">' +
+      '<b style="font-size:14px">' + name + '</b><small style="font-size:11px;opacity:.8">' + hint + '</small></button>';
+  }
   function casesModal(cid, fresh) {
     var c = A('customers').filter(function (x) { return x.id === cid; })[0]; if (!c) return;
     api('GET', '/cases?cid=' + encodeURIComponent(cid)).then(function (r) {
@@ -685,12 +694,21 @@
       }
       if (!s.wa && c.phone) api('POST', '/cases/wa', { cid: cid, wa: c.phone, ifEmpty: true }).catch(function () {});   /* 4.92 · patients who don't find their result ask on this WhatsApp */
       var u = casesUrl(s.code), msg = 'السلام عليكم ' + c.name + ' 🌿\nده لينك «QR Patient» من *' + company() + '*:\n' + u + (fresh ? '\nالباسوورد: ' + fresh : '') + '\n\nافتحوه من كمبيوتر المركز، اسحبوا PDF الحالة، وهيطلعلكم باركود تلزقوه للمريض — المريض يمسحه ويشوف أشعته على موبايله.\nسيبوا الصفحة مفتوحة على الكمبيوتر عشان الحالات القديمة تفضل تفتح.';
+      window.__qrPatientSelectedTheme = s.theme || 'a';
       openModal('▦ QR Patient — ' + esc(c.name),
         (fresh ? '<div style="background:#ECFDF5;border:1px solid #A7F3D0;color:#065F46;border-radius:14px;padding:12px 14px;margin-bottom:12px;text-align:center"><div style="font-size:13px">الباسوورد (اكتبه دلوقتي — مش هيظهر تاني)</div><div style="font-size:30px;font-weight:900;letter-spacing:4px;direction:ltr">' + esc(fresh) + '</div></div>' : '') +
         '<div class="cl-l"><input readonly value="' + esc(u) + '" onclick="this.select()"><button class="btn btn-secondary btn-sm" id="cs-cp">نسخ</button></div>' +
         /* 4.99 · each center's own logo — it sits in the middle of every QR of this center */
         '<div class="cl-l" style="margin-top:10px;align-items:center;gap:12px"><span style="width:52px;height:52px;border-radius:14px;flex:none;display:grid;place-items:center;overflow:hidden;background:' + (s.logo ? '#fff' : 'rgba(255,255,255,.08)') + ';border:1px solid rgba(127,127,127,.25);font-weight:900;font-size:20px">' + (s.logo ? '<img src="' + esc(s.logo) + '" alt="" style="width:100%;height:100%;object-fit:contain;padding:4px">' : esc(String(c.name || 'م').trim().charAt(0))) + '</span><div style="flex:1;min-width:0"><b style="display:block;font-size:13.5px">لوجو المركز</b><small style="opacity:.7;font-size:12px">' + (s.logo ? 'بيظهر في نص كل باركود للمركز ده وفي صفحة المريض' : 'ارفع لوجو المركز — يتحط في نص كل باركود بتاعه') + '</small></div><button class="btn btn-secondary btn-sm" id="cs-lg">' + (s.logo ? 'غيّر' : '＋ ارفع لوجو') + '</button>' + (s.logo ? '<button class="btn btn-ghost btn-sm" id="cs-lgx">شيل</button>' : '') + '</div>' +
-        '<div class="cl-l" style="margin-top:8px;align-items:center;gap:8px"><b style="font-size:13px;white-space:nowrap">🎨 شكل صفحة المريض</b><span style="flex:1"></span><button class="btn btn-sm ' + ((s.theme || 'a') === 'a' ? 'btn-primary' : 'btn-secondary') + '" data-csth="a">«نَفَس» أبيض</button><button class="btn btn-sm ' + (s.theme === 'c' ? 'btn-primary' : 'btn-secondary') + '" data-csth="c">«دفا» كريمي</button></div>' +
+        '<div style="margin-top:14px;padding:12px;border:1px solid rgba(127,127,127,.22);border-radius:16px"><div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:10px"><b style="font-size:14px">🎨 شكل صفحة المريض</b><small style="opacity:.72">اختار الشكل اللي يظهر عند مسح الباركود</small></div>' +
+        '<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px">' +
+          themeChoice('a', '🌿 نَفَس', 'أبيض وتركواز') +
+          themeChoice('b', '💙 نبض', 'أزرق طبي') +
+          themeChoice('c', '🧡 دفا', 'كريمي وبرتقالي') +
+          themeChoice('d', '💜 هدوء', 'بنفسجي داكن') +
+        '</div>' +
+        (s.pub ? '<a class="btn btn-secondary btn-sm" style="display:flex;align-items:center;justify-content:center;text-decoration:none;margin-top:10px" href="' + esc(base().replace(/\\/$/, '') + '/h/' + s.pub) + '" target="_blank" rel="noopener">👁 معاينة صفحة المريض بالشكل المختار</a>' : '') +
+        '</div>' +
         '<div class="cl-st" style="margin-top:12px"><div class="' + (s.online ? 'ok' : '') + '"><b>' + (s.online ? '🟢' : '⚪') + '</b><span>' + (s.online ? 'متصل دلوقتي' : (s.last_seen ? 'آخر دخول ' + esc(String(s.last_seen).slice(0, 16)) : 'لسه مدخلش')) + '</span></div><div><b>' + s.cases + '</b><span>حالة</span></div><div><b>' + s.views + '</b><span>مرة اتفتحت</span></div></div>' +
         (s.pub ? '<p class="cl-note" style="margin-top:10px">📌 الباركود الثابت للورق (المريض يكتب رقم موبايله بس): <a href="' + esc(base().replace(/\/$/, '') + '/h/' + s.pub) + '" target="_blank" rel="noopener" style="direction:ltr;unicode-bidi:isolate">' + esc(base().replace(/\/$/, '') + '/h/' + s.pub) + '</a>' + (s.fixed ? '' : ' — <b>موقوف من المركز</b>') + '</p>' : '') +
         '<div class="cl-l" style="margin-top:10px"><span style="white-space:nowrap;font-weight:700;font-size:13px">💬 واتساب طلبات المرضى</span><input id="cs-wa-n" value="' + esc(s.wa || '') + '" placeholder="' + esc(c.phone || S().companyPhone || '01xxxxxxxxx') + '" style="direction:ltr;text-align:right"><button class="btn btn-secondary btn-sm" id="cs-wa-s">حفظ</button></div>' +
