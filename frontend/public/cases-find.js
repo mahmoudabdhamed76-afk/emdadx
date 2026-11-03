@@ -10,21 +10,41 @@
   function dmy(ts) { var m = /(\d{4})-(\d{2})-(\d{2})/.exec(String(ts || '')); return m ? (+m[3]) + '/' + (+m[2]) + '/' + m[1] : ''; }
   document.body.className = 'v f';
   if (C.missing) { document.body.innerHTML = '<div class="w"><div class="ld" style="margin-top:30vh"><i>🔍</i><b>الباركود ده مش شغال</b><p>كلّم المركز.</p></div></div>'; return; }
-  /* 5.01 · the look comes from cases-skin.js (A «نَفَس» / C «دفا» + night mode) */
-  var TC = window.OZSkin && OZSkin.theme === 'c';
-  document.body.innerHTML = '<div class="w"><div class="top"><span class="tlg">' + (window.OZSkin ? OZSkin.logo('') : '') + '</span><div class="tn"><b>' + esc(C.center) + '</b><small>نتيجة الأشعة على موبايلك</small></div></div>' +
-    '<h1 class="ttl" id="patient-title">' + (TC ? 'نتيجتك<br><span>بموبايلك بس.</span>' : 'أهلاً بيك 🌿<br><span>نتيجتك</span> جاهزة في ثواني') + '</h1>' + (C.on ? '<span class="on2">● شغالين 24 ساعة</span>' : '') +
-    '<div class="patient-chooser" role="tablist" aria-label="خدمات المركز"><button type="button" id="tab-results" class="on" role="tab" aria-selected="true" aria-controls="patient-results"><span>🩻</span><b>نتيجة الأشعة</b><small>اعرض أو نزّل نتيجتك</small></button><button type="button" id="tab-booking" role="tab" aria-selected="false" aria-controls="patient-book"><span>📅</span><b>احجز أشعة</b><small>ابعت طلب موعد للمركز</small></button></div>' +
-    '<section id="patient-results" class="patient-panel" role="tabpanel" aria-labelledby="tab-results">' +
-    '<div class="srch" id="sr">' + (C.on ?
-      '<label class="l">رقم موبايلك اللي سجّلته في المركز</label><input class="fld n" id="ph" type="tel" inputmode="tel" autocomplete="tel" maxlength="20" placeholder="01xxxxxxxxx" style="text-align:right">' +
-      '<p class="hint">نفس الرقم اللي اديته للمركز وانت بتعمل الأشعة.</p>' +
-      '<button class="btn w" id="go">🔍 دوّر على نتيجتي</button><div class="err" id="er" style="color:var(--red);font-weight:700;text-align:center;margin-top:8px;min-height:20px"></div>'
-      : '<div class="ld" style="box-shadow:none;padding:6px"><i>⏸</i><b>البحث مقفول دلوقتي</b><p>كلّم المركز يبعتلك لينك نتيجتك.</p></div>') + '</div>' +
-    '<div class="res" id="res"></div>' +
-    (C.on ? '<div class="miss" id="miss"><b>مش لاقي نتيجتك؟</b><p>اكتب موبايلك فوق، ودوس هنا — طلبك بيوصل للمركز على طول وهم يرفعولك النتيجة.</p>' + '<div class="af"><label class="l">اسمك زي ما اتسجّل في المركز *</label><input class="fld" id="an0" maxlength="60" autocomplete="name" placeholder="الاسم بالكامل"><label class="l">تاريخ عمل الأشعة *</label><input class="fld" id="ad0" type="date"><label class="l">نوع الفحص (اختياري)</label><input class="fld" id="nt0" maxlength="60" placeholder="مثلاً: مقطعية على الصدر"><div class="aer" id="ae0"></div></div>' + '<button class="btn ask2 w" id="wa0">📨 اطلب نتيجتك من المركز</button></div>' : '') +
-    '<div class="steps"><div><i>📷</i>مسحت الباركود</div><div><i>✍️</i>اكتب رقم موبايلك</div><div><i>🩻</i>افتح نتيجتك</div></div>' +
-    '<p class="foot">نتيجتك متشفّرة — بتتفتح برقم موبايلك اللي في المركز.</p></section>' +
+  /* V2: One clear home, two equal service cards; expanding either opens its own matching card. */
+  document.body.innerHTML = '<div class="w pv2-page">' +
+    '<header class="top pv2-top"><span class="tlg">' + (window.OZSkin ? OZSkin.logo('') : '') + '</span>' +
+      '<div class="tn"><b>' + esc(C.center) + '</b><small>بوابة المرضى الإلكترونية</small></div>' +
+      '<span class="pv2-online" title="الخدمات الإلكترونية"><i></i>أونلاين</span></header>' +
+    '<section class="pv2-hero" aria-label="مرحباً بك">' +
+      '<div class="pv2-hero-bg" aria-hidden="true"><i></i><i></i><i></i></div>' +
+      '<div class="pv2-hero-copy"><span class="pv2-eyebrow">✦ تجربة أسهل للاطمئنان عليك</span>' +
+      '<h1 class="ttl" id="patient-title">ألف سلامة عليك <span>♥</span></h1>' +
+      '<p>احجز فحصك أو شوف نتيجة الأشعة من موبايلك، بخطوات واضحة وسريعة.</p>' +
+      '<div class="pv2-hero-chip"><span class="pv2-chip-dot"></span> اختار الخدمة اللي محتاجها</div></div>' +
+      '<div class="pv2-hero-art" aria-hidden="true"><span class="pv2-art-ring r1"></span><span class="pv2-art-ring r2"></span><span class="pv2-art-core">✚</span>' +
+      '<svg class="pv2-art-ecg" viewBox="0 0 160 42" fill="none"><path d="M0 22h48l8-11 8 22 9-30 9 19h78" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>' +
+    '</section>' +
+    '<div class="pv2-section-title"><div><span>الخدمات</span><h2>تحب تعمل إيه النهارده؟</h2></div><small>اختار واحدة للمتابعة</small></div>' +
+    '<div class="patient-chooser" role="tablist" aria-label="خدمات المركز">' +
+      '<button type="button" id="tab-booking" class="pv2-service" role="tab" aria-selected="false" aria-controls="patient-book">' +
+        '<span class="pv2-service-icon">📅</span><b>حجز أشعة</b><small>اختار الفحص واليوم المناسب</small><span class="pv2-service-go" aria-hidden="true">←</span></button>' +
+      '<button type="button" id="tab-results" class="pv2-service" role="tab" aria-selected="false" aria-controls="patient-results">' +
+        '<span class="pv2-service-icon">🩻</span><b>نتيجة الأشعة</b><small>استعلم عن نتيجتك بسهولة</small><span class="pv2-service-go" aria-hidden="true">←</span></button></div>' +
+    '<p class="pv2-action-hint" id="patient-hint" aria-live="polite">اختار حجز الأشعة أو نتيجة الأشعة علشان نبدأ</p>' +
+    '<section id="patient-results" class="patient-panel" role="tabpanel" aria-labelledby="tab-results" hidden>' +
+      '<div class="srch results-card" id="sr"><div class="booking-heading"><span>🩻</span><div><b>استعلام نتيجة الأشعة</b><small>نتيجتك في مكان واحد، بمجرد إدخال رقم الموبايل</small></div></div>' + (C.on ?
+        '<label class="l" for="ph">رقم الموبايل المسجل في المركز</label><input class="fld n" id="ph" type="tel" inputmode="tel" autocomplete="tel" maxlength="20" placeholder="01xxxxxxxxx" style="text-align:right" dir="ltr">' +
+        '<p class="hint">اكتب نفس رقم الموبايل اللي سجلته يوم الفحص.</p>' +
+        '<button class="btn w" id="go">🩻 اعرض نتيجتي ←</button><div class="err" id="er" role="status" aria-live="polite" style="color:var(--pacc);font-weight:700;text-align:center;margin-top:8px;min-height:20px"></div>'
+        : '<div class="ld" style="box-shadow:none;padding:6px"><i>⏸</i><b>البحث غير متاح حاليًا</b><p>تواصل مع المركز لمساعدة إضافية.</p></div>') + '</div>' +
+      '<div class="res" id="res"></div>' +
+      (C.on ? '<div class="miss" id="miss"><b>محتاج مساعدة في النتيجة؟</b><p>لو نتيجتك لسه مش موجودة، اطلبها من المركز وهيتابع معاك.</p>' +
+        '<div class="af"><label class="l">اسمك زي ما اتسجّل في المركز *</label><input class="fld" id="an0" maxlength="60" autocomplete="name" placeholder="الاسم بالكامل">' +
+        '<label class="l">تاريخ عمل الأشعة *</label><input class="fld" id="ad0" type="date"><label class="l">نوع الفحص (اختياري)</label>' +
+        '<input class="fld" id="nt0" maxlength="60" placeholder="مثلاً: مقطعية على الصدر"><div class="aer" id="ae0"></div></div>' +
+        '<button class="btn ask2 w" id="wa0">📨 اطلب نتيجتك من المركز</button></div>' : '') +
+      '<p class="foot">🔒 ملفات الأشعة مشفّرة، ولازم تستخدم رقم الموبايل المسجّل للفحص.</p>' +
+    '</section>' +
     '<section id="patient-book" class="patient-panel" role="tabpanel" aria-labelledby="tab-booking" hidden>' +
       '<div class="booking-card"><div class="booking-heading"><span>📅</span><div><b>اطلب حجز أشعة</b><small>حدد الفحص والوقت المناسب، والمركز هيتواصل معاك للتأكيد</small></div></div>' +
       '<form id="booking-form" novalidate><label class="l" for="bn">الاسم بالكامل *</label><input id="bn" class="fld" type="text" autocomplete="name" maxlength="60" placeholder="اسم المريض">' +
@@ -32,24 +52,31 @@
       '<label class="l" for="be">نوع الأشعة *</label><select class="fld" id="be"><option value="">اختار نوع الفحص</option><option>أشعة عادية</option><option>سونار</option><option>أشعة مقطعية</option><option>رنين مغناطيسي</option><option>دوبلر</option><option>ماموجرام</option><option>فحص آخر</option></select>' +
       '<div class="booking-grid"><div><label class="l" for="bd">اليوم المناسب *</label><input id="bd" class="fld" type="date"></div><div><label class="l" for="bs">الوقت المفضل *</label><select class="fld" id="bs"><option>أي وقت</option><option>صباحًا</option><option>ظهرًا</option><option>مساءً</option></select></div></div>' +
       '<label class="l" for="bnote">ملاحظات للحجز (اختياري)</label><textarea id="bnote" class="fld" rows="2" maxlength="180" placeholder="مثلاً: محتاج أعرف تعليمات التحضير"></textarea>' +
-      '<p class="booking-note">🔒 بيانات التواصل تُستخدم لمتابعة طلب الحجز. الموعد مش مؤكد غير لما موظف المركز يتواصل معاك.</p><div id="bmsg" class="booking-msg" role="status" aria-live="polite"></div>' +
+      '<p class="booking-note">🔒 بيانات التواصل لتأكيد طلب الحجز فقط. الموعد مش مؤكد غير لما موظف المركز يتواصل معاك.</p><div id="bmsg" class="booking-msg" role="status" aria-live="polite"></div>' +
       '<button class="btn w" type="submit" id="bgo">إرسال طلب الحجز ←</button></form></div>' +
-    '</section></div>';
-  /* Two distinct patient journeys: results and a new appointment request. */
+    '</section>' +
+    '<div class="pv2-trust"><div><i>🔒</i><span>خصوصية بياناتك</span></div><div><i>⚡</i><span>خطوات سريعة</span></div><div><i>📱</i><span>كل حاجة من موبايلك</span></div></div>' +
+    '<p class="pv2-footer">نتمنالك دوام الصحة والعافية ♥</p>' +
+  '</div>';
   function chooseJourney(which) {
-    var booking = which === 'booking';
-    $('patient-results').hidden = booking;
+    var booking = which === 'booking', result = which === 'results';
+    $('patient-results').hidden = !result;
     $('patient-book').hidden = !booking;
-    [['tab-results', !booking], ['tab-booking', booking]].forEach(function (x) {
+    [['tab-results', result], ['tab-booking', booking]].forEach(function (x) {
       var b = $(x[0]); b.classList.toggle('on', x[1]); b.setAttribute('aria-selected', String(x[1]));
     });
-    $('patient-title').innerHTML = booking ? 'احجز فحصك<br><span>في خطوات بسيطة</span>' :
-      (TC ? 'نتيجتك<br><span>بموبايلك بس.</span>' : 'أهلاً بيك 🌿<br><span>نتيجتك</span> جاهزة في ثواني');
+    $('patient-hint').textContent = booking ? '📅 اختار اليوم والفحص، وهنبعت طلبك للمركز' :
+      '🩻 اكتب رقم موبايلك علشان توصل لنتيجتك';
     try { history.replaceState(null, '', location.pathname + (booking ? '#book' : '#results')); } catch (e) {}
+    var panel = $(booking ? 'patient-book' : 'patient-results');
+    if (panel && panel.scrollIntoView) setTimeout(function () {
+      panel.scrollIntoView({ behavior: window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+    }, 60);
   }
   $('tab-results').onclick = function () { chooseJourney('results'); };
   $('tab-booking').onclick = function () { chooseJourney('booking'); };
   if (location.hash === '#book') chooseJourney('booking');
+  else if (location.hash === '#results') chooseJourney('results');
   (function setupBooking() {
     var input = $('bd'), d = new Date(), loc = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
     input.min = loc.toISOString().slice(0, 10); loc.setUTCDate(loc.getUTCDate() + 90); input.max = loc.toISOString().slice(0, 10);

@@ -668,6 +668,14 @@
 
   /* ── 4.90 · حالات المرضى: لينك منفصل بباسوورد لكل مركز (/k/xxxxxxxx) ── */
   function casesUrl(code) { return base().replace(/\/$/, '') + '/k/' + code; }
+  function patientThemeButton(current, key, title, sub, tint) {
+    var active = (current || 'a') === key;
+    return '<button type="button" data-csth="' + key + '" class="btn btn-sm ' +
+      (active ? 'btn-primary' : 'btn-secondary') + '" aria-pressed="' + active + '"' +
+      ' style="min-width:0;min-height:71px;white-space:normal;border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;line-height:1.3;text-align:center;padding:9px 7px">' +
+      '<span style="width:23px;height:6px;background:' + tint + ';border-radius:20px"></span>' +
+      '<b style="font-size:13px">' + title + '</b><small style="font-size:10.5px;opacity:.85">' + sub + '</small></button>';
+  }
   function casesModal(cid, fresh) {
     var c = A('customers').filter(function (x) { return x.id === cid; })[0]; if (!c) return;
     api('GET', '/cases?cid=' + encodeURIComponent(cid)).then(function (r) {
@@ -690,7 +698,16 @@
         '<div class="cl-l"><input readonly value="' + esc(u) + '" onclick="this.select()"><button class="btn btn-secondary btn-sm" id="cs-cp">نسخ</button></div>' +
         /* 4.99 · each center's own logo — it sits in the middle of every QR of this center */
         '<div class="cl-l" style="margin-top:10px;align-items:center;gap:12px"><span style="width:52px;height:52px;border-radius:14px;flex:none;display:grid;place-items:center;overflow:hidden;background:' + (s.logo ? '#fff' : 'rgba(255,255,255,.08)') + ';border:1px solid rgba(127,127,127,.25);font-weight:900;font-size:20px">' + (s.logo ? '<img src="' + esc(s.logo) + '" alt="" style="width:100%;height:100%;object-fit:contain;padding:4px">' : esc(String(c.name || 'م').trim().charAt(0))) + '</span><div style="flex:1;min-width:0"><b style="display:block;font-size:13.5px">لوجو المركز</b><small style="opacity:.7;font-size:12px">' + (s.logo ? 'بيظهر في نص كل باركود للمركز ده وفي صفحة المريض' : 'ارفع لوجو المركز — يتحط في نص كل باركود بتاعه') + '</small></div><button class="btn btn-secondary btn-sm" id="cs-lg">' + (s.logo ? 'غيّر' : '＋ ارفع لوجو') + '</button>' + (s.logo ? '<button class="btn btn-ghost btn-sm" id="cs-lgx">شيل</button>' : '') + '</div>' +
-        '<div class="cl-l" style="margin-top:8px;align-items:center;gap:8px"><b style="font-size:13px;white-space:nowrap">🎨 شكل صفحة المريض</b><span style="flex:1"></span><button class="btn btn-sm ' + ((s.theme || 'a') === 'a' ? 'btn-primary' : 'btn-secondary') + '" data-csth="a">«نَفَس» أبيض</button><button class="btn btn-sm ' + (s.theme === 'c' ? 'btn-primary' : 'btn-secondary') + '" data-csth="c">«دفا» كريمي</button></div>' +
+        '<div style="margin-top:14px;border:1px solid rgba(127,127,127,.25);border-radius:16px;padding:12px"><b style="display:block;font-size:14px;margin-bottom:5px">🎨 شكل صفحة المريض</b>' +
+          '<p style="font-size:12px;opacity:.75;margin:0 0 12px">٦ تصميمات نهارية ثابتة — اختار الشكل واضغط على لينك الباركود لمعاينته.</p>' +
+          '<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px">' +
+          patientThemeButton(s.theme,'a','🌿 نَفَس','تركواز','#14B8A6') +
+          patientThemeButton(s.theme,'b','💙 نبض','أزرق طبي','#2CA7EC') +
+          patientThemeButton(s.theme,'c','🧡 دفا','كريمي','#EA580C') +
+          patientThemeButton(s.theme,'d','💜 هدوء','لافندر نهاري','#A78BFA') +
+          patientThemeButton(s.theme,'e','❄️ صفا','أزرق ثلجي','#6CC4E8') +
+          patientThemeButton(s.theme,'f','🌱 رؤية','أخضر طبي','#55B68C') +
+          '</div></div>' +
         '<div class="cl-st" style="margin-top:12px"><div class="' + (s.online ? 'ok' : '') + '"><b>' + (s.online ? '🟢' : '⚪') + '</b><span>' + (s.online ? 'متصل دلوقتي' : (s.last_seen ? 'آخر دخول ' + esc(String(s.last_seen).slice(0, 16)) : 'لسه مدخلش')) + '</span></div><div><b>' + s.cases + '</b><span>حالة</span></div><div><b>' + s.views + '</b><span>مرة اتفتحت</span></div></div>' +
         (s.pub ? '<p class="cl-note" style="margin-top:10px">📌 الباركود الثابت للورق (المريض يكتب رقم موبايله بس): <a href="' + esc(base().replace(/\/$/, '') + '/h/' + s.pub) + '" target="_blank" rel="noopener" style="direction:ltr;unicode-bidi:isolate">' + esc(base().replace(/\/$/, '') + '/h/' + s.pub) + '</a>' + (s.fixed ? '' : ' — <b>موقوف من المركز</b>') + '</p>' : '') +
         '<div class="cl-l" style="margin-top:10px"><span style="white-space:nowrap;font-weight:700;font-size:13px">💬 واتساب طلبات المرضى</span><input id="cs-wa-n" value="' + esc(s.wa || '') + '" placeholder="' + esc(c.phone || S().companyPhone || '01xxxxxxxxx') + '" style="direction:ltr;text-align:right"><button class="btn btn-secondary btn-sm" id="cs-wa-s">حفظ</button></div>' +
