@@ -50,6 +50,17 @@ db.exec(`CREATE TABLE IF NOT EXISTS case_booking (
   note TEXT, at TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'new', updated_at TEXT
 );
 CREATE INDEX IF NOT EXISTS ix_case_booking ON case_booking (customer_id, status, id);`);
+/* Anonymous QR landing analytics: counts and coarse geo only, no raw IP, GPS or patient identity. */
+db.exec(`CREATE TABLE IF NOT EXISTS case_qr_stat (
+ customer_id TEXT PRIMARY KEY, total INTEGER NOT NULL DEFAULT 0,
+ count_fixed INTEGER NOT NULL DEFAULT 0, count_report INTEGER NOT NULL DEFAULT 0,
+ day TEXT, today INTEGER NOT NULL DEFAULT 0, last_at TEXT
+);
+CREATE TABLE IF NOT EXISTS case_qr_visit (
+ id INTEGER PRIMARY KEY AUTOINCREMENT, customer_id TEXT NOT NULL,
+ at TEXT NOT NULL, kind TEXT NOT NULL, city TEXT, country TEXT
+);
+CREATE INDEX IF NOT EXISTS ix_case_qr_visit ON case_qr_visit (customer_id, id);`);
 
 
 const DIR = path.join(DATA_DIR, 'cases');
@@ -83,6 +94,56 @@ function setLookup(f) { LOOKUP = typeof f === 'function' ? f : null; }
 function waFor(cid, wa) { const w = waOf(wa); if (w) return w; try { return LOOKUP ? waOf(LOOKUP(cid)) : ''; } catch (e) { return ''; } }
 function asksOf(cid) { return db.prepare('SELECT id, name, phone, note, at FROM case_ask WHERE customer_id = ? AND done = 0 ORDER BY id DESC LIMIT 60').all(cid); }
 function bookingsOf(cid) { return db.prepare("SELECT id, name, phone, exam, day, slot, note, at FROM case_booking WHERE customer_id = ? AND status = 'new' ORDER BY id DESC LIMIT 100").all(cid); }
+/* 'QR opens' means a browser opened the QR destination, not a verified camera scan. */
+function qrStatsOf(cid) {
+  const row = db.prepare('SELECT total, count_fixed, count_report, day, today, last_at FROM case_qr_stat WHERE customer_id = ?').get(cid);
+  const today = nowTs().slice(0, 10);
+  const recent = db.prepare('SELECT at, kind, city, country FROM case_qr_visit WHERE customer_id = ? ORDER BY id DESC LIMIT 8').all(cid);
+  return {
+    total: row ? row.total : 0, fixed: row ? row.count_fixed : 0,
+    report: row ? row.count_report : 0, today: row && row.day === today ? row.today : 0,
+    last: row ? row.last_at : '', recent
+  };
+}
+function qrGeo(req) {
+  /* Cloudflare/Vercel/edge geolocation headers, when available. Never ask for GPS. */
+  const raw = k => {
+    const v = req.headers[k];
+    return typeof v === 'string' ? v : Array.isArray(v) ? String(v[0] || '') : '';
+  };
+  let city = raw('cf-ipcity') || raw('x-vercel-ip-city') || raw('x-geo-city') || '';
+  try { city = decodeURIComponent(city); } catch (_) {}
+  city = clean(city, 55);
+  if (/^(unknown|null|undefined|n\/a)$/i.test(city)) city = '';
+  const code = (raw('cf-ipcountry') || raw('x-vercel-ip-country') || raw('x-geo-country') || '').trim().toUpperCase();
+  let country = '';
+  if (/^[A-Z]{2}$/.test(code) && code !== 'XX') {
+    try { country = new Intl.DisplayNames(['ar'], { type: 'region' }).of(code) || ''; }
+    catch (_) { country = code; }
+  }
+  return { city, country: clean(country, 55) };
+}
+function qrOpen(req, cid, kind) {
+  try {
+    const ua = String(req.headers['user-agent'] || '');
+    if (/(bot|crawl|spider|slurp|preview|facebookexternalhit|telegrambot|discordbot|headless|uptime|monitoring)/i.test(ua)) return;
+    if (/prefetch/i.test(String(req.headers.purpose || '') + ' ' + String(req.headers['sec-purpose'] || ''))) return;
+    if (limited('qr-open:' + cid + ':' + ipOf(req), 120, 600000)) return;
+    const at = nowTs(), day = at.slice(0, 10), geo = qrGeo(req);
+    db.prepare(`INSERT INTO case_qr_stat (customer_id, total, count_fixed, count_report, day, today, last_at)
+      VALUES (?, 1, ?, ?, ?, 1, ?)
+      ON CONFLICT(customer_id) DO UPDATE SET total = total + 1,
+      count_fixed = count_fixed + excluded.count_fixed,
+      count_report = count_report + excluded.count_report,
+      today = CASE WHEN case_qr_stat.day = excluded.day THEN case_qr_stat.today + 1 ELSE 1 END,
+      day = excluded.day, last_at = excluded.last_at`).run(cid, kind === 'fixed' ? 1 : 0, kind === 'report' ? 1 : 0, day, at);
+    db.prepare('INSERT INTO case_qr_visit (customer_id, at, kind, city, country) VALUES (?,?,?,?,?)')
+      .run(cid, at, kind, geo.city || null, geo.country || null);
+    /* Keep only the most recent 80 anonymous visits per center; totals remain permanent. */
+    db.prepare('DELETE FROM case_qr_visit WHERE customer_id = ? AND id NOT IN (SELECT id FROM case_qr_visit WHERE customer_id = ? ORDER BY id DESC LIMIT 80)').run(cid, cid);
+    tell(cid, 'qr-open', { qr: qrStatsOf(cid) });
+  } catch (e) { console.warn('[qr-analytics]', e.message); } /* no failure can block patient access */
+}
 function bookingPhone(p) {
   let d = String(p || '').replace(/[٠-٩]/g, c => String(c.charCodeAt(0) - 0x660)).replace(/\D/g, '');
   if (d.length === 12 && d.startsWith('20')) d = d.slice(2);
@@ -132,7 +193,7 @@ function itemOut(r) { return { id: r.id, token: r.token, patient: r.patient, pho
 
 function page(title, body, css, js) {
   return '<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover' + (css === 'v' ? ',maximum-scale=1,user-scalable=no' : '') + '"><meta name="robots" content="noindex,nofollow"><meta name="referrer" content="no-referrer"><meta name="theme-color" content="#0E9F9A">' +
-    '<title>' + esc(title) + '</title><link rel="icon" href="/icons/favicon-32.png"><link rel="stylesheet" href="/fonts/fonts.css"><link rel="stylesheet" href="/cases.css?v=504"></head><body class="' + css + '">' + body + js + '</body></html>';
+    '<title>' + esc(title) + '</title><link rel="icon" href="/icons/favicon-32.png"><link rel="stylesheet" href="/fonts/fonts.css"><link rel="stylesheet" href="/cases.css?v=505"></head><body class="' + css + '">' + body + js + '</body></html>';
 }
 function html(res, code, s) { res.writeHead(code, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store', 'X-Frame-Options': 'DENY', 'Referrer-Policy': 'no-referrer' }); res.end(s); }
 
@@ -158,7 +219,7 @@ async function centerRoute(req, res, m) {
     if (req.method !== 'GET') return false;
     const CD = { code, center: site.center_name || '', logo: site.logo || '', theme: site.theme || 'a', auth: me, cacheDays: CACHE_DAYS, maxMb: MAX_MB, pub: me ? pubOf(site) : '', fixedOn: !!site.fixed_on, wa: me ? (site.wa || '') : '', waDefault: me && !site.wa ? waFor(cid0(site), '') : '' };
     if (me) db.prepare('UPDATE case_site SET last_seen = ? WHERE customer_id = ?').run(nowTs(), site.customer_id);
-    html(res, 200, page('QR Patient — ' + (site.center_name || ''), '<div id="app"></div>', 'k', '<script>window.CD=' + json(CD) + '</script><script src="/vendor/qrcode.js"></script><script src="/cases-kit.js?v=504"></script><script src="/cases-dicom.js?v=504"></script><script src="/cases-pacs.js?v=504"></script><script src="/cases-center.js?v=504"></script>'));
+    html(res, 200, page('QR Patient — ' + (site.center_name || ''), '<div id="app"></div>', 'k', '<script>window.CD=' + json(CD) + '</script><script src="/vendor/qrcode.js"></script><script src="/cases-kit.js?v=505"></script><script src="/cases-dicom.js?v=505"></script><script src="/cases-pacs.js?v=505"></script><script src="/cases-center.js?v=505"></script>'));
     return true;
   }
   if (sub === 'login' && req.method === 'POST') {
@@ -174,7 +235,7 @@ async function centerRoute(req, res, m) {
   if (sub === 'list' && req.method === 'GET') {
     const rows = db.prepare('SELECT * FROM case_item WHERE customer_id = ? ORDER BY id DESC LIMIT 500').all(cid).map(itemOut);
     const recent = db.prepare('SELECT v.token, v.at, v.dev, v.via, v.src, i.patient, i.exam FROM case_view v JOIN case_item i ON i.token = v.token WHERE v.customer_id = ? ORDER BY v.id DESC LIMIT 30').all(cid);
-    send(res, 200, { list: rows, online: (LIVE.get(cid) || new Set()).size, asks: asksOf(cid), bookings: bookingsOf(cid), recent }); return true;
+    send(res, 200, { list: rows, online: (LIVE.get(cid) || new Set()).size, asks: asksOf(cid), bookings: bookingsOf(cid), qr: qrStatsOf(cid), recent }); return true;
   }
   if (sub === 'live' && req.method === 'GET') {
     res.writeHead(200, { 'Content-Type': 'text/event-stream; charset=utf-8', 'Cache-Control': 'no-store', Connection: 'keep-alive', 'X-Accel-Buffering': 'no' });
@@ -320,8 +381,9 @@ async function viewRoute(req, res, token, file) {
   const it = db.prepare('SELECT i.*, s.center_name, s.logo AS site_logo, s.theme AS site_theme, s.active AS site_on, s.wa AS site_wa, s.pub AS site_pub FROM case_item i LEFT JOIN case_site s ON s.customer_id = i.customer_id WHERE i.token = ?').get(token);
   if (!file) {
     if (!it) { if (limited('vx:' + ip, 40, 600e3)) { send(res, 429, { message: 'حاولت كتير' }); return true; } }
+    if (it && it.active && it.site_on && who.via === 'qr') qrOpen(req, it.customer_id, 'report');
     const CD = it ? { token, kind: it.kind || 'pdf', center: it.center_name || '', logo: it.site_logo || '', theme: it.site_theme || 'a', patient: it.patient, exam: it.exam || '', at: it.created_at, pages: it.pages || 0, size: it.size, name: it.file_name || '', active: !!(it.active && it.site_on), ready: !!(it.cached && it.cache_until > Date.now()) || online(it.customer_id), wa: waFor(it.customer_id, it.site_wa), pub: it.site_pub || '' } : { missing: true };
-    html(res, it ? 200 : 404, page(it ? 'نتيجة الفحص — ' + (it.center_name || '') : 'الحالة مش موجودة', '<div id="app"></div>', 'v', '<script>window.CD=' + json(CD) + '</script>' + (it && it.kind === 'dicom' ? '<script src="/cases-pacs.js?v=504"></script>' : '<script src="/vendor/pdfjs/pdf.min.js"></script>') + '<script src="/cases-skin.js?v=504"></script><script src="/cases-view.js?v=504"></script>'));
+    html(res, it ? 200 : 404, page(it ? 'نتيجة الفحص — ' + (it.center_name || '') : 'الحالة مش موجودة', '<div id="app"></div>', 'v', '<script>window.CD=' + json(CD) + '</script>' + (it && it.kind === 'dicom' ? '<script src="/cases-pacs.js?v=505"></script>' : '<script src="/vendor/pdfjs/pdf.min.js"></script>') + '<script src="/cases-skin.js?v=505"></script><script src="/cases-view.js?v=505"></script>'));
     return true;
   }
   if (!it) { send(res, 404, { message: 'الحالة مش موجودة' }); return true; }
@@ -395,8 +457,9 @@ async function findRoute(req, res, pub, sub) {
   if (!find) {
     if (req.method !== 'GET') return false;
     if (!site) { if (limited('hx:' + ip, 30, 600e3)) { send(res, 429, { message: 'حاولت كتير' }); return true; } }
+    if (site) qrOpen(req, site.customer_id, 'fixed');
     const CD = site ? { pub, center: site.center_name || '', logo: site.logo || '', theme: site.theme || 'a', on: !!site.fixed_on, wa: waFor(site.customer_id, site.wa) } : { missing: true };
-    html(res, site ? 200 : 404, page(site ? 'نتيجتك — ' + (site.center_name || '') : 'اللينك مش شغال', '<div id="app"></div>', 'v', '<script>window.CD=' + json(CD) + '</script><script src="/cases-kit.js?v=504"></script><script src="/cases-skin.js?v=504"></script><script src="/cases-find.js?v=504"></script>'));
+    html(res, site ? 200 : 404, page(site ? 'نتيجتك — ' + (site.center_name || '') : 'اللينك مش شغال', '<div id="app"></div>', 'v', '<script>window.CD=' + json(CD) + '</script><script src="/cases-kit.js?v=505"></script><script src="/cases-skin.js?v=505"></script><script src="/cases-find.js?v=505"></script>'));
     return true;
   }
   if (req.method !== 'POST') return false;
