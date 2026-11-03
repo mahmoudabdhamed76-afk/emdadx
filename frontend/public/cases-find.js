@@ -56,7 +56,7 @@
       '<button class="btn w" type="submit" id="bgo">إرسال طلب الحجز ←</button></form></div>' +
     '</section>' +
     '<div class="pv2-trust"><div><i>🔒</i><span>خصوصية بياناتك</span></div><div><i>⚡</i><span>خطوات سريعة</span></div><div><i>📱</i><span>كل حاجة من موبايلك</span></div></div>' +
-    '<p class="pv2-footer">نتمنالك دوام الصحة والعافية ♥</p>' +
+    '<p class="pv2-footer">نتمنالك دوام الصحة والعافية ♥</p><p class="pv2-analytics-note">يتم تسجيل عدد زيارات رابط الباركود، وموقع عام تقريبي إن توفر، دون طلب الوصول لموقع جهازك.</p>' +
   '</div>';
   function chooseJourney(which) {
     var booking = which === 'booking', result = which === 'results';
@@ -127,7 +127,7 @@
         M = M.filter(Boolean); b.disabled = false; b.innerHTML = '🔍 دوّر على نتيجتي';
         if (!M.length) { er.textContent = ''; notFound(ph); return; }
         try { sessionStorage.setItem('ozx_find', JSON.stringify({ p: ph })); sessionStorage.setItem('ozx_back', location.pathname.replace(/\/$/, '')); } catch (e) {}
-        var href = function (m) { return '/v/' + m.x.token + '#' + m.k; };
+        var href = function (m) { return '/v/' + m.x.token + '?h=1#' + m.k; };
         if (M.length === 1) { $('res').innerHTML = '<div class="ld"><i>✅</i><b>لقينا نتيجتك</b><p>بنفتحها…</p></div>'; setTimeout(function () { location.href = href(M[0]); }, 450); return; }
         $('res').innerHTML = '<p style="color:var(--mut);font-weight:700;margin:4px 4px 0">لقينا ' + M.length + ' نتايج — اختار:</p>' + M.map(function (m, i) {
           var dm = /(\d{4})-(\d{2})-(\d{2})/.exec(String(m.x.at || '')), MO = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
@@ -169,7 +169,7 @@
       fetch(location.pathname.replace(/\/$/, '') + '/find', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ phone: ph }) })
         .then(function (r) { return r.ok ? r.json() : { list: [] }; })
         .then(function (j) { return Promise.all((j.list || []).map(function (x) { return open1(x, ph).then(function (k) { return k ? { x: x, k: k } : null; }); })); })
-        .then(function (M) { M = M.filter(Boolean); if (!M.length) return; clearInterval(watch.t); try { navigator.vibrate && navigator.vibrate([200, 100, 200]); } catch (e) {} $('res').innerHTML = '<div class="ld"><i>🎉</i><b>نتيجتك جهزت!</b><p>بنفتحها…</p></div>'; try { sessionStorage.setItem('ozx_back', location.pathname.replace(/\/$/, '')); } catch (e) {} setTimeout(function () { location.href = '/v/' + M[0].x.token + '#' + M[0].k; }, 900); })
+        .then(function (M) { M = M.filter(Boolean); if (!M.length) return; clearInterval(watch.t); try { navigator.vibrate && navigator.vibrate([200, 100, 200]); } catch (e) {} $('res').innerHTML = '<div class="ld"><i>🎉</i><b>نتيجتك جهزت!</b><p>بنفتحها…</p></div>'; try { sessionStorage.setItem('ozx_back', location.pathname.replace(/\/$/, '')); } catch (e) {} setTimeout(function () { location.href = '/v/' + M[0].x.token + '?h=1#' + M[0].k; }, 900); })
         .catch(function () {});
     }, 120000);
   }
