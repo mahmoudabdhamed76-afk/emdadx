@@ -195,6 +195,52 @@ try {
   if (!sc3.includes('slides_seeded')) db.exec('ALTER TABLE case_site ADD COLUMN slides_seeded INTEGER NOT NULL DEFAULT 0');
   if (!sc3.includes('slide_ms')) db.exec('ALTER TABLE case_site ADD COLUMN slide_ms INTEGER NOT NULL DEFAULT 5200');
 } catch (e) { console.error('[cases] 5.20 migrate', e.message); }
+/* 5.21 · patients rate their visit after opening the result (one rating per case per phone) */
+db.exec(`CREATE TABLE IF NOT EXISTS case_rating (id INTEGER PRIMARY KEY AUTOINCREMENT, customer_id TEXT NOT NULL, token TEXT NOT NULL, vk TEXT NOT NULL, stars INTEGER NOT NULL, tags TEXT, note TEXT, at TEXT NOT NULL, dev TEXT, UNIQUE (token, vk));
+CREATE INDEX IF NOT EXISTS ix_case_rating ON case_rating (customer_id, at);`);
+const RATE_TAGS = ['النتيجة وصلت بسرعة', 'التقرير واضح', 'المعاملة ممتازة', 'الصفحة سهلة', 'الانتظار كان طويل', 'التقرير اتأخر', 'محتاج توضيح أكتر', 'التعامل مش كويس'];
+function ratingsOf(cid, from, to) {
+  return db.prepare('SELECT r.id, r.token, r.stars, r.tags, r.note, r.at, r.dev, i.patient, i.exam, i.phone FROM case_rating r LEFT JOIN case_item i ON i.token = r.token WHERE r.customer_id = ? AND r.at >= ? AND r.at < ? ORDER BY r.id DESC LIMIT 2000').all(cid, from, to)
+    .map(r => Object.assign(r, { tags: (() => { try { return JSON.parse(r.tags || '[]'); } catch (e) { return []; } })() }));
+}
+function monthEdge(m) { const [y, mo] = m.split('-').map(Number); const n = mo === 12 ? (y + 1) + '-01' : y + '-' + String(mo + 1).padStart(2, '0'); return [m + '-01', n + '-01']; }
+function prevMonth(m) { const [y, mo] = m.split('-').map(Number); return mo === 1 ? (y - 1) + '-12' : y + '-' + String(mo - 1).padStart(2, '0'); }
+/* 5.21 · everything the monthly report needs, for one month and the one before it */
+function reportOf(cid, m) {
+  const one = (q, ...a) => (db.prepare(q).get(cid, ...a) || {}).n || 0;
+  const part = mm => {
+    const [a, b] = monthEdge(mm), r = ratingsOf(cid, a, b);
+    return {
+      month: mm, cases: one('SELECT COUNT(*) n FROM case_item WHERE customer_id = ? AND created_at >= ? AND created_at < ?', a, b),
+      dicom: one("SELECT COUNT(*) n FROM case_item WHERE customer_id = ? AND kind = 'dicom' AND created_at >= ? AND created_at < ?", a, b),
+      views: one('SELECT COUNT(*) n FROM case_view WHERE customer_id = ? AND at >= ? AND at < ?', a, b),
+      opened: one('SELECT COUNT(DISTINCT v.token) n FROM case_view v JOIN case_item i ON i.token = v.token WHERE v.customer_id = ? AND i.created_at >= ? AND i.created_at < ?', a, b),
+      qr: one("SELECT COALESCE(SUM(n),0) n FROM case_qr_hour WHERE customer_id = ? AND kind = 'fixed' AND day >= ? AND day < ?", a, b),
+      bookings: one('SELECT COUNT(*) n FROM case_booking WHERE customer_id = ? AND at >= ? AND at < ?', a, b),
+      bookDone: one("SELECT COUNT(*) n FROM case_booking WHERE customer_id = ? AND status != 'new' AND at >= ? AND at < ?", a, b),
+      asks: one('SELECT COUNT(*) n FROM case_ask WHERE customer_id = ? AND at >= ? AND at < ?', a, b),
+      complaints: one("SELECT COUNT(*) n FROM case_service_request WHERE customer_id = ? AND kind = 'complaint' AND at >= ? AND at < ?", a, b),
+      compDone: one("SELECT COUNT(*) n FROM case_service_request WHERE customer_id = ? AND kind = 'complaint' AND status != 'new' AND at >= ? AND at < ?", a, b),
+      reports: one("SELECT COUNT(*) n FROM case_service_request WHERE customer_id = ? AND kind = 'report' AND at >= ? AND at < ?", a, b),
+      rated: r.length, stars: r.length ? r.reduce((x, y) => x + y.stars, 0) / r.length : 0, happy: r.filter(x => x.stars >= 4).length,
+      dist: [1, 2, 3, 4, 5].map(k => r.filter(x => x.stars === k).length), _r: r, _a: a, _b: b
+    };
+  };
+  const cur = part(m), prev = part(prevMonth(m)), [a, b] = [cur._a, cur._b];
+  const days = {}, add = (d, k, n) => { (days[d] = days[d] || { cases: 0, qr: 0, views: 0 })[k] += n; };
+  db.prepare('SELECT substr(created_at,1,10) d, COUNT(*) n FROM case_item WHERE customer_id = ? AND created_at >= ? AND created_at < ? GROUP BY 1').all(cid, a, b).forEach(r => add(r.d, 'cases', r.n));
+  db.prepare("SELECT day d, SUM(n) n FROM case_qr_hour WHERE customer_id = ? AND kind = 'fixed' AND day >= ? AND day < ? GROUP BY 1").all(cid, a, b).forEach(r => add(r.d, 'qr', r.n));
+  db.prepare('SELECT substr(at,1,10) d, COUNT(*) n FROM case_view WHERE customer_id = ? AND at >= ? AND at < ? GROUP BY 1').all(cid, a, b).forEach(r => add(r.d, 'views', r.n));
+  const exams = db.prepare("SELECT COALESCE(NULLIF(TRIM(exam),''),'من غير نوع') e, COUNT(*) n FROM case_item WHERE customer_id = ? AND created_at >= ? AND created_at < ? GROUP BY 1 ORDER BY 2 DESC LIMIT 8").all(cid, a, b);
+  const bookExams = db.prepare('SELECT exam e, COUNT(*) n FROM case_booking WHERE customer_id = ? AND at >= ? AND at < ? GROUP BY 1 ORDER BY 2 DESC LIMIT 6').all(cid, a, b);
+  const subj = db.prepare("SELECT COALESCE(NULLIF(TRIM(subject),''),'من غير عنوان') e, COUNT(*) n FROM case_service_request WHERE customer_id = ? AND kind = 'complaint' AND at >= ? AND at < ? GROUP BY 1 ORDER BY 2 DESC LIMIT 6").all(cid, a, b);
+  const hours = new Array(24).fill(0); db.prepare("SELECT hour h, SUM(n) n FROM case_qr_hour WHERE customer_id = ? AND kind = 'fixed' AND day >= ? AND day < ? GROUP BY 1").all(cid, a, b).forEach(r => { hours[r.h] = r.n; });
+  const tags = {}; cur._r.forEach(r => (r.tags || []).forEach(t => { tags[t] = (tags[t] || 0) + 1; }));
+  const notes = cur._r.filter(r => r.note).slice(0, 8).map(r => ({ stars: r.stars, note: r.note, patient: r.patient, at: r.at }));
+  const site = db.prepare('SELECT center_name FROM case_site WHERE customer_id = ?').get(cid) || {};
+  [cur, prev].forEach(x => { delete x._r; delete x._a; delete x._b; });
+  return { center: site.center_name || '', cur, prev, days, exams, bookExams, subj, hours, tags: Object.keys(tags).map(k => [k, tags[k]]).sort((x, y) => y[1] - x[1]), notes, made: nowTs() };
+}
 const BASE_SLIDES = [
   { art: 'ct', tag: 'QR Patient', title: 'ألف سلامة عليك 🤍', body: 'إزاي نقدر نساعدك النهارده؟', cta: '', sort: -1000 },
   { art: 'doc', tag: 'تقارير الأشعة', title: 'تقارير دقيقة.. وسرعة في الخدمة', body: 'فريق متخصص وأحدث أجهزة التصوير', cta: '', sort: 1000 },
@@ -244,7 +290,8 @@ function dashOf(cid) {
     cases: { total: c.total || 0, today: c.today || 0, month: c.month || 0, off: c.off || 0, unseen: c.unseen || 0 },
     views: { total: v.total || 0, today: v.today || 0, yday: v.yday || 0 },
     qr: { total: st.count_fixed || 0, all: st.total || 0, report: st.count_report || 0, today: qToday, yday: qYday },
-    req, hours, days, ads: one('SELECT COUNT(*) n FROM case_ad WHERE customer_id = ? AND active = 1') };
+    req, hours, days, ads: one('SELECT COUNT(*) n FROM case_ad WHERE customer_id = ? AND active = 1'),
+    rate: (() => { const r = db.prepare('SELECT COUNT(*) n, AVG(stars) avg, SUM(stars >= 4) happy FROM case_rating WHERE customer_id = ? AND at >= ?').get(cid, dOf(29)) || {}; return { n: r.n || 0, avg: r.avg || 0, happy: r.happy || 0 }; })() };
 }
 /* 'QR opens' means a browser opened the QR destination, not a verified camera scan. */
 function qrStatsOf(cid) {
@@ -395,18 +442,31 @@ function page(title, body, css, js, manifestUrl) {
   return '<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover' + (css === 'v' ? ',maximum-scale=1,user-scalable=no' : '') + '"><meta name="robots" content="noindex,nofollow"><meta name="referrer" content="no-referrer"><meta name="theme-color" content="#0E9F9A">' +
     '<title>' + esc(title) + '</title><link rel="icon" href="/icons/favicon-32.png">' +
     (manifestUrl ? '<link rel="manifest" href="'+esc(manifestUrl)+'"><link rel="apple-touch-icon" href="'+esc(manifestUrl.replace('/manifest','/icon'))+'"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default">' : '') +
-    '<link rel="stylesheet" href="/fonts/fonts.css"><link rel="stylesheet" href="/cases.css?v=520"></head><body class="' + css + '">' + body + js + '</body></html>';
+    '<link rel="stylesheet" href="/fonts/fonts.css"><link rel="stylesheet" href="/cases.css?v=521"></head><body class="' + css + '">' + body + js + '</body></html>';
 }
 function html(res, code, s) { res.writeHead(code, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store', 'X-Frame-Options': 'DENY', 'Referrer-Policy': 'no-referrer' }); res.end(s); }
 
 /* ════════ public routes ════════ */
 async function handle(req, res, pathname) {
-  let m = /^\/k\/([A-Za-z0-9]{8})(\/(login|logout|list|qr|layout|live|case|relay|item|fixed|wa|ask|bookings|tickets|ticket-image|logo|views|theme|manifest|icon|push-key|push-subscribe|push-disable|push-test|dash|ads|slides-base|tickets-all|tickets-reset|ads-order|slides-reset|slide-ms)(\/[A-Za-z0-9]{1,20})?(\/(stop|start|delete|wrap|done|toggle|up|down|uncache))?)?\/?$/.exec(pathname);
+  let m = /^\/k\/([A-Za-z0-9]{8})(\/(login|logout|list|qr|layout|live|case|relay|item|fixed|wa|ask|bookings|tickets|ticket-image|logo|views|theme|manifest|icon|push-key|push-subscribe|push-disable|push-test|dash|ads|slides-base|tickets-all|tickets-reset|ads-order|slides-reset|slide-ms|ratings|report)(\/[A-Za-z0-9]{1,20})?(\/(stop|start|delete|wrap|done|toggle|up|down|uncache))?)?\/?$/.exec(pathname);
   if (m) return centerRoute(req, res, m);
   m = /^\/h\/([A-Za-z0-9]{8})(\/(seen|find|ask|book|complaint|report-request|manifest|icon|push-key|push-subscribe|push-disable|push-test))?\/?$/.exec(pathname);
   if (m) return findRoute(req, res, m[1], m[3] || '');
-  m = /^\/v\/([A-Za-z0-9]{12})(\/(file|ask|seen))?\/?$/.exec(pathname);
+  m = /^\/v\/([A-Za-z0-9]{12})(\/(file|ask|seen|rate))?\/?$/.exec(pathname);
   if (m && m[3] === 'ask') return viewAsk(req, res, m[1]);
+  if (m && m[3] === 'rate') {
+    if (req.method !== 'POST') return false;
+    const ip = ipOf(req); if (limited('rate:' + ip, 20, 3600e3)) { send(res, 429, { message: 'استنى شوية' }); return true; }
+    let b = {}; try { b = await readJson(req, 1500); } catch (e) {}
+    const it = db.prepare('SELECT customer_id, token FROM case_item WHERE token = ?').get(m[1]); if (!it) { send(res, 404, { message: 'الحالة مش موجودة' }); return true; }
+    const stars = Math.round(Number(b.stars)); if (!(stars >= 1 && stars <= 5)) { send(res, 400, { message: 'اختار عدد النجوم' }); return true; }
+    const tags = (Array.isArray(b.tags) ? b.tags : []).filter(t => RATE_TAGS.includes(t)).slice(0, 6);
+    const vk = crypto.createHash('sha256').update(ip + '|' + String(req.headers['user-agent'] || '') + '|' + String(b.vid || '').slice(0, 40)).digest('base64url').slice(0, 22);
+    db.prepare(`INSERT INTO case_rating (customer_id, token, vk, stars, tags, note, at, dev) VALUES (?,?,?,?,?,?,?,?)
+      ON CONFLICT(token, vk) DO UPDATE SET stars = excluded.stars, tags = excluded.tags, note = excluded.note, at = excluded.at`).run(it.customer_id, it.token, vk, stars, JSON.stringify(tags), clean(b.note, 300), nowTs(), devOf(req.headers['user-agent']));
+    tell(it.customer_id, 'rating', { stars });
+    send(res, 200, { ok: true }); return true;
+  }
   if (m && m[3] === 'seen') {
     if (req.method !== 'POST') return false;
     let b = {}; try { b = await readJson(req, 300); } catch (e) {}
@@ -428,7 +488,7 @@ async function centerRoute(req, res, m) {
     if (req.method !== 'GET') return false;
     const CD = { code, center: site.center_name || '', logo: site.logo || '', theme: site.theme || 'a', layout: site.dashboard_layout === 'violet' ? 'violet' : 'teal', auth: me, cacheDays: CACHE_DAYS, maxMb: MAX_MB, pub: me ? pubOf(site) : '', fixedOn: !!site.fixed_on, wa: me ? (site.wa || '') : '', waDefault: me && !site.wa ? waFor(cid0(site), '') : '' };
     if (me) db.prepare('UPDATE case_site SET last_seen = ? WHERE customer_id = ?').run(nowTs(), site.customer_id);
-    html(res, 200, page('QR Patient — ' + (site.center_name || ''), '<div id="app"></div>', 'k', '<script>window.CD=' + json(CD) + '</script><script src="/vendor/qrcode.js"></script><script src="/cases-kit.js?v=520"></script><script src="/cases-dicom.js?v=520"></script><script src="/cases-pacs.js?v=520"></script><script src="/cases-ads.js?v=520"></script><script src="/cases-center.js?v=520"></script><script src="/cases-push.js?v=520"></script>', '/k/'+code+'/manifest'));
+    html(res, 200, page('QR Patient — ' + (site.center_name || ''), '<div id="app"></div>', 'k', '<script>window.CD=' + json(CD) + '</script><script src="/vendor/qrcode.js"></script><script src="/cases-kit.js?v=521"></script><script src="/cases-dicom.js?v=521"></script><script src="/cases-pacs.js?v=521"></script><script src="/cases-ads.js?v=521"></script><script src="/cases-center.js?v=521"></script><script src="/cases-push.js?v=521"></script>', '/k/'+code+'/manifest'));
     return true;
   }
   if (sub === 'manifest' && req.method === 'GET') { respondManifest(res,site,'k');return true; }
@@ -467,6 +527,18 @@ async function centerRoute(req, res, m) {
   if (sub === 'dash' && req.method === 'GET') { send(res, 200, { dash: dashOf(cid) }); return true; }
   /* 5.15 · ads shown in the patient page's slider */
   if (sub === 'ads' && req.method === 'GET' && !arg) { const st = db.prepare('SELECT slides_base, slide_ms FROM case_site WHERE customer_id = ?').get(cid) || {}; send(res, 200, { ads: adsOf(cid, true), base: st.slides_base !== 0, ms: st.slide_ms || 5200 }); return true; }
+  if (sub === 'ratings' && req.method === 'GET') {
+    const u = new URL(req.url, 'http://x'), days = Math.max(1, Math.min(400, Number(u.searchParams.get('days')) || 90));
+    const from = new Date(Date.now() - days * 864e5).toISOString().slice(0, 10);
+    const L = ratingsOf(cid, from, '9999');
+    const months = db.prepare("SELECT substr(at,1,7) m, COUNT(*) n, AVG(stars) avg, SUM(stars >= 4) happy FROM case_rating WHERE customer_id = ? GROUP BY 1 ORDER BY 1 DESC LIMIT 12").all(cid);
+    send(res, 200, { list: L, months, tags: RATE_TAGS }); return true;
+  }
+  if (sub === 'report' && req.method === 'GET') {
+    const m = new URL(req.url, 'http://x').searchParams.get('month') || nowTs().slice(0, 7);
+    if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(m)) { send(res, 400, { message: 'الشهر غلط' }); return true; }
+    send(res, 200, { report: reportOf(cid, m) }); return true;
+  }
   if (sub === 'ads-order' && req.method === 'POST') {
     let b = {}; try { b = await readJson(req, 4000); } catch (e) {}
     const ids = Array.isArray(b.ids) ? b.ids.map(Number).filter(Number.isSafeInteger).slice(0, 60) : [];
@@ -732,8 +804,8 @@ async function viewRoute(req, res, token, file) {
   const it = db.prepare('SELECT i.*, s.center_name, s.logo AS site_logo, s.theme AS site_theme, s.active AS site_on, s.wa AS site_wa, s.pub AS site_pub FROM case_item i LEFT JOIN case_site s ON s.customer_id = i.customer_id WHERE i.token = ?').get(token);
   if (!file) {
     if (!it) { if (limited('vx:' + ip, 40, 600e3)) { send(res, 429, { message: 'حاولت كتير' }); return true; } }
-    const CD = it ? { token, kind: it.kind || 'pdf', center: it.center_name || '', logo: it.site_logo || '', theme: it.site_theme || 'a', patient: it.patient, exam: it.exam || '', at: it.created_at, pages: it.pages || 0, size: it.size, name: it.file_name || '', active: !!(it.active && it.site_on), ready: !!(it.cached && it.cache_until > Date.now()) || online(it.customer_id), wa: waFor(it.customer_id, it.site_wa), pub: it.site_pub || '' } : { missing: true };
-    html(res, it ? 200 : 404, page(it ? 'نتيجة الفحص — ' + (it.center_name || '') : 'الحالة مش موجودة', '<div id="app"></div>', 'v', '<script>window.CD=' + json(CD) + '</script>' + (it && it.kind === 'dicom' ? '<script src="/cases-pacs.js?v=520"></script>' : '<script src="/vendor/pdfjs/pdf.min.js"></script>') + '<script src="/cases-skin.js?v=520"></script><script src="/cases-view.js?v=520"></script>'));
+    const CD = it ? { token, kind: it.kind || 'pdf', center: it.center_name || '', logo: it.site_logo || '', theme: it.site_theme || 'a', patient: it.patient, exam: it.exam || '', at: it.created_at, pages: it.pages || 0, size: it.size, name: it.file_name || '', active: !!(it.active && it.site_on), ready: !!(it.cached && it.cache_until > Date.now()) || online(it.customer_id), wa: waFor(it.customer_id, it.site_wa), pub: it.site_pub || '', rateTags: RATE_TAGS } : { missing: true };
+    html(res, it ? 200 : 404, page(it ? 'نتيجة الفحص — ' + (it.center_name || '') : 'الحالة مش موجودة', '<div id="app"></div>', 'v', '<script>window.CD=' + json(CD) + '</script>' + (it && it.kind === 'dicom' ? '<script src="/cases-pacs.js?v=521"></script>' : '<script src="/vendor/pdfjs/pdf.min.js"></script>') + '<script src="/cases-skin.js?v=521"></script><script src="/cases-view.js?v=521"></script>'));
     return true;
   }
   if (!it) { send(res, 404, { message: 'الحالة مش موجودة' }); return true; }
@@ -901,7 +973,7 @@ async function findRoute(req, res, pub, sub) {
     if (req.method !== 'GET') return false;
     if (!site) { if (limited('hx:' + ip, 30, 600e3)) { send(res, 429, { message: 'حاولت كتير' }); return true; } }
     const CD = site ? { pub, center: site.center_name || '', logo: site.logo || '', theme: site.theme || 'a', on: !!site.fixed_on, wa: waFor(site.customer_id, site.wa), ads: adsOf(site.customer_id), base: site.slides_base !== 0, slideMs: site.slide_ms || 5200, seeded: true } : { missing: true };
-    html(res, site ? 200 : 404, page(site ? 'نتيجتك — ' + (site.center_name || '') : 'اللينك مش شغال', '<div id="app"></div>', 'v', '<script>window.CD=' + json(CD) + '</script><script src="/cases-kit.js?v=520"></script><script src="/cases-skin.js?v=520"></script><script src="/cases-ads.js?v=520"></script><script src="/cases-find.js?v=520"></script><script src="/cases-push.js?v=520"></script>',site?'/h/'+pub+'/manifest':null));
+    html(res, site ? 200 : 404, page(site ? 'نتيجتك — ' + (site.center_name || '') : 'اللينك مش شغال', '<div id="app"></div>', 'v', '<script>window.CD=' + json(CD) + '</script><script src="/cases-kit.js?v=521"></script><script src="/cases-skin.js?v=521"></script><script src="/cases-ads.js?v=521"></script><script src="/cases-find.js?v=521"></script><script src="/cases-push.js?v=521"></script>',site?'/h/'+pub+'/manifest':null));
     return true;
   }
   if (req.method !== 'POST') return false;

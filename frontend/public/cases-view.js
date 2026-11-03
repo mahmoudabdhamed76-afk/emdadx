@@ -55,7 +55,7 @@
       var all = new Uint8Array(x.buf), iv = all.slice(0, 12), ct = all.slice(12);
       return crypto.subtle.importKey('raw', unb64u(KEY), { name: 'AES-GCM' }, false, ['decrypt']).then(function (k) { return crypto.subtle.decrypt({ name: 'AES-GCM', iv: iv }, k, ct); })
         .catch(function () { var e = new Error('bad'); e.bad = true; throw e; });
-    }).then(function (plain) { if (C.kind === 'dicom') return showDicom(plain); PDF = new Uint8Array(plain); show(); })
+    }).then(function (plain) { if (C.kind === 'dicom') showDicom(plain); else { PDF = new Uint8Array(plain); show(); } setTimeout(rateCard, 2500); })
       .catch(function (e) {
         if (e.bad) return box('🔑', 'مش قادر أفتح الملف', 'الباركود ده مش بتاع الحالة دي أو ناقص — امسحه تاني.');
         if (e.j && e.j.stopped) return box('⏸', 'الحالة دي اتوقفت', 'كلّم المركز لو محتاجها.');
@@ -63,6 +63,33 @@
         if (e.j && e.j.offline) { TRY++; box('🌙', 'جهاز المركز مقفول دلوقتي', 'الحالة محفوظة على كمبيوتر المركز، وهتتفتح أول ما يشتغل. هنجرّب تاني لوحدنا…', '<button class="btn" id="re" style="margin-top:14px">↻ جرّب دلوقتي</button>'); $('re').onclick = load; clearTimeout(load.t); load.t = setTimeout(load, Math.min(120000, 20000 * TRY)); return; }
         box('⚠️', 'محصلش', esc(e.message || 'النت فصل — جرّب تاني'), '<button class="btn" id="re" style="margin-top:14px">↻ جرّب تاني</button>'); $('re').onclick = load;
       });
+  }
+  /* 5.21 · after the result opens: «قيّم زيارتك» — stars, quick reasons, a line; low stars offer the complaint form */
+  function rateCard() {
+    if (C.missing || $('rate')) return; var K = 'ozx_rate:' + C.token, done = null; try { done = JSON.parse(localStorage.getItem(K) || 'null'); } catch (e) {}
+    var host = document.createElement('section'); host.id = 'rate'; host.className = 'rt'; var body = $('body'); if (!body) return; body.parentNode.insertBefore(host, body.nextSibling);
+    var st = done ? done.s : 0, tags = done ? done.t || [] : [], T = C.rateTags || [], good = T.slice(0, 4), bad = T.slice(4);
+    function paint(sent) {
+      if (sent) { host.innerHTML = '<div class="rt-ok"><span>💚</span><b>شكرًا على تقييمك</b><p>' + (st >= 4 ? 'فرّحتنا! ألف سلامة عليك 🤍' : 'هنراجع ملاحظتك ونتحسّن.') + '</p>' + (st <= 2 && C.pub ? '<a class="btn g" href="/h/' + esc(C.pub) + '#complaint">📝 قدّم شكوى للمركز</a>' : '') + '<button type="button" class="rt-ed" id="rtE">تعديل التقييم</button></div>'; $('rtE').onclick = function () { paint(false); }; return; }
+      var list = st ? (st >= 4 ? good : bad) : [];
+      host.innerHTML = '<div class="rt-h"><b>قيّم زيارتك لـ ' + esc(C.center || 'المركز') + '</b><small>رأيك بيوصل للمركز على طول ومن غير اسمك</small></div>' +
+        '<div class="rt-st" role="radiogroup" aria-label="عدد النجوم">' + [1, 2, 3, 4, 5].map(function (k) { return '<button type="button" role="radio" aria-checked="' + (k === st) + '" aria-label="' + k + ' من 5" data-st="' + k + '" class="' + (k <= st ? 'on' : '') + '">★</button>'; }).join('') + '</div>' +
+        '<p class="rt-lb">' + (['', 'وحش 😞', 'مش كويس 🙁', 'مقبول 😐', 'كويس 🙂', 'ممتاز 🤩'][st] || 'اختار من 1 لـ 5 نجوم') + '</p>' +
+        (st ? '<div class="rt-tg">' + list.map(function (t) { return '<button type="button" data-tg="' + esc(t) + '" class="' + (tags.indexOf(t) > -1 ? 'on' : '') + '">' + esc(t) + '</button>'; }).join('') + '</div>' +
+          '<textarea class="fld rt-n" id="rtN" maxlength="300" rows="2" placeholder="عايز تقول حاجة تانية؟ (اختياري)">' + esc(done && done.n || '') + '</textarea><button type="button" class="btn w" id="rtS">ابعت التقييم</button><p class="rt-er" id="rtR"></p>' : '');
+      [].forEach.call(host.querySelectorAll('[data-st]'), function (b) { b.onclick = function () { var n = +b.dataset.st; if ((n >= 4) !== (st >= 4)) tags = []; st = n; paint(false); }; });
+      [].forEach.call(host.querySelectorAll('[data-tg]'), function (b) { b.onclick = function () { var t = b.dataset.tg, i = tags.indexOf(t); if (i > -1) tags.splice(i, 1); else tags.push(t); b.classList.toggle('on', i < 0); }; });
+      var sb = $('rtS'); if (sb) sb.onclick = function () {
+        var n = $('rtN').value.trim(), vid = ''; try { vid = localStorage.getItem('ozx_vid') || ''; } catch (e) {}
+        sb.disabled = true; sb.textContent = 'بنبعت…';
+        fetch(location.pathname.replace(/\/$/, '') + '/rate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ stars: st, tags: tags, note: n, vid: vid }) })
+          .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) throw new Error(j.message || 'محصلش'); }); })
+          .then(function () { try { localStorage.setItem(K, JSON.stringify({ s: st, t: tags, n: n })); } catch (e) {} paint(true); })
+          .catch(function (e) { sb.disabled = false; sb.textContent = 'ابعت التقييم'; $('rtR').textContent = e.message; });
+      };
+    }
+    paint(!!done);
+    setTimeout(function () { host.classList.add('in'); }, 30);
   }
   /* 5.00 · a DICOM case → the mini PACS right here */
   function showDicom(buf) {

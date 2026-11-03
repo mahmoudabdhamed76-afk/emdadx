@@ -124,6 +124,10 @@
           var se = { desc: p0.series || p0.study || p0.modality || '', rows: sh.rows, cols: sh.cols, b: p0.b, rgb: p0.rgb, signed: p0.signed, slope: p0.slope, inter: p0.inter, wc: p0.wc, ww: p0.ww, mono1: p0.mono1, sp: p0.spacing ? [p0.spacing[0] * k, p0.spacing[1] * k] : null, modality: p0.modality, f: [] };
           head.series.push(se);
           var fl = []; s.forEach(function (p) { if (p.rows === p0.rows && p.cols === p0.cols) p.frames.forEach(function (fr) { fl.push(fr); }); });
+          /* 5.21 · distance between slices (for sagittal / coronal reconstruction) */
+          var zs = s.filter(function (p) { return p.z != null && p.frames.length === 1; }).map(function (p) { return p.z; }), dzs = [];
+          for (var zi = 1; zi < zs.length; zi++) { var dzv = Math.abs(zs[zi] - zs[zi - 1]); if (dzv > 0.01) dzs.push(dzv); }
+          if (dzs.length) { dzs.sort(function (a, b) { return a - b; }); se.dz = dzs[Math.floor(dzs.length / 2)]; }
           return fl.reduce(function (q, fr) { return q.then(function () { var r = shrink(fr, p0.rows, p0.cols, p0.b, p0.rgb, maxSide); return gz(new Uint8Array(delta(r.fr).buffer)).then(function (z) { parts.push(z); se.f.push(z.length); step('pack', ++done, total); }); }); }, Promise.resolve());
         });
       }, Promise.resolve()).then(function () {
@@ -213,13 +217,13 @@
   function viewer(el, buf, o) {
     o = o || {};
     var H = openBundle(buf), si = 0, fi = 0, S = H.series[0], A = null, wc = 0, ww = 1, inv = false, z = 1, panX = 0, panY = 0, rot = 0, flip = false;
-    var tool = 'wl', fps = 10, play = 0, lastT = 0, dirty = false, lutKey = '', lut = null, M = null, meas = {}, drag = null;
+    var tool = 'wl', fps = 10, play = 0, lastT = 0, dirty = false, lutKey = '', lut = null, M = null, meas = {}, drag = null, plane = 'ax', VOL = null, silent = false;
     var MOD = String(H.modality || S.modality || '').toUpperCase(), isCT = MOD === 'CT', PRE = isCT ? PRESETS.CT : PRESETS.X, preI = 0;
     var tools = [['wl', 'تباين'], ['pan', 'تحريك'], ['zoom', 'زوم'], ['stack', 'شرايح'], ['ruler', 'مسطرة'], ['roi', 'منطقة']];
     var acts = [['inv', 'عكس'], ['rot', 'لف'], ['flip', 'قلب'], ['reset', 'رجّع'], ['clear', 'امسح القياس']];
     el.innerHTML = '<div class="pz" tabindex="0" aria-label="عارض صور الأشعة">' +
       '<header class="pz-top"><div class="pz-id"><b>' + esc(H.patient || o.name || '') + '</b><span>' + [MOD, fmtDate(H.date), H.study].filter(Boolean).map(esc).join(' · ') + '</span></div>' +
-        '<div class="pz-tb"><button type="button" data-a="info" aria-label="بيانات الدراسة" title="بيانات الدراسة">' + svg('info') + '</button><button type="button" data-a="snap" aria-label="احفظ صورة" title="احفظ صورة">' + svg('snap') + '</button><button type="button" data-a="fs" aria-label="ملء الشاشة" title="ملء الشاشة">' + svg('fs') + '</button>' + (o.onClose ? '<button type="button" data-a="close" aria-label="قفل" title="قفل">' + svg('x') + '</button>' : '') + '</div></header>' +
+        '<div class="pz-tb"><button type="button" data-a="info" aria-label="بيانات الدراسة" title="بيانات الدراسة">' + svg('info') + '</button><button type="button" data-a="snap" aria-label="احفظ صورة" title="احفظ صورة">' + svg('snap') + '</button><button type="button" data-a="fs" aria-label="ملء الشاشة" title="ملء الشاشة">' + svg('fs') + '</button>' + (o.onCompare ? '<button type="button" data-a="cmp" class="pz-cmp" aria-label="قارن بدراسة تانية" title="قارن بدراسة تانية">⇆<span>قارن</span></button>' : '') + (o.onClose ? '<button type="button" data-a="close" aria-label="قفل" title="قفل">' + svg('x') + '</button>' : '') + '</div></header>' +
       '<div class="pz-body">' + (H.series.length > 1 ? '<div class="pz-rail" role="tablist" aria-label="السيريز">' + H.series.map(function (s, i) { return '<button type="button" role="tab" data-s="' + i + '" aria-selected="' + (i ? 'false' : 'true') + '" class="' + (i ? '' : 'on') + '"><canvas width="72" height="72"></canvas><span>' + esc(s.desc || ('سيريز ' + (i + 1))) + '</span><em>' + s.f.length + '</em></button>'; }).join('') + '</div>' : '') +
         '<div class="pz-vp" id="pzV"><canvas id="pzC"></canvas>' +
           '<div class="pz-o tl" id="pzTL"></div><div class="pz-o tr" id="pzTR"></div><div class="pz-o bl" id="pzBL"></div><div class="pz-o br" id="pzBR"></div>' +
@@ -229,12 +233,23 @@
         '<div class="pz-fps" role="group" aria-label="السرعة">' + [5, 10, 15, 24].map(function (f) { return '<button type="button" data-fps="' + f + '" class="' + (f === fps ? 'on' : '') + '">' + f + '</button>'; }).join('') + '</div></div>' +
       '<nav class="pz-tools" role="toolbar" aria-label="الأدوات">' + tools.map(function (t) { return '<button type="button" data-t="' + t[0] + '" aria-pressed="' + (t[0] === tool) + '" class="' + (t[0] === tool ? 'on' : '') + '">' + svg(t[0]) + '<span>' + t[1] + '</span></button>'; }).join('') +
         '<i class="pz-sep"></i>' + acts.map(function (t) { return '<button type="button" data-a="' + t[0] + '"' + (t[0] === 'inv' ? ' aria-pressed="false"' : '') + '>' + svg(t[0]) + '<span>' + t[1] + '</span></button>'; }).join('') + '</nav>' +
-      '<div class="pz-pre" role="group" aria-label="قوالب التباين">' + PRE.map(function (p, i) { return '<button type="button" data-p="' + i + '" class="' + (i ? '' : 'on') + '">' + p[0] + '</button>'; }).join('') + '</div>' +
+      '<div class="pz-pre" role="group" aria-label="قوالب التباين"><div class="pz-mpr" id="pzMpr" role="group" aria-label="الاتجاه" hidden><button type="button" data-pl="ax" class="on">محوري</button><button type="button" data-pl="co">تاجي</button><button type="button" data-pl="sa">سهمي</button></div>' + PRE.map(function (p, i) { return '<button type="button" data-p="' + i + '" class="' + (i ? '' : 'on') + '">' + p[0] + '</button>'; }).join('') + '</div>' +
       '<div class="pz-info" id="pzI" hidden></div></div>';
     var root = el.querySelector('.pz'), $ = function (id) { return el.querySelector('#' + id); }, cv = $('pzC'), ctx = cv.getContext('2d'), V = $('pzV'), oc = document.createElement('canvas'), ox = oc.getContext('2d'), img = null, img32 = null;
     var DPR = Math.min(2, window.devicePixelRatio || 1);
     /* ── data ── */
-    function key() { return si + ':' + fi; }
+    function key() { return si + ':' + plane + ':' + fi; }
+    /* frames of the current plane: axial = the stored slices, coronal / sagittal = cut from the volume on the fly */
+    var vc = {};
+    function vFrame(i) {
+      if (vc[i]) return vc[i]; var V0 = VOL, N = V0.n, R = V0.rows, Cc = V0.cols, out = new V0.vol.constructor(S.rows * S.cols), s2, x;
+      if (plane === 'co') { for (s2 = 0; s2 < N; s2++) out.set(V0.vol.subarray(s2 * R * Cc + i * Cc, s2 * R * Cc + i * Cc + Cc), s2 * Cc); }
+      else { for (s2 = 0; s2 < N; s2++) { var b0 = s2 * R * Cc + i, o0 = s2 * R; for (x = 0; x < R; x++) out[o0 + x] = V0.vol[b0 + x * Cc]; } }
+      var ks = Object.keys(vc); if (ks.length > 12) delete vc[ks[0]]; vc[i] = out; return out;
+    }
+    function hasF(i) { return plane === 'ax' ? H.has(si, i) : true; }
+    function getF(i) { return plane === 'ax' ? H.frame(si, i) : Promise.resolve(vFrame(i)); }
+    function nowF(i) { return plane === 'ax' ? S.cache[i] : vFrame(i); }
     function val(a, j) { return a[j] * S.slope + S.inter; }
     function buildLut() {
       var k = [S.b, S.signed, wc.toFixed(2), ww.toFixed(2), inv, S.mono1, S.slope, S.inter].join('|'); if (k === lutKey) return; lutKey = k;
@@ -256,12 +271,13 @@
       preI = i; var p = PRE[i][1], a = A ? autoWL() : [wc, ww];
       if (!p) { wc = a[0]; ww = a[1]; } else if (p === 'hi') { wc = a[0]; ww = a[1] * 0.55; } else if (p === 'lo') { wc = a[0]; ww = a[1] * 1.6; } else { wc = p[0]; ww = p[1]; }
       [].forEach.call(el.querySelectorAll('[data-p]'), function (b) { b.classList.toggle('on', +b.dataset.p === i); });
-      render(true);
+      render(true); emit();
     }
     /* ── view transform: image px → canvas px ── */
     function matrix() {
-      var W = cv.width, Hh = cv.height, sw = rot % 2 ? S.rows : S.cols, sh = rot % 2 ? S.cols : S.rows, k = Math.min(W / sw, Hh / sh) * z;
-      var m = new DOMMatrix(); m.translateSelf(W / 2 + panX * DPR, Hh / 2 + panY * DPR); m.rotateSelf(rot * 90); m.scaleSelf(k * (flip ? -1 : 1), k); m.translateSelf(-S.cols / 2, -S.rows / 2); return m;
+      var ay = S.sp && S.sp[1] > 0 ? Math.max(0.2, Math.min(8, S.sp[0] / S.sp[1])) : 1, ih = S.rows * ay;
+      var W = cv.width, Hh = cv.height, sw = rot % 2 ? ih : S.cols, sh = rot % 2 ? S.cols : ih, k = Math.min(W / sw, Hh / sh) * z;
+      var m = new DOMMatrix(); m.translateSelf(W / 2 + panX * DPR, Hh / 2 + panY * DPR); m.rotateSelf(rot * 90); m.scaleSelf(k * (flip ? -1 : 1), k * ay); m.translateSelf(-S.cols / 2, -S.rows / 2); return m;
     }
     function toImg(cx, cy) { var r = cv.getBoundingClientRect(), p = M.inverse().transformPoint(new DOMPoint((cx - r.left) * DPR, (cy - r.top) * DPR)); return [p.x, p.y]; }
     function toScr(p) { var q = M.transformPoint(new DOMPoint(p[0], p[1])); return [q.x, q.y]; }
@@ -317,18 +333,18 @@
     function load(first) {
       var w = fi, s0 = si; want = w; H.pin = [si, fi];
       var ld = $('pzLD'), slow = setTimeout(function () { ld.classList.add('on'); }, 160);
-      H.frame(si, w).then(function (a) { clearTimeout(slow); ld.classList.remove('on'); if (want !== w || s0 !== si) return; A = a; if (first) applyPreset(0); else render(true); prefetch(); })
+      getF(w).then(function (a) { clearTimeout(slow); ld.classList.remove('on'); if (want !== w || s0 !== si) return; A = a; if (first) applyPreset(0); else render(true); prefetch(); })
         .catch(function () { clearTimeout(slow); ld.classList.remove('on'); });
     }
     var pfT = 0;
     function prefetch() {
       clearTimeout(pfT); var s0 = si, f0 = fi, order = []; for (var d = 1; d <= 24; d++) { order.push(f0 + d); order.push(f0 - d); }
-      order = order.filter(function (i) { return i >= 0 && i < S.f.length && !H.has(s0, i); });
+      if (plane !== 'ax') return; order = order.filter(function (i) { return i >= 0 && i < S.f.length && !H.has(s0, i); });
       (function nx(k) { if (k >= order.length || s0 !== si || Math.abs(fi - f0) > 12) return; H.frame(s0, order[k]).then(function () { pfT = setTimeout(function () { nx(k + 1); }, 0); }, function () {}); })(0);
     }
-    function go(n, quiet) { n = Math.max(0, Math.min(S.f.length - 1, n)); if (n === fi) return; fi = n; if (S.f.length > 1 && !quiet) hint(false); if (H.has(si, fi)) { A = S.cache[fi]; H.pin = [si, fi]; render(true); if (!play) prefetch(); } else load(false); }
+    function go(n, quiet) { n = Math.max(0, Math.min(S.f.length - 1, n)); if (n === fi) return; fi = n; if (S.f.length > 1 && !quiet) hint(false); if (hasF(fi)) { A = nowF(fi); if (plane === 'ax') H.pin = [si, fi]; render(true); if (!play) prefetch(); } else load(false); emit(); }
     function setSeries(i) {
-      stop(); si = i; S = H.series[i]; fi = Math.floor(S.f.length / 2); oc.width = S.cols; oc.height = S.rows; img = ox.createImageData(S.cols, S.rows); img32 = new Uint32Array(img.data.buffer); A = null; z = 1; panX = panY = 0; rot = 0; flip = false; lutKey = '';
+      stop(); plane = 'ax'; VOL = null; vc = {}; si = i; S = H.series[i]; fi = Math.floor(S.f.length / 2); mprBar(); oc.width = S.cols; oc.height = S.rows; img = ox.createImageData(S.cols, S.rows); img32 = new Uint32Array(img.data.buffer); A = null; z = 1; panX = panY = 0; rot = 0; flip = false; lutKey = '';
       MOD = String(S.modality || H.modality || '').toUpperCase(); isCT = MOD === 'CT';
       var r = $('pzR'); r.max = S.f.length; $('pzCine').hidden = S.f.length < 2;
       [].forEach.call(el.querySelectorAll('[data-s]'), function (b) { var on = +b.dataset.s === i; b.classList.toggle('on', on); b.setAttribute('aria-selected', String(on)); });
@@ -345,11 +361,47 @@
         }).catch(function () {});
       });
     }
+    /* ── MPR: sagittal / coronal from the axial stack ── */
+    function canMpr(s) { return s && !s.rgb && s.f.length >= 12; }
+    function mprBar() { var g = $('pzMpr'); if (!g) return; var B = H.series[si]; g.hidden = !canMpr(B); [].forEach.call(g.querySelectorAll('[data-pl]'), function (b) { var on = b.dataset.pl === plane; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); }); }
+    function buildVol(B) {
+      if (B.vol) return Promise.resolve(B.vol);
+      var N = B.f.length, k = Math.max(1, Math.ceil(Math.sqrt(B.rows * B.cols * N * (B.b === 16 ? 2 : 1) / (150 * 1048576)))), R = Math.floor(B.rows / k), Cc = Math.floor(B.cols / k);
+      var Ctor = B.b === 16 ? (B.signed ? Int16Array : Uint16Array) : Uint8Array, vol = new Ctor(N * R * Cc), ld = $('pzLD'), t = ld.querySelector('span'); ld.classList.add('on', 'mpr');
+      var i = 0;
+      return new Promise(function (ok, no) {
+        (function nx() {
+          if (i >= N) { ld.classList.remove('on', 'mpr'); ld.removeAttribute('data-p'); B.vol = { vol: vol, n: N, rows: R, cols: Cc, k: k }; return ok(B.vol); }
+          var j = i++; H.frame(si, j).then(function (a) {
+            if (k === 1) vol.set(a, j * R * Cc); else for (var y = 0; y < R; y++) for (var x = 0; x < Cc; x++) vol[j * R * Cc + y * Cc + x] = a[(y * k) * B.cols + x * k];
+            ld.setAttribute('data-p', 'بنجهّز الإعادة ' + Math.round(i / N * 100) + '%'); if (j % 6 === 5) setTimeout(nx, 0); else nx();
+          }).catch(function (e) { ld.classList.remove('on', 'mpr'); no(e); });
+        })();
+      });
+    }
+    function setPlane(pl) {
+      var B = H.series[si]; if (pl === plane || (pl !== 'ax' && !canMpr(B))) return; stop();
+      if (pl === 'ax') { plane = 'ax'; S = B; fi = Math.round((VOL ? (plane === 'ax' ? fi : 0) : fi)); var axF = ui0.axF != null ? ui0.axF : Math.floor(B.f.length / 2); return switchTo(B, axF); }
+      if (plane === 'ax') ui0.axF = fi;
+      buildVol(B).then(function (V0) {
+        VOL = V0; vc = {}; plane = pl; var dz = B.dz || (function () { var m0 = /(\d+(?:\.\d+)?)\s*mm/i.exec(B.desc || ''); return m0 ? +m0[1] : (B.sp ? B.sp[0] : 1); })(), spx = B.sp ? B.sp[1] * V0.k : 1, spy = B.sp ? B.sp[0] * V0.k : 1;
+        var VS = { desc: (pl === 'co' ? 'تاجي (Coronal)' : 'سهمي (Sagittal)') + ' · ' + (B.desc || ''), rows: V0.n, cols: pl === 'co' ? V0.cols : V0.rows, b: B.b, rgb: false, signed: B.signed, slope: B.slope, inter: B.inter, wc: B.wc, ww: B.ww, mono1: B.mono1, sp: B.sp ? [dz, pl === 'co' ? spx : spy] : [dz, 1], modality: B.modality, f: { length: pl === 'co' ? V0.rows : V0.cols }, cache: {} };
+        switchTo(VS, Math.floor(VS.f.length / 2), true);
+      }).catch(function () {});
+    }
+    var ui0 = {};
+    function switchTo(NS, f0, keepWL) {
+      var wl0 = [wc, ww]; S = NS; fi = f0; oc.width = S.cols; oc.height = S.rows; img = ox.createImageData(S.cols, S.rows); img32 = new Uint32Array(img.data.buffer); A = null; z = 1; panX = panY = 0; rot = 0; flip = false; lutKey = '';
+      var r = $('pzR'); r.max = S.f.length; $('pzCine').hidden = S.f.length < 2; mprBar();
+      getF(fi).then(function (a) { A = a; if (keepWL || plane === 'ax') { wc = wl0[0]; ww = wl0[1]; } render(true); emit(); });
+    }
+    /* ── linked viewers (compare two studies) ── */
+    function emit() { if (silent || !o.onChange) return; o.onChange({ rel: S.f.length > 1 ? fi / (S.f.length - 1) : 0, wc: wc, ww: ww, z: z, plane: plane }); }
     /* ── cine ── */
     function stop() { if (play) { cancelAnimationFrame(play); play = 0; } var b = $('pzPl'); if (b) { b.innerHTML = svg('play'); b.setAttribute('aria-label', 'شغّل الشرايح'); } }
     function start() {
       if (S.f.length < 2) return; var b = $('pzPl'); b.innerHTML = svg('pause'); b.setAttribute('aria-label', 'وقّف'); lastT = 0;
-      (function tick(t) { play = requestAnimationFrame(tick); if (t - lastT < 1000 / fps) return; lastT = t; var n = fi + 1 >= S.f.length ? 0 : fi + 1; if (H.has(si, n)) go(n, true); else H.frame(si, n).then(function () { if (play) go(n, true); }); for (var d = 2; d < 8; d++) { var q = (fi + d) % S.f.length; if (!H.has(si, q)) H.frame(si, q).catch(function () {}); } })(performance.now());
+      (function tick(t) { play = requestAnimationFrame(tick); if (t - lastT < 1000 / fps) return; lastT = t; var n = fi + 1 >= S.f.length ? 0 : fi + 1; if (hasF(n)) go(n, true); else getF(n).then(function () { if (play) go(n, true); }); if (plane === 'ax') for (var d = 2; d < 8; d++) { var q = (fi + d) % S.f.length; if (!H.has(si, q)) H.frame(si, q).catch(function () {}); } })(performance.now());
     }
     /* ── interaction ── */
     var P = {}, last = null, pinch = null, moved = 0, tapT = 0, acc = 0, btn = 0;
@@ -371,7 +423,7 @@
       var dx = e.clientX - last.x, dy = e.clientY - last.y; last = { x: e.clientX, y: e.clientY }; moved += Math.abs(dx) + Math.abs(dy);
       var t = activeTool(e);
       if (drag && drag.m) { drag.m.b = toImg(e.clientX, e.clientY); render(); return; }
-      if (t === 'wl' && !S.rgb) { var k = Math.max(0.4, ww / 240); ww = Math.max(1, ww + dx * k); wc = wc + dy * k; if (preI) [].forEach.call(el.querySelectorAll('[data-p]'), function (b) { b.classList.remove('on'); }); preI = -1; render(true); }
+      if (t === 'wl' && !S.rgb) { var k = Math.max(0.4, ww / 240); ww = Math.max(1, ww + dx * k); wc = wc + dy * k; if (preI) [].forEach.call(el.querySelectorAll('[data-p]'), function (b) { b.classList.remove('on'); }); preI = -1; render(true); emit(); }
       else if (t === 'pan' || (S.rgb && t === 'wl')) { panX += dx; panY += dy; render(); }
       else if (t === 'zoom') { z = Math.max(0.3, Math.min(16, z * (1 - dy / 180))); render(); }
       else if (t === 'stack') { acc += dy; var st = Math.max(3, 260 / S.f.length); while (Math.abs(acc) > st) { go(fi + (acc > 0 ? 1 : -1)); acc -= acc > 0 ? st : -st; } }
@@ -411,6 +463,8 @@
       if (b.dataset.t) setTool(b.dataset.t);
       if (b.dataset.s) setSeries(+b.dataset.s);
       if (b.dataset.p) applyPreset(+b.dataset.p);
+      if (b.dataset.pl) setPlane(b.dataset.pl);
+      if (b.dataset.a === 'cmp' && o.onCompare) o.onCompare();
       if (b.dataset.fps) { fps = +b.dataset.fps; [].forEach.call(el.querySelectorAll('[data-fps]'), function (x) { x.classList.toggle('on', x === b); }); }
       var a = b.dataset.a;
       if (a === 'inv') { inv = !inv; b.classList.toggle('on', inv); b.setAttribute('aria-pressed', String(inv)); render(true); }
@@ -442,7 +496,9 @@
     document.addEventListener('fullscreenchange', function () { root.classList.toggle('fs', document.fullscreenElement === root); setTimeout(size, 60); });
     setTool('wl'); setSeries(0); size(); setTimeout(thumbs, 400);
     if (!o.noFocus && !(window.matchMedia && matchMedia('(pointer:coarse)').matches)) try { root.focus({ preventScroll: true }); } catch (e) {}
-    return { head: H, destroy: function () { stop(); if (ro) ro.disconnect(); } };
+    return { head: H, destroy: function () { stop(); if (ro) ro.disconnect(); },
+      set: function (st) { if (!st || !A) return; silent = true; try { if (st.rel != null && S.f.length > 1) go(Math.round(st.rel * (S.f.length - 1)), true); if (st.wc != null && !S.rgb) { wc = st.wc; ww = st.ww; render(true); } } finally { silent = false; } },
+      resize: function () { size(); } };
   }
 
   window.OZPacs = { parse: parse, pack: pack, open: openBundle, viewer: viewer, isBundle: function (u8) { return new TextDecoder().decode(u8.subarray(0, 6)) === MAGIC; } };
