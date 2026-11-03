@@ -235,7 +235,7 @@
             if(!/^data:image\/jpeg;base64,/.test(data)||data.length>5550000) {
               reject(Error('الصورة كبيرة بعد التحويل؛ جرّب صورة أصغر.'));return;
             }
-            resolve({name:file.name.replace(/\.(heic|heif|png|webp)$/i,'')+'.jpg',data:data});
+            resolve({name:file.name.replace(/\.(heic|heif|png|webp|jpe?g)$/i,'')+'.jpg',data:data});
           }catch(e){finish();reject(Error('مش قادر أجهز الصورة؛ جرّب JPG أو Screenshot.'));}
         };
         img.src=url;
