@@ -10,7 +10,7 @@
 (function () {
   'use strict';
   var C = window.CD || {}, BASE = '/k/' + C.code, $ = function (id) { return document.getElementById(id); }, K = window.OZK;
-  var ui = { logo: C.logo || '', logoImg: null, recent: [], vwOpen: '', asks: [], bookings: [], qr: null, layout: C.layout === 'violet' ? 'violet' : 'teal', wa: C.wa || '', prefill: null, list: [], local: {}, q: '', f: 'all', queue: [], live: false, es: null, fixed: !!C.fixedOn, dir: null, dirName: '', seen: {}, watchT: 0, pend: {}, auto: false, lastScan: 0 };
+  var ui = { logo: C.logo || '', logoImg: null, recent: [], vwOpen: '', asks: [], bookings: [], qr: null, page: 'dashboard', dicomMounted: false, layout: C.layout === 'violet' ? 'violet' : 'teal', wa: C.wa || '', prefill: null, list: [], local: {}, q: '', f: 'all', queue: [], live: false, es: null, fixed: !!C.fixedOn, dir: null, dirName: '', seen: {}, watchT: 0, pend: {}, auto: false, lastScan: 0 };
   var QID = 0;
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function toast(t) { var el = $('toast'); if (!el) return; el.textContent = t; el.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(function () { el.classList.remove('on'); }, 3000); }
@@ -124,18 +124,113 @@
 
   /* Dashboard V3: the two user-approved mockup layouts, shared data and controls. */
   function dashboardNav() {
+    var items = [
+      ['dashboard', '⌂', 'لوحة التحكم'],
+      ['bookings', '▣', 'طلبات حجز الأشعة'],
+      ['results', '▤', 'طلبات النتائج'],
+      ['upload', '⇧', 'رفع ملفات PDF / DICOM'],
+      ['cases', '▥', 'الحالات'],
+      ['qr', '▦', 'باركود المركز'],
+      ['design', '◉', 'شكل صفحة المريض'],
+      ['activity', '◷', 'آخر مرات الفتح'],
+      ['settings', '⚙', 'الإعدادات']
+    ];
     return '<aside class="qrd-nav" id="dashSidebar" aria-label="قائمة QR Patient">' +
       '<div class="qrd-nav-brand"><span class="qrd-nav-logo">▦</span><div><b>QR Patient</b><small>إدارة صور وملفات المرضى</small></div></div>' +
       '<nav class="qrd-nav-list" aria-label="أقسام الصفحة">' +
-      '<a href="#qrStats" class="on"><span>⌂</span> لوحة التحكم</a>' +
-      '<a href="#bookings"><span>▣</span> طلبات حجز الأشعة</a>' +
-      '<a href="#asks"><span>▤</span> طلبات النتائج</a>' +
-      '<a href="#drop"><span>⇧</span> رفع ملفات PDF / DICOM</a>' +
-      '<a href="#tbl"><span>▥</span> الحالات</a>' +
-      '<a href="#thm"><span>◉</span> شكل صفحة المريض</a>' +
-      '<a href="#rec"><span>◷</span> آخر مرات الفتح</a>' +
+      items.map(function (x) {
+        return '<a href="#page-' + x[0] + '" data-page="' + x[0] + '"' +
+          (x[0] === 'dashboard' ? ' class="on" aria-current="page"' : '') +
+          '><span>' + x[1] + '</span><b>' + x[2] + '</b>' +
+          (x[0] === 'bookings' || x[0] === 'results' ? '<em class="qrd-nav-count" data-count="' + x[0] + '">0</em>' : '') + '</a>';
+      }).join('') +
       '</nav><div class="qrd-nav-end"><span class="qrd-nav-online">● متصل ببيانات المركز</span>' +
       '<small>كل الملفات والطلبات في مكان واحد</small></div></aside>';
+  }
+  function updateNavCount(name, n) {
+    var el = document.querySelector('[data-count="' + name + '"]');
+    if (el) { el.textContent = n0(n); el.hidden = !n; }
+  }
+  function pageFromHash() {
+    var match = /^#page-(dashboard|bookings|results|upload|cases|qr|design|activity|settings)$/.exec(location.hash || '');
+    return match ? match[1] : 'dashboard';
+  }
+  function ensureDicom() {
+    if (ui.dicomMounted || !window.OZDicom || !$('mwda')) return;
+    ui.dicomMounted = true;
+    try { window.OZDicom.mount($('mwda'), { center: C.center, toast: toast, onPdf: addConverted }); }
+    catch (e) { ui.dicomMounted = false; toast('مش قادر أفتح أداة DICOM'); }
+  }
+  function navigatePage(page, push) {
+    var selected = /^(dashboard|bookings|results|upload|cases|qr|design|activity|settings)$/.test(page) ? page : 'dashboard';
+    ui.page = selected;
+    var panes = document.querySelectorAll('[data-qrd-page]');
+    [].forEach.call(panes, function (node) { node.hidden = node.dataset.qrdPage !== selected; });
+    [].forEach.call(document.querySelectorAll('.qrd-nav-list a[data-page]'), function (a) {
+      var active = a.dataset.page === selected;
+      a.classList.toggle('on', active);
+      if (active) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
+    });
+    document.body.setAttribute('data-qrd-page', selected);
+    if (push && location.hash !== '#page-' + selected) {
+      try { history.pushState({ qrdPage: selected }, '', '#page-' + selected); } catch (e) {}
+    }
+    if (selected === 'upload') setTimeout(ensureDicom, 50);
+    if (typeof window.scrollTo === 'function') window.scrollTo(0, 0);
+  }
+  function buildDashboardPages() {
+    var wrap = document.querySelector('.wrap'), oldGrid = document.querySelector('.kgrid');
+    if (!wrap || !oldGrid) return;
+    var host = document.createElement('main'); host.id = 'qrdPages'; host.className = 'qrd-pages';
+    var meta = [
+      ['dashboard', 'لوحة التحكم', 'ملخص زيارات الباركود وآخر فتح للنتائج'],
+      ['bookings', 'طلبات حجز الأشعة', 'طلبات الحجز الواردة فقط، مع إجراء الاتصال والتأكيد'],
+      ['results', 'طلبات نتائج الأشعة', 'المرضى اللي طلبوا المساعدة في العثور على نتائجهم'],
+      ['upload', 'رفع ملفات الأشعة', 'رفع PDF وDICOM وإدارة الملفات قبل حفظها'],
+      ['cases', 'الحالات والنتائج', 'البحث عن الحالات المرفوعة وإدارتها'],
+      ['qr', 'باركود المركز', 'رابط الباركود الثابت وطرق طباعته ومشاركته'],
+      ['design', 'شكل صفحة المريض', 'اختيار التصميم اللي يظهر للمرضى على موبايلهم'],
+      ['activity', 'آخر مرات الفتح', 'سجل فتح نتائج الأشعة وروابط الحالات'],
+      ['settings', 'إعدادات وتخزين الجهاز', 'حالة مساحة التخزين ونسخة الملفات المحلية']
+    ];
+    var bodies = {};
+    meta.forEach(function (m) {
+      var page = document.createElement('section');
+      page.className = 'qrd-page'; page.id = 'qrd-page-' + m[0]; page.dataset.qrdPage = m[0]; page.hidden = m[0] !== 'dashboard';
+      page.innerHTML = '<div class="qrd-page-title"><div><small>QR Patient / ' + m[1] + '</small><h1>' + m[1] +
+        '</h1><p>' + m[2] + '</p></div></div><div class="qrd-page-body" id="qrd-body-' + m[0] + '"></div>';
+      host.appendChild(page); bodies[m[0]] = page.querySelector('.qrd-page-body');
+    });
+    wrap.appendChild(host);
+    var move = function (name, selector, parent) {
+      var node = typeof selector === 'string' ? document.querySelector(selector) : selector;
+      if (node) (parent || bodies[name]).appendChild(node);
+      return node;
+    };
+    move('dashboard', '.hero2');
+    var homeGrid = document.createElement('div'); homeGrid.className = 'qrd-home-grid'; bodies.dashboard.appendChild(homeGrid);
+    move('dashboard', '#qrStats', homeGrid);
+    var homeRecent = document.createElement('section'); homeRecent.className = 'qrd-home-recent';
+    homeRecent.innerHTML = '<div class="qrd-home-recent-head"><div><small>نشاط المرضى</small><h2>👁 آخر مرات الفتح</h2></div>' +
+      '<button type="button" data-page-nav="activity" class="btn g sm">عرض السجل كله ←</button></div>' +
+      '<div id="qrdHomeRecent" class="qrd-recent-rows"></div>';
+    homeGrid.insertBefore(homeRecent, homeGrid.firstChild);
+    move('bookings', '#bookings'); move('results', '#asks');
+    move('upload', '.kmain .upz'); move('upload', '#mwda'); move('upload', '#qu');
+    move('cases', '.kmain .card.list');
+    move('qr', '#fx');
+    var how = document.querySelector('.kside .how'); if (how) move('qr', how.closest('.opt'));
+    move('design', '#thm');
+    move('activity', '#recentViews');
+    move('settings', '#disk');
+    if (oldGrid.parentNode) oldGrid.parentNode.removeChild(oldGrid);
+    host.addEventListener('click', function (e) {
+      var b = e.target.closest && e.target.closest('[data-page-nav]');
+      if (b) { e.preventDefault(); navigatePage(b.dataset.pageNav, true); }
+    });
+    window.addEventListener('hashchange', function () { navigatePage(pageFromHash(), false); });
+    window.addEventListener('popstate', function () { navigatePage(pageFromHash(), false); });
+    navigatePage(pageFromHash(), false);
   }
   function setDashboardLayout(mode) {
     ui.layout = mode === 'violet' ? 'violet' : 'teal';
@@ -167,10 +262,10 @@
         }).catch(function (e) { setDashboardLayout(prev); toast(e.message || 'محصلش حفظ'); });
       };
     });
-    [].forEach.call(document.querySelectorAll('.qrd-nav-list a'), function (a) {
-      a.addEventListener('click', function () {
-        [].forEach.call(document.querySelectorAll('.qrd-nav-list a'), function (b) { b.classList.remove('on'); });
-        a.classList.add('on');
+    [].forEach.call(document.querySelectorAll('.qrd-nav-list a[data-page]'), function (a) {
+      a.addEventListener('click', function (e) {
+        e.preventDefault();
+        navigatePage(a.dataset.page, true);
       });
     });
     var upz = document.querySelector('.kmain .upz'), mwda = $('mwda');
@@ -190,6 +285,7 @@
       if (theme) rail.insertBefore(theme, fixed);
       if (rec) rail.insertBefore(rec, fixed);
     }
+    buildDashboardPages();
   }
 
   /* ════ the page ════ */
@@ -234,7 +330,7 @@
     document.addEventListener('dragover', function (e) { e.preventDefault(); }); document.addEventListener('drop', function (e) { e.preventDefault(); });
     $('q').oninput = function () { ui.q = this.value.trim(); table(); };
     fixedCard(); watchBar(); themeCard();
-    if (window.OZDicom) OZDicom.mount($('mwda'), { center: C.center, toast: toast, onPdf: addConverted });   /* 4.94 · مودة: DICOM → PDF right here */
+    /* DICOM preview is mounted when the Upload section opens, so its measurements are correct. */
   }
   function addConverted(L) {
     if (!L.length) return;
@@ -253,26 +349,46 @@
     [[$('s1'), a], [$('s2'), b], [$('s3'), v], [$('s4'), Object.keys(ui.local).length]].forEach(function (x) { if (x[0] && x[0].dataset.v !== String(x[1])) { x[0].dataset.v = x[1]; count(x[0], x[1]); } });
   }
 
-  /* QR analytics: counts, timestamps and kind ONLY. No location tracking. */
+  /* Compact QR open summary with native, keyboard-accessible expandable visit lists. */
   function qrPanel() {
     var root = $('qrStats'), q = ui.qr;
     if (!root || !q) return;
-    var L = q.recent || [];
-    var recent = L.length ? L.slice(0, 5).map(function (x, i) {
-      return '<div class="qrc-visit" style="animation-delay:' + i * 40 + 'ms">' +
-        '<span class="qrc-visit-icon">' + (x.kind === 'report' ? '🩻' : '▦') + '</span>' +
-        '<div><b>' + (x.kind === 'report' ? 'فتح باركود نتيجة أشعة' : 'فتح باركود المركز') + '</b><small>زيارة لرابط الباركود</small></div>' +
-        '<time>' + esc(when(x.at)) + '</time></div>';
-    }).join('') : '<p class="qrc-empty">لسه مفيش زيارات جديدة. أول فتح للرابط هيظهر هنا.</p>';
+    var previouslyOpen = {};
+    [].forEach.call(root.querySelectorAll('details[data-qr-kind]'), function (d) {
+      previouslyOpen[d.dataset.qrKind] = d.open;
+    });
+    var rows = q.recent || [];
+    function visitTime(ts) {
+      var m = /(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2})/.exec(String(ts || ''));
+      if (!m) return String(ts || '—');
+      var h = Number(m[4]);
+      return (+m[3]) + '/' + (+m[2]) + '/' + m[1] + ' · ' +
+        ((h % 12) || 12) + ':' + m[5] + (h < 12 ? ' ص' : ' م');
+    }
+    function group(kind, label, number, symbol) {
+      var log = rows.filter(function (r) { return r.kind === kind; });
+      var times = log.length ? log.map(function (r) {
+        return '<li><span>◷ فتح الرابط</span><time datetime="' + esc(String(r.at || '').replace(' ', 'T')) +
+          '">' + esc(visitTime(r.at)) + '</time></li>';
+      }).join('') : '<li class="qrd-qr-empty">مفيش مواعيد فتح مسجلة حديثًا للقسم ده.</li>';
+      var tail = number > log.length ? '<p class="qrd-qr-history-note">بنحتفظ بآخر ' + log.length +
+        ' زيارة تفصيليًا هنا، والعدد الإجمالي محفوظ كامل.</p>' : '';
+      return '<details class="qrd-qr-accordion" data-qr-kind="' + kind + '"' + (previouslyOpen[kind] ? ' open' : '') + '>' +
+        '<summary><span class="qrd-qr-symbol">' + symbol + '</span><span class="qrd-qr-label"><b>' + label +
+        '</b><small>اضغط لعرض أوقات الفتح</small></span><strong>' + n0(number) +
+        ' <small>مرة</small></strong><span class="qrd-qr-chevron" aria-hidden="true">⌄</span></summary>' +
+        '<div class="qrd-qr-opened"><ol class="qrd-qr-times">' + times + '</ol>' + tail + '</div></details>';
+    }
     root.innerHTML =
-      '<div class="qrc-head"><div class="qrc-head-icon">▦</div><div class="qrc-head-copy"><small>QR ANALYTICS</small><h2>عداد فتح الباركود</h2><p>متابعة فتح روابط الباركود للمركز والنتائج، بدون تسجيل أي موقع.</p></div><span class="qrc-tag"><i></i> تحديث لحظي</span></div>' +
-      '<div class="qrc-metrics">' +
-        '<div class="qrc-stat"><span>▦ إجمالي الفتحات</span><strong>' + n0(q.total) + '</strong><small>من بداية تشغيل العداد</small></div>' +
-        '<div class="qrc-stat"><span>▣ فتحات النهارده</span><strong>' + n0(q.today) + '</strong><small>زيارات اليوم</small></div>' +
-        '<div class="qrc-stat"><span>▦ باركود المركز</span><strong>' + n0(q.fixed) + '</strong><small>فتح الرابط الثابت</small></div>' +
-        '<div class="qrc-stat"><span>🩻 باركود النتائج</span><strong>' + n0(q.report) + '</strong><small>فتح روابط نتائج منفصلة</small></div>' +
-      '</div><div class="qrc-lower"><div class="qrc-latest"><h3>◷ آخر عمليات فتح الباركود</h3>' + recent + '</div>' +
-        '<p class="qrc-disclosure">🔒 بدون تحديد موقع — بنتابع فقط تاريخ فتح رابط الباركود ونوعه. العدّاد بيحسب فتح الرابط حتى لو من غير كاميرا.</p></div>';
+      '<div class="qrc-head"><div class="qrc-head-icon">▦</div><div class="qrc-head-copy"><small>QR ANALYTICS</small><h2>فتح روابط الباركود</h2>' +
+        '<p>عداد الفتحات والمواعيد، من غير موقع أو بيانات زائر.</p></div><span class="qrc-tag"><i></i> مباشر</span></div>' +
+      '<div class="qrd-qr-totals"><div><span>إجمالي الفتحات</span><strong>' + n0(q.total) + '</strong></div>' +
+        '<div><span>فتحات اليوم</span><strong>' + n0(q.today) + '</strong></div></div>' +
+      '<div class="qrd-qr-groups">' +
+        group('fixed', 'باركود المركز الثابت', q.fixed, '▦') +
+        group('report', 'روابط نتائج الأشعة', q.report, '🩻') +
+      '</div>' +
+      '<p class="qrd-qr-note">العداد بيحسب فتح الرابط من الكاميرا أو مباشرة؛ افتح أي قائمة لعرض المواعيد المسجلة.</p>';
   }
   /* ── option 2: the fixed barcode on every report ── */
   /* 5.01 · the look of the patient's pages (A «نَفَس» / C «دفا») — the patient can switch to night mode himself */
@@ -545,6 +661,7 @@
   function bookings() {
     var el = $('bookings'); if (!el) return;
     var L = ui.bookings || [];
+    updateNavCount('bookings', L.length);
     if (!L.length) {
       el.innerHTML = '<div class="asks bookings"><div class="ah"><span class="ping">📅</span><div><b>طلبات حجز أشعة</b><small>طلبات المواعيد الواردة من المرضى</small></div><em>0</em></div>' +
         '<p class="qrd-rail-empty">✅ مفيش طلبات حجز جديدة حاليًا</p></div>'; return;
@@ -565,6 +682,7 @@
   /* ── 4.92 · patients who didn't find their result and asked on WhatsApp ── */
   function asks() {
     var el = $('asks'); if (!el) return; var L = ui.asks || [];
+    updateNavCount('results', L.length);
     if (!L.length) {
       el.innerHTML = '<div class="asks"><div class="ah"><span class="ping">📨</span><div><b>طلبات نتيجة الأشعة</b><small>طلبات المساعدة في العثور على النتائج</small></div><em>0</em></div>' +
         '<p class="qrd-rail-empty">✅ مفيش طلبات نتيجة معلّقة</p></div>'; return;
@@ -575,7 +693,7 @@
     [].forEach.call(el.querySelectorAll('[data-k]'), function (b) {
       b.onclick = function () {
         var id = +b.closest('.ar').dataset.id, a = L.filter(function (x) { return x.id === id; })[0]; if (!a) return; var k = b.dataset.k;
-        if (k === 'up') { ui.prefill = { patient: a.name === 'مريض' ? '' : a.name, phone: a.phone }; clearTimeout(ui.pfT); ui.pfT = setTimeout(function () { ui.prefill = null; }, 120000); $('fi').click(); }
+        if (k === 'up') { ui.prefill = { patient: a.name === 'مريض' ? '' : a.name, phone: a.phone }; clearTimeout(ui.pfT); ui.pfT = setTimeout(function () { ui.prefill = null; }, 120000); navigatePage('upload', true); $('fi').click(); }
         if (k === 'wa') { var ph = phoneWa(a.phone); if (ph) window.open('https://wa.me/' + ph + '?text=' + encodeURIComponent('أهلاً ' + a.name + ' 🌿\nطلبك وصل ' + C.center + '، وبنجهّز نتيجتك وهنبعتهالك حالاً 🙏'), '_blank'); }
         if (k === 'ok') api('POST', 'ask/' + id + '/done').then(function (x) { ui.asks = x.asks || []; asks(); }).catch(function (e) { toast(e.message); });
       };
@@ -633,9 +751,18 @@
     return '<div class="ve"><span class="vi">' + v[0] + '</span><div><b>' + (withName ? esc(e.patient || '') + (e.exam ? ' <small>· ' + esc(e.exam) + '</small>' : '') : esc(e.dev || 'جهاز')) + '</b><small>' + when(e.at) + ' · ' + v[1] + (withName ? (e.dev ? ' · ' + esc(e.dev) : '') : (SRC[e.src] ? ' · ' + SRC[e.src] : '')) + '</small></div></div>';
   }
   function recent() {
-    var el = $('rec'); if (!el) return; var L = ui.recent.slice(0, 6);
-    el.innerHTML = L.length ? L.map(function (e, i) { return '<div class="rx" data-vt="' + esc(e.token) + '" style="animation-delay:' + i * 40 + 'ms">' + entryRow(e, true) + '</div>'; }).join('') : '<p class="rmt">لسه محدش فتح حالته — أول ما مريض يفتح هتلاقيه هنا لايف.</p>';
-    [].forEach.call(el.querySelectorAll('[data-vt]'), function (x) { x.onclick = function () { viewsModal(x.dataset.vt); }; });
+    function paint(el, L) {
+      if (!el) return;
+      el.innerHTML = L.length ? L.map(function (e, i) {
+        return '<button type="button" class="rx qrd-activity-button" data-vt="' + esc(e.token) +
+          '" style="animation-delay:' + i * 35 + 'ms">' + entryRow(e, true) + '</button>';
+      }).join('') : '<p class="rmt">لسه مفيش فتح لنتائج الأشعة — هتظهر هنا لحظيًا لما أي مريض يفتح نتيجته.</p>';
+      [].forEach.call(el.querySelectorAll('[data-vt]'), function (x) {
+        x.onclick = function () { viewsModal(x.dataset.vt); };
+      });
+    }
+    paint($('qrdHomeRecent'), ui.recent.slice(0, 7));
+    paint($('rec'), ui.recent.slice(0, 30));
   }
   function viewsModal(tok) {
     var r = itemOf(tok); if (!r) return;
