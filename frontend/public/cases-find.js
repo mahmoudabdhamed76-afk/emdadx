@@ -15,14 +15,14 @@
     '<header class="top pv2-top"><span class="tlg">' + (window.OZSkin ? OZSkin.logo('') : '') + '</span>' +
       '<div class="tn"><b>' + esc(C.center) + '</b><small>بوابة المرضى الإلكترونية</small></div>' +
       '<span class="pv2-online" title="الخدمات الإلكترونية"><i></i>أونلاين</span></header>' +
-    '<section class="pv2-hero" aria-label="مرحباً بك">' +
-      '<div class="pv2-hero-bg" aria-hidden="true"><i></i><i></i><i></i></div>' +
-      '<div class="pv2-hero-copy"><span class="pv2-eyebrow">✦ تجربة أسهل للاطمئنان عليك</span>' +
-      '<h1 class="ttl" id="patient-title">ألف سلامة عليك <span>♥</span></h1>' +
-      '<p>نتيجة الأشعة، حجز فحص، شكوى أو طلب تقرير — كل خدمات المركز من موبايلك.</p>' +
-      '<div class="pv2-hero-chip"><span class="pv2-chip-dot"></span> اختار الخدمة اللي محتاجها</div></div>' +
-      '<div class="pv2-hero-art" aria-hidden="true"><span class="pv2-art-ring r1"></span><span class="pv2-art-ring r2"></span><span class="pv2-art-core">✚</span>' +
-      '<svg class="pv2-art-ecg" viewBox="0 0 160 42" fill="none"><path d="M0 22h48l8-11 8 22 9-30 9 19h78" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>' +
+    '<section class="pv2-hero pv3-radiology-hero" aria-label="خدمات مركز الأشعة">' +
+      '<div class="pv3-radiology-photo" aria-hidden="true"><img src="/cases-hero-doctor.webp" alt="" decoding="async" fetchpriority="high"></div>' +
+      '<div class="pv3-radiology-overlay" aria-hidden="true"></div>' +
+      '<div class="pv3-radiology-copy"><span class="pv3-radiology-label">✦ مركز الأشعة</span>' +
+      '<h1 class="ttl" id="patient-title">تقارير دقيقة.. <span>وسرعة في الخدمة</span></h1>' +
+      '<p>فريق متخصص وأحدث أجهزة التصوير</p>' +
+      '<div class="pv3-hero-pulse" aria-hidden="true"><i></i><svg viewBox="0 0 180 32" fill="none"><path d="M1 17h53l11-11 9 22 10-24 10 13h85" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>' +
+      '<div class="pv3-hero-dots" aria-hidden="true"><i class="on"></i><i></i><i></i></div>' +
     '</section>' +
     '<div class="pv2-section-title"><div><span>الخدمات</span><h2>تحب تعمل إيه النهارده؟</h2></div><small>اختار واحدة للمتابعة</small></div>' +
     '<div class="patient-chooser" role="tablist" aria-label="خدمات المركز">' +
@@ -35,6 +35,11 @@
       '<button type="button" id="tab-report" class="pv2-service" role="tab" aria-selected="false" aria-controls="patient-report">' +
         '<span class="pv2-service-icon">📤</span><b>طلب تقرير أشعة</b><small>ارفع صورة واطلب تقريرك</small><span class="pv2-service-go" aria-hidden="true">←</span></button></div>' +
     '<p class="pv2-action-hint" id="patient-hint" aria-live="polite">اختار أي خدمة من الأربع خدمات للمتابعة</p>' +
+    '<section class="pv3-notification-bar" aria-label="إشعارات طلبات المرضى">' +
+      '<div class="pv3-notification-icon" aria-hidden="true">🔔</div>' +
+      '<div class="pv3-notification-copy"><b>خليك متابع طلبك أول بأول</b><small>فعّل الإشعارات على الآيفون بعد إضافة الصفحة للشاشة الرئيسية</small></div>' +
+      '<button class="pv3-notification-button" id="patientPushToggle" type="button">فعّل الإشعارات</button>' +
+    '</section>' +
     '<section id="patient-results" class="patient-panel" role="tabpanel" aria-labelledby="tab-results" hidden>' +
       '<div class="srch results-card" id="sr"><div class="booking-heading"><span>🩻</span><div><b>استعلام نتيجة الأشعة</b><small>نتيجتك في مكان واحد، بمجرد إدخال رقم الموبايل</small></div></div>' + (C.on ?
         '<label class="l" for="ph">رقم الموبايل المسجل في المركز</label><input class="fld n" id="ph" type="tel" inputmode="tel" autocomplete="tel" maxlength="20" placeholder="01xxxxxxxxx" style="text-align:right" dir="ltr">' +
