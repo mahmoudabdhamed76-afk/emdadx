@@ -1481,3 +1481,13 @@ html.qrd-ios-browser body.qrd-center .qrd-page:not([hidden]){
     overscroll-behavior-x:contain;
   }
 }
+
+
+/* Always render meaningful content while a center section is fetching its data. */
+body.qrd-center .qrd-data-pending,body.qrd-center .qrd-data-error{
+  display:flex;align-items:center;justify-content:center;min-height:160px;
+  background:#fff;border:1px solid #E4EAF5;border-radius:18px;
+  padding:25px;text-align:center;line-height:1.9;
+  font-size:13px;font-weight:800;color:#63738F;
+}
+body.qrd-center .qrd-data-error{color:#A63152;background:#FFF6F8;border-color:#F8DCE6}
