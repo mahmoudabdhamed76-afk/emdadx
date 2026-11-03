@@ -141,7 +141,7 @@
       '<div class="qrd-nav-brand"><span class="qrd-nav-logo">▦</span><div><b>QR Patient</b><small>إدارة صور وملفات المرضى</small></div></div>' +
       '<nav class="qrd-nav-list" aria-label="أقسام الصفحة">' +
       items.map(function (x) {
-        return '<a href="#page-' + x[0] + '" data-page="' + x[0] + '"' +
+        return '<a href="' + (isIOSBrowser() ? pageUrl(x[0]) : '#page-' + x[0]) + '" data-page="' + x[0] + '"' +
           (x[0] === 'dashboard' ? ' class="on" aria-current="page"' : '') +
           '><span>' + x[1] + '</span><b>' + x[2] + '</b>' +
           (['bookings','results','complaints','reports'].indexOf(x[0]) >= 0 ? '<em class="qrd-nav-count" data-count="' + x[0] + '">0</em>' : '') + '</a>';
@@ -795,7 +795,17 @@
     [].forEach.call(el.querySelectorAll('[data-k]'), function (b) {
       b.onclick = function () {
         var id = +b.closest('.ar').dataset.id, a = L.filter(function (x) { return x.id === id; })[0]; if (!a) return; var k = b.dataset.k;
-        if (k === 'up') { ui.prefill = { patient: a.name === 'مريض' ? '' : a.name, phone: a.phone }; clearTimeout(ui.pfT); ui.pfT = setTimeout(function () { ui.prefill = null; }, 120000); navigatePage('upload', true); $('fi').click(); }
+        if (k === 'up') {
+          ui.prefill = { patient: a.name === 'مريض' ? '' : a.name, phone: a.phone };
+          clearTimeout(ui.pfT);
+          ui.pfT = setTimeout(function () { ui.prefill = null; }, 120000);
+          if (isIOSBrowser()) {
+            try { sessionStorage.setItem('qrd-upload-prefill', JSON.stringify(ui.prefill)); } catch (e) {}
+            navigatePage('upload', true);
+          } else {
+            navigatePage('upload', true); $('fi').click();
+          }
+        }
         if (k === 'wa') { var ph = phoneWa(a.phone); if (ph) window.open('https://wa.me/' + ph + '?text=' + encodeURIComponent('أهلاً ' + a.name + ' 🌿\nطلبك وصل ' + C.center + '، وبنجهّز نتيجتك وهنبعتهالك حالاً 🙏'), '_blank'); }
         if (k === 'ok') api('POST', 'ask/' + id + '/done').then(function (x) { ui.asks = x.asks || []; asks(); }).catch(function (e) { toast(e.message); });
       };
@@ -1007,7 +1017,14 @@
     });
   }
   function boot() {
+    if (isIOSBrowser()) try {
+      var savedPrefill = sessionStorage.getItem('qrd-upload-prefill');
+      if (savedPrefill) { ui.prefill = JSON.parse(savedPrefill); sessionStorage.removeItem('qrd-upload-prefill'); }
+    } catch (e) {}
     shell();
+    if (ui.prefill && ui.page === 'upload') {
+      toast('📂 جهزنا بيانات المريض — اختار ملف PDF من زر رفع الملفات');
+    }
     Promise.all([api('GET', 'list'), localAll()]).then(function (a) { ui.list = a[0].list || []; ui.local = a[1] || {}; ui.asks = a[0].asks || []; ui.bookings = a[0].bookings || []; ui.tickets = a[0].tickets || []; ui.qr = a[0].qr || ui.qr; ui.recent = a[0].recent || []; qrPanel(); bookings(); asks(); serviceTickets(); recent(); table(); stats(); disk(); backfill(); }).catch(function (e) { $('tbl').innerHTML = '<div class="emp"><i>⚠️</i>' + esc(e.message) + '</div>'; });
     connect(); bootWatch();
     document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible' && (!ui.es || ui.es.readyState === 2)) connect(); });
