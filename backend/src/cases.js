@@ -68,7 +68,7 @@ db.exec(`CREATE TABLE IF NOT EXISTS case_push_device (
   token TEXT PRIMARY KEY, customer_id TEXT NOT NULL, created_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS ix_case_push_device_center ON case_push_device(customer_id);`);
-for (const [table, column] of [['case_booking','notify_device'],['case_service_request','notify_device']]) {
+for (const [table, column] of [['case_booking','notify_device'],['case_service_request','notify_device'],['case_ask','notify_device']]) {
   const existing = db.prepare('PRAGMA table_info('+table+')').all().map(c => c.name);
   if (!existing.includes(column)) db.exec('ALTER TABLE '+table+' ADD COLUMN '+column+' TEXT');
 }
@@ -434,10 +434,21 @@ async function centerRoute(req, res, m) {
     db.prepare('UPDATE case_site SET wa = ? WHERE customer_id = ?').run(w ? clean(b.wa, 20) : null, cid);
     send(res, 200, { ok: true, wa: w ? clean(b.wa, 20) : '' }); return true;
   }
-  if (sub === 'ask' && req.method === 'POST') {    /* ask/<id>/done, or ask with {phone} → close every open ask of that mobile (a case was just saved for it) */
-    if (arg && act === 'done') db.prepare('UPDATE case_ask SET done = 1 WHERE id = ? AND customer_id = ?').run(Number(arg), cid);
-    else { let b = {}; try { b = await readJson(req, 500); } catch (e) {} const ph = phashOf(b.phone); if (ph) db.prepare('UPDATE case_ask SET done = 1 WHERE customer_id = ? AND phash = ? AND done = 0').run(cid, ph); }
-    send(res, 200, { ok: true, asks: asksOf(cid) }); return true;
+  if (sub === 'ask' && req.method === 'POST') {  /* Center fulfills a missing-result request */
+    let open=[];
+    if (arg && act === 'done') {
+      open=db.prepare('SELECT DISTINCT notify_device FROM case_ask WHERE id = ? AND customer_id = ? AND done = 0 AND notify_device IS NOT NULL').all(Number(arg),cid);
+      db.prepare('UPDATE case_ask SET done = 1 WHERE id = ? AND customer_id = ?').run(Number(arg), cid);
+    } else {
+      let b={};try{b=await readJson(req,500);}catch(e){}
+      const ph=phashOf(b.phone);
+      if(ph){
+        open=db.prepare('SELECT DISTINCT notify_device FROM case_ask WHERE customer_id = ? AND phash = ? AND done = 0 AND notify_device IS NOT NULL').all(cid,ph);
+        db.prepare('UPDATE case_ask SET done = 1 WHERE customer_id = ? AND phash = ? AND done = 0').run(cid,ph);
+      }
+    }
+    for(const item of open) if(item.notify_device) pushPatientAlert(item.notify_device,pubOf(site));
+    send(res,200,{ok:true,asks:asksOf(cid)});return true;
   }
   if (sub === 'ticket-image' && req.method === 'GET' && arg) {
     const id = Number(arg), index = Number(new URL(req.url,'http://x').searchParams.get('i') || '0');
@@ -712,8 +723,9 @@ async function findRoute(req, res, pub, sub) {
     let b = {}; try { b = await readJson(req, 1500); } catch (e) { send(res, 400, { message: 'محصلش' }); return true; }
     const name = clean(b.name, 60) || 'مريض', phone = clean(b.phone, 20), ph = phashOf(phone); if (!ph) { send(res, 400, { message: 'اكتب رقم موبايلك صح' }); return true; }
     const dup = db.prepare('SELECT id FROM case_ask WHERE customer_id = ? AND phash = ? AND done = 0').get(site.customer_id, ph);
-    if (dup) db.prepare('UPDATE case_ask SET name = ?, note = ?, at = ? WHERE id = ?').run(name, clean(b.note, 120), nowTs(), dup.id);
-    else db.prepare('INSERT INTO case_ask (customer_id, name, phone, phash, note, at) VALUES (?,?,?,?,?,?)').run(site.customer_id, name, phone, ph, clean(b.note, 120), nowTs());
+    const notify=optInDevice(site.customer_id,b.notifyDevice)?b.notifyDevice:null;
+    if (dup) db.prepare('UPDATE case_ask SET name = ?, note = ?, at = ?, notify_device = COALESCE(?,notify_device) WHERE id = ?').run(name, clean(b.note, 120), nowTs(),notify,dup.id);
+    else db.prepare('INSERT INTO case_ask (customer_id, name, phone, phash, note, at, notify_device) VALUES (?,?,?,?,?,?,?)').run(site.customer_id, name, phone, ph, clean(b.note, 120), nowTs(),notify);
     tell(site.customer_id, 'ask', { asks: asksOf(site.customer_id), name, phone });
     pushCenterAlert(site,'results','مريض طلب المساعدة في الحصول على نتيجة أشعة','ask-'+ph.slice(0,10));
     send(res, 200, { ok: true }); return true;
