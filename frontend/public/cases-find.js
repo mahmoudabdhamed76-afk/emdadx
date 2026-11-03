@@ -57,7 +57,7 @@
       e.preventDefault();
       var name = $('bn').value.trim(), phone = K.digits($('bp').value), exam = $('be').value, day = input.value,
         slot = $('bs').value, note = $('bnote').value.trim(), msg = $('bmsg'), btn = $('bgo');
-      if (phone.length === 13 && phone.slice(0, 2) === '20') phone = phone.slice(2);
+      if (phone.length === 12 && phone.slice(0, 2) === '20') phone = phone.slice(2);
       if (phone.length === 10 && phone.charAt(0) === '1') phone = '0' + phone;
       if (name.length < 3 || !/^01[0125]\d{8}$/.test(phone) || !exam || !day || !slot) {
         msg.textContent = 'كمّل الاسم ورقم موبايل مصري صحيح ونوع الأشعة واليوم المناسب.'; msg.className = 'booking-msg err'; return;
