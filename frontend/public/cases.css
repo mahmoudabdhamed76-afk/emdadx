@@ -2570,3 +2570,11 @@ html.qrd-dark .rp-pg .rp-hd small{color:#E11D48!important}
 .rp-pop-s button.on{transform:scale(1.15)}
 .rp-pop-s button:active{transform:scale(1.3)}
 .rp-pop-ok{display:block;font-size:34px;animation:pvsPop .5s cubic-bezier(.3,1.6,.5,1) both}
+/* 5.23 · pop-up entrance: the card springs in, the stars drop one after another */
+.rp-pop-lg{display:grid;place-items:center;width:52px;height:52px;margin:-46px auto 8px;border-radius:16px;background:#fff;box-shadow:0 10px 24px -10px rgba(0,0,0,.35);overflow:hidden;padding:4px}
+.rp-pop-lg img{width:100%;height:100%;object-fit:contain}
+.rp-pop-c:has(.rp-pop-lg){padding-top:16px;margin-top:26px}
+.rp-pop.in .rp-pop-s button{animation:rpStar .5s cubic-bezier(.34,1.56,.64,1) both;animation-delay:calc(var(--d) + 180ms)}
+@keyframes rpStar{from{transform:translateY(-14px) scale(.4);opacity:0}to{transform:none;opacity:1}}
+.rp-pop.in .rp-pop-s button.on{animation:none;transform:scale(1.15)}
+@media (prefers-reduced-motion:reduce){.rp-pop-c,.rp-pop.in .rp-pop-s button{animation:none!important;transition:none!important}}

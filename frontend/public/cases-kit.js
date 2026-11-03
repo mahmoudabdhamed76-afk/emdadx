@@ -72,3 +72,31 @@
   function arm() { clearTimeout(t); if (document.visibilityState === 'visible') t = setTimeout(go, 1500); }
   document.addEventListener('visibilitychange', arm); arm();
 })();
+/* 5.23 · the stars-only rating pop-up (center page and result page share it) */
+(function () {
+  'use strict';
+  function ratePop(o) {
+    var vid = ''; try { vid = localStorage.getItem('ozx_vid') || ''; } catch (e) {}
+    var el = document.createElement('div'); el.className = 'rp-pop'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', o.title || 'قيّم خدمتنا');
+    el.innerHTML = '<div class="rp-pop-c"><button type="button" class="rp-pop-x" aria-label="قفل">✕</button>' + (o.logo ? '<span class="rp-pop-lg">' + o.logo + '</span>' : '') +
+      '<b>' + (o.title || 'إيه رأيك في خدمتنا؟') + '</b><small>' + (o.sub || 'دوس على النجوم') + '</small>' +
+      '<div class="rp-pop-s" role="radiogroup">' + [1, 2, 3, 4, 5].map(function (k) { return '<button type="button" role="radio" aria-label="' + k + ' من 5" data-ps="' + k + '" style="--d:' + (k * 70) + 'ms">★</button>'; }).join('') + '</div></div>';
+    document.body.appendChild(el); requestAnimationFrame(function () { requestAnimationFrame(function () { el.classList.add('in'); }); });
+    var gone = false, close = function (ms) { if (gone) return; gone = true; document.removeEventListener('keydown', kd); setTimeout(function () { el.classList.remove('in'); el.classList.add('out'); setTimeout(function () { el.remove(); }, 340); }, ms || 0); };
+    var kd = function (e) { if (e.key === 'Escape') close(); }; document.addEventListener('keydown', kd);
+    el.addEventListener('click', function (e) { if (e.target === el || e.target.closest('.rp-pop-x')) close(); });
+    var btns = [].slice.call(el.querySelectorAll('[data-ps]'));
+    btns.forEach(function (b) {
+      b.onmouseenter = function () { btns.forEach(function (x) { x.classList.toggle('hv', +x.dataset.ps <= +b.dataset.ps); }); };
+      b.onclick = function () {
+        var n = +b.dataset.ps; btns.forEach(function (x) { x.disabled = true; x.classList.toggle('on', +x.dataset.ps <= n); });
+        fetch(o.url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ stars: n, tags: [], note: '', vid: vid }) })
+          .then(function (r) { if (!r.ok) throw new Error(); try { sessionStorage.setItem('ozx_rated_s', '1'); } catch (e) {} if (o.onDone) o.onDone(n);
+            el.querySelector('.rp-pop-c').innerHTML = '<span class="rp-pop-ok">💚</span><b>شكرًا!</b><small>' + (n >= 4 ? 'فرّحتنا — ألف سلامة عليك' : 'هنهتم بملاحظتك ونتحسّن') + '</small>'; close(1400); })
+          .catch(function () { close(); });
+      };
+    });
+    return { close: close };
+  }
+  if (window.OZK) window.OZK.ratePop = ratePop; else window.OZK = { ratePop: ratePop };
+})();

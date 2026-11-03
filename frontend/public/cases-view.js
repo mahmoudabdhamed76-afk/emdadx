@@ -95,25 +95,8 @@
     if (!done && !skip) setTimeout(function () {
       try { if (localStorage.getItem(K) || sessionStorage.getItem(seenK)) return; sessionStorage.setItem(seenK, '1'); } catch (e) {}
       if (document.fullscreenElement || document.querySelector('.pz.max')) return;
-      var o = document.createElement('div'); o.className = 'rp-pop'; o.setAttribute('role', 'dialog'); o.setAttribute('aria-modal', 'true'); o.setAttribute('aria-label', 'قيّم زيارتك');
-      o.innerHTML = '<div class="rp-pop-c"><button type="button" class="rp-pop-x" aria-label="قفل">✕</button><b>إيه رأيك في خدمتنا؟</b><small>دوس على النجوم</small>' +
-        '<div class="rp-pop-s" role="radiogroup">' + [1, 2, 3, 4, 5].map(function (k) { return '<button type="button" role="radio" aria-label="' + k + ' من 5" data-ps="' + k + '">★</button>'; }).join('') + '</div></div>';
-      document.body.appendChild(o); requestAnimationFrame(function () { o.classList.add('in'); });
-      var gone = false, close = function (ms) { if (gone) return; gone = true; setTimeout(function () { o.classList.remove('in'); o.classList.add('out'); setTimeout(function () { o.remove(); }, 320); }, ms || 0); };
-      o.addEventListener('click', function (e) { if (e.target === o || e.target.closest('.rp-pop-x')) close(); });
-      document.addEventListener('keydown', function esc1(e) { if (e.key === 'Escape') { close(); document.removeEventListener('keydown', esc1); } });
-      var btns = [].slice.call(o.querySelectorAll('[data-ps]'));
-      btns.forEach(function (b) {
-        b.onmouseenter = function () { btns.forEach(function (x) { x.classList.toggle('hv', +x.dataset.ps <= +b.dataset.ps); }); };
-        b.onclick = function () {
-          var n = +b.dataset.ps, vid = ''; try { vid = localStorage.getItem('ozx_vid') || ''; } catch (e) {}
-          btns.forEach(function (x) { x.disabled = true; x.classList.toggle('on', +x.dataset.ps <= n); });
-          fetch(location.pathname.replace(/\/$/, '') + '/rate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ stars: n, tags: [], note: '', vid: vid }) })
-            .then(function (r) { if (!r.ok) throw new Error(); try { localStorage.setItem(K, JSON.stringify({ s: n, t: [], n: '' })); } catch (e) {} st = n; tags = []; paint(true);
-              o.querySelector('.rp-pop-c').innerHTML = '<span class="rp-pop-ok">💚</span><b>شكرًا!</b><small>' + (n >= 4 ? 'فرّحتنا — ألف سلامة عليك' : 'هنهتم بملاحظتك') + '</small>'; close(1400); })
-            .catch(function () { close(); });
-        };
-      });
+      try { if (sessionStorage.getItem('ozx_rated_s')) return; } catch (e) {}
+      OZK.ratePop({ url: location.pathname.replace(/\/$/, '') + '/rate', onDone: function (n) { try { localStorage.setItem(K, JSON.stringify({ s: n, t: [], n: '' })); } catch (e) {} st = n; tags = []; paint(true); } });
     }, 6000);
   }
   /* 5.00 · a DICOM case → the mini PACS right here */
