@@ -92,6 +92,27 @@
     '<div class="pv2-trust"><div><i>🔒</i><span>خصوصية بياناتك</span></div><div><i>⚡</i><span>خطوات سريعة</span></div><div><i>📱</i><span>كل حاجة من موبايلك</span></div></div>' +
     '<p class="pv2-footer">نتمنالك دوام الصحة والعافية ♥</p><p class="pv2-analytics-note">يتم احتساب مرات فتح رابط الباركود فقط، بدون تحديد موقع المريض أو تسجيل مكانه.</p>' +
   '</div>';
+  /* Gentle, low-cost hero copy carousel; no resizing or transform on service icons. */
+  (function heroCarousel() {
+    var title=$('patient-title'),sub=document.querySelector('.pv3-radiology-copy>p');
+    var dots=[].slice.call(document.querySelectorAll('.pv3-hero-dots i'));
+    if(!title||!sub||!dots.length)return;
+    var slides=[
+      ['تقارير دقيقة.. <span>وسرعة في الخدمة</span>','فريق متخصص وأحدث أجهزة التصوير'],
+      ['رعايتك تبدأ <span>من أول زيارة</span>','احجز أشعتك واختار اليوم المناسب بسهولة'],
+      ['نتيجتك أقرب <span>وأسرع ليك</span>','تابع نتيجة الأشعة من أي مكان بأمان']
+    ];
+    var index=0;
+    if(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+    setInterval(function(){
+      if(document.visibilityState==='hidden')return;
+      index=(index+1)%slides.length;
+      title.classList.remove('pv3-slide-in');sub.classList.remove('pv3-slide-in');
+      title.innerHTML=slides[index][0];sub.textContent=slides[index][1];
+      void title.offsetWidth;title.classList.add('pv3-slide-in');sub.classList.add('pv3-slide-in');
+      dots.forEach(function(d,i){d.classList.toggle('on',i===index);});
+    },7000);
+  })();
   function chooseJourney(which) {
     var modes = {
       booking: ['patient-book','tab-booking','📅 اختار اليوم والفحص، وهنبعت طلبك للمركز','#book'],
