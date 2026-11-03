@@ -740,3 +740,74 @@ html.patient-daylight .v .pv2-hero .ttl{font-size:clamp(27px,6.5vw,36px)!importa
 @media(prefers-reduced-motion:reduce){
  .pv2-page *, .pv2-page *::before,.pv2-page *::after,.pv2-splw *{animation:none!important;transition:none!important;scroll-behavior:auto!important}
 }
+
+
+/* 5.04 · larger center identity, accessible inputs, no accidental patient-page zoom */
+html.patient-daylight body.v .pv2-page .pv2-top{
+  display:flex;align-items:center;gap:12px;min-height:82px;
+}
+html.patient-daylight body.v .pv2-page .pv2-top .tlg{
+  width:78px;height:78px;min-width:78px;border-radius:23px;
+  padding:6px;background:#fff;
+}
+html.patient-daylight body.v .pv2-page .pv2-top .tlg img{
+  display:block;width:100%;height:100%;object-fit:contain;
+}
+html.patient-daylight body.v .pv2-page .pv2-top .tlg .ini{
+  font-size:32px;line-height:1;
+}
+html.patient-daylight body.v .pv2-page .pv2-top .tn{
+  min-width:0;flex:1;display:flex;flex-direction:column;gap:4px;
+}
+html.patient-daylight body.v .pv2-page .pv2-top .tn b{
+  font-size:clamp(20px,5.4vw,24px);font-weight:900;line-height:1.35;
+  letter-spacing:-.35px;overflow-wrap:break-word;color:var(--pi);
+}
+html.patient-daylight body.v .pv2-page .pv2-top .tn small{
+  font-size:12.5px;line-height:1.4;
+}
+html.patient-daylight body.v .pv2-page .pv2-online{flex:none;margin-inline-start:0}
+html.patient-daylight .pv2-welcome-logo{
+  width:132px;height:132px;min-width:132px;border-radius:36px;
+}
+html.patient-daylight .pv2-welcome-logo img{
+  display:block;width:113px;height:113px;object-fit:contain;
+}
+html.patient-daylight .pv2-welcome-logo .ini{
+  font-size:61px;
+}
+html.patient-daylight .pv2-welcome-name{
+  font-size:clamp(26px,6.5vw,32px);font-weight:900;
+  line-height:1.4;max-width:100%;overflow-wrap:break-word;
+}
+/* Prevent iOS Safari's focus zoom without reducing form readability.
+   Keep the radiology DICOM viewer's image-specific gestures intact. */
+html.patient-daylight body.v{touch-action:manipulation;overflow-x:hidden}
+html.patient-daylight body.v .pv2-page input,
+html.patient-daylight body.v .pv2-page textarea,
+html.patient-daylight body.v .pv2-page select{
+  font-size:16px!important;
+}
+html.patient-daylight body.v .pv2-page #ph,
+html.patient-daylight body.v .pv2-page #bp{
+  font-size:20px!important;
+}
+html.patient-daylight body.v .pv2-page #bd,
+html.patient-daylight body.v .pv2-page #bs{
+  min-width:0;width:100%;font-size:16px!important;
+}
+@media(max-width:420px){
+  html.patient-daylight body.v .pv2-page .pv2-top .tlg{
+    width:72px;height:72px;min-width:72px;border-radius:21px;
+  }
+  html.patient-daylight body.v .pv2-page .pv2-online{display:none}
+  html.patient-daylight body.v .pv2-page .booking-grid{grid-template-columns:minmax(0,1fr)}
+}
+@media(max-width:350px){
+  html.patient-daylight body.v .pv2-page .pv2-top{gap:10px}
+  html.patient-daylight body.v .pv2-page .pv2-top .tlg{
+    width:66px;height:66px;min-width:66px;
+  }
+  html.patient-daylight .pv2-welcome-logo{width:120px;height:120px;min-width:120px}
+  html.patient-daylight .pv2-welcome-logo img{width:105px;height:105px}
+}
