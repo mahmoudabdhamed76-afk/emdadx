@@ -1415,3 +1415,15 @@ body.qrd-center .qrd-nav-list a em.qrd-nav-count{margin-inline-start:auto}
   body.qrd-center .qrd-ticket-top b{font-size:14px}
   body.qrd-center .qrd-ticket-actions .btn{flex:1;min-width:110px;font-size:12px}
 }
+
+
+/* Mobile patient panel visibility: don't animate the whole panel into a blank Safari viewport. */
+html.patient-daylight body.v .pv2-page .patient-panel:not([hidden]){
+  display:block!important;visibility:visible!important;opacity:1!important;
+}
+html.patient-daylight body.v .pv2-page .patient-panel[hidden]{display:none!important}
+@media(max-width:760px){
+  html.patient-daylight body.v .pv2-page .patient-panel:not([hidden]){
+    animation:none!important;transform:none!important;min-height:180px;
+  }
+}
