@@ -67,7 +67,7 @@
   /* 5.00 · a DICOM case → the mini PACS right here */
   function showDicom(buf) {
     if (!window.OZPacs || !window.DecompressionStream) { box('⚠️', 'المتصفح ده قديم', 'افتح اللينك من Chrome أو Safari جديد.'); return; }
-    $('body').innerHTML = '<div id="pacs"></div><p class="pxtip">◐ اسحب على الصورة للتباين والسطوع · صباعين للزوم والتحريك · ⇅ لتقليب الشرايح · دبل كليك يرجّعها</p>';
+    $('body').innerHTML = '<div id="pacs"></div><p class="pxtip">🔒 الصور مشفّرة ومحدش يقدر يفتحها غير بالباركود ده · المسطرة والمنطقة للقياس بالملّي</p>';
     try { OZPacs.viewer($('pacs'), buf, { name: String(C.patient || 'صورة').replace(/[\\/:*?"<>|]+/g, ' ') }); }
     catch (e) { box('⚠️', 'مش قادر أفتح الصور', esc(e.message || '')); }
   }

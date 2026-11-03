@@ -753,6 +753,8 @@
       .then(function (buf) { return crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, key, buf); })
       .then(function (ct) {
         var blob = new Blob([iv, ct], { type: 'application/octet-stream' }), meta = { patient: q.patient, phone: q.phone, exam: String(q.exam || '').trim(), name: q.name, pages: q.pages, kind: q.kind === 'dicom' ? 'dicom' : 'pdf', wrap: wrapped, wrap2: wrapped2 };
+        /* 5.20 · DICOM (PACS) cases never go to the server: only their details do; the images stay on this computer and reach the patient live */
+        var local = meta.kind === 'dicom'; if (local) { meta.local = true; meta.size = blob.size; }
         return new Promise(function (ok, no) {
           var x = new XMLHttpRequest(); x.open('POST', BASE + '/case'); x.withCredentials = true;
           x.setRequestHeader('Content-Type', 'application/octet-stream');
@@ -760,7 +762,7 @@
           x.upload.onprogress = function (e) { var b = $('pb' + q.id); if (b && e.lengthComputable) b.style.width = Math.max(4, Math.round(e.loaded / e.total * 100)) + '%'; };
           x.onload = function () { var j = {}; try { j = JSON.parse(x.responseText); } catch (e) {} if (x.status === 200 && j.item) ok({ item: j.item, blob: blob }); else no(new Error(j.message || 'محصلش — جرّب تاني')); };
           x.onerror = function () { no(new Error('النت فصل — جرّب تاني')); };
-          x.send(blob);
+          x.send(local ? null : blob);
         });
       })
       .then(function (r) { return put({ token: r.item.token, code: C.code, key: rawKey, blob: r.blob, size: r.blob.size, thumb: q.thumb, name: q.name, at: Date.now() }).then(function () { return r; }); })
@@ -773,7 +775,7 @@
         queue(); table(); stats(); disk();
         var open = ui.queue.filter(function (x) { return x.st !== 'gone' && x.st !== 'done'; }).length;
         if (!quiet && !open && ui.queue.filter(function (x) { return x.st === 'done'; }).length === 1) { showQr(r.item.token, true); setTimeout(function () { q.st = 'gone'; queue(); }, 400); }
-        else toast('✅ ' + q.patient + ' اتحفظت');
+        else toast('✅ ' + q.patient + ' اتحفظت' + (q.kind === 'dicom' ? ' — صور الـ DICOM على الكمبيوتر ده بس 🔒' : ''));
       })
       .catch(function (e) { q.st = 'err'; q.msg = e && e.message || 'محصلش'; paintQ(q); throw e; });
   }
@@ -1020,6 +1022,25 @@
   }
 
   /* ════════ 5.15 · admin look (Laravel/Filament style): honest numbers, stat widgets, data tables, ads ════════ */
+  /* 5.20 · the center reads its own PACS cases from this computer — nothing is downloaded */
+  function openPacs(tok) {
+    var r = itemOf(tok); if (!r || !window.OZPacs) return;
+    var host = document.createElement('div'); host.className = 'pz-modal'; host.innerHTML = '<div class="pz-load"><span></span><b>بنفتح الصور من الكمبيوتر…</b></div>'; document.body.appendChild(host); document.body.style.overflow = 'hidden';
+    var v = null, close = function () { if (v && v.destroy) v.destroy(); host.remove(); document.body.style.overflow = ''; if (document.fullscreenElement) document.exitFullscreen().catch(function () {}); };
+    localGet(tok).then(function (rec) {
+      if (!rec || !rec.blob) throw new Error('الحالة مش موجودة على الكمبيوتر ده');
+      return Promise.all([rec.blob.arrayBuffer(), crypto.subtle.importKey('raw', K.unb64u(rec.key), { name: 'AES-GCM' }, false, ['decrypt'])]);
+    }).then(function (x) { var all = new Uint8Array(x[0]); return crypto.subtle.decrypt({ name: 'AES-GCM', iv: all.slice(0, 12) }, x[1], all.slice(12)); })
+      .then(function (plain) { host.innerHTML = ''; v = OZPacs.viewer(host, plain, { name: String(r.patient || 'صورة').replace(/[\\/:*?"<>|]+/g, ' '), onClose: close }); })
+      .catch(function (e) { close(); toast(e.message || 'مش قادر أفتح الحالة'); });
+  }
+  function dicomOffServer() {
+    var L = ui.list.filter(function (r) { return r.kind === 'dicom' && r.cached && ui.local[r.token]; }), n = 0; if (!L.length) return;
+    (function nx(i) {
+      if (i >= L.length) { if (n) { toast('🔒 ' + n + ' حالة DICOM اتشالت من السيرفر — صورها على الكمبيوتر ده بس'); table(); } return; }
+      api('POST', 'item/' + L[i].token + '/uncache').then(function () { L[i].cached = false; L[i].local = true; n++; }).catch(function () {}).then(function () { nx(i + 1); });
+    })(0);
+  }
   function dashSoon() { clearTimeout(ui.dashT); ui.dashT = setTimeout(function () { api('GET', 'dash').then(function (x) { ui.dash = x.dash || ui.dash; dashX(); dHome(); }).catch(function () {}); }, 700); }
   function pct(a, b) { return b ? Math.round((a - b) / b * 100) : 0; }
   function lxSpark(arr, c) {
@@ -1133,7 +1154,6 @@
 
   /* ── ads: written here, shown to patients in their page's slider ── */
   var PAL = { a: ['#0F766E', '#14B8A6'], b: ['#145FB4', '#2CA7EC'], c: ['#EA580C', '#F97316'], d: ['#7357C5', '#A78BFA'], e: ['#267CB4', '#6CC4E8'], f: ['#247D5B', '#55B68C'] };
-  function adsLoad() { api('GET', 'ads').then(function (x) { ui.ads = x.ads || []; ui.slBase = x.base !== false; adsUI(); }).catch(function () { ui.ads = ui.ads || []; adsUI(); }); }
   function adImg(file) {
     return new Promise(function (ok, no) {
       var u = URL.createObjectURL(file), I = new Image();
@@ -1142,51 +1162,67 @@
       I.onerror = function () { no(new Error('الملف ده مش صورة')); }; I.src = u;
     });
   }
+  /* ════════ 5.20 · slider studio — every slide (welcome, drawn, ads, photos) in one ordered list the center fully controls ════════ */
+  var KIND = { base: ['جاهزة', 'kb'], ad: ['إعلان', 'ka'], slide: ['صورة', 'ks'] };
+  function adsLoad() { api('GET', 'ads').then(function (x) { ui.ads = x.ads || []; ui.slMs = x.ms || 5200; adsUI(); }).catch(function () { ui.ads = ui.ads || []; adsUI(); }); }
   function adState(a) { var td = ymd(); if (!a.active) return ['of', 'موقوف']; if (a.ends && a.ends < td) return ['ex', 'خلص']; return ['on', 'شغال']; }
+  function liveSlides() { var td = ymd(); return (ui.ads || []).filter(function (a) { return a.active && (!a.ends || a.ends >= td) && (a.kind !== 'slide' || a.image); }); }
+  function slideObj(a, extra) { var o = { title: a.title, body: a.body, tag: a.kind === 'slide' ? '' : a.tag, art: a.art, image: a.image, cta: a.kind === 'slide' ? '' : a.cta, ad: a.kind === 'ad', pic: a.kind === 'slide' }; if (a.kind === 'slide') o.pic = true; return Object.assign(o, extra || {}); }
+  function palette(w) { var p = PAL[ui.theme || C.theme] || PAL.a; w.style.setProperty('--pp', p[0]); w.style.setProperty('--pp2', p[1]); }
+  /* the editor's single-slide preview */
   function adPrev() {
-    var w = $('adPv'); if (!w || !window.OZAds) return; var f = ui.adEdit, p = PAL[ui.theme || C.theme] || PAL.a;
-    w.style.setProperty('--pp', p[0]); w.style.setProperty('--pp2', p[1]);
-    w.innerHTML = '<div class="pvs"><div class="pvs-tr">' + OZAds.slide({ title: f.title || 'عنوان الإعلان', body: f.body, tag: f.tag, art: f.art, image: f.image, cta: f.cta, ad: true }, true) + '</div><div class="pvs-dots"><button class="on" type="button"><i></i></button><button type="button"><i></i></button><button type="button"><i></i></button></div></div>';
+    var w = $('adPv'); if (!w || !window.OZAds) return; var f = ui.adEdit; palette(w);
+    w.innerHTML = '<div class="pvs"><div class="pvs-tr">' + OZAds.slide(slideObj({ title: f.title || (f.kind === 'slide' ? '' : 'عنوان الشريحة'), body: f.body, tag: f.tag, art: f.art, image: f.image, cta: f.cta, kind: f.kind || 'ad' }), true) + '</div></div>';
+  }
+  /* the whole slider, autoplaying, exactly as the patient sees it */
+  function studioPreview() {
+    var w = $('stPv'); if (!w || !window.OZAds) return; palette(w); clearInterval(ui.stT);
+    var L = liveSlides(); if (!L.length) { w.innerHTML = '<div class="st-empty">كل الشرائح موقوفة — المريض هيشوف شريحة الترحيب الافتراضية</div>'; return; }
+    w.innerHTML = '<div class="pvs"><div class="pvs-tr" id="stTr">' + L.map(function (a, i) { return OZAds.slide(slideObj(a), !i); }).join('') + '</div><div class="pvs-dots">' + L.map(function (a, i) { return '<button type="button" data-sd="' + i + '" class="' + (i ? '' : 'on') + '"><i style="animation-duration:' + (ui.slMs || 5200) + 'ms"></i></button>'; }).join('') + '</div></div>';
+    var cur = 0, tr = $('stTr'), go = function (i) { cur = (i + L.length) % L.length; tr.style.transform = 'translateX(' + cur * 100 + '%)'; [].forEach.call(tr.children, function (s, k) { s.classList.toggle('on', k === cur); }); [].forEach.call(w.querySelectorAll('[data-sd]'), function (d, k) { d.classList.toggle('on', k === cur); }); };
+    [].forEach.call(w.querySelectorAll('[data-sd]'), function (d) { d.onclick = function () { go(+d.dataset.sd); clearInterval(ui.stT); ui.stT = setInterval(function () { go(cur + 1); }, ui.slMs || 5200); }; });
+    ui.stGo = go; if (L.length > 1) ui.stT = setInterval(function () { if (!document.body.contains(tr)) return clearInterval(ui.stT); go(cur + 1); }, ui.slMs || 5200);
+  }
+  function editSlide(a) {
+    ui.adEdit = a ? { id: a.id, kind: a.kind, title: a.title, body: a.body, tag: a.tag, art: a.art, image: a.image, cta: a.cta, ends: a.ends, active: a.active } : { kind: 'ad', art: 'offer', cta: 'book', active: true, title: '', body: '', tag: 'عرض خاص', image: '', ends: '' };
+    adsUI(); var f = $('adForm'); if (f) { f.scrollIntoView({ behavior: 'smooth', block: 'start' }); setTimeout(function () { var t = $('adT'); if (t) t.focus({ preventScroll: true }); }, 350); }
   }
   function adsUI() {
     var el = $('adsBox'); if (!el || !window.OZAds) return;
-    var f = ui.adEdit = ui.adEdit || { art: 'offer', cta: 'book', active: true, title: '', body: '', tag: 'عرض خاص', image: '', ends: '' }, L = (ui.ads || []).filter(function (a) { return a.kind !== 'slide'; }), SL = (ui.ads || []).filter(function (a) { return a.kind === 'slide'; });
+    var f = ui.adEdit = ui.adEdit || { kind: 'ad', art: 'offer', cta: 'book', active: true, title: '', body: '', tag: 'عرض خاص', image: '', ends: '' }, L = ui.ads || [];
+    var isPic = f.kind === 'slide', live = liveSlides().length;
+    var rows = L.map(function (a, i) {
+      var s = adState(a), K = KIND[a.kind] || KIND.ad, first = !i && a.kind === 'base';
+      return '<li class="st-it' + (a.active ? '' : ' off') + (f.id === a.id ? ' ed' : '') + '" draggable="true" data-ad="' + a.id + '">' +
+        '<span class="st-h" aria-hidden="true">⋮⋮</span><span class="st-n">' + (i + 1) + '</span>' +
+        '<span class="ad-th">' + (a.image ? '<img src="' + a.image + '" alt="">' : OZAds.art(a.art)) + '</span>' +
+        '<div class="st-tx"><b>' + esc(a.title || (a.kind === 'slide' ? 'صورة من غير عنوان' : '—')) + '</b><small>' + esc(a.body || (a.cta ? 'زرار: ' + OZAds.CTA[a.cta] : '')) + '</small></div>' +
+        '<span class="st-k ' + K[1] + '">' + (first ? 'ترحيب' : K[0]) + '</span><span class="lx-st2 ' + s[0] + '">' + s[1] + '</span>' +
+        '<label class="ad-sw st-sw" title="' + (a.active ? 'وقّفها' : 'شغّلها') + '"><input type="checkbox" data-ada="toggle"' + (a.active ? ' checked' : '') + ' aria-label="تظهر للمرضى"><i></i></label>' +
+        '<div class="st-acts"><button class="lx-ib" data-ada="up" data-tip="لفوق"' + (i ? '' : ' disabled') + ' aria-label="لفوق">' + ic('au') + '</button><button class="lx-ib" data-ada="down" data-tip="لتحت"' + (i < L.length - 1 ? '' : ' disabled') + ' aria-label="لتحت">' + ic('ad') + '</button>' +
+        '<button class="lx-ib" data-ada="edit" data-tip="تعديل" aria-label="تعديل">' + ic('edit') + '</button><button class="lx-ib dl" data-ada="delete" data-tip="امسح" aria-label="امسح">' + ic('trash') + '</button></div></li>';
+    }).join('');
     var arts = OZAds.ARTS.map(function (a) { return '<button type="button" data-art="' + a[0] + '" class="' + (!f.image && f.art === a[0] ? 'on' : '') + '"><span class="ad-mini">' + OZAds.art(a[0]) + '</span><small>' + a[1] + '</small></button>'; }).join('') +
       '<button type="button" data-art="img" class="' + (f.image ? 'on' : '') + '"><span class="ad-mini im">' + (f.image ? '<img src="' + f.image + '" alt="">' : ic('img')) + '</span><small>' + (f.image ? 'غيّر الصورة' : 'صورة من عندك') + '</small></button>';
-    var rows = L.map(function (a, i) {
-      var s = adState(a);
-      return '<tr data-ad="' + a.id + '"><td><div class="lx-pt"><span class="ad-th">' + (a.image ? '<img src="' + a.image + '" alt="">' : OZAds.art(a.art)) + '</span><div><b>' + esc(a.title) + '</b><span class="n">' + esc(a.body || '—') + '</span></div></div></td>' +
-        '<td>' + (a.tag ? '<span class="lx-b" style="--x:#D97706">' + esc(a.tag) + '</span>' : '—') + '</td><td class="mut">' + (a.cta ? OZAds.CTA[a.cta] : 'بدون') + '</td>' +
-        '<td><span class="lx-st2 ' + s[0] + '">' + s[1] + '</span></td><td class="mut">' + (a.ends ? (+a.ends.slice(8)) + '/' + (+a.ends.slice(5, 7)) + '/' + a.ends.slice(0, 4) : 'مفتوح') + '</td>' +
-        '<td class="lx-acts"><button class="lx-ib" data-ada="up" data-tip="لفوق"' + (i ? '' : ' disabled') + '>' + ic('au') + '</button><button class="lx-ib" data-ada="down" data-tip="لتحت"' + (i < L.length - 1 ? '' : ' disabled') + '>' + ic('ad') + '</button>' +
-        '<button class="lx-ib" data-ada="edit" data-tip="تعديل">' + ic('edit') + '</button><button class="lx-ib" data-ada="toggle" data-tip="' + (a.active ? 'وقّف' : 'شغّل') + '">' + ic(a.active ? 'pause' : 'play') + '</button><button class="lx-ib dl" data-ada="delete" data-tip="امسح">' + ic('trash') + '</button></td></tr>';
-    }).join('');
-    el.innerHTML = '<div class="lx-ads"><section class="lx-card ad-form"><div class="lx-ch"><div><h3>' + (f.id ? '✎ تعديل الإعلان' : '📣 إعلان جديد') + '</h3><small>بيظهر للمرضى في السلايدر اللي في أول صفحتهم، بعد شريحة «ألف سلامة»</small></div></div>' +
+    el.innerHTML = '<div class="lx-ads">' +
+      '<section class="lx-card st-card"><div class="lx-ch"><div><h3>🎞 السلايدر اللي فوق صفحة المريض</h3><small>' + L.length + ' شريحة · ' + live + ' ظاهرة للمرضى — اسحب الشريحة لفوق أو لتحت عشان ترتّبها</small></div>' +
+        '<div class="st-top"><label class="st-ms">⏱ <select id="stMs" aria-label="مدة كل شريحة">' + [3000, 4000, 5200, 7000, 10000].map(function (v) { return '<option value="' + v + '"' + (Math.abs((ui.slMs || 5200) - v) < 300 ? ' selected' : '') + '>' + Math.round(v / 1000) + ' ث لكل شريحة</option>'; }).join('') + '</select></label>' +
+          '<button type="button" class="btn" id="stAd">' + ic('mega') + ' إعلان</button><button type="button" class="btn g" id="slAdd">' + ic('img') + ' صور</button><input type="file" id="slF" accept="image/png,image/jpeg,image/webp" multiple hidden>' +
+          '<button type="button" class="btn g" id="stRs" title="يرجّع الشرائح الجاهزة الأربعة زي الأول">↺ الجاهزة</button></div></div>' +
+        '<div class="st-grid"><div class="st-pw"><small>كده بيشوفه المريض دلوقتي</small><div class="pvd ad-prev st-prev" id="stPv"></div></div>' +
+          '<ol class="st-list" id="stL">' + (rows || '<li class="lx-emp">مفيش شرايح — ضيف إعلان أو صور، أو رجّع الشرائح الجاهزة</li>') + '</ol></div></section>' +
+      '<section class="lx-card ad-form" id="adForm"><div class="lx-ch"><div><h3>' + (f.id ? '✎ تعديل الشريحة' : '📣 إعلان جديد') + '</h3><small>' + (f.id ? (KIND[f.kind] || KIND.ad)[0] + ' · التعديل بيظهر للمرضى أول ما تحفظ' : 'بيتضاف بعد شريحة الترحيب، وتقدر ترتّبه من القايمة') + '</small></div></div>' +
       '<div class="ad-grid"><div class="ad-fields">' +
-        '<label class="l" for="adT">عنوان الإعلان *</label><input class="fld" id="adT" maxlength="70" placeholder="مثلاً: خصم 20% على السونار" value="' + esc(f.title) + '">' +
+        '<label class="l" for="adT">العنوان' + (isPic ? ' (اختياري)' : ' *') + '</label><input class="fld" id="adT" maxlength="70" placeholder="مثلاً: خصم 20% على السونار" value="' + esc(f.title) + '">' +
         '<label class="l" for="adB">سطر توضيحي</label><input class="fld" id="adB" maxlength="120" placeholder="مثلاً: العرض لحد آخر الشهر — احجز من موبايلك" value="' + esc(f.body) + '">' +
-        '<div class="ad-2"><div><label class="l" for="adG">الشارة الصغيرة</label><input class="fld" id="adG" maxlength="24" placeholder="عرض خاص" value="' + esc(f.tag) + '"></div>' +
-        '<div><label class="l" for="adC">الزرار اللي في الإعلان</label><select class="fld" id="adC"><option value="">بدون زرار</option>' + Object.keys(OZAds.CTA).map(function (k) { return '<option value="' + k + '"' + (f.cta === k ? ' selected' : '') + '>' + OZAds.CTA[k] + '</option>'; }).join('') + '</select></div></div>' +
-        '<label class="l">الرسمة أو الصورة</label><div class="ad-arts">' + arts + '</div><input type="file" id="adF" accept="image/png,image/jpeg,image/webp" hidden>' +
-        '<div class="ad-2"><div><label class="l" for="adE">آخر يوم للإعلان (اختياري)</label><input class="fld" id="adE" type="date" value="' + esc(f.ends || '') + '"></div>' +
-        '<div><label class="l">الظهور</label><label class="ad-sw"><input type="checkbox" id="adA"' + (f.active !== false ? ' checked' : '') + '><i></i><span>يظهر للمرضى</span></label></div></div>' +
-      '</div><div class="ad-pw"><small>كده هيظهر للمريض</small><div class="pvd ad-prev" id="adPv"></div>' +
-        '<div class="ad-btns"><button type="button" class="btn" id="adS">💾 ' + (f.id ? 'احفظ التعديل' : 'انشر الإعلان') + '</button>' + (f.id ? '<button type="button" class="btn g" id="adX">إلغاء</button>' : '') + '</div></div></div></section>' +
-      '<section class="lx-card ad-list"><div class="lx-ch"><div><h3>الإعلانات</h3><small>' + (L.length ? L.length + ' إعلان · الترتيب هو ترتيب ظهورهم في السلايدر' : 'لسه مفيش إعلانات') + '</small></div></div>' +
-        (rows ? '<div class="lx-tw"><table class="lx-t"><thead><tr><th>الإعلان</th><th>الشارة</th><th>الزرار</th><th>الحالة</th><th>لحد</th><th></th></tr></thead><tbody>' + rows + '</tbody></table></div>'
-          : '<p class="lx-emp">📣 اكتب أول إعلان من الفورم — هيظهر للمرضى على طول في صفحتهم.</p>') + '</section>' +
-      /* 5.16 · the slider's own photos (separate from ads) + the 4 drawn slides on/off */
-      '<section class="lx-card sl-card"><div class="lx-ch"><div><h3>🖼 صور السلايدر</h3><small>ضيف صور المركز والأجهزة براحتك — بتظهر في السلايدر بعد الإعلانات</small></div>' +
-        '<button type="button" class="btn" id="slAdd">' + ic('img') + ' ضيف صور</button><input type="file" id="slF" accept="image/png,image/jpeg,image/webp" multiple hidden></div>' +
-        '<label class="ad-sw sl-base"><input type="checkbox" id="slBase"' + (ui.slBase !== false ? ' checked' : '') + '><i></i><span>اعرض الشرائح الجاهزة (الجهاز، الدكتور، الأشعة، الموبايل)</span></label>' +
-        (SL.length ? '<div class="sl-grid">' + SL.map(function (a, i) {
-          var st = adState(a);
-          return '<div class="sl-it' + (a.active ? '' : ' off') + '" data-ad="' + a.id + '"><div class="sl-img" style="background-image:url(\'' + a.image + '\')"><span class="lx-st2 ' + st[0] + '">' + st[1] + '</span><em>' + (i + 1) + '</em></div>' +
-            '<input class="fld sl-t" data-slt maxlength="70" placeholder="عنوان على الصورة (اختياري)" value="' + esc(a.title || '') + '"><input class="fld sl-t" data-slb maxlength="120" placeholder="سطر صغير (اختياري)" value="' + esc(a.body || '') + '">' +
-            '<div class="sl-acts"><button class="lx-ib" data-ada="up" data-tip="قبل"' + (i ? '' : ' disabled') + '>' + ic('au') + '</button><button class="lx-ib" data-ada="down" data-tip="بعد"' + (i < SL.length - 1 ? '' : ' disabled') + '>' + ic('ad') + '</button>' +
-            '<button class="lx-ib" data-ada="toggle" data-tip="' + (a.active ? 'وقّف' : 'شغّل') + '">' + ic(a.active ? 'pause' : 'play') + '</button><button class="lx-ib dl" data-ada="delete" data-tip="امسح">' + ic('trash') + '</button></div></div>';
-        }).join('') + '</div>' : '<p class="lx-emp">🖼 لسه مفيش صور — دوس «ضيف صور» واختار صورة أو أكتر من الكمبيوتر أو الموبايل.</p>') + '</section></div>';
-    adPrev(); slidesWire();
+        (isPic ? '' : '<div class="ad-2"><div><label class="l" for="adG">الشارة الصغيرة</label><input class="fld" id="adG" maxlength="24" placeholder="عرض خاص" value="' + esc(f.tag) + '"></div>' +
+        '<div><label class="l" for="adC">الزرار اللي في الشريحة</label><select class="fld" id="adC"><option value="">بدون زرار</option>' + Object.keys(OZAds.CTA).map(function (k) { return '<option value="' + k + '"' + (f.cta === k ? ' selected' : '') + '>' + OZAds.CTA[k] + '</option>'; }).join('') + '</select></div></div>') +
+        '<label class="l">' + (isPic ? 'الصورة' : 'الرسمة أو الصورة') + '</label><div class="ad-arts">' + (isPic ? '<button type="button" data-art="img" class="on"><span class="ad-mini im">' + (f.image ? '<img src="' + f.image + '" alt="">' : ic('img')) + '</span><small>غيّر الصورة</small></button>' : arts) + '</div><input type="file" id="adF" accept="image/png,image/jpeg,image/webp" hidden>' +
+        '<div class="ad-2"><div><label class="l" for="adE">آخر يوم (اختياري)</label><input class="fld" id="adE" type="date" value="' + esc(f.ends || '') + '"></div>' +
+        '<div><label class="l">الظهور</label><label class="ad-sw"><input type="checkbox" id="adA"' + (f.active !== false ? ' checked' : '') + '><i></i><span>تظهر للمرضى</span></label></div></div>' +
+      '</div><div class="ad-pw"><small>الشريحة دي لوحدها</small><div class="pvd ad-prev" id="adPv"></div>' +
+        '<div class="ad-btns"><button type="button" class="btn" id="adS">💾 ' + (f.id ? 'احفظ التعديل' : 'انشر الإعلان') + '</button>' + (f.id ? '<button type="button" class="btn g" id="adX">إلغاء</button>' : '') + '</div></div></div></section></div>';
+    adPrev(); studioPreview(); studioWire(el);
     var bind = function (id, k) { var i = $(id); if (i) i.oninput = i.onchange = function () { f[k] = i.type === 'checkbox' ? i.checked : i.value; if (k !== 'active' && k !== 'ends') adPrev(); }; };
     bind('adT', 'title'); bind('adB', 'body'); bind('adG', 'tag'); bind('adC', 'cta'); bind('adE', 'ends'); bind('adA', 'active');
     [].forEach.call(el.querySelectorAll('[data-art]'), function (b) { b.onclick = function () {
@@ -1195,39 +1231,48 @@
     }; });
     $('adF').onchange = function () { var file = this.files[0]; this.value = ''; if (!file) return; adImg(file).then(function (d) { f.image = d; adsUI(); }).catch(function (e) { toast(e.message); }); };
     $('adS').onclick = function () {
-      if (!String(f.title || '').trim()) { $('adT').focus(); toast('اكتب عنوان الإعلان'); return; }
+      if (f.kind !== 'slide' && !String(f.title || '').trim()) { $('adT').focus(); toast('اكتب العنوان'); return; }
+      if (f.kind === 'slide' && !f.image) { toast('اختار صورة'); return; }
       var b = this; b.disabled = true;
-      api('POST', 'ads', { id: f.id, title: f.title, body: f.body, tag: f.tag, art: f.art, image: f.image, cta: f.cta, ends: f.ends, active: f.active !== false })
+      api('POST', 'ads', { id: f.id, kind: f.kind, title: f.title, body: f.body, tag: f.tag, art: f.art, image: f.image, cta: f.cta, ends: f.ends, active: f.active !== false })
         .then(function (x) { ui.ads = x.ads || []; toast(f.id ? '✅ اتحفظ التعديل' : '📣 الإعلان اتنشر — المرضى هيشوفوه في صفحتهم'); ui.adEdit = null; adsUI(); dashSoon(); })
         .catch(function (e) { b.disabled = false; toast(e.message); });
     };
     if ($('adX')) $('adX').onclick = function () { ui.adEdit = null; adsUI(); };
-    [].forEach.call(el.querySelectorAll('[data-ada]'), function (b) { b.onclick = function () {
-      var id = +b.closest('[data-ad]').dataset.ad, k = b.dataset.ada, a = (ui.ads || []).filter(function (x) { return x.id === id; })[0];
-      if (k === 'edit') { ui.adEdit = { id: a.id, title: a.title, body: a.body, tag: a.tag, art: a.art, image: a.image, cta: a.cta, ends: a.ends, active: a.active }; adsUI(); el.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
-      if (k === 'delete' && !confirm(a.kind === 'slide' ? 'تمسح الصورة دي من السلايدر؟' : 'تمسح إعلان «' + a.title + '»؟')) return;
-      b.disabled = true;
-      api('POST', 'ads/' + id + '/' + k).then(function (x) { ui.ads = x.ads || []; if (ui.adEdit && ui.adEdit.id === id && k === 'delete') ui.adEdit = null; adsUI(); dashSoon(); }).catch(function (e) { b.disabled = false; toast(e.message); });
-    }; });
   }
-  function slidesWire() {
-    var el = $('adsBox'); if (!el || !$('slAdd')) return;
+  function adsSave(x) { ui.ads = x.ads || ui.ads; adsUI(); dashSoon(); }
+  function studioWire(el) {
+    $('stAd').onclick = function () { editSlide(null); };
     $('slAdd').onclick = function () { $('slF').click(); };
     $('slF').onchange = function () {
       var files = [].slice.call(this.files || []); this.value = ''; if (!files.length) return;
       toast('⏳ بنجهّز ' + files.length + (files.length > 1 ? ' صور…' : ' صورة…'));
       var i = 0; (function nx() {
         if (i >= files.length) { toast('🖼 الصور اتضافت للسلايدر'); return; }
-        adImg(files[i++]).then(function (d) { return api('POST', 'ads', { kind: 'slide', image: d, title: '', active: true }); })
-          .then(function (x) { ui.ads = x.ads || ui.ads; adsUI(); nx(); }).catch(function (e) { toast(e.message); nx(); });
+        adImg(files[i++]).then(function (d) { return api('POST', 'ads', { kind: 'slide', image: d, title: '', active: true }); }).then(function (x) { adsSave(x); nx(); }).catch(function (e) { toast(e.message); nx(); });
       })();
     };
-    $('slBase').onchange = function () { var on = this.checked; api('POST', 'slides-base', { on: on }).then(function () { ui.slBase = on; toast(on ? 'الشرائح الجاهزة هتظهر' : 'الشرائح الجاهزة اتشالت — هتظهر صورك والإعلانات بس'); }).catch(function (e) { toast(e.message); }); };
-    [].forEach.call(el.querySelectorAll('.sl-it'), function (it) {
-      var id = +it.dataset.ad, a = (ui.ads || []).filter(function (x) { return x.id === id; })[0]; if (!a) return;
-      var save = function () { var t = it.querySelector('[data-slt]').value, b = it.querySelector('[data-slb]').value; if (t === (a.title || '') && b === (a.body || '')) return;
-        api('POST', 'ads', { id: id, kind: 'slide', image: a.image, title: t, body: b, active: a.active, art: a.art }).then(function (x) { ui.ads = x.ads || ui.ads; a.title = t; a.body = b; toast('اتحفظ ✓'); }).catch(function (e) { toast(e.message); }); };
-      [].forEach.call(it.querySelectorAll('input'), function (inp) { inp.onchange = save; });
+    $('stRs').onclick = function () { if (!confirm('ترجّع الشرائح الجاهزة الأربعة زي الأول؟ (الإعلانات والصور بتاعتك مش هتتمسح)')) return; api('POST', 'slides-reset').then(function (x) { adsSave(x); toast('↺ الشرائح الجاهزة رجعت'); }).catch(function (e) { toast(e.message); }); };
+    $('stMs').onchange = function () { var v = +this.value; api('POST', 'slide-ms', { ms: v }).then(function (x) { ui.slMs = x.ms; studioPreview(); toast('⏱ كل شريحة ' + Math.round(x.ms / 1000) + ' ثواني'); }).catch(function (e) { toast(e.message); }); };
+    var list = $('stL'), order = function () { return [].map.call(list.querySelectorAll('[data-ad]'), function (li) { return +li.dataset.ad; }); };
+    var saveOrder = function () { api('POST', 'ads-order', { ids: order() }).then(function (x) { adsSave(x); toast('↕ الترتيب اتحفظ'); }).catch(function (e) { toast(e.message); }); };
+    [].forEach.call(list.querySelectorAll('[data-ad]'), function (li) {
+      var id = +li.dataset.ad, a = (ui.ads || []).filter(function (x) { return x.id === id; })[0]; if (!a) return;
+      li.addEventListener('dragstart', function (e) { li.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; try { e.dataTransfer.setData('text/plain', String(id)); } catch (er) {} });
+      li.addEventListener('dragend', function () { li.classList.remove('dragging'); var now = order().join(','); if (now !== li.dataset.o) saveOrder(); });
+      li.addEventListener('dragover', function (e) { e.preventDefault(); var d = list.querySelector('.dragging'); if (!d || d === li) return; var r = li.getBoundingClientRect(); list.insertBefore(d, e.clientY < r.top + r.height / 2 ? li : li.nextSibling); });
+      li.dataset.o = order().join(',');
+      li.addEventListener('click', function (e) { if (e.target.closest('button,label,input')) return; var L = liveSlides(), k = L.indexOf(a); if (k > -1 && ui.stGo) ui.stGo(k); });
+      [].forEach.call(li.querySelectorAll('[data-ada]'), function (b) {
+        var run = function () {
+          var k = b.dataset.ada;
+          if (k === 'edit') return editSlide(a);
+          if (k === 'up' || k === 'down') { var ids = order(), i = ids.indexOf(id), j = k === 'up' ? i - 1 : i + 1; if (j < 0 || j >= ids.length) return; ids.splice(j, 0, ids.splice(i, 1)[0]); return api('POST', 'ads-order', { ids: ids }).then(adsSave).catch(function (e) { toast(e.message); }); }
+          if (k === 'delete' && !confirm(a.kind === 'slide' ? 'تمسح الصورة دي من السلايدر؟' : 'تمسح شريحة «' + (a.title || '') + '»؟' + (a.kind === 'base' ? '\nتقدر ترجّعها بزرار «↺ الجاهزة».' : ''))) { if (b.type === 'checkbox') b.checked = !b.checked; return; }
+          api('POST', 'ads/' + id + '/' + k).then(function (x) { if (ui.adEdit && ui.adEdit.id === id && k === 'delete') ui.adEdit = null; adsSave(x); }).catch(function (e) { toast(e.message); });
+        };
+        if (b.type === 'checkbox') b.onchange = run; else b.onclick = run;
+      });
     });
   }
   document.addEventListener('click', function (e) {
@@ -1374,12 +1419,12 @@
     P.forEach(function (r) {
       var d = dayOf(r.at); if (d !== last) { last = d; var n = L.filter(function (x) { return dayOf(x.at) === d; }).length; body += '<tr class="lx-g"><td colspan="7"><span>' + esc(d) + '</span><em>' + n + ' حالة</em></td></tr>'; }
       var loc = ui.local[r.token], days = r.cached ? Math.max(1, Math.ceil((r.cache_until - Date.now()) / 864e5)) : 0;
-      var st = !r.active ? '<span class="lx-st2 of">⏸ موقوفة</span>' : (loc ? '<span class="lx-st2 on" title="الملف الأصلي على الكمبيوتر ده">💾 الجهاز ده</span>' : '') + (r.cached ? '<span class="lx-st2 nw" title="نسخة مشفّرة مؤقتة على السيرفر">☁ ' + days + ' يوم</span>' : '') + (!loc && !r.cached ? '<span class="lx-st2 ex">⚠ جهاز تاني</span>' : '') + (r.wrapped ? '<span class="lx-st2 pn" title="المريض يلاقيها بالباركود الثابت">📌 ثابت</span>' : (r.phone ? '' : '<span class="lx-st2 of" title="من غير موبايل — مش هتتلاقى بالباركود الثابت">📵</span>'));
+      var st = !r.active ? '<span class="lx-st2 of">⏸ موقوفة</span>' : (r.kind === 'dicom' && !r.cached ? '<span class="lx-st2 pc" title="صور الـ DICOM مش مترفوعة على السيرفر — بتوصل للمريض من الكمبيوتر اللي عليه الحالة وهو شغال">🔒 PACS على الكمبيوتر</span>' : '') + (loc ? '<span class="lx-st2 on" title="الملف الأصلي على الكمبيوتر ده">💾 الجهاز ده</span>' : '') + (r.cached ? '<span class="lx-st2 nw" title="نسخة مشفّرة مؤقتة على السيرفر">☁ ' + days + ' يوم</span>' : '') + (!loc && !r.cached ? '<span class="lx-st2 ex">⚠ جهاز تاني</span>' : '') + (r.wrapped ? '<span class="lx-st2 pn" title="المريض يلاقيها بالباركود الثابت">📌 ثابت</span>' : (r.phone ? '' : '<span class="lx-st2 of" title="من غير موبايل — مش هتتلاقى بالباركود الثابت">📵</span>'));
       var qr = loc ? '<button type="button" class="lx-q" data-qr="' + r.token + '" title="كبّر الباركود">' + qrSvg(linkOf(r.token)) + '</button>' : '<span class="lx-q na" title="الباركود متاح على الجهاز اللي اترفعت منه">▦</span>';
       var acts = (loc && r.active ? '<button class="lx-ib" data-a="qr" data-tip="الباركود">' + ic('qr') + '</button><button class="lx-ib" data-a="print" data-tip="اطبع استيكر">' + ic('print') + '</button>' + (r.phone ? '<button class="lx-ib wa" data-a="wa" data-tip="واتساب للمريض">' + ic('wa') + '</button>' : '') : '') +
         '<div class="lx-mn"><button type="button" class="lx-ib" data-menu data-tip="المزيد">' + ic('dots') + '</button><div class="lx-dd" hidden>' +
         (r.active ? '<button data-a="stop">' + ic('pause') + ' وقّف الحالة</button>' : '<button data-a="start">' + ic('play') + ' شغّل الحالة</button>') +
-        '<button data-a="views">' + ic('eye') + ' مين فتحها</button><button data-a="del" class="dl">' + ic('trash') + ' امسح الحالة</button></div></div>';
+        (r.kind === 'dicom' && loc ? '<button data-a="pacs">🩻 افتح في الـ PACS</button>' : '') + '<button data-a="views">' + ic('eye') + ' مين فتحها</button><button data-a="del" class="dl">' + ic('trash') + ' امسح الحالة</button></div></div>';
       body += '<tr class="lx-cr' + (r.active ? '' : ' off') + '" data-t="' + r.token + '" style="--x:' + exColor(r.exam) + '">' +
         '<td><div class="lx-pt">' + qr + '<div><b title="' + esc(r.patient) + '">' + esc(r.patient) + '</b><span class="n">' + esc(r.phone || '—') + '</span></div></div></td>' +
         '<td><span class="lx-b" style="--x:' + exColor(r.exam) + '">' + esc(r.exam || 'فحص') + '</span></td>' +
@@ -1393,7 +1438,7 @@
     [].forEach.call($('tbl').querySelectorAll('[data-qr]'), function (x) { x.onclick = function () { showQr(x.dataset.qr); }; });
     [].forEach.call($('tbl').querySelectorAll('[data-vw]'), function (x) { x.onclick = function () { viewsModal(x.dataset.vw); }; });
     [].forEach.call($('tbl').querySelectorAll('[data-pg]'), function (x) { x.onclick = function () { ui.cp += +x.dataset.pg; table(); var t = $('tbl'); if (t) t.scrollIntoView({ block: 'start', behavior: 'smooth' }); }; });
-    [].forEach.call($('tbl').querySelectorAll('[data-a]'), function (b) { b.onclick = function () { var dd = b.closest('.lx-dd'); if (dd) dd.hidden = true; if (b.dataset.a === 'views') return viewsModal(b.closest('[data-t]').dataset.t); act(b.closest('[data-t]').dataset.t, b.dataset.a, b); }; });
+    [].forEach.call($('tbl').querySelectorAll('[data-a]'), function (b) { b.onclick = function () { var dd = b.closest('.lx-dd'); if (dd) dd.hidden = true; if (b.dataset.a === 'views') return viewsModal(b.closest('[data-t]').dataset.t); if (b.dataset.a === 'pacs') return openPacs(b.closest('[data-t]').dataset.t); act(b.closest('[data-t]').dataset.t, b.dataset.a, b); }; });
   }
   /* ── 4.98 · access log: every time a patient opens his case ── */
   var VIA = { qr: ['▦', 'باركود الحالة'], fixed: ['📌', 'الباركود الثابت'] }, SRC = { cache: '☁ من السيرفر', center: '💻 من جهاز المركز' };
@@ -1565,7 +1610,7 @@
     if (ui.prefill && ui.page === 'upload') {
       toast('📂 جهزنا بيانات المريض — اختار ملف PDF من زر رفع الملفات');
     }
-    Promise.all([api('GET', 'list'), localAll()]).then(function (a) { ui.list = a[0].list || []; ui.local = a[1] || {}; ui.asks = a[0].asks || []; ui.bookings = a[0].bookings || []; ui.tickets = a[0].tickets || []; ui.qr = a[0].qr || ui.qr; ui.recent = a[0].recent || []; ui.dash = a[0].dash || null; dashX(); adsLoad(); qrPanel(); bookings(); asks(); serviceTickets(); recent(); table(); stats(); disk(); backfill(); dHome(); }).catch(function (e) {
+    Promise.all([api('GET', 'list'), localAll()]).then(function (a) { ui.list = a[0].list || []; ui.local = a[1] || {}; ui.asks = a[0].asks || []; ui.bookings = a[0].bookings || []; ui.tickets = a[0].tickets || []; ui.qr = a[0].qr || ui.qr; ui.recent = a[0].recent || []; ui.dash = a[0].dash || null; dashX(); adsLoad(); setTimeout(dicomOffServer, 1500); qrPanel(); bookings(); asks(); serviceTickets(); recent(); table(); stats(); disk(); backfill(); dHome(); }).catch(function (e) {
       var message='تعذّر تحميل بيانات القسم. جرّب تحديث الصفحة أو اتأكد من اتصال الإنترنت.';
       ['bookings','asks','complaints','reportRequests'].forEach(function (id) {
         var box=$(id); if (box) box.innerHTML='<div class="qrd-data-error" role="alert">⚠️ '+message+'</div>';

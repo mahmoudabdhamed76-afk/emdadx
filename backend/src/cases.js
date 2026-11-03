@@ -190,9 +190,27 @@ try {
 const DEL_PASS = String(process.env.QR_DELETE_PASS_SHA256 || '9684d2c3bf46fe113b14f73af9e6b5224e9ec4ba9bd786729bf563b8a11df93a').toLowerCase();
 function delPassOk(pw) { const h = crypto.createHash('sha256').update(String(pw || '')).digest(); const w = Buffer.from(DEL_PASS, 'hex'); return w.length === h.length && crypto.timingSafeEqual(h, w); }
 function dropRequestFiles(rows) { for (const row of rows) { let files = []; try { files = JSON.parse(row.files_json || '[]'); } catch (_) {} for (const f of files) if (/^[A-Za-z0-9]{16}$/.test(f.id || '')) try { fs.unlinkSync(requestPhotoPath(f.id)); } catch (_) {} } }
+try {
+  const sc3 = db.prepare('PRAGMA table_info(case_site)').all().map(c => c.name);
+  if (!sc3.includes('slides_seeded')) db.exec('ALTER TABLE case_site ADD COLUMN slides_seeded INTEGER NOT NULL DEFAULT 0');
+  if (!sc3.includes('slide_ms')) db.exec('ALTER TABLE case_site ADD COLUMN slide_ms INTEGER NOT NULL DEFAULT 5200');
+} catch (e) { console.error('[cases] 5.20 migrate', e.message); }
+const BASE_SLIDES = [
+  { art: 'ct', tag: 'QR Patient', title: 'ألف سلامة عليك 🤍', body: 'إزاي نقدر نساعدك النهارده؟', cta: '', sort: -1000 },
+  { art: 'doc', tag: 'تقارير الأشعة', title: 'تقارير دقيقة.. وسرعة في الخدمة', body: 'فريق متخصص وأحدث أجهزة التصوير', cta: '', sort: 1000 },
+  { art: 'xray', tag: 'كل الفحوصات', title: 'مقطعية، رنين، سونار وعادية', body: 'احجز فحصك من موبايلك في دقيقة', cta: 'book', sort: 1010 },
+  { art: 'phone', tag: 'نتيجتك معاك', title: 'نتيجتك على موبايلك', body: 'التقرير وصور الأشعة معاك في أي وقت', cta: 'results', sort: 1020 }
+];
+function seedSlides(cid, force) {
+  const st = db.prepare('SELECT slides_seeded, slides_base FROM case_site WHERE customer_id = ?').get(cid); if (!st || (st.slides_seeded && !force)) return;
+  const ins = db.prepare("INSERT INTO case_ad (customer_id, title, body, tag, art, image, cta, active, ends, sort, created_at, kind) VALUES (?,?,?,?,?,NULL,?,?,NULL,?,?,'base')");
+  BASE_SLIDES.forEach((b, i) => ins.run(cid, b.title, b.body, b.tag, b.art, b.cta, (i === 0 || st.slides_base !== 0 || force) ? 1 : 0, b.sort, nowTs()));
+  db.prepare('UPDATE case_site SET slides_seeded = 1 WHERE customer_id = ?').run(cid);
+}
 const AD_ART = ['ct', 'doc', 'xray', 'phone', 'offer', 'heart'], AD_CTA = ['', 'book', 'results', 'report', 'complaint'];
 function adOut(a, full) { const o = { id: a.id, kind: a.kind || 'ad', title: a.title, body: a.body || '', tag: a.tag || '', art: a.art || 'offer', image: a.image || '', cta: a.cta || '' }; if (full) Object.assign(o, { active: !!a.active, ends: a.ends || '', sort: a.sort, at: a.created_at }); return o; }
 function adsOf(cid, full) {
+  seedSlides(cid);
   const L = db.prepare('SELECT * FROM case_ad WHERE customer_id = ? ORDER BY sort, id DESC').all(cid);
   if (full) return L.map(a => adOut(a, true));
   const td = nowTs().slice(0, 10);
@@ -371,19 +389,19 @@ function send(res, code, o, h) { res.writeHead(code, Object.assign({ 'Content-Ty
 function readJson(req, max) {
   return new Promise((ok, no) => { const ch = []; let n = 0; req.on('data', c => { n += c.length; if (n > max) { no(Object.assign(new Error('كبير'), { status: 413 })); req.destroy(); } else ch.push(c); }); req.on('end', () => { try { ok(JSON.parse(Buffer.concat(ch).toString('utf8') || '{}')); } catch (e) { no(Object.assign(new Error('bad'), { status: 400 })); } }); req.on('error', no); });
 }
-function itemOut(r) { return { id: r.id, token: r.token, patient: r.patient, phone: r.phone, exam: r.exam, name: r.file_name, size: r.size, pages: r.pages, at: r.created_at, views: r.views, last_view: r.last_view, active: !!r.active, cached: !!r.cached && r.cache_until > Date.now(), cache_until: r.cache_until, wrapped: !!(r.wrap || r.wrap2), wrapped2: !!r.wrap2, kind: r.kind || 'pdf' }; }
+function itemOut(r) { return { id: r.id, token: r.token, patient: r.patient, phone: r.phone, exam: r.exam, name: r.file_name, size: r.size, pages: r.pages, at: r.created_at, views: r.views, last_view: r.last_view, active: !!r.active, cached: !!r.cached && r.cache_until > Date.now(), cache_until: r.cache_until, wrapped: !!(r.wrap || r.wrap2), wrapped2: !!r.wrap2, kind: r.kind || 'pdf', local: !r.cached }; }
 
 function page(title, body, css, js, manifestUrl) {
   return '<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover' + (css === 'v' ? ',maximum-scale=1,user-scalable=no' : '') + '"><meta name="robots" content="noindex,nofollow"><meta name="referrer" content="no-referrer"><meta name="theme-color" content="#0E9F9A">' +
     '<title>' + esc(title) + '</title><link rel="icon" href="/icons/favicon-32.png">' +
     (manifestUrl ? '<link rel="manifest" href="'+esc(manifestUrl)+'"><link rel="apple-touch-icon" href="'+esc(manifestUrl.replace('/manifest','/icon'))+'"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default">' : '') +
-    '<link rel="stylesheet" href="/fonts/fonts.css"><link rel="stylesheet" href="/cases.css?v=519"></head><body class="' + css + '">' + body + js + '</body></html>';
+    '<link rel="stylesheet" href="/fonts/fonts.css"><link rel="stylesheet" href="/cases.css?v=520"></head><body class="' + css + '">' + body + js + '</body></html>';
 }
 function html(res, code, s) { res.writeHead(code, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store', 'X-Frame-Options': 'DENY', 'Referrer-Policy': 'no-referrer' }); res.end(s); }
 
 /* ════════ public routes ════════ */
 async function handle(req, res, pathname) {
-  let m = /^\/k\/([A-Za-z0-9]{8})(\/(login|logout|list|qr|layout|live|case|relay|item|fixed|wa|ask|bookings|tickets|ticket-image|logo|views|theme|manifest|icon|push-key|push-subscribe|push-disable|push-test|dash|ads|slides-base|tickets-all|tickets-reset)(\/[A-Za-z0-9]{1,20})?(\/(stop|start|delete|wrap|done|toggle|up|down))?)?\/?$/.exec(pathname);
+  let m = /^\/k\/([A-Za-z0-9]{8})(\/(login|logout|list|qr|layout|live|case|relay|item|fixed|wa|ask|bookings|tickets|ticket-image|logo|views|theme|manifest|icon|push-key|push-subscribe|push-disable|push-test|dash|ads|slides-base|tickets-all|tickets-reset|ads-order|slides-reset|slide-ms)(\/[A-Za-z0-9]{1,20})?(\/(stop|start|delete|wrap|done|toggle|up|down|uncache))?)?\/?$/.exec(pathname);
   if (m) return centerRoute(req, res, m);
   m = /^\/h\/([A-Za-z0-9]{8})(\/(seen|find|ask|book|complaint|report-request|manifest|icon|push-key|push-subscribe|push-disable|push-test))?\/?$/.exec(pathname);
   if (m) return findRoute(req, res, m[1], m[3] || '');
@@ -410,7 +428,7 @@ async function centerRoute(req, res, m) {
     if (req.method !== 'GET') return false;
     const CD = { code, center: site.center_name || '', logo: site.logo || '', theme: site.theme || 'a', layout: site.dashboard_layout === 'violet' ? 'violet' : 'teal', auth: me, cacheDays: CACHE_DAYS, maxMb: MAX_MB, pub: me ? pubOf(site) : '', fixedOn: !!site.fixed_on, wa: me ? (site.wa || '') : '', waDefault: me && !site.wa ? waFor(cid0(site), '') : '' };
     if (me) db.prepare('UPDATE case_site SET last_seen = ? WHERE customer_id = ?').run(nowTs(), site.customer_id);
-    html(res, 200, page('QR Patient — ' + (site.center_name || ''), '<div id="app"></div>', 'k', '<script>window.CD=' + json(CD) + '</script><script src="/vendor/qrcode.js"></script><script src="/cases-kit.js?v=519"></script><script src="/cases-dicom.js?v=519"></script><script src="/cases-pacs.js?v=519"></script><script src="/cases-ads.js?v=519"></script><script src="/cases-center.js?v=519"></script><script src="/cases-push.js?v=519"></script>', '/k/'+code+'/manifest'));
+    html(res, 200, page('QR Patient — ' + (site.center_name || ''), '<div id="app"></div>', 'k', '<script>window.CD=' + json(CD) + '</script><script src="/vendor/qrcode.js"></script><script src="/cases-kit.js?v=520"></script><script src="/cases-dicom.js?v=520"></script><script src="/cases-pacs.js?v=520"></script><script src="/cases-ads.js?v=520"></script><script src="/cases-center.js?v=520"></script><script src="/cases-push.js?v=520"></script>', '/k/'+code+'/manifest'));
     return true;
   }
   if (sub === 'manifest' && req.method === 'GET') { respondManifest(res,site,'k');return true; }
@@ -448,7 +466,23 @@ async function centerRoute(req, res, m) {
   if (sub === 'qr' && req.method === 'GET') { send(res, 200, { qr: qrStatsOf(cid) }); return true; }
   if (sub === 'dash' && req.method === 'GET') { send(res, 200, { dash: dashOf(cid) }); return true; }
   /* 5.15 · ads shown in the patient page's slider */
-  if (sub === 'ads' && req.method === 'GET' && !arg) { const st = db.prepare('SELECT slides_base FROM case_site WHERE customer_id = ?').get(cid) || {}; send(res, 200, { ads: adsOf(cid, true), base: st.slides_base !== 0 }); return true; }
+  if (sub === 'ads' && req.method === 'GET' && !arg) { const st = db.prepare('SELECT slides_base, slide_ms FROM case_site WHERE customer_id = ?').get(cid) || {}; send(res, 200, { ads: adsOf(cid, true), base: st.slides_base !== 0, ms: st.slide_ms || 5200 }); return true; }
+  if (sub === 'ads-order' && req.method === 'POST') {
+    let b = {}; try { b = await readJson(req, 4000); } catch (e) {}
+    const ids = Array.isArray(b.ids) ? b.ids.map(Number).filter(Number.isSafeInteger).slice(0, 60) : [];
+    const up = db.prepare('UPDATE case_ad SET sort = ? WHERE id = ? AND customer_id = ?'); ids.forEach((id, k) => up.run(k * 10, id, cid));
+    send(res, 200, { ok: true, ads: adsOf(cid, true) }); return true;
+  }
+  if (sub === 'slides-reset' && req.method === 'POST') {
+    db.prepare("DELETE FROM case_ad WHERE customer_id = ? AND kind = 'base'").run(cid); seedSlides(cid, true);
+    const L = db.prepare('SELECT id, kind FROM case_ad WHERE customer_id = ? ORDER BY sort, id DESC').all(cid), up = db.prepare('UPDATE case_ad SET sort = ? WHERE id = ?'); L.forEach((r, k) => up.run(k * 10, r.id));
+    send(res, 200, { ok: true, ads: adsOf(cid, true) }); return true;
+  }
+  if (sub === 'slide-ms' && req.method === 'POST') {
+    let b = {}; try { b = await readJson(req, 200); } catch (e) {}
+    const ms = Math.max(3000, Math.min(12000, Math.round(Number(b.ms) || 5200))); db.prepare('UPDATE case_site SET slide_ms = ? WHERE customer_id = ?').run(ms, cid);
+    send(res, 200, { ok: true, ms }); return true;
+  }
   if (sub === 'slides-base' && req.method === 'POST') { let b = {}; try { b = await readJson(req, 200); } catch (e) {} db.prepare('UPDATE case_site SET slides_base = ? WHERE customer_id = ?').run(b.on ? 1 : 0, cid); send(res, 200, { ok: true, base: !!b.on }); return true; }
   /* 5.16 · complaints: password-protected delete / reset, and the full history for the analysis report */
   if (sub === 'tickets-all' && req.method === 'GET') {
@@ -478,8 +512,9 @@ async function centerRoute(req, res, m) {
       send(res, 200, { ok: true, ads: adsOf(cid, true) }); return true;
     }
     let b = {}; try { b = await readJson(req, 700000); } catch (e) { send(res, 413, { message: 'الصورة كبيرة — اختار صورة أصغر' }); return true; }
-    const kind = b.kind === 'slide' ? 'slide' : 'ad';
-    const title = clean(b.title, 70); if (!title && kind === 'ad') { send(res, 400, { message: 'اكتب عنوان الإعلان' }); return true; }
+    let kind = b.kind === 'slide' ? 'slide' : b.kind === 'base' ? 'base' : 'ad';
+    if (b.id) { const ex = db.prepare('SELECT kind FROM case_ad WHERE id = ? AND customer_id = ?').get(Number(b.id), cid); if (ex) kind = ex.kind || 'ad'; }
+    const title = clean(b.title, 70); if (!title && kind !== 'slide') { send(res, 400, { message: 'اكتب عنوان الشريحة' }); return true; }
     const img = String(b.image || '');
     if (img && !/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(img)) { send(res, 400, { message: 'الملف ده مش صورة' }); return true; }
     if (kind === 'slide' && !img) { send(res, 400, { message: 'اختار صورة للشريحة' }); return true; }
@@ -489,7 +524,7 @@ async function centerRoute(req, res, m) {
       const r = db.prepare('UPDATE case_ad SET title = ?, body = ?, tag = ?, art = ?, image = ?, cta = ?, active = ?, ends = ? WHERE id = ? AND customer_id = ?').run(...row, Number(b.id), cid);
       if (!r.changes) { send(res, 404, { message: 'الإعلان مش موجود' }); return true; }
     } else {
-      if ((db.prepare('SELECT COUNT(*) n FROM case_ad WHERE customer_id = ? AND kind = ?').get(cid, kind) || {}).n >= 12) { send(res, 400, { message: 'وصلت لأقصى عدد (12) — امسح واحد قديم الأول' }); return true; }
+      if ((db.prepare('SELECT COUNT(*) n FROM case_ad WHERE customer_id = ? AND kind = ?').get(cid, kind) || {}).n >= (kind === 'base' ? 8 : 12)) { send(res, 400, { message: 'وصلت لأقصى عدد (12) — امسح واحد قديم الأول' }); return true; }
       db.prepare('INSERT INTO case_ad (customer_id, title, body, tag, art, image, cta, active, ends, sort, created_at, kind) VALUES (?,?,?,?,?,?,?,?,?,-1,?,?)').run(cid, ...row, nowTs(), kind);
     }
     send(res, 200, { ok: true, ads: adsOf(cid, true) }); return true;
@@ -516,16 +551,18 @@ async function centerRoute(req, res, m) {
   if (sub === 'case' && req.method === 'POST' && !arg) {      /* upload: body = the encrypted file; meta in X-Meta (base64url JSON) */
     let meta = {}; try { meta = JSON.parse(Buffer.from(String(req.headers['x-meta'] || ''), 'base64url').toString('utf8')) || {}; } catch (e) {}
     const patient = clean(meta.patient, 80); if (!patient) { req.resume(); send(res, 400, { message: 'اكتب اسم المريض' }); return true; }
-    const len = Number(req.headers['content-length'] || 0); if (!(len > 28) || len > MAX_MB * 1048576) { req.resume(); send(res, 413, { message: 'الملف لازم يكون أقل من ' + MAX_MB + ' ميجا' }); return true; }
+    const local = meta.local === true && meta.kind === 'dicom';   /* 5.20 · PACS cases never leave the center's computer */
+    const len = Number(req.headers['content-length'] || 0); if (!local && (!(len > 28) || len > MAX_MB * 1048576)) { req.resume(); send(res, 413, { message: 'الملف لازم يكون أقل من ' + MAX_MB + ' ميجا' }); return true; }
     let token; do { token = rnd(12); } while (db.prepare('SELECT 1 FROM case_item WHERE token = ?').get(token));
-    const keep = cacheBytes() + len < CACHE_CAP, tmp = fileOf(token) + '.part';
+    const keep = !local && cacheBytes() + len < CACHE_CAP, tmp = fileOf(token) + '.part';
     const done = n => {
       const wj = w => w && typeof w === 'object' && w.s && w.i && w.k ? JSON.stringify({ s: clean(w.s, 40), i: clean(w.i, 40), k: clean(w.k, 120) }) : null;
       const wrap = wj(meta.wrap), wrap2 = wj(meta.wrap2);
       const r = db.prepare('INSERT INTO case_item (customer_id, token, patient, phone, exam, file_name, size, pages, created_at, cache_until, cached, phash, wrap, wrap2, kind) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)')
-        .run(cid, token, patient, clean(meta.phone, 20), clean(meta.exam, 80), clean(meta.name, 120), n, Math.max(0, Math.min(5000, Number(meta.pages) || 0)) || null, nowTs(), Date.now() + CACHE_DAYS * 864e5, keep ? 1 : 0, phashOf(meta.phone), wrap, wrap2, meta.kind === 'dicom' ? 'dicom' : 'pdf');
+        .run(cid, token, patient, clean(meta.phone, 20), clean(meta.exam, 80), clean(meta.name, 120), n, Math.max(0, Math.min(5000, Number(meta.pages) || 0)) || null, nowTs(), local ? 0 : Date.now() + CACHE_DAYS * 864e5, keep ? 1 : 0, phashOf(meta.phone), wrap, wrap2, meta.kind === 'dicom' ? 'dicom' : 'pdf');
       send(res, 200, { ok: true, item: itemOut(db.prepare('SELECT * FROM case_item WHERE id = ?').get(Number(r.lastInsertRowid))) });
     };
+    if (local) { req.resume(); done(Math.max(0, Math.min(MAX_MB * 1048576, Math.round(Number(meta.size) || 0)))); return true; }
     if (!keep) { let n = 0; req.on('data', c => { n += c.length; }); req.on('end', () => done(n)); return true; }
     const out = fs.createWriteStream(tmp); let n = 0, bad = false;
     req.on('data', c => { n += c.length; if (n > MAX_MB * 1048576) { bad = true; req.destroy(); } });
@@ -543,6 +580,7 @@ async function centerRoute(req, res, m) {
       db.prepare('UPDATE case_item SET ' + (two ? 'wrap2' : 'wrap') + ' = ?, phash = COALESCE(phash, ?) WHERE id = ?').run(JSON.stringify({ s: clean(w.s, 40), i: clean(w.i, 40), k: clean(w.k, 120) }), phashOf(it.phone), it.id);
       send(res, 200, { ok: true }); return true;
     }
+    if (act === 'uncache') { try { fs.unlinkSync(fileOf(it.token)); } catch (e) {} db.prepare('UPDATE case_item SET cached = 0, cache_until = 0 WHERE id = ?').run(it.id); send(res, 200, { ok: true, item: itemOut(db.prepare('SELECT * FROM case_item WHERE id = ?').get(it.id)) }); return true; }
     if (act === 'delete') { try { fs.unlinkSync(fileOf(it.token)); } catch (e) {} db.prepare('DELETE FROM case_item WHERE id = ?').run(it.id); db.prepare('DELETE FROM case_view WHERE token = ?').run(it.token); }
     else db.prepare('UPDATE case_item SET active = ? WHERE id = ?').run(act === 'start' ? 1 : 0, it.id);
     send(res, 200, { ok: true }); return true;
@@ -695,7 +733,7 @@ async function viewRoute(req, res, token, file) {
   if (!file) {
     if (!it) { if (limited('vx:' + ip, 40, 600e3)) { send(res, 429, { message: 'حاولت كتير' }); return true; } }
     const CD = it ? { token, kind: it.kind || 'pdf', center: it.center_name || '', logo: it.site_logo || '', theme: it.site_theme || 'a', patient: it.patient, exam: it.exam || '', at: it.created_at, pages: it.pages || 0, size: it.size, name: it.file_name || '', active: !!(it.active && it.site_on), ready: !!(it.cached && it.cache_until > Date.now()) || online(it.customer_id), wa: waFor(it.customer_id, it.site_wa), pub: it.site_pub || '' } : { missing: true };
-    html(res, it ? 200 : 404, page(it ? 'نتيجة الفحص — ' + (it.center_name || '') : 'الحالة مش موجودة', '<div id="app"></div>', 'v', '<script>window.CD=' + json(CD) + '</script>' + (it && it.kind === 'dicom' ? '<script src="/cases-pacs.js?v=519"></script>' : '<script src="/vendor/pdfjs/pdf.min.js"></script>') + '<script src="/cases-skin.js?v=519"></script><script src="/cases-view.js?v=519"></script>'));
+    html(res, it ? 200 : 404, page(it ? 'نتيجة الفحص — ' + (it.center_name || '') : 'الحالة مش موجودة', '<div id="app"></div>', 'v', '<script>window.CD=' + json(CD) + '</script>' + (it && it.kind === 'dicom' ? '<script src="/cases-pacs.js?v=520"></script>' : '<script src="/vendor/pdfjs/pdf.min.js"></script>') + '<script src="/cases-skin.js?v=520"></script><script src="/cases-view.js?v=520"></script>'));
     return true;
   }
   if (!it) { send(res, 404, { message: 'الحالة مش موجودة' }); return true; }
@@ -862,8 +900,8 @@ async function findRoute(req, res, pub, sub) {
   if (!find) {
     if (req.method !== 'GET') return false;
     if (!site) { if (limited('hx:' + ip, 30, 600e3)) { send(res, 429, { message: 'حاولت كتير' }); return true; } }
-    const CD = site ? { pub, center: site.center_name || '', logo: site.logo || '', theme: site.theme || 'a', on: !!site.fixed_on, wa: waFor(site.customer_id, site.wa), ads: adsOf(site.customer_id), base: site.slides_base !== 0 } : { missing: true };
-    html(res, site ? 200 : 404, page(site ? 'نتيجتك — ' + (site.center_name || '') : 'اللينك مش شغال', '<div id="app"></div>', 'v', '<script>window.CD=' + json(CD) + '</script><script src="/cases-kit.js?v=519"></script><script src="/cases-skin.js?v=519"></script><script src="/cases-ads.js?v=519"></script><script src="/cases-find.js?v=519"></script><script src="/cases-push.js?v=519"></script>',site?'/h/'+pub+'/manifest':null));
+    const CD = site ? { pub, center: site.center_name || '', logo: site.logo || '', theme: site.theme || 'a', on: !!site.fixed_on, wa: waFor(site.customer_id, site.wa), ads: adsOf(site.customer_id), base: site.slides_base !== 0, slideMs: site.slide_ms || 5200, seeded: true } : { missing: true };
+    html(res, site ? 200 : 404, page(site ? 'نتيجتك — ' + (site.center_name || '') : 'اللينك مش شغال', '<div id="app"></div>', 'v', '<script>window.CD=' + json(CD) + '</script><script src="/cases-kit.js?v=520"></script><script src="/cases-skin.js?v=520"></script><script src="/cases-ads.js?v=520"></script><script src="/cases-find.js?v=520"></script><script src="/cases-push.js?v=520"></script>',site?'/h/'+pub+'/manifest':null));
     return true;
   }
   if (req.method !== 'POST') return false;

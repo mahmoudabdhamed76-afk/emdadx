@@ -19,19 +19,22 @@
       { art: 'phone', tag: 'نتيجتك معاك', title: 'نتيجتك على موبايلك', body: 'التقرير وصور الأشعة معاك في أي وقت', cta: 'results' }
     ];
     /* 5.15 · the center's own ads come right after the welcome slide */
-    var all = C.ads || [], ads = all.filter(function (a) { return a.kind !== 'slide'; }).slice(0, 6).map(function (a) { a.ad = true; return a; });
-    var pics = all.filter(function (a) { return a.kind === 'slide' && a.image; }).slice(0, 10).map(function (a) { a.pic = true; a.tag = ''; a.cta = ''; return a; });
-    var L = [base[0]].concat(ads, pics, C.base === false ? [] : base.slice(1)), i;
+    var all = C.ads || [], L, i;
+    all.forEach(function (a) { if (a.kind === 'ad' || !a.kind) a.ad = true; if (a.kind === 'slide') { a.pic = true; a.tag = ''; a.cta = ''; } });
+    if (all.some(function (a) { return a.kind === 'base'; })) L = all.filter(function (a) { return a.kind !== 'slide' || a.image; });   /* 5.20 · the center controls every slide and their order */
+    else L = [base[0]].concat(all.filter(function (a) { return a.kind !== 'slide'; }).slice(0, 6), all.filter(function (a) { return a.kind === 'slide' && a.image; }).slice(0, 10), C.base === false ? [] : base.slice(1));
+    if (!L.length) L = [base[0]];
     var h = '<div class="pvs" id="pvs" role="region" aria-roledescription="carousel" aria-label="عن المركز"><div class="pvs-tr" id="pvsTr">';
     for (i = 0; i < L.length; i++) h += Z.slide(L[i], !i, !i);
     h += '</div><div class="pvs-dots" role="tablist">';
-    for (i = 0; i < L.length; i++) h += '<button type="button" role="tab" aria-label="شريحة ' + (i + 1) + '"' + (i ? '' : ' class="on" aria-selected="true"') + '><i></i></button>';
+    for (i = 0; i < L.length; i++) h += '<button type="button" role="tab" aria-label="شريحة ' + (i + 1) + '"' + (i ? '' : ' class="on" aria-selected="true"') + '><i style="animation-duration:' + (C.slideMs || 5200) + 'ms"></i></button>';
+    if (L.length < 2) h = h.replace('class="pvs-dots"', 'class="pvs-dots" hidden');
     return h + '</div></div>';
   }
   function pvsWire() {
     var box = $('pvs'), tr = $('pvsTr'); if (!box || !tr) return;
     var S = [].slice.call(tr.children), D = [].slice.call(box.querySelectorAll('.pvs-dots button')), n = S.length, cur = 0, timer = 0,
-      still = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches, WAIT = 5200;
+      still = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches || S.length < 2, WAIT = Math.max(3000, Math.min(12000, C.slideMs || 5200));
     function go(i) {
       cur = (i + n) % n; tr.style.transition = ''; tr.style.transform = 'translateX(' + (cur * 100) + '%)';
       S.forEach(function (s, k) { s.classList.toggle('on', k === cur); if (k === cur) s.removeAttribute('aria-hidden'); else s.setAttribute('aria-hidden', 'true'); });
