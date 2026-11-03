@@ -196,7 +196,7 @@
     }
     ui.page = selected;
     /* Explicit show/hide to prevent blank mobile Safari panels after tapping a section. */
-    var panes = document.querySelectorAll('[data-qrd-page]'), visible = null;
+    var panes = document.querySelectorAll('section.qrd-page[data-qrd-page]'), visible = null;
     [].forEach.call(panes, function (node) {
       var active = node.dataset.qrdPage === selected;
       node.hidden = !active;
@@ -213,7 +213,7 @@
       a.classList.toggle('on', active);
       if (active) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
     });
-    document.body.setAttribute('data-qrd-page', selected);
+    document.body.setAttribute('data-qrd-page', selected); if (typeof markTab === 'function') markTab();
     if (push && location.hash !== '#page-' + selected) {
       try { history.pushState({ qrdPage: selected }, '', '#page-' + selected); } catch (e) {}
     }
@@ -305,6 +305,60 @@
       b.setAttribute('aria-pressed', String(ui.layout === x[1]));
     });
   }
+  /* ════ 5.03 · design D «تطبيق» on phones: KPI cards, today's scans by hour, quick actions, bottom tab bar ════ */
+  var DSV={"home": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z\"/></svg>", "list": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01\"/></svg>", "cal": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"5\" width=\"18\" height=\"16\" rx=\"3\"/><path d=\"M3 10h18M8 3v4M16 3v4\"/></svg>", "up": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 19V7M6 12l6-6 6 6\"/><path d=\"M4 21h16\"/></svg>", "more": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"5\" cy=\"12\" r=\"1.6\"/><circle cx=\"12\" cy=\"12\" r=\"1.6\"/><circle cx=\"19\" cy=\"12\" r=\"1.6\"/></svg>", "eye": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z\"/><circle cx=\"12\" cy=\"12\" r=\"3\"/></svg>", "file": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z\"/><path d=\"M14 3v5h5M9 13h6M9 17h4\"/></svg>", "lung": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 4v8M12 12c-2 0-3 1-3 3v3c0 1.7-1.3 3-3 3s-3-1.3-3-3v-4c0-4 3-8 6-8M12 12c2 0 3 1 3 3v3c0 1.7 1.3 3 3 3s3-1.3 3-3v-4c0-4-3-8-6-8\"/></svg>", "qr": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"7\" height=\"7\" rx=\"1.5\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"7\" rx=\"1.5\"/><rect x=\"3\" y=\"14\" width=\"7\" height=\"7\" rx=\"1.5\"/><path d=\"M14 14h3v3h-3zM20 14v.01M14 20h.01M17 20h4v-3\"/></svg>"};
+  function dSvg(n) { return DSV[n] || ''; }
+  function setupMobileD() {
+    document.body.classList.add('qrd-d');
+    var dash = $('qrd-body-dashboard');
+    if (dash && !$('qrdD')) {
+      var d = document.createElement('section'); d.id = 'qrdD'; d.className = 'qrdd';
+      d.innerHTML = '<div class="qrdd-kp"><div class="qrdd-k1"><small>فتح باركود المركز النهارده</small><b id="dK1">0</b><em id="dK1t">—</em><svg class="qrdd-sp" viewBox="0 0 200 44" preserveAspectRatio="none"><path id="dSpA" fill="rgba(255,255,255,.22)"/><path id="dSpL" fill="none" stroke="#fff" stroke-width="2.4"/></svg></div>' +
+        '<div class="qrdd-k2" style="--b:#ECFDF5;--c:#059669">' + dSvg('eye') + '<b id="dK2">0</b><small>مرة اتفتحت نتيجة</small></div>' +
+        '<div class="qrdd-k2" style="--b:#FFF7ED;--c:#EA580C">' + dSvg('cal') + '<b id="dK3">0</b><small>طلبات جديدة</small></div></div>' +
+        '<div class="qrdd-ch"><div class="qrdd-t"><b>فتح الباركود على مدار اليوم</b><small id="dChT">النهارده</small></div><div class="qrdd-bars" id="dBars"></div><div class="qrdd-bx"><span>12ص</span><span>6ص</span><span>12م</span><span>6م</span><span>11م</span></div></div>' +
+        '<div class="qrdd-qa"><button type="button" data-dq="pdf" style="--c:#E11D48">' + dSvg('file') + 'ارفع PDF</button><button type="button" data-dq="dicom" style="--c:#4F46E5">' + dSvg('lung') + 'DICOM</button><button type="button" data-dq="qr" style="--c:var(--qrd-a,#0F766E)">' + dSvg('qr') + 'الباركود الثابت</button></div>';
+      dash.insertBefore(d, dash.firstChild);
+      d.addEventListener('click', function (e) {
+        var b = e.target.closest('[data-dq]'); if (!b) return; var k = b.dataset.dq;
+        if (k === 'qr') return navigatePage('qr', true);
+        navigatePage('upload', true); setTimeout(function () { if (k === 'pdf') { var f = $('fi'); if (f) f.click(); } else dicomPick(); }, 200);
+      });
+    }
+    if (!$('qrdTab')) {
+      var tabs = [['dashboard', 'home', 'الرئيسية'], ['cases', 'list', 'الحالات'], ['bookings', 'cal', 'الطلبات'], ['upload', 'up', 'رفع'], ['more', 'more', 'المزيد']];
+      document.body.insertAdjacentHTML('beforeend', '<nav class="qrdd-tab" id="qrdTab" aria-label="التنقل">' + tabs.map(function (t) {
+        return '<button type="button" data-dt="' + t[0] + '">' + dSvg(t[1]) + '<span>' + t[2] + '</span>' + (t[0] === 'bookings' ? '<em id="dTabN" hidden>0</em>' : '') + '</button>'; }).join('') + '</nav>' +
+        '<div class="qrdd-sheet" id="qrdSheet" hidden><div class="qrdd-sh"><i></i><b>كل الأقسام</b><div class="qrdd-sl" id="qrdSheetL"></div></div></div>');
+      var nav = document.querySelectorAll('.qrd-nav-list a[data-page]'), L = $('qrdSheetL');
+      [].forEach.call(nav, function (a) { L.insertAdjacentHTML('beforeend', '<button type="button" data-sp="' + a.dataset.page + '">' + a.innerHTML + '</button>'); });
+      var sheet = $('qrdSheet');
+      sheet.onclick = function (e) { var b = e.target.closest('[data-sp]'); if (b) { sheet.hidden = true; navigatePage(b.dataset.sp, true); } else if (e.target === sheet) sheet.hidden = true; };
+      $('qrdTab').onclick = function (e) { var b = e.target.closest('[data-dt]'); if (!b) return; if (b.dataset.dt === 'more') { sheet.hidden = false; return; } navigatePage(b.dataset.dt, true); };
+    }
+    markTab();
+  }
+  function markTab() {
+    var p = document.body.getAttribute('data-qrd-page') || ui.page || 'dashboard', main = ['dashboard', 'cases', 'bookings', 'upload'];
+    [].forEach.call(document.querySelectorAll('#qrdTab [data-dt]'), function (b) { b.classList.toggle('on', b.dataset.dt === p || (b.dataset.dt === 'more' && main.indexOf(p) < 0)); });
+  }
+  function dHome() {
+    if (!$('qrdD')) return;
+    var q = ui.qr || {}, rec = q.recent || [], td = ymd(), y = ymd(new Date(Date.now() - 864e5)), hrs = new Array(24).fill(0), yc = 0;
+    rec.forEach(function (r) { var at = String(r.at || ''); if (r.kind !== 'fixed') return; if (at.slice(0, 10) === td) hrs[+at.slice(11, 13) || 0]++; else if (at.slice(0, 10) === y) yc++; });
+    var today = q.today || 0, views = 0; ui.list.forEach(function (r) { views += r.views || 0; });
+    var reqs = (ui.bookings || []).length + (ui.tickets || []).length + (ui.asks || []).length;
+    var set = function (id, v) { var e = $(id); if (e && e.dataset.v !== String(v)) { e.dataset.v = v; count(e, v); } };
+    set('dK1', today); set('dK2', views); set('dK3', reqs);
+    var t = $('dK1t'); if (t) t.textContent = yc ? (today >= yc ? '▲ ' : '▼ ') + Math.abs(Math.round((today - yc) / yc * 100)) + '% عن امبارح' : (q.total ? 'الإجمالي ' + n0(q.total) + ' مرة' : 'لسه مفيش فتح');
+    var mx = Math.max.apply(null, hrs.concat([1])), now = new Date().getHours();
+    $('dBars').innerHTML = hrs.map(function (n, h) { return '<i class="' + (h === now ? 'h' : '') + (n ? ' v' : '') + '" style="height:' + Math.max(6, Math.round(n / mx * 100)) + '%" title="' + h + ':00 — ' + n + '"></i>'; }).join('');
+    var pts = [], acc = 0; hrs.forEach(function (n, h) { acc += n; pts.push([h / 23 * 200, 40 - (acc / Math.max(1, today || acc)) * 34]); });
+    var dL = 'M' + pts.map(function (p) { return p[0].toFixed(1) + ' ' + p[1].toFixed(1); }).join(' L');
+    $('dSpL').setAttribute('d', dL); $('dSpA').setAttribute('d', dL + ' L200 44 L0 44Z');
+    var tn = $('dTabN'); if (tn) { tn.textContent = reqs; tn.hidden = !reqs; }
+    [].forEach.call(document.querySelectorAll('#qrdSheetL [data-count]'), function (em) { var src = document.querySelector('.qrd-nav-list [data-count="' + em.dataset.count + '"]'); if (src) { em.textContent = src.textContent; em.hidden = src.hidden || src.textContent === '0'; } });
+  }
   function setupDashboardDecor() {
     document.body.classList.add('qrd-center');
     if (isIOSBrowser()) {
@@ -353,6 +407,7 @@
       if (rec) rail.insertBefore(rec, fixed);
     }
     buildDashboardPages();
+    setupMobileD();
   }
 
   /* ════ the page ════ */
@@ -411,6 +466,7 @@
   }
   function count(el, to) { var t0 = performance.now(); (function f(t) { var k = Math.min(1, (t - t0) / 900), e = 1 - Math.pow(1 - k, 3); el.textContent = n0(to * e); if (k < 1) requestAnimationFrame(f); })(t0); }
   function stats() {
+    setTimeout(function () { try { dHome(); } catch (e) {} }, 0);
     var td = ymd(), mo = td.slice(0, 7), a = 0, b = 0, v = 0;
     ui.list.forEach(function (r) { var d = String(r.at || '').slice(0, 10); if (d === td) a++; if (d.slice(0, 7) === mo) b++; v += r.views || 0; });
     [[$('s1'), a], [$('s2'), b], [$('s3'), v], [$('s4'), Object.keys(ui.local).length]].forEach(function (x) { if (x[0] && x[0].dataset.v !== String(x[1])) { x[0].dataset.v = x[1]; count(x[0], x[1]); } });
@@ -971,7 +1027,7 @@
     var es = new EventSource(BASE + '/live'); ui.es = es;
     es.addEventListener('hello', function () {
       setLive(true);
-      api('GET', 'qr').then(function (x) { ui.qr = x.qr || ui.qr; qrPanel(); }).catch(function () {});
+      api('GET', 'qr').then(function (x) { ui.qr = x.qr || ui.qr; qrPanel(); dHome(); }).catch(function () {});
     });
     es.onerror = function () { setLive(false); };
     es.addEventListener('need', function (ev) {
@@ -983,7 +1039,7 @@
     });
     es.addEventListener('qr-open', function (ev) {
       var m = {}; try { m = JSON.parse(ev.data); } catch (e) { return; }
-      ui.qr = m.qr || ui.qr; qrPanel();
+      ui.qr = m.qr || ui.qr; qrPanel(); dHome();
     });
     es.addEventListener('ticket', function (ev) {
       var m={};try{m=JSON.parse(ev.data);}catch(e){return;}
@@ -1028,7 +1084,7 @@
     if (ui.prefill && ui.page === 'upload') {
       toast('📂 جهزنا بيانات المريض — اختار ملف PDF من زر رفع الملفات');
     }
-    Promise.all([api('GET', 'list'), localAll()]).then(function (a) { ui.list = a[0].list || []; ui.local = a[1] || {}; ui.asks = a[0].asks || []; ui.bookings = a[0].bookings || []; ui.tickets = a[0].tickets || []; ui.qr = a[0].qr || ui.qr; ui.recent = a[0].recent || []; qrPanel(); bookings(); asks(); serviceTickets(); recent(); table(); stats(); disk(); backfill(); }).catch(function (e) {
+    Promise.all([api('GET', 'list'), localAll()]).then(function (a) { ui.list = a[0].list || []; ui.local = a[1] || {}; ui.asks = a[0].asks || []; ui.bookings = a[0].bookings || []; ui.tickets = a[0].tickets || []; ui.qr = a[0].qr || ui.qr; ui.recent = a[0].recent || []; qrPanel(); bookings(); asks(); serviceTickets(); recent(); table(); stats(); disk(); backfill(); dHome(); }).catch(function (e) {
       var message='تعذّر تحميل بيانات القسم. جرّب تحديث الصفحة أو اتأكد من اتصال الإنترنت.';
       ['bookings','asks','complaints','reportRequests'].forEach(function (id) {
         var box=$(id); if (box) box.innerHTML='<div class="qrd-data-error" role="alert">⚠️ '+message+'</div>';

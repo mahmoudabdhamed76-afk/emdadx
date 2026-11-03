@@ -1675,3 +1675,120 @@ body.qrd-center #casePushMsg{
 @media(prefers-reduced-motion:reduce){
   .pv3-radiology-copy .pv3-slide-in{animation:none!important;filter:none!important}
 }
+
+/* ════════════════ 5.03 · patient page — design D «تطبيق» (uses the center's palette) ════════════════ */
+.tx .v > .w.pv2-page.pvd{padding:0 0 calc(110px + env(safe-area-inset-bottom,0px));max-width:560px}
+.pvd .pvd-hd{position:relative;overflow:hidden;color:#fff;padding:calc(18px + env(safe-area-inset-top,0px)) 20px 74px;border-radius:0 0 36px 36px;background:radial-gradient(120% 90% at 100% 0%,var(--pp2),var(--pp) 48%,color-mix(in srgb,var(--pp) 55%,#061317));box-shadow:0 24px 50px -34px var(--pp)}
+.pvd .pvd-hd::after{content:'';position:absolute;inset:0;background:radial-gradient(circle at 12% 112%,rgba(255,255,255,.18),transparent 42%),radial-gradient(circle at 92% -10%,rgba(255,255,255,.14),transparent 36%);pointer-events:none}
+.pvd .pvd-r1{position:relative;z-index:1;display:flex;align-items:center;gap:12px}
+.pvd .pvd-r1 .tlg{width:50px;height:50px;border-radius:16px;background:#fff;padding:4px;flex:none;display:grid;place-items:center;overflow:hidden;box-shadow:0 10px 22px -12px rgba(0,0,0,.5)}
+.pvd .pvd-r1 .tlg img{width:100%;height:100%;object-fit:contain}.pvd .pvd-r1 .tlg .ini{color:var(--pp);font-size:22px;font-weight:800}
+.pvd .pvd-r1 .tn{min-width:0}.pvd .pvd-r1 .tn b{display:block;font-size:16px;line-height:1.3;color:#fff}.pvd .pvd-r1 .tn small{font-size:12px;color:rgba(255,255,255,.78)}
+.pvd .pvd-bell{margin-inline-start:auto;flex:none;width:42px;height:42px;border-radius:14px;border:0;background:rgba(255,255,255,.16);color:#fff;padding:10px;position:relative}
+.pvd .pvd-bell svg{width:100%;height:100%;display:block}
+.pvd .pvd-bell::after{content:'';position:absolute;top:8px;left:9px;width:8px;height:8px;border-radius:50%;background:#FB7185;box-shadow:0 0 0 2px var(--pp)}
+.pvd .pvd-h1{position:relative;z-index:1;margin-top:22px;font-size:27px;font-weight:800;line-height:1.3;color:#fff;animation:up .55s .05s var(--ease) both}
+.pvd .pvd-h1 span{color:#fff;opacity:.92}
+.pvd .pvd-sub{position:relative;z-index:1;color:rgba(255,255,255,.82);font-size:13.5px;margin-top:4px}
+.pvd .pvd-ecg{position:absolute;left:0;right:0;bottom:22px;width:100%;height:38px;color:#fff;opacity:.4}
+.pvd .pvd-ecg path{stroke-dasharray:560;stroke-dashoffset:560;animation:draw 2.2s .3s ease-out forwards}
+.pvd .pvd-sr{position:relative;z-index:3;margin:-46px 16px 0;background:#fff;border-radius:24px;padding:9px;display:flex;gap:8px;box-shadow:0 22px 46px -24px rgba(11,34,40,.5);border:1px solid var(--pl)}
+.pvd .pvd-sr.shake{animation:pvdShake .4s}
+@keyframes pvdShake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.pvd .pvd-in{flex:1;min-width:0;height:54px;border-radius:17px;background:var(--pin);display:flex;align-items:center;gap:8px;padding:0 12px;border:2px solid transparent;transition:border-color .2s}
+.pvd .pvd-in:focus-within{border-color:var(--pp2);background:#fff}
+.pvd .pvd-ic{width:20px;height:20px;color:var(--pp);flex:none}.pvd .pvd-ic svg{width:100%;height:100%;display:block}
+.pvd .pvd-in input{flex:1;min-width:0;border:0;background:transparent;outline:0;font-size:17px;font-weight:700;color:var(--pi);text-align:right}
+.pvd .pvd-in input::placeholder{font-size:14px;font-weight:500;color:var(--pm)}
+.pvd .pvd-go{flex:none;width:54px;height:54px;border-radius:17px;border:0;background:var(--pbtn);color:#fff;padding:15px;box-shadow:0 12px 22px -12px var(--pp)}
+.pvd .pvd-go svg{width:100%;height:100%;display:block}
+.pvd .pvd-sec{margin:24px 18px 10px!important;display:flex;align-items:baseline;justify-content:space-between}
+.pvd .pvd-sec h2{font-size:18px!important;margin:0!important}.pvd .pvd-sec small{color:var(--pp)!important;font-weight:800}
+.pvd .patient-chooser{padding:0 16px;gap:10px!important}
+.pvd .patient-chooser button.pv2-service{min-height:150px!important;border-radius:24px!important;border:1px solid var(--pl)!important;background:#fff!important;box-shadow:0 14px 28px -22px rgba(11,34,40,.55)!important;overflow:hidden;padding:15px!important;text-align:right}
+.pvd .patient-chooser button.pv2-service::before{content:'';position:absolute;width:96px;height:96px;border-radius:50%;top:-34px;left:-34px;background:var(--pvc,var(--pp));opacity:.08;pointer-events:none}
+.pvd .pv2-service-icon{width:48px!important;height:48px!important;border-radius:16px!important;padding:11px;color:#fff;font-size:0!important;box-shadow:0 10px 20px -10px var(--pvc,var(--pp))}
+.pvd .pv2-service-icon svg{width:100%;height:100%;display:block}
+.pvd .pvd-c1{background:linear-gradient(135deg,#818CF8,#4F46E5)!important;--pvc:#4F46E5}
+.pvd .pvd-c2{background:linear-gradient(135deg,var(--pp2),var(--pp))!important;--pvc:var(--pp)}
+.pvd .pvd-c3{background:linear-gradient(135deg,#FB7185,#E11D48)!important;--pvc:#E11D48}
+.pvd .pvd-c4{background:linear-gradient(135deg,#FBBF24,#D97706)!important;--pvc:#D97706}
+.pvd #tab-booking{--pvc:#4F46E5}.pvd #tab-results{--pvc:var(--pp)}.pvd #tab-complaint{--pvc:#E11D48}.pvd #tab-report{--pvc:#D97706}
+.pvd .pv2-service b{font-size:15.5px!important;margin-top:8px}.pvd .pv2-service small{font-size:11.5px!important}
+.pvd .pv2-service.on{border-color:var(--pvc,var(--pp))!important;box-shadow:0 0 0 3px color-mix(in srgb,var(--pvc,var(--pp)) 18%,transparent),0 14px 28px -22px rgba(11,34,40,.55)!important}
+.pvd .pv2-service-go{background:color-mix(in srgb,var(--pvc,var(--pp)) 12%,#fff)!important;color:var(--pvc,var(--pp))!important}
+.pvd .pv2-service.on .pv2-service-go{background:var(--pvc,var(--pp))!important;color:#fff!important}
+.pvd .pv2-action-hint{margin:12px 18px 0!important}
+.pvd .pv3-notification-bar{margin:14px 16px 0!important;background:#0B2228!important;border:0!important;border-radius:22px!important;color:#fff}
+.pvd .pv3-notification-bar b{color:#fff!important}.pvd .pv3-notification-bar small{color:rgba(255,255,255,.7)!important}
+.pvd .pv3-notification-icon{background:rgba(255,255,255,.1)!important}
+.pvd .pv3-notification-button{background:var(--pp2)!important;color:#fff!important;border:0!important}
+.pvd .pv3-notification-bar.pvd-flash{animation:flash2 1.2s 2}
+.pvd .patient-panel{margin:16px 16px 0}
+.pvd .pv2-trust,.pvd .pv2-footer,.pvd .pv2-analytics-note{margin-left:16px;margin-right:16px}
+.pvd .pvd-tab{position:fixed;z-index:30;left:50%;transform:translateX(-50%);bottom:calc(12px + env(safe-area-inset-bottom,0px));width:min(528px,calc(100% - 24px));height:66px;border-radius:24px;background:rgba(255,255,255,.97);border:1px solid var(--pl);box-shadow:0 18px 40px -18px rgba(11,34,40,.45);display:flex;justify-content:space-around;align-items:center;padding:0 6px}
+.pvd .pvd-tab button{flex:1;border:0;background:transparent;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10.5px;font-weight:700;color:var(--pm);padding:6px 0}
+.pvd .pvd-tab button svg{width:22px;height:22px;display:block;transition:background .2s}
+.pvd .pvd-tab button.on{color:var(--pp)}
+.pvd .pvd-tab button.on svg{background:var(--pri);border-radius:12px;width:46px;height:30px;padding:4px 12px;box-sizing:border-box}
+@media (min-width:900px){.pvd .pvd-tab{bottom:18px}}
+.tx .v .pvd .pvd-tab button.on{background:transparent;padding:6px 0;margin:0;border-radius:0;font-size:10.5px;color:var(--pp)}
+.pvd .pv2-service small{display:block;white-space:normal}
+.pvd .patient-chooser button.pv2-service{padding-bottom:52px!important;min-height:0!important}
+
+/* ════════════════ 5.03 · QR page on phones — design D «تطبيق» ════════════════ */
+.qrdd,.qrdd-tab,.qrdd-sheet{display:none}
+@media (max-width:900px){
+  body.qrd-d .qrd-nav{display:none!important}
+  body.qrd-d{padding-bottom:calc(96px + env(safe-area-inset-bottom,0px))!important}
+  body.qrd-d .qrdd{display:block;margin:0 0 14px}
+  .qrdd-kp{display:flex;gap:10px;overflow-x:auto;scrollbar-width:none;margin:0 -14px;padding:2px 14px 6px;scroll-snap-type:x mandatory}
+  .qrdd-kp::-webkit-scrollbar{display:none}
+  .qrdd-k1{flex:none;width:224px;scroll-snap-align:start;border-radius:24px;padding:16px;color:#fff;background:linear-gradient(140deg,#4F46E5,#06B6D4);box-shadow:0 18px 34px -20px #4F46E5;position:relative;overflow:hidden}
+  body.qrd-teal .qrdd-k1{background:linear-gradient(140deg,#0F766E,#14B8A6);box-shadow:0 18px 34px -20px #0F766E}
+  .qrdd-k1 small{font-size:12px;opacity:.88;display:block}.qrdd-k1 b{display:block;font-size:44px;font-weight:800;line-height:1.05;margin-top:4px;font-variant-numeric:tabular-nums}
+  .qrdd-k1 em{font-style:normal;font-size:11.5px;font-weight:700;background:rgba(255,255,255,.2);border-radius:999px;padding:3px 9px;position:relative;z-index:1}
+  .qrdd-sp{position:absolute;bottom:0;left:0;width:100%;height:44px}
+  .qrdd-k2{flex:none;width:132px;scroll-snap-align:start;border-radius:24px;padding:14px;background:#fff;border:1px solid var(--line);box-shadow:0 12px 26px -22px rgba(0,0,0,.4)}
+  .qrdd-k2 svg{width:36px;height:36px;border-radius:12px;padding:8px;background:var(--b);color:var(--c);box-sizing:border-box;display:block}
+  .qrdd-k2 b{display:block;font-size:27px;font-weight:800;margin-top:10px;font-variant-numeric:tabular-nums}.qrdd-k2 small{font-size:11.5px;color:var(--mut)}
+  .qrdd-ch{margin-top:12px;background:#fff;border:1px solid var(--line);border-radius:24px;padding:16px;box-shadow:0 12px 26px -22px rgba(0,0,0,.4)}
+  .qrdd-t{display:flex;justify-content:space-between;align-items:baseline}.qrdd-t b{font-size:15px}.qrdd-t small{font-size:11.5px;color:var(--mut);font-weight:700}
+  .qrdd-bars{display:flex;align-items:flex-end;gap:3px;height:96px;margin-top:14px;direction:ltr}
+  .qrdd-bars i{flex:1;border-radius:5px 5px 2px 2px;background:#E0E7FF;transform-origin:bottom;animation:qrddUp .7s var(--ease) both}
+  body.qrd-teal .qrdd-bars i{background:#CCFBF1}
+  .qrdd-bars i.v{background:linear-gradient(#6366F1,#06B6D4)}body.qrd-teal .qrdd-bars i.v{background:linear-gradient(#14B8A6,#0F766E)}
+  .qrdd-bars i.h{box-shadow:0 0 0 2px #fff,0 0 0 3.5px #F59E0B}
+  @keyframes qrddUp{from{transform:scaleY(0)}}
+  .qrdd-bx{display:flex;justify-content:space-between;font-size:10px;color:var(--faint);margin-top:6px;direction:ltr}
+  .qrdd-qa{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+  .qrdd-qa button{border:1px solid var(--line);background:#fff;border-radius:18px;padding:12px 4px;display:flex;flex-direction:column;align-items:center;gap:6px;font-size:12px;font-weight:800;color:var(--ink);box-shadow:0 12px 26px -22px rgba(0,0,0,.4)}
+  .qrdd-qa svg{width:40px;height:40px;border-radius:13px;padding:9px;color:#fff;background:var(--c);box-sizing:border-box;display:block}
+  .qrdd-qa button:active{transform:scale(.96)}
+  body.qrd-d .qrdd-tab{display:flex;position:fixed;z-index:60;left:12px;right:12px;bottom:calc(10px + env(safe-area-inset-bottom,0px));height:66px;border-radius:24px;background:rgba(255,255,255,.97);border:1px solid var(--line);box-shadow:0 18px 40px -18px rgba(11,16,36,.45);justify-content:space-around;align-items:center;padding:0 4px}
+  .qrdd-tab button{position:relative;flex:1;border:0;background:transparent;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10.5px;font-weight:700;color:#7A8394;padding:6px 0}
+  .qrdd-tab svg{width:22px;height:22px;display:block}
+  .qrdd-tab button.on{color:#4F46E5}.qrdd-tab button.on svg{background:#E0E7FF;border-radius:12px;width:46px;height:30px;padding:4px 12px;box-sizing:border-box}
+  body.qrd-teal .qrdd-tab button.on{color:#0F766E}body.qrd-teal .qrdd-tab button.on svg{background:#CCFBF1}
+  .qrdd-tab em{position:absolute;top:0;left:calc(50% - 22px);font-style:normal;min-width:18px;height:18px;border-radius:9px;background:#F43F5E;color:#fff;font-size:10.5px;font-weight:800;display:grid;place-items:center;padding:0 4px;box-shadow:0 0 0 2px #fff}
+  .qrdd-tab em[hidden]{display:none}
+  body.qrd-d .qrdd-sheet:not([hidden]){display:flex;position:fixed;inset:0;z-index:70;background:rgba(11,16,36,.45);align-items:flex-end;animation:fd .2s}
+  .qrdd-sh{width:100%;max-height:78vh;overflow:auto;background:#fff;border-radius:28px 28px 0 0;padding:10px 16px calc(20px + env(safe-area-inset-bottom,0px));animation:qrddSh .35s var(--spring)}
+  @keyframes qrddSh{from{transform:translateY(40%)}}
+  .qrdd-sh > i{display:block;width:44px;height:5px;border-radius:3px;background:#E2E8F0;margin:0 auto 12px}
+  .qrdd-sh > b{display:block;font-size:16px;margin:0 4px 10px}
+  .qrdd-sl{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .qrdd-sl button{display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:#F8FAFC;border-radius:16px;padding:12px;font-size:13px;font-weight:700;color:var(--ink);text-align:right;position:relative}
+  .qrdd-sl button span{width:30px;height:30px;border-radius:10px;background:#fff;display:grid;place-items:center;flex:none}
+  .qrdd-sl button b{font-weight:700;font-size:12.5px;line-height:1.3}
+  .qrdd-sl button em{margin-inline-start:auto;font-style:normal;font-size:11px;font-weight:800;background:#F43F5E;color:#fff;border-radius:999px;padding:1px 7px}
+  .qrdd-sl button em[hidden]{display:none}
+}
+@media (max-width:900px){
+  body.qrd-d .tbar .tb-in{flex-wrap:wrap;row-gap:8px;padding-left:12px;padding-right:12px;max-width:100vw;box-sizing:border-box}
+  body.qrd-d .tbar .sp{margin-inline-start:0;width:100%;min-width:0;overflow-x:auto;scrollbar-width:none;flex-wrap:nowrap;padding-bottom:2px}
+  body.qrd-d .tbar .sp::-webkit-scrollbar{display:none}
+  body.qrd-d .tbar .sp > *{flex:none}
+  html,body.qrd-d{overflow-x:hidden;max-width:100%}
+}
+@media (max-width:900px){.qrdd-kp{margin:0;padding:2px 0 6px}}

@@ -11,29 +11,24 @@
   document.body.className = 'v f';
   if (C.missing) { document.body.innerHTML = '<div class="w"><div class="ld" style="margin-top:30vh"><i>🔍</i><b>الباركود ده مش شغال</b><p>كلّم المركز.</p></div></div>'; return; }
   /* V2: One clear home, two equal service cards; expanding either opens its own matching card. */
-  document.body.innerHTML = '<div class="w pv2-page">' +
-    '<header class="top pv2-top"><span class="tlg">' + (window.OZSkin ? OZSkin.logo('') : '') + '</span>' +
-      '<div class="tn"><b>' + esc(C.center) + '</b><small>بوابة المرضى الإلكترونية</small></div>' +
-      '<span class="pv2-online" title="الخدمات الإلكترونية"><i></i>أونلاين</span></header>' +
-    '<section class="pv2-hero pv3-radiology-hero" aria-label="خدمات مركز الأشعة">' +
-      '<div class="pv3-radiology-photo" aria-hidden="true"><img src="/cases-hero-doctor.webp" alt="" decoding="async" fetchpriority="high"></div>' +
-      '<div class="pv3-radiology-overlay" aria-hidden="true"></div>' +
-      '<div class="pv3-radiology-copy"><span class="pv3-radiology-label">✦ مركز الأشعة</span>' +
-      '<h1 class="ttl" id="patient-title">تقارير دقيقة.. <span>وسرعة في الخدمة</span></h1>' +
-      '<p>فريق متخصص وأحدث أجهزة التصوير</p>' +
-      '<div class="pv3-hero-pulse" aria-hidden="true"><i></i><svg viewBox="0 0 180 32" fill="none"><path d="M1 17h53l11-11 9 22 10-24 10 13h85" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>' +
-      '<div class="pv3-hero-dots" aria-hidden="true"><i class="on"></i><i></i><i></i></div>' +
-    '</section>' +
-    '<div class="pv2-section-title"><div><span>الخدمات</span><h2>تحب تعمل إيه النهارده؟</h2></div><small>اختار واحدة للمتابعة</small></div>' +
+  document.body.innerHTML = '<div class="w pv2-page pvd">' +
+    /* 5.03 · design D «تطبيق»: gradient header + floating mobile search + coloured service tiles + bottom tab bar */
+    '<header class="pvd-hd"><div class="pvd-r1"><span class="tlg">' + (window.OZSkin ? OZSkin.logo('') : '') + '</span>' +
+      '<div class="tn"><b>' + esc(C.center) + '</b><small>معاكم 24 ساعة · بوابة المرضى</small></div>' +
+      '<button type="button" class="pvd-bell" id="pvdBell" aria-label="الإشعارات"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M6 16V11a6 6 0 1 1 12 0v5l2 2H4z\"/><path d=\"M10 20a2 2 0 0 0 4 0\"/></svg></button></div>' +
+      '<h1 class="pvd-h1" id="patient-title">ألف سلامة عليك 🤍<br><span>إزاي نقدر نساعدك؟</span></h1><p class="pvd-sub">نتيجتك، حجزك وطلباتك — كلها من موبايلك</p>' +
+      '<svg class="pvd-ecg" viewBox="0 0 380 40" preserveAspectRatio="none" aria-hidden="true"><path d="M0 22h140l8-14 10 26 10-30 8 18h204" fill="none" stroke="currentColor" stroke-width="2"/></svg></header>' +
+    (C.on ? '<form class="pvd-sr" id="pvdSearch" novalidate><label class="pvd-in" for="pvdPh"><span class="pvd-ic"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"6\" y=\"2\" width=\"12\" height=\"20\" rx=\"3\"/><path d=\"M11 18h2\"/></svg></span><input id="pvdPh" type="tel" inputmode="tel" autocomplete="tel" maxlength="20" dir="ltr" placeholder="اكتب رقم موبايلك لنتيجتك"></label><button class="pvd-go" type="submit" aria-label="اعرض نتيجتي"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M15 6l-6 6 6 6\"/></svg></button></form>' : '') +
+    '<div class="pv2-section-title pvd-sec"><div><h2>الخدمات</h2></div><small>كلها من موبايلك</small></div>' +
     '<div class="patient-chooser" role="tablist" aria-label="خدمات المركز">' +
       '<button type="button" id="tab-booking" class="pv2-service" role="tab" aria-selected="false" aria-controls="patient-book">' +
-        '<span class="pv2-service-icon">📅</span><b>حجز أشعة</b><small>اختار الفحص واليوم المناسب</small><span class="pv2-service-go" aria-hidden="true">←</span></button>' +
+        '<span class="pv2-service-icon pvd-c1"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"5\" width=\"18\" height=\"16\" rx=\"3\"/><path d=\"M3 10h18M8 3v4M16 3v4\"/><path d=\"M8 14h3v3H8z\"/></svg></span><b>حجز أشعة</b><small>اختار الفحص واليوم المناسب</small><span class="pv2-service-go" aria-hidden="true">←</span></button>' +
       '<button type="button" id="tab-results" class="pv2-service" role="tab" aria-selected="false" aria-controls="patient-results">' +
-        '<span class="pv2-service-icon">🩻</span><b>نتيجة الأشعة</b><small>استعلم عن نتيجتك بسهولة</small><span class="pv2-service-go" aria-hidden="true">←</span></button>' +
+        '<span class="pv2-service-icon pvd-c2"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 4v8M12 12c-2 0-3 1-3 3v3c0 1.7-1.3 3-3 3s-3-1.3-3-3v-4c0-4 3-8 6-8M12 12c2 0 3 1 3 3v3c0 1.7 1.3 3 3 3s3-1.3 3-3v-4c0-4-3-8-6-8\"/></svg></span><b>نتيجة الأشعة</b><small>استعلم عن نتيجتك بسهولة</small><span class="pv2-service-go" aria-hidden="true">←</span></button>' +
       '<button type="button" id="tab-complaint" class="pv2-service" role="tab" aria-selected="false" aria-controls="patient-complaint">' +
-        '<span class="pv2-service-icon">📝</span><b>تقديم شكوى</b><small>قولنا إيه اللي ضايقك وهنساعدك</small><span class="pv2-service-go" aria-hidden="true">←</span></button>' +
+        '<span class="pv2-service-icon pvd-c3"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z\"/><path d=\"M8.5 12h.01M12 12h.01M15.5 12h.01\"/></svg></span><b>تقديم شكوى</b><small>قولنا إيه اللي ضايقك وهنساعدك</small><span class="pv2-service-go" aria-hidden="true">←</span></button>' +
       '<button type="button" id="tab-report" class="pv2-service" role="tab" aria-selected="false" aria-controls="patient-report">' +
-        '<span class="pv2-service-icon">📤</span><b>طلب تقرير أشعة</b><small>ارفع صورة واطلب تقريرك</small><span class="pv2-service-go" aria-hidden="true">←</span></button></div>' +
+        '<span class="pv2-service-icon pvd-c4"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z\"/><path d=\"M14 3v5h5M9 13h6M9 17h4\"/></svg></span><b>طلب تقرير أشعة</b><small>ارفع صورة واطلب تقريرك</small><span class="pv2-service-go" aria-hidden="true">←</span></button></div>' +
     '<p class="pv2-action-hint" id="patient-hint" aria-live="polite">اختار أي خدمة من الأربع خدمات للمتابعة</p>' +
     '<section class="pv3-notification-bar" aria-label="إشعارات طلبات المرضى">' +
       '<div class="pv3-notification-icon" aria-hidden="true">🔔</div>' +
@@ -90,6 +85,9 @@
         '<button class="btn w" id="rgo" type="submit">إرسال طلب التقرير والصور ←</button>' +
       '</form></div></section>' +
     '<div class="pv2-trust"><div><i>🔒</i><span>خصوصية بياناتك</span></div><div><i>⚡</i><span>خطوات سريعة</span></div><div><i>📱</i><span>كل حاجة من موبايلك</span></div></div>' +
+    '<nav class="pvd-tab" aria-label="التنقل"><button type="button" data-pvd="home" class="on"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z\"/></svg><span>الرئيسية</span></button>' +
+      '<button type="button" data-pvd="results"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 4v8M12 12c-2 0-3 1-3 3v3c0 1.7-1.3 3-3 3s-3-1.3-3-3v-4c0-4 3-8 6-8M12 12c2 0 3 1 3 3v3c0 1.7 1.3 3 3 3s3-1.3 3-3v-4c0-4-3-8-6-8\"/></svg><span>نتيجتي</span></button><button type="button" data-pvd="booking"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"5\" width=\"18\" height=\"16\" rx=\"3\"/><path d=\"M3 10h18M8 3v4M16 3v4\"/><path d=\"M8 14h3v3H8z\"/></svg><span>احجز</span></button>' +
+      '<button type="button" data-pvd="report"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z\"/><path d=\"M14 3v5h5M9 13h6M9 17h4\"/></svg><span>تقرير</span></button><button type="button" data-pvd="complaint"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z\"/><path d=\"M8.5 12h.01M12 12h.01M15.5 12h.01\"/></svg><span>شكوى</span></button></nav>' +
     '<p class="pv2-footer">نتمنالك دوام الصحة والعافية ♥</p><p class="pv2-analytics-note">يتم احتساب مرات فتح رابط الباركود فقط، بدون تحديد موقع المريض أو تسجيل مكانه.</p>' +
   '</div>';
   /* Gentle, low-cost hero copy carousel; no resizing or transform on service icons. */
@@ -150,6 +148,24 @@
   [['booking','tab-booking'],['results','tab-results'],['complaint','tab-complaint'],['report','tab-report']].forEach(function (x) {
     $(x[1]).onclick=function () { chooseJourney(x[0]); };
   });
+  /* 5.03 · design D wiring: floating search, bell, bottom tab bar */
+  (function pvdWire() {
+    var tabs = [].slice.call(document.querySelectorAll('.pvd-tab [data-pvd]'));
+    function mark(w) { tabs.forEach(function (b) { b.classList.toggle('on', b.dataset.pvd === w); }); }
+    tabs.forEach(function (b) { b.onclick = function () {
+      var w = b.dataset.pvd; mark(w);
+      if (w === 'home') { ['patient-results','patient-book','patient-complaint','patient-report'].forEach(function (id) { var p = $(id); if (p) { p.hidden = true; p.style.display = 'none'; } });
+        [].forEach.call(document.querySelectorAll('.pv2-service'), function (x) { x.classList.remove('on'); x.setAttribute('aria-selected', 'false'); });
+        try { history.replaceState(null, '', location.pathname); } catch (e) {} window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
+      chooseJourney(w);
+    }; });
+    [['tab-booking','booking'],['tab-results','results'],['tab-complaint','complaint'],['tab-report','report']].forEach(function (x) { var b = $(x[0]); if (b) b.addEventListener('click', function () { mark(x[1]); }); });
+    var f = $('pvdSearch');
+    if (f) f.onsubmit = function (e) { e.preventDefault(); var v = $('pvdPh').value.trim(); if (!K.last10(v)) { $('pvdPh').focus(); f.classList.remove('shake'); void f.offsetWidth; f.classList.add('shake'); return; }
+      mark('results'); chooseJourney('results'); var ph = $('ph'); if (ph) { ph.value = v; var g = $('go'); if (g) setTimeout(function () { g.click(); }, 120); } };
+    var bell = $('pvdBell'), nb = document.querySelector('.pv3-notification-bar');
+    if (bell && nb) bell.onclick = function () { nb.scrollIntoView({ behavior: 'smooth', block: 'center' }); nb.classList.remove('pvd-flash'); void nb.offsetWidth; nb.classList.add('pvd-flash'); };
+  })();
   var initial={ '#book':'booking','#results':'results','#complaint':'complaint','#report':'report' }[location.hash];
   if (initial) chooseJourney(initial);
   function pushDeviceToken() {
