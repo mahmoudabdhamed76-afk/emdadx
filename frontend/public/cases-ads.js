@@ -63,8 +63,8 @@
   /* ad = {title, body, tag, art, image, cta}; head = the slide holds the page's <h1> */
   function slide(ad, on, head) {
     var bg = ad.image ? '<div class="pvs-img" style="background-image:url(\'' + String(ad.image).replace(/'/g, '') + '\')"></div>' : '<div class="pvs-art">' + art(ad.art) + '</div>';
-    var t = head ? '<h1 id="patient-title">' + esc(ad.title) + '</h1>' : '<b>' + esc(ad.title) + '</b>';
-    return '<div class="pvs-s' + (on ? ' on' : '') + (ad.image ? ' im' : '') + (ad.ad ? ' ad' : '') + '" role="group" aria-roledescription="slide">' + bg +
+    var t = head ? '<h1 id="patient-title">' + esc(ad.title) + '</h1>' : (ad.title ? '<b>' + esc(ad.title) + '</b>' : '');
+    return '<div class="pvs-s' + (on ? ' on' : '') + (ad.image ? ' im' : '') + (ad.ad ? ' ad' : '') + (ad.pic ? ' pic' + (ad.title || ad.body ? '' : ' bare') : '') + '" role="group" aria-roledescription="slide">' + bg +
       '<div class="pvs-tx">' + (ad.tag ? '<span class="pvs-k">' + esc(ad.tag) + '</span>' : '') + t + (ad.body ? '<small>' + esc(ad.body) + '</small>' : '') +
       (ad.cta && CTA[ad.cta] ? '<button type="button" class="pvs-cta" data-cta="' + esc(ad.cta) + '">' + CTA[ad.cta] + ' ←</button>' : '') + '</div></div>';
   }

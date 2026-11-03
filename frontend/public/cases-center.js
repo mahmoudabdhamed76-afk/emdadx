@@ -16,6 +16,14 @@
   function qrdDarkGet() { try { var v = localStorage.getItem('qrd-dark'); if (v === '1') return true; if (v === '0') return false; } catch (e) {} return false; }
   function qrdDarkSet(on) { document.documentElement.classList.toggle('qrd-dark', on); var b = document.getElementById('dkT'); if (b) { b.innerHTML = ic(on ? 'sun' : 'moon') + '<span>' + (on ? 'نهاري' : 'ليلي') + '</span>'; b.setAttribute('aria-pressed', String(on)); } }
   document.documentElement.classList.toggle('qrd-dark', qrdDarkGet());
+  function qrdDarkSwap(on, btn) {
+    var H = document.documentElement, still = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (btn) { btn.classList.remove('dk-spin'); void btn.offsetWidth; btn.classList.add('dk-spin'); }
+    if (!document.startViewTransition || still || !btn) { H.classList.add('qrd-swap'); qrdDarkSet(on); setTimeout(function () { H.classList.remove('qrd-swap'); }, 450); return; }
+    var r = btn.getBoundingClientRect(), x = r.left + r.width / 2, y = r.top + r.height / 2, R = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
+    var t = document.startViewTransition(function () { qrdDarkSet(on); });
+    t.ready.then(function () { H.animate({ clipPath: ['circle(0px at ' + x + 'px ' + y + 'px)', 'circle(' + R + 'px at ' + x + 'px ' + y + 'px)'] }, { duration: 620, easing: 'cubic-bezier(.22,1,.36,1)', pseudoElement: '::view-transition-new(root)' }); }).catch(function () {});
+  }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function toast(t) { var el = $('toast'); if (!el) return; el.textContent = t; el.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(function () { el.classList.remove('on'); }, 3000); }
   function mb(n) { return n >= 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB'; }
@@ -387,16 +395,12 @@
     }
     document.body.insertAdjacentHTML('afterbegin', dashboardNav());
     var header = document.querySelector('.tbar .sp');
-    if (header) header.insertAdjacentHTML('afterbegin',
-      '<div class="qrd-layout-switch" role="group" aria-label="شكل لوحة التحكم">' +
-      '<button type="button" id="dashTeal" aria-pressed="false" title="التصميم الطبي التركواز">🌿 تركواز</button>' +
-      '<button type="button" id="dashViolet" aria-pressed="false" title="التصميم البنفسجي العصري">💜 بنفسجي</button></div>');
     if (header && !$('dkT')) {
       header.insertAdjacentHTML('afterbegin', '<button type="button" class="ib dkt" id="dkT" title="وضع ليلي / نهاري"></button>');
-      $('dkT').onclick = function () { var on = !document.documentElement.classList.contains('qrd-dark'); qrdDarkSet(on); try { localStorage.setItem('qrd-dark', on ? '1' : '0'); } catch (e) {} };
+      $('dkT').onclick = function () { var on = !document.documentElement.classList.contains('qrd-dark'); qrdDarkSwap(on, this); try { localStorage.setItem('qrd-dark', on ? '1' : '0'); } catch (e) {} };
       qrdDarkSet(qrdDarkGet());
     }
-    setDashboardLayout(ui.layout);
+    ui.layout = 'teal'; setDashboardLayout('teal');
     [['dashTeal','teal'],['dashViolet','violet']].forEach(function (x) {
       var b = $(x[0]); if (!b) return;
       b.onclick = function () {
@@ -852,10 +856,18 @@
           '<div class="qx-what"><span class="qx-tag ' + (kind === 'complaint' ? 'r' : 'a') + '">' + esc(t.subject || (kind === 'complaint' ? 'شكوى' : 'طلب تقرير')) + '</span></div>' +
           '<div class="qx-note" title="اضغط لعرض الكلام كله"><p>' + esc(t.message) + '</p>' + (imgs ? '<div class="qx-phs">' + imgs + '</div>' : '') + '</div>' +
           '<time class="qx-t">' + esc(when(t.at)) + '</time>' +
-          '<div class="qx-act"><a class="ic2" href="tel:' + esc(t.phone) + '" data-tip="اتصال">' + ic('phone') + '</a><button type="button" class="btn sm g" data-ticket-done="' + Number(t.id) + '">✓ تم التواصل</button></div></article>';
+          '<div class="qx-act"><a class="ic2" href="tel:' + esc(t.phone) + '" data-tip="اتصال">' + ic('phone') + '</a><button type="button" class="btn sm g" data-ticket-done="' + Number(t.id) + '">✓ تم التواصل</button>' +
+          (kind === 'complaint' ? '<button type="button" class="ic2 dl" data-ticket-del="' + Number(t.id) + '" data-n="' + esc(t.name) + '" data-tip="امسح (بكلمة سر)">' + ic('trash') + '</button>' : '') + '</div></article>';
       });
       el.innerHTML = qxShell(kind, ['المريض', kind === 'complaint' ? 'عنوان الشكوى' : 'الطلب', 'التفاصيل', 'وصلت', ''], R, emptyText, kind === 'complaint' ? 'شكوى' : 'طلب');
       qxWire(el, kind === 'complaint' ? 'شكوى' : 'طلب');
+      if (kind === 'complaint') {
+        el.insertAdjacentHTML('afterbegin', '<div class="cx-tools"><div><b>📊 تحليل الشكاوى</b><small>تقرير PDF لكل الشكاوى اللي حصلت — الجديدة واللي اتحلّت: الأسباب، الأيام والأوقات، وقت الرد، والمرضى اللي اشتكوا أكتر من مرة</small></div>' +
+          '<button type="button" class="btn" data-cx="pdf">' + ic('down') + ' نزّل التحليل PDF</button><button type="button" class="btn g red-t" data-cx="reset">' + ic('trash') + ' مسح كل الشكاوى</button></div>');
+        el.querySelector('[data-cx="pdf"]').onclick = function () { complaintsReport(this); };
+        el.querySelector('[data-cx="reset"]').onclick = ticketReset;
+        [].forEach.call(el.querySelectorAll('[data-ticket-del]'), function (b) { b.onclick = function () { ticketDelete(+b.dataset.ticketDel, b.dataset.n); }; });
+      }
       [].forEach.call(el.querySelectorAll('[data-ticket-done]'), function (btn) {
         btn.onclick = function () {
           var id = Number(btn.dataset.ticketDone); btn.disabled = true;
@@ -996,7 +1008,7 @@
 
   /* ── ads: written here, shown to patients in their page's slider ── */
   var PAL = { a: ['#0F766E', '#14B8A6'], b: ['#145FB4', '#2CA7EC'], c: ['#EA580C', '#F97316'], d: ['#7357C5', '#A78BFA'], e: ['#267CB4', '#6CC4E8'], f: ['#247D5B', '#55B68C'] };
-  function adsLoad() { api('GET', 'ads').then(function (x) { ui.ads = x.ads || []; adsUI(); }).catch(function () { ui.ads = ui.ads || []; adsUI(); }); }
+  function adsLoad() { api('GET', 'ads').then(function (x) { ui.ads = x.ads || []; ui.slBase = x.base !== false; adsUI(); }).catch(function () { ui.ads = ui.ads || []; adsUI(); }); }
   function adImg(file) {
     return new Promise(function (ok, no) {
       var u = URL.createObjectURL(file), I = new Image();
@@ -1013,7 +1025,7 @@
   }
   function adsUI() {
     var el = $('adsBox'); if (!el || !window.OZAds) return;
-    var f = ui.adEdit = ui.adEdit || { art: 'offer', cta: 'book', active: true, title: '', body: '', tag: 'عرض خاص', image: '', ends: '' }, L = ui.ads || [];
+    var f = ui.adEdit = ui.adEdit || { art: 'offer', cta: 'book', active: true, title: '', body: '', tag: 'عرض خاص', image: '', ends: '' }, L = (ui.ads || []).filter(function (a) { return a.kind !== 'slide'; }), SL = (ui.ads || []).filter(function (a) { return a.kind === 'slide'; });
     var arts = OZAds.ARTS.map(function (a) { return '<button type="button" data-art="' + a[0] + '" class="' + (!f.image && f.art === a[0] ? 'on' : '') + '"><span class="ad-mini">' + OZAds.art(a[0]) + '</span><small>' + a[1] + '</small></button>'; }).join('') +
       '<button type="button" data-art="img" class="' + (f.image ? 'on' : '') + '"><span class="ad-mini im">' + (f.image ? '<img src="' + f.image + '" alt="">' : ic('img')) + '</span><small>' + (f.image ? 'غيّر الصورة' : 'صورة من عندك') + '</small></button>';
     var rows = L.map(function (a, i) {
@@ -1037,8 +1049,19 @@
         '<div class="ad-btns"><button type="button" class="btn" id="adS">💾 ' + (f.id ? 'احفظ التعديل' : 'انشر الإعلان') + '</button>' + (f.id ? '<button type="button" class="btn g" id="adX">إلغاء</button>' : '') + '</div></div></div></section>' +
       '<section class="lx-card ad-list"><div class="lx-ch"><div><h3>الإعلانات</h3><small>' + (L.length ? L.length + ' إعلان · الترتيب هو ترتيب ظهورهم في السلايدر' : 'لسه مفيش إعلانات') + '</small></div></div>' +
         (rows ? '<div class="lx-tw"><table class="lx-t"><thead><tr><th>الإعلان</th><th>الشارة</th><th>الزرار</th><th>الحالة</th><th>لحد</th><th></th></tr></thead><tbody>' + rows + '</tbody></table></div>'
-          : '<p class="lx-emp">📣 اكتب أول إعلان من الفورم — هيظهر للمرضى على طول في صفحتهم.</p>') + '</section></div>';
-    adPrev();
+          : '<p class="lx-emp">📣 اكتب أول إعلان من الفورم — هيظهر للمرضى على طول في صفحتهم.</p>') + '</section>' +
+      /* 5.16 · the slider's own photos (separate from ads) + the 4 drawn slides on/off */
+      '<section class="lx-card sl-card"><div class="lx-ch"><div><h3>🖼 صور السلايدر</h3><small>ضيف صور المركز والأجهزة براحتك — بتظهر في السلايدر بعد الإعلانات</small></div>' +
+        '<button type="button" class="btn" id="slAdd">' + ic('img') + ' ضيف صور</button><input type="file" id="slF" accept="image/png,image/jpeg,image/webp" multiple hidden></div>' +
+        '<label class="ad-sw sl-base"><input type="checkbox" id="slBase"' + (ui.slBase !== false ? ' checked' : '') + '><i></i><span>اعرض الشرائح الجاهزة (الجهاز، الدكتور، الأشعة، الموبايل)</span></label>' +
+        (SL.length ? '<div class="sl-grid">' + SL.map(function (a, i) {
+          var st = adState(a);
+          return '<div class="sl-it' + (a.active ? '' : ' off') + '" data-ad="' + a.id + '"><div class="sl-img" style="background-image:url(\'' + a.image + '\')"><span class="lx-st2 ' + st[0] + '">' + st[1] + '</span><em>' + (i + 1) + '</em></div>' +
+            '<input class="fld sl-t" data-slt maxlength="70" placeholder="عنوان على الصورة (اختياري)" value="' + esc(a.title || '') + '"><input class="fld sl-t" data-slb maxlength="120" placeholder="سطر صغير (اختياري)" value="' + esc(a.body || '') + '">' +
+            '<div class="sl-acts"><button class="lx-ib" data-ada="up" data-tip="قبل"' + (i ? '' : ' disabled') + '>' + ic('au') + '</button><button class="lx-ib" data-ada="down" data-tip="بعد"' + (i < SL.length - 1 ? '' : ' disabled') + '>' + ic('ad') + '</button>' +
+            '<button class="lx-ib" data-ada="toggle" data-tip="' + (a.active ? 'وقّف' : 'شغّل') + '">' + ic(a.active ? 'pause' : 'play') + '</button><button class="lx-ib dl" data-ada="delete" data-tip="امسح">' + ic('trash') + '</button></div></div>';
+        }).join('') + '</div>' : '<p class="lx-emp">🖼 لسه مفيش صور — دوس «ضيف صور» واختار صورة أو أكتر من الكمبيوتر أو الموبايل.</p>') + '</section></div>';
+    adPrev(); slidesWire();
     var bind = function (id, k) { var i = $(id); if (i) i.oninput = i.onchange = function () { f[k] = i.type === 'checkbox' ? i.checked : i.value; if (k !== 'active' && k !== 'ends') adPrev(); }; };
     bind('adT', 'title'); bind('adB', 'body'); bind('adG', 'tag'); bind('adC', 'cta'); bind('adE', 'ends'); bind('adA', 'active');
     [].forEach.call(el.querySelectorAll('[data-art]'), function (b) { b.onclick = function () {
@@ -1055,18 +1078,146 @@
     };
     if ($('adX')) $('adX').onclick = function () { ui.adEdit = null; adsUI(); };
     [].forEach.call(el.querySelectorAll('[data-ada]'), function (b) { b.onclick = function () {
-      var id = +b.closest('[data-ad]').dataset.ad, k = b.dataset.ada, a = L.filter(function (x) { return x.id === id; })[0];
+      var id = +b.closest('[data-ad]').dataset.ad, k = b.dataset.ada, a = (ui.ads || []).filter(function (x) { return x.id === id; })[0];
       if (k === 'edit') { ui.adEdit = { id: a.id, title: a.title, body: a.body, tag: a.tag, art: a.art, image: a.image, cta: a.cta, ends: a.ends, active: a.active }; adsUI(); el.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
-      if (k === 'delete' && !confirm('تمسح إعلان «' + a.title + '»؟')) return;
+      if (k === 'delete' && !confirm(a.kind === 'slide' ? 'تمسح الصورة دي من السلايدر؟' : 'تمسح إعلان «' + a.title + '»؟')) return;
       b.disabled = true;
       api('POST', 'ads/' + id + '/' + k).then(function (x) { ui.ads = x.ads || []; if (ui.adEdit && ui.adEdit.id === id && k === 'delete') ui.adEdit = null; adsUI(); dashSoon(); }).catch(function (e) { b.disabled = false; toast(e.message); });
     }; });
+  }
+  function slidesWire() {
+    var el = $('adsBox'); if (!el || !$('slAdd')) return;
+    $('slAdd').onclick = function () { $('slF').click(); };
+    $('slF').onchange = function () {
+      var files = [].slice.call(this.files || []); this.value = ''; if (!files.length) return;
+      toast('⏳ بنجهّز ' + files.length + (files.length > 1 ? ' صور…' : ' صورة…'));
+      var i = 0; (function nx() {
+        if (i >= files.length) { toast('🖼 الصور اتضافت للسلايدر'); return; }
+        adImg(files[i++]).then(function (d) { return api('POST', 'ads', { kind: 'slide', image: d, title: '', active: true }); })
+          .then(function (x) { ui.ads = x.ads || ui.ads; adsUI(); nx(); }).catch(function (e) { toast(e.message); nx(); });
+      })();
+    };
+    $('slBase').onchange = function () { var on = this.checked; api('POST', 'slides-base', { on: on }).then(function () { ui.slBase = on; toast(on ? 'الشرائح الجاهزة هتظهر' : 'الشرائح الجاهزة اتشالت — هتظهر صورك والإعلانات بس'); }).catch(function (e) { toast(e.message); }); };
+    [].forEach.call(el.querySelectorAll('.sl-it'), function (it) {
+      var id = +it.dataset.ad, a = (ui.ads || []).filter(function (x) { return x.id === id; })[0]; if (!a) return;
+      var save = function () { var t = it.querySelector('[data-slt]').value, b = it.querySelector('[data-slb]').value; if (t === (a.title || '') && b === (a.body || '')) return;
+        api('POST', 'ads', { id: id, kind: 'slide', image: a.image, title: t, body: b, active: a.active, art: a.art }).then(function (x) { ui.ads = x.ads || ui.ads; a.title = t; a.body = b; toast('اتحفظ ✓'); }).catch(function (e) { toast(e.message); }); };
+      [].forEach.call(it.querySelectorAll('input'), function (inp) { inp.onchange = save; });
+    });
   }
   document.addEventListener('click', function (e) {
     var m = e.target.closest && e.target.closest('[data-menu]');
     [].forEach.call(document.querySelectorAll('.lx-dd'), function (d) { if (!m || d !== m.nextElementSibling) d.hidden = true; });
     if (m) { var dd = m.nextElementSibling; dd.hidden = !dd.hidden; }
   });
+
+  /* ════════ 5.16 · complaints: password-protected delete / reset + a PDF analysis of every complaint ════════ */
+  function askPass(title, note, danger, run) {
+    var o = modal('<h3>' + title + '</h3><p>' + note + '</p><label class="l" for="pwI" style="text-align:right;display:block;margin-top:10px">كلمة سر المدير</label>' +
+      '<input class="fld" id="pwI" type="password" autocomplete="off" dir="ltr" style="width:100%;text-align:center;letter-spacing:2px"><p class="pw-er" id="pwE"></p>' +
+      '<div class="bt"><button class="btn' + (danger ? ' red' : '') + '" data-x="go">' + (danger ? '🗑 تأكيد المسح' : 'تأكيد') + '</button><button class="btn g" data-x="cl">إلغاء</button></div>',
+      function (k, close, x) {
+        if (k !== 'go') return; var i = $('pwI'), v = i.value; if (!v) { i.focus(); return; }
+        x.disabled = true; $('pwE').textContent = '';
+        run(v).then(function () { close(); }).catch(function (e) { x.disabled = false; $('pwE').textContent = e.message || 'حصلت مشكلة'; i.value = ''; i.focus(); });
+      });
+    setTimeout(function () { var i = $('pwI'); if (i) { i.focus(); i.onkeydown = function (e) { if (e.key === 'Enter') o.querySelector('[data-x="go"]').click(); }; } }, 60);
+  }
+  function ticketDelete(id, name) {
+    askPass('🗑 مسح الشكوى', 'هتتمسح شكوى «' + esc(name || 'مريض') + '» نهائي ومعاها الصور. اكتب كلمة سر المدير للتأكيد.', true, function (pw) {
+      return api('POST', 'tickets/' + id + '/delete', { password: pw }).then(function (x) { ui.tickets = x.tickets || []; serviceTickets(); toast('🗑 الشكوى اتمسحت'); });
+    });
+  }
+  function ticketReset() {
+    askPass('⚠️ مسح كل الشكاوى (ريست)', 'هتتمسح <b>كل</b> الشكاوى — الجديدة واللي اتحلّت — ومش هتظهر في التحليل تاني. ننصحك تنزّل «تحليل الشكاوى PDF» الأول. اكتب كلمة سر المدير للتأكيد.', true, function (pw) {
+      return api('POST', 'tickets-reset', { password: pw, kind: 'complaint' }).then(function (x) { ui.tickets = x.tickets || []; serviceTickets(); toast('✅ اتعمل ريست — اتمسحت ' + (x.removed || 0) + ' شكوى'); });
+    });
+  }
+  function loadJs(src) { return new Promise(function (ok, no) { var s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = function () { no(new Error('مش قادر أحمّل أداة الـ PDF')); }; document.head.appendChild(s); }); }
+  function tsOf(t) { var m = /(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/.exec(String(t || '')); return m ? new Date(+m[1], m[2] - 1, +m[3], +m[4], +m[5]).getTime() : 0; }
+  function dmyOf(t) { var m = /(\d{4})-(\d{2})-(\d{2})/.exec(String(t || '')); return m ? (+m[3]) + '/' + (+m[2]) + '/' + m[1] : '—'; }
+  function hrsTxt(h) { if (h < 1) return Math.max(1, Math.round(h * 60)) + ' دقيقة'; if (h < 48) return (Math.round(h * 10) / 10) + ' ساعة'; return Math.round(h / 24) + ' يوم'; }
+  function complaintsReport(btn) {
+    if (btn) { btn.disabled = true; btn.dataset.t = btn.innerHTML; btn.innerHTML = '⏳ بنجهّز التحليل…'; }
+    var reset = function () { if (btn) { btn.disabled = false; btn.innerHTML = btn.dataset.t; } };
+    Promise.all([api('GET', 'tickets-all'), window.jspdf ? 0 : loadJs('/vendor/jspdf/jspdf.umd.min.js'), window.modernScreenshot ? 0 : loadJs('/vendor/modern-screenshot.js')]).then(function (a) {
+      var L = (a[0].list || []).slice().sort(function (x, y) { return tsOf(x.at) - tsOf(y.at); });
+      if (!L.length) { reset(); toast('مفيش شكاوى لسه علشان نحللها'); return; }
+      var A = analyse(L), pages = reportPages(L, A), host = document.createElement('div');
+      host.className = 'rp-host'; host.innerHTML = pages.join(''); document.body.appendChild(host);
+      var P = [].slice.call(host.querySelectorAll('.rp-pg')), doc = new jspdf.jsPDF({ unit: 'pt', format: 'a4', compress: true }), i = 0;
+      (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(function nx() {
+        if (i >= P.length) { host.remove(); doc.save('تحليل الشكاوى — ' + String(C.center || '').trim() + ' — ' + ymd() + '.pdf'); reset(); toast('📊 التحليل نزل PDF (' + P.length + ' صفحة)'); return; }
+        var pg = P[i]; return modernScreenshot.domToJpeg(pg, { scale: 2, quality: 0.9, backgroundColor: '#ffffff', width: 794, height: 1123 }).then(function (d) {
+          if (i) doc.addPage(); doc.addImage(d, 'JPEG', 0, 0, 595.28, 841.89); i++; return nx();
+        });
+      }).catch(function (e) { host.remove(); reset(); toast(e.message || 'محصلش — جرّب تاني'); });
+    }).catch(function (e) { reset(); toast(e.message || 'محصلش — جرّب تاني'); });
+  }
+  function analyse(L) {
+    var A = { total: L.length, done: 0, open: 0, resp: [], subj: {}, wd: [0, 0, 0, 0, 0, 0, 0], slot: [0, 0, 0, 0, 0, 0, 0, 0], ph: {}, first: L[0].at, last: L[L.length - 1].at, series: [] };
+    L.forEach(function (t) {
+      if (t.status === 'done') { A.done++; if (t.updated_at) { var h = (tsOf(t.updated_at) - tsOf(t.at)) / 36e5; if (h >= 0) A.resp.push(h); } } else A.open++;
+      var s = String(t.subject || 'من غير عنوان').trim() || 'من غير عنوان'; A.subj[s] = (A.subj[s] || 0) + 1;
+      var d = new Date(tsOf(t.at)); A.wd[d.getDay()]++; A.slot[Math.floor(d.getHours() / 3)]++;
+      var p = K.last10(t.phone) || t.phone; if (p) { A.ph[p] = A.ph[p] || { n: 0, name: t.name }; A.ph[p].n++; }
+    });
+    A.subjL = Object.keys(A.subj).map(function (k) { return [k, A.subj[k]]; }).sort(function (x, y) { return y[1] - x[1]; });
+    A.rep = Object.keys(A.ph).filter(function (k) { return A.ph[k].n > 1; }).map(function (k) { return [A.ph[k].name, k, A.ph[k].n]; }).sort(function (x, y) { return y[2] - x[2]; });
+    A.resp.sort(function (x, y) { return x - y; });
+    A.avg = A.resp.length ? A.resp.reduce(function (s, v) { return s + v; }, 0) / A.resp.length : 0;
+    A.med = A.resp.length ? A.resp[Math.floor(A.resp.length / 2)] : 0;
+    /* time series: by day (≤ 31 days), week (≤ 120) or month */
+    var t0 = tsOf(A.first), t1 = tsOf(A.last), span = (t1 - t0) / 864e5, unit = span <= 31 ? 'd' : span <= 120 ? 'w' : 'm', B = {}, keys = [];
+    var keyOf = function (ts) { var d = new Date(ts); if (unit === 'm') return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2); if (unit === 'w') { d.setDate(d.getDate() - d.getDay()); } return ymd(d); };
+    for (var ts = t0, c = 0; ts <= t1 && c < 400; c++) { var k = keyOf(ts); if (keys.indexOf(k) < 0) keys.push(k); ts += unit === 'm' ? 27 * 864e5 : unit === 'w' ? 7 * 864e5 : 864e5; }
+    L.forEach(function (t) { var k = keyOf(tsOf(t.at)); B[k] = (B[k] || 0) + 1; if (keys.indexOf(k) < 0) keys.push(k); });
+    keys.sort(); A.unit = unit; A.series = keys.slice(-24).map(function (k) { return [k, B[k] || 0]; });
+    return A;
+  }
+  var WDN = ['الأحد', 'الاتنين', 'التلات', 'الأربع', 'الخميس', 'الجمعة', 'السبت'], SLN = ['12–3 ص', '3–6 ص', '6–9 ص', '9–12 ص', '12–3 م', '3–6 م', '6–9 م', '9–12 م'];
+  function rpBars(rows, color, total) {
+    var mx = Math.max.apply(null, rows.map(function (r) { return r[1]; }).concat([1]));
+    return '<div class="rp-hb">' + rows.map(function (r) { return '<div class="rp-hr"><span class="rp-hl">' + esc(r[0]) + '</span><span class="rp-ht"><i style="width:' + Math.max(2, r[1] / mx * 100) + '%;background:' + color + '"></i></span><b>' + r[1] + '<small>' + (total ? Math.round(r[1] / total * 100) + '%' : '') + '</small></b></div>'; }).join('') + '</div>';
+  }
+  function rpCols(rows, color, lbl) {
+    var mx = Math.max.apply(null, rows.map(function (r) { return r[1]; }).concat([1]));
+    return '<div class="rp-cols">' + rows.map(function (r) { return '<div class="rp-c"><em>' + (r[1] || '') + '</em><i style="height:' + (r[1] ? Math.max(3, r[1] / mx * 100) : 0) + '%;background:' + color + '"></i><span>' + esc(lbl(r[0])) + '</span></div>'; }).join('') + '</div>';
+  }
+  function reportPages(L, A) {
+    var head = function (sub) { return '<div class="rp-hd"><div class="rp-lg">' + (ui.logo ? '<img src="' + ui.logo + '" alt="">' : '<b>' + esc(String(C.center || 'م').trim().charAt(0)) + '</b>') + '</div><div><small>QR Patient · تقرير</small><h1>تحليل شكاوى المرضى</h1><p>' + esc(C.center || '') + ' · ' + sub + '</p></div></div>'; };
+    var foot = function (n, N) { return '<div class="rp-ft"><span>' + esc(C.center || '') + ' · اتعمل ' + dmyOf(ymd()) + ' ' + hmOf(ymd() + ' ' + ('0' + new Date().getHours()).slice(-2) + ':' + ('0' + new Date().getMinutes()).slice(-2)) + '</span><span>صفحة ' + n + ' من ' + N + '</span></div>'; };
+    var period = 'من ' + dmyOf(A.first) + ' لحد ' + dmyOf(A.last);
+    var top = A.subjL[0], wdMax = A.wd.indexOf(Math.max.apply(null, A.wd)), slMax = A.slot.indexOf(Math.max.apply(null, A.slot));
+    var ins = [
+      'أكتر سبب للشكاوى هو «' + esc(top[0]) + '» — ' + top[1] + ' شكوى (' + Math.round(top[1] / A.total * 100) + '% من الكل).',
+      'أكتر يوم بتيجي فيه شكاوى: <b>' + WDN[wdMax] + '</b>، وأكتر وقت: <b>' + SLN[slMax] + '</b>.',
+      A.done ? 'المركز رد على ' + A.done + ' شكوى من ' + A.total + ' (' + Math.round(A.done / A.total * 100) + '%)' + (A.resp.length ? '، ومتوسط وقت الرد ' + hrsTxt(A.avg) + ' (النص: ' + hrsTxt(A.med) + ').' : '.') : 'لسه مفيش شكوى اتسجل إن المركز تواصل فيها.',
+      A.open ? '<b>' + A.open + '</b> شكوى لسه مستنية تواصل.' : 'كل الشكاوى اتعمل فيها تواصل ✓',
+      A.rep.length ? A.rep.length + ' مريض اشتكوا أكتر من مرة — محتاجين متابعة خاصة.' : 'مفيش مريض اشتكى أكتر من مرة.'
+    ];
+    var kp = [['إجمالي الشكاوى', A.total, '#E11D48'], ['اتعمل فيها تواصل', A.done, '#059669'], ['لسه مستنية', A.open, '#D97706'], ['متوسط وقت الرد', A.resp.length ? hrsTxt(A.avg) : '—', '#4F46E5']];
+    var lbl = function (k) { if (A.unit === 'm') { var p = k.split('-'); return (+p[1]) + '/' + p[0].slice(2); } var q = k.split('-'); return (+q[2]) + '/' + (+q[1]); };
+    var p1 = head(period) +
+      '<div class="rp-kp">' + kp.map(function (k) { return '<div style="--c:' + k[2] + '"><small>' + k[0] + '</small><b>' + k[1] + '</b></div>'; }).join('') + '</div>' +
+      '<div class="rp-box"><h2>💡 أهم الملاحظات</h2><ul>' + ins.map(function (t) { return '<li>' + t + '</li>'; }).join('') + '</ul></div>' +
+      '<div class="rp-box"><h2>أسباب الشكاوى</h2>' + rpBars(A.subjL.slice(0, 9), '#E11D48', A.total) + '</div>' +
+      '<div class="rp-box"><h2>عدد الشكاوى ' + (A.unit === 'd' ? 'كل يوم' : A.unit === 'w' ? 'كل أسبوع' : 'كل شهر') + '</h2>' + rpCols(A.series, '#4F46E5', lbl) + '</div>';
+    var p2 = head(period) +
+      '<div class="rp-two"><div class="rp-box"><h2>حسب يوم الأسبوع</h2>' + rpBars(WDN.map(function (n, i) { return [n, A.wd[i]]; }), '#0D9488', A.total) + '</div>' +
+      '<div class="rp-box"><h2>حسب وقت اليوم</h2>' + rpBars(SLN.map(function (n, i) { return [n, A.slot[i]]; }), '#D97706', A.total) + '</div></div>' +
+      '<div class="rp-box"><h2>حالة الشكاوى</h2><div class="rp-st"><div class="rp-sb"><i style="width:' + (A.done / A.total * 100) + '%"></i></div><p><span class="ok">● اتعمل تواصل ' + A.done + '</span><span class="wa">● مستنية ' + A.open + '</span></p></div></div>' +
+      '<div class="rp-box"><h2>مرضى اشتكوا أكتر من مرة</h2>' + (A.rep.length ? '<table class="rp-t"><thead><tr><th>المريض</th><th>الموبايل</th><th>عدد الشكاوى</th></tr></thead><tbody>' + A.rep.slice(0, 12).map(function (r) { return '<tr><td>' + esc(r[0]) + '</td><td dir="ltr">' + esc(r[1]) + '</td><td>' + r[2] + '</td></tr>'; }).join('') + '</tbody></table>' : '<p class="rp-mut">مفيش ✓</p>') + '</div>';
+    var rows = L.slice().reverse(), PER = 17, chunks = [];
+    for (var i = 0; i < rows.length; i += PER) chunks.push(rows.slice(i, i + PER));
+    var N = 2 + chunks.length, out = ['<div class="rp-pg">' + p1 + foot(1, N) + '</div>', '<div class="rp-pg">' + p2 + foot(2, N) + '</div>'];
+    chunks.forEach(function (ch, j) {
+      out.push('<div class="rp-pg">' + head('كل الشكاوى · ' + period) + '<table class="rp-t rp-all"><thead><tr><th>التاريخ</th><th>المريض</th><th>العنوان</th><th>الشكوى</th><th>الحالة</th></tr></thead><tbody>' +
+        ch.map(function (t) { var m = String(t.message || ''); return '<tr><td>' + dmyOf(t.at) + '<small>' + hmOf(t.at) + '</small></td><td><b>' + esc(t.name) + '</b><small dir="ltr">' + esc(t.phone) + '</small></td><td>' + esc(t.subject || '—') + '</td><td class="m">' + esc(m.length > 150 ? m.slice(0, 150) + '…' : m) + '</td><td>' + (t.status === 'done' ? '<span class="ok">اتعمل تواصل</span>' : '<span class="wa">مستنية</span>') + '</td></tr>'; }).join('') +
+        '</tbody></table>' + foot(3 + j, N) + '</div>');
+    });
+    return out;
+  }
 
   /* ── the list ── */
   function inF(r) {

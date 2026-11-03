@@ -19,8 +19,9 @@
       { art: 'phone', tag: 'نتيجتك معاك', title: 'نتيجتك على موبايلك', body: 'التقرير وصور الأشعة معاك في أي وقت', cta: 'results' }
     ];
     /* 5.15 · the center's own ads come right after the welcome slide */
-    var ads = (C.ads || []).slice(0, 6).map(function (a) { a.ad = true; return a; });
-    var L = [base[0]].concat(ads, base.slice(1)), i;
+    var all = C.ads || [], ads = all.filter(function (a) { return a.kind !== 'slide'; }).slice(0, 6).map(function (a) { a.ad = true; return a; });
+    var pics = all.filter(function (a) { return a.kind === 'slide' && a.image; }).slice(0, 10).map(function (a) { a.pic = true; a.tag = ''; a.cta = ''; return a; });
+    var L = [base[0]].concat(ads, pics, C.base === false ? [] : base.slice(1)), i;
     var h = '<div class="pvs" id="pvs" role="region" aria-roledescription="carousel" aria-label="عن المركز"><div class="pvs-tr" id="pvsTr">';
     for (i = 0; i < L.length; i++) h += Z.slide(L[i], !i, !i);
     h += '</div><div class="pvs-dots" role="tablist">';

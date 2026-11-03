@@ -180,13 +180,23 @@ CREATE INDEX IF NOT EXISTS ix_case_ad ON case_ad (customer_id, sort, id);`);
   if (fresh) db.exec(`INSERT OR IGNORE INTO case_qr_hour (customer_id, day, hour, kind, n)
     SELECT customer_id, substr(at,1,10), CAST(substr(at,12,2) AS INTEGER), kind, COUNT(*) FROM case_qr_visit GROUP BY 1,2,3,4`);
 } catch (e) { console.error('[cases] 5.15 migrate', e.message); }
+try {
+  const ac = db.prepare('PRAGMA table_info(case_ad)').all().map(c => c.name);
+  if (!ac.includes('kind')) db.exec("ALTER TABLE case_ad ADD COLUMN kind TEXT NOT NULL DEFAULT 'ad'");
+  const sc2 = db.prepare('PRAGMA table_info(case_site)').all().map(c => c.name);
+  if (!sc2.includes('slides_base')) db.exec('ALTER TABLE case_site ADD COLUMN slides_base INTEGER NOT NULL DEFAULT 1');
+} catch (e) { console.error('[cases] 5.16 migrate', e.message); }
+/* 5.16 · deleting complaints needs the manager's password (only its SHA-256 lives here; QR_DELETE_PASS_SHA256 overrides it) */
+const DEL_PASS = String(process.env.QR_DELETE_PASS_SHA256 || '9684d2c3bf46fe113b14f73af9e6b5224e9ec4ba9bd786729bf563b8a11df93a').toLowerCase();
+function delPassOk(pw) { const h = crypto.createHash('sha256').update(String(pw || '')).digest(); const w = Buffer.from(DEL_PASS, 'hex'); return w.length === h.length && crypto.timingSafeEqual(h, w); }
+function dropRequestFiles(rows) { for (const row of rows) { let files = []; try { files = JSON.parse(row.files_json || '[]'); } catch (_) {} for (const f of files) if (/^[A-Za-z0-9]{16}$/.test(f.id || '')) try { fs.unlinkSync(requestPhotoPath(f.id)); } catch (_) {} } }
 const AD_ART = ['ct', 'doc', 'xray', 'phone', 'offer', 'heart'], AD_CTA = ['', 'book', 'results', 'report', 'complaint'];
-function adOut(a, full) { const o = { id: a.id, title: a.title, body: a.body || '', tag: a.tag || '', art: a.art || 'offer', image: a.image || '', cta: a.cta || '' }; if (full) Object.assign(o, { active: !!a.active, ends: a.ends || '', sort: a.sort, at: a.created_at }); return o; }
+function adOut(a, full) { const o = { id: a.id, kind: a.kind || 'ad', title: a.title, body: a.body || '', tag: a.tag || '', art: a.art || 'offer', image: a.image || '', cta: a.cta || '' }; if (full) Object.assign(o, { active: !!a.active, ends: a.ends || '', sort: a.sort, at: a.created_at }); return o; }
 function adsOf(cid, full) {
   const L = db.prepare('SELECT * FROM case_ad WHERE customer_id = ? ORDER BY sort, id DESC').all(cid);
   if (full) return L.map(a => adOut(a, true));
   const td = nowTs().slice(0, 10);
-  return L.filter(a => a.active && (!a.ends || a.ends >= td)).slice(0, 6).map(a => adOut(a));
+  return L.filter(a => a.active && (!a.ends || a.ends >= td)).slice(0, 16).map(a => adOut(a));
 }
 /* one honest source for every number on the dashboard */
 function dashOf(cid) {
@@ -361,13 +371,13 @@ function page(title, body, css, js, manifestUrl) {
   return '<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover' + (css === 'v' ? ',maximum-scale=1,user-scalable=no' : '') + '"><meta name="robots" content="noindex,nofollow"><meta name="referrer" content="no-referrer"><meta name="theme-color" content="#0E9F9A">' +
     '<title>' + esc(title) + '</title><link rel="icon" href="/icons/favicon-32.png">' +
     (manifestUrl ? '<link rel="manifest" href="'+esc(manifestUrl)+'"><link rel="apple-touch-icon" href="'+esc(manifestUrl.replace('/manifest','/icon'))+'"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default">' : '') +
-    '<link rel="stylesheet" href="/fonts/fonts.css"><link rel="stylesheet" href="/cases.css?v=515"></head><body class="' + css + '">' + body + js + '</body></html>';
+    '<link rel="stylesheet" href="/fonts/fonts.css"><link rel="stylesheet" href="/cases.css?v=516"></head><body class="' + css + '">' + body + js + '</body></html>';
 }
 function html(res, code, s) { res.writeHead(code, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store', 'X-Frame-Options': 'DENY', 'Referrer-Policy': 'no-referrer' }); res.end(s); }
 
 /* ════════ public routes ════════ */
 async function handle(req, res, pathname) {
-  let m = /^\/k\/([A-Za-z0-9]{8})(\/(login|logout|list|qr|layout|live|case|relay|item|fixed|wa|ask|bookings|tickets|ticket-image|logo|views|theme|manifest|icon|push-key|push-subscribe|push-disable|push-test|dash|ads)(\/[A-Za-z0-9]{1,20})?(\/(stop|start|delete|wrap|done|toggle|up|down))?)?\/?$/.exec(pathname);
+  let m = /^\/k\/([A-Za-z0-9]{8})(\/(login|logout|list|qr|layout|live|case|relay|item|fixed|wa|ask|bookings|tickets|ticket-image|logo|views|theme|manifest|icon|push-key|push-subscribe|push-disable|push-test|dash|ads|slides-base|tickets-all|tickets-reset)(\/[A-Za-z0-9]{1,20})?(\/(stop|start|delete|wrap|done|toggle|up|down))?)?\/?$/.exec(pathname);
   if (m) return centerRoute(req, res, m);
   m = /^\/h\/([A-Za-z0-9]{8})(\/(find|ask|book|complaint|report-request|manifest|icon|push-key|push-subscribe|push-disable|push-test))?\/?$/.exec(pathname);
   if (m) return findRoute(req, res, m[1], m[3] || '');
@@ -387,7 +397,7 @@ async function centerRoute(req, res, m) {
     if (req.method !== 'GET') return false;
     const CD = { code, center: site.center_name || '', logo: site.logo || '', theme: site.theme || 'a', layout: site.dashboard_layout === 'violet' ? 'violet' : 'teal', auth: me, cacheDays: CACHE_DAYS, maxMb: MAX_MB, pub: me ? pubOf(site) : '', fixedOn: !!site.fixed_on, wa: me ? (site.wa || '') : '', waDefault: me && !site.wa ? waFor(cid0(site), '') : '' };
     if (me) db.prepare('UPDATE case_site SET last_seen = ? WHERE customer_id = ?').run(nowTs(), site.customer_id);
-    html(res, 200, page('QR Patient — ' + (site.center_name || ''), '<div id="app"></div>', 'k', '<script>window.CD=' + json(CD) + '</script><script src="/vendor/qrcode.js"></script><script src="/cases-kit.js?v=515"></script><script src="/cases-dicom.js?v=515"></script><script src="/cases-pacs.js?v=515"></script><script src="/cases-ads.js?v=515"></script><script src="/cases-center.js?v=515"></script><script src="/cases-push.js?v=515"></script>', '/k/'+code+'/manifest'));
+    html(res, 200, page('QR Patient — ' + (site.center_name || ''), '<div id="app"></div>', 'k', '<script>window.CD=' + json(CD) + '</script><script src="/vendor/qrcode.js"></script><script src="/cases-kit.js?v=516"></script><script src="/cases-dicom.js?v=516"></script><script src="/cases-pacs.js?v=516"></script><script src="/cases-ads.js?v=516"></script><script src="/cases-center.js?v=516"></script><script src="/cases-push.js?v=516"></script>', '/k/'+code+'/manifest'));
     return true;
   }
   if (sub === 'manifest' && req.method === 'GET') { respondManifest(res,site,'k');return true; }
@@ -425,28 +435,49 @@ async function centerRoute(req, res, m) {
   if (sub === 'qr' && req.method === 'GET') { send(res, 200, { qr: qrStatsOf(cid) }); return true; }
   if (sub === 'dash' && req.method === 'GET') { send(res, 200, { dash: dashOf(cid) }); return true; }
   /* 5.15 · ads shown in the patient page's slider */
-  if (sub === 'ads' && req.method === 'GET' && !arg) { send(res, 200, { ads: adsOf(cid, true) }); return true; }
+  if (sub === 'ads' && req.method === 'GET' && !arg) { const st = db.prepare('SELECT slides_base FROM case_site WHERE customer_id = ?').get(cid) || {}; send(res, 200, { ads: adsOf(cid, true), base: st.slides_base !== 0 }); return true; }
+  if (sub === 'slides-base' && req.method === 'POST') { let b = {}; try { b = await readJson(req, 200); } catch (e) {} db.prepare('UPDATE case_site SET slides_base = ? WHERE customer_id = ?').run(b.on ? 1 : 0, cid); send(res, 200, { ok: true, base: !!b.on }); return true; }
+  /* 5.16 · complaints: password-protected delete / reset, and the full history for the analysis report */
+  if (sub === 'tickets-all' && req.method === 'GET') {
+    const L = db.prepare("SELECT id, name, phone, subject, message, at, status, updated_at FROM case_service_request WHERE customer_id = ? AND kind = 'complaint' ORDER BY id DESC LIMIT 5000").all(cid);
+    send(res, 200, { list: L }); return true;
+  }
+  if ((sub === 'tickets-reset' || (sub === 'tickets' && arg && act === 'delete')) && req.method === 'POST') {
+    if (limited('tdel:' + cid + ':' + ip, 12, 600e3)) { send(res, 429, { message: 'محاولات كتير — استنى شوية' }); return true; }
+    let b = {}; try { b = await readJson(req, 500); } catch (e) {}
+    if (!delPassOk(b.password)) { send(res, 403, { message: 'كلمة السر غلط' }); return true; }
+    const kind = b.kind === 'report' ? 'report' : 'complaint';
+    const rows = sub === 'tickets-reset'
+      ? db.prepare('SELECT id, files_json FROM case_service_request WHERE customer_id = ? AND kind = ?').all(cid, kind)
+      : db.prepare('SELECT id, files_json FROM case_service_request WHERE customer_id = ? AND id = ?').all(cid, Number(arg));
+    dropRequestFiles(rows);
+    const del = db.prepare('DELETE FROM case_service_request WHERE id = ? AND customer_id = ?'); rows.forEach(r => del.run(r.id, cid));
+    send(res, 200, { ok: true, removed: rows.length, tickets: serviceRequestsOf(cid) }); return true;
+  }
   if (sub === 'ads' && req.method === 'POST') {
     if (arg && act === 'delete') { db.prepare('DELETE FROM case_ad WHERE id = ? AND customer_id = ?').run(Number(arg), cid); send(res, 200, { ok: true, ads: adsOf(cid, true) }); return true; }
     if (arg && act === 'toggle') { db.prepare('UPDATE case_ad SET active = 1 - active WHERE id = ? AND customer_id = ?').run(Number(arg), cid); send(res, 200, { ok: true, ads: adsOf(cid, true) }); return true; }
     if (arg && (act === 'up' || act === 'down')) {
-      const L = db.prepare('SELECT id FROM case_ad WHERE customer_id = ? ORDER BY sort, id DESC').all(cid).map(x => x.id), i = L.indexOf(Number(arg)), j = act === 'up' ? i - 1 : i + 1;
+      const me = db.prepare('SELECT kind FROM case_ad WHERE id = ? AND customer_id = ?').get(Number(arg), cid) || {};
+      const L = db.prepare('SELECT id FROM case_ad WHERE customer_id = ? AND kind = ? ORDER BY sort, id DESC').all(cid, me.kind || 'ad').map(x => x.id), i = L.indexOf(Number(arg)), j = act === 'up' ? i - 1 : i + 1;
       if (i >= 0 && j >= 0 && j < L.length) { const t = L[i]; L[i] = L[j]; L[j] = t; }
       const up = db.prepare('UPDATE case_ad SET sort = ? WHERE id = ?'); L.forEach((id, k) => up.run(k, id));
       send(res, 200, { ok: true, ads: adsOf(cid, true) }); return true;
     }
     let b = {}; try { b = await readJson(req, 700000); } catch (e) { send(res, 413, { message: 'الصورة كبيرة — اختار صورة أصغر' }); return true; }
-    const title = clean(b.title, 70); if (!title) { send(res, 400, { message: 'اكتب عنوان الإعلان' }); return true; }
+    const kind = b.kind === 'slide' ? 'slide' : 'ad';
+    const title = clean(b.title, 70); if (!title && kind === 'ad') { send(res, 400, { message: 'اكتب عنوان الإعلان' }); return true; }
     const img = String(b.image || '');
     if (img && !/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(img)) { send(res, 400, { message: 'الملف ده مش صورة' }); return true; }
+    if (kind === 'slide' && !img) { send(res, 400, { message: 'اختار صورة للشريحة' }); return true; }
     const ends = /^\d{4}-\d{2}-\d{2}$/.test(String(b.ends || '')) ? b.ends : null;
     const row = [title, clean(b.body, 120), clean(b.tag, 24), AD_ART.includes(b.art) ? b.art : 'offer', img || null, AD_CTA.includes(b.cta) ? b.cta : '', b.active === false ? 0 : 1, ends];
     if (b.id) {
       const r = db.prepare('UPDATE case_ad SET title = ?, body = ?, tag = ?, art = ?, image = ?, cta = ?, active = ?, ends = ? WHERE id = ? AND customer_id = ?').run(...row, Number(b.id), cid);
       if (!r.changes) { send(res, 404, { message: 'الإعلان مش موجود' }); return true; }
     } else {
-      if ((db.prepare('SELECT COUNT(*) n FROM case_ad WHERE customer_id = ?').get(cid) || {}).n >= 12) { send(res, 400, { message: 'وصلت لأقصى عدد (12 إعلان) — امسح إعلان قديم الأول' }); return true; }
-      db.prepare('INSERT INTO case_ad (customer_id, title, body, tag, art, image, cta, active, ends, sort, created_at) VALUES (?,?,?,?,?,?,?,?,?,-1,?)').run(cid, ...row, nowTs());
+      if ((db.prepare('SELECT COUNT(*) n FROM case_ad WHERE customer_id = ? AND kind = ?').get(cid, kind) || {}).n >= 12) { send(res, 400, { message: 'وصلت لأقصى عدد (12) — امسح واحد قديم الأول' }); return true; }
+      db.prepare('INSERT INTO case_ad (customer_id, title, body, tag, art, image, cta, active, ends, sort, created_at, kind) VALUES (?,?,?,?,?,?,?,?,?,-1,?,?)').run(cid, ...row, nowTs(), kind);
     }
     send(res, 200, { ok: true, ads: adsOf(cid, true) }); return true;
   }
@@ -647,7 +678,7 @@ async function viewRoute(req, res, token, file) {
     if (!it) { if (limited('vx:' + ip, 40, 600e3)) { send(res, 429, { message: 'حاولت كتير' }); return true; } }
     if (it && it.active && it.site_on && who.via === 'qr') qrOpen(req, it.customer_id, 'report');
     const CD = it ? { token, kind: it.kind || 'pdf', center: it.center_name || '', logo: it.site_logo || '', theme: it.site_theme || 'a', patient: it.patient, exam: it.exam || '', at: it.created_at, pages: it.pages || 0, size: it.size, name: it.file_name || '', active: !!(it.active && it.site_on), ready: !!(it.cached && it.cache_until > Date.now()) || online(it.customer_id), wa: waFor(it.customer_id, it.site_wa), pub: it.site_pub || '' } : { missing: true };
-    html(res, it ? 200 : 404, page(it ? 'نتيجة الفحص — ' + (it.center_name || '') : 'الحالة مش موجودة', '<div id="app"></div>', 'v', '<script>window.CD=' + json(CD) + '</script>' + (it && it.kind === 'dicom' ? '<script src="/cases-pacs.js?v=515"></script>' : '<script src="/vendor/pdfjs/pdf.min.js"></script>') + '<script src="/cases-skin.js?v=515"></script><script src="/cases-view.js?v=515"></script>'));
+    html(res, it ? 200 : 404, page(it ? 'نتيجة الفحص — ' + (it.center_name || '') : 'الحالة مش موجودة', '<div id="app"></div>', 'v', '<script>window.CD=' + json(CD) + '</script>' + (it && it.kind === 'dicom' ? '<script src="/cases-pacs.js?v=516"></script>' : '<script src="/vendor/pdfjs/pdf.min.js"></script>') + '<script src="/cases-skin.js?v=516"></script><script src="/cases-view.js?v=516"></script>'));
     return true;
   }
   if (!it) { send(res, 404, { message: 'الحالة مش موجودة' }); return true; }
@@ -809,8 +840,8 @@ async function findRoute(req, res, pub, sub) {
     if (req.method !== 'GET') return false;
     if (!site) { if (limited('hx:' + ip, 30, 600e3)) { send(res, 429, { message: 'حاولت كتير' }); return true; } }
     if (site) qrOpen(req, site.customer_id, 'fixed');
-    const CD = site ? { pub, center: site.center_name || '', logo: site.logo || '', theme: site.theme || 'a', on: !!site.fixed_on, wa: waFor(site.customer_id, site.wa), ads: adsOf(site.customer_id) } : { missing: true };
-    html(res, site ? 200 : 404, page(site ? 'نتيجتك — ' + (site.center_name || '') : 'اللينك مش شغال', '<div id="app"></div>', 'v', '<script>window.CD=' + json(CD) + '</script><script src="/cases-kit.js?v=515"></script><script src="/cases-skin.js?v=515"></script><script src="/cases-ads.js?v=515"></script><script src="/cases-find.js?v=515"></script><script src="/cases-push.js?v=515"></script>',site?'/h/'+pub+'/manifest':null));
+    const CD = site ? { pub, center: site.center_name || '', logo: site.logo || '', theme: site.theme || 'a', on: !!site.fixed_on, wa: waFor(site.customer_id, site.wa), ads: adsOf(site.customer_id), base: site.slides_base !== 0 } : { missing: true };
+    html(res, site ? 200 : 404, page(site ? 'نتيجتك — ' + (site.center_name || '') : 'اللينك مش شغال', '<div id="app"></div>', 'v', '<script>window.CD=' + json(CD) + '</script><script src="/cases-kit.js?v=516"></script><script src="/cases-skin.js?v=516"></script><script src="/cases-ads.js?v=516"></script><script src="/cases-find.js?v=516"></script><script src="/cases-push.js?v=516"></script>',site?'/h/'+pub+'/manifest':null));
     return true;
   }
   if (req.method !== 'POST') return false;
