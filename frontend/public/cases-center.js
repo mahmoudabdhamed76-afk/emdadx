@@ -153,9 +153,26 @@
     var el = document.querySelector('[data-count="' + name + '"]');
     if (el) { el.textContent = n0(n); el.hidden = !n; }
   }
+  /* iOS Safari sometimes leaves hidden/composited panels blank after hash-only SPA navigation.
+     On Apple mobile devices open each section as an actual document navigation instead. */
+  var QRD_PAGES = /^(dashboard|bookings|results|complaints|reports|upload|cases|qr|design|activity|settings)$/;
+  function isIOSBrowser() {
+    var ua = String(navigator.userAgent || '');
+    return /iP(?:hone|ad|od)/i.test(ua) ||
+      (navigator.platform === 'MacIntel' && Number(navigator.maxTouchPoints) > 1);
+  }
   function pageFromHash() {
-    var match = /^#page-(dashboard|bookings|results|complaints|reports|upload|cases|qr|design|activity|settings)$/.exec(location.hash || '');
-    return match ? match[1] : 'dashboard';
+    var hash = /^#page-([a-z]+)$/.exec(location.hash || '');
+    if (hash && QRD_PAGES.test(hash[1])) return hash[1];
+    /* Search fallback makes direct bookmarks work even if Safari drops # on reload. */
+    var q = /(?:^|[?&])section=([a-z]+)(?:&|$)/.exec(location.search || '');
+    return q && QRD_PAGES.test(q[1]) ? q[1] : 'dashboard';
+  }
+  function pageUrl(section) {
+    var url = new URL(location.href);
+    url.searchParams.set('section', section);
+    url.hash = 'page-' + section;
+    return url.href;
   }
   function ensureDicom() {
     if (ui.dicomMounted || !window.OZDicom || !$('mwda')) return;
@@ -164,7 +181,18 @@
     catch (e) { ui.dicomMounted = false; toast('مش قادر أفتح أداة DICOM'); }
   }
   function navigatePage(page, push) {
-    var selected = /^(dashboard|bookings|results|complaints|reports|upload|cases|qr|design|activity|settings)$/.test(page) ? page : 'dashboard';
+    var selected = QRD_PAGES.test(page) ? page : 'dashboard';
+    if (push && selected !== ui.page && isIOSBrowser()) {
+      /* Real page transition avoids repeated blank white views on iPhone Safari/WebKit.
+         Don't interrupt an in-progress file upload or an unsaved queue item. */
+      if (ui.queue.some(function (item) { return item.st === 'ready' || item.st === 'saving' || item.st === 'reading'; })) {
+        toast('خلص حفظ أو رفع الملفات الأول قبل ما تفتح قسم تاني'); return;
+      }
+      try { history.scrollRestoration = 'manual'; window.scrollTo(0, 0); } catch (e) {}
+      ui.safeSectionNavigation = true;
+      window.location.assign(pageUrl(selected));
+      return;
+    }
     ui.page = selected;
     /* Explicit show/hide to prevent blank mobile Safari panels after tapping a section. */
     var panes = document.querySelectorAll('[data-qrd-page]'), visible = null;
@@ -201,6 +229,7 @@
     var wrap = document.querySelector('.wrap'), oldGrid = document.querySelector('.kgrid');
     if (!wrap || !oldGrid) return;
     var host = document.createElement('main'); host.id = 'qrdPages'; host.className = 'qrd-pages';
+    var initialPage = pageFromHash();
     var meta = [
       ['dashboard', 'لوحة التحكم', 'ملخص زيارات الباركود وآخر فتح للنتائج'],
       ['bookings', 'طلبات حجز الأشعة', 'طلبات الحجز الواردة فقط، مع إجراء الاتصال والتأكيد'],
@@ -217,7 +246,11 @@
     var bodies = {};
     meta.forEach(function (m) {
       var page = document.createElement('section');
-      page.className = 'qrd-page'; page.id = 'qrd-page-' + m[0]; page.dataset.qrdPage = m[0]; page.hidden = m[0] !== 'dashboard';
+      page.className = 'qrd-page'; page.id = 'qrd-page-' + m[0]; page.dataset.qrdPage = m[0];
+      /* Build the requested section visible from the start — never reveal a previously
+         hidden ancestor immediately after the initial iOS Safari paint. */
+      page.hidden = m[0] !== initialPage;
+      page.style.display = page.hidden ? 'none' : 'block';
       page.innerHTML = '<div class="qrd-page-title"><div><small>QR Patient / ' + m[1] + '</small><h1>' + m[1] +
         '</h1><p>' + m[2] + '</p></div></div><div class="qrd-page-body" id="qrd-body-' + m[0] + '"></div>';
       host.appendChild(page); bodies[m[0]] = page.querySelector('.qrd-page-body');
@@ -252,6 +285,11 @@
     });
     window.addEventListener('hashchange', function () { navigatePage(pageFromHash(), false); });
     window.addEventListener('popstate', function () { navigatePage(pageFromHash(), false); });
+    /* Restore the correct section when Safari returns from Back/Forward Cache. */
+    if (isIOSBrowser()) window.addEventListener('pageshow', function () {
+      navigatePage(pageFromHash(), false);
+      try { window.scrollTo(0, 0); } catch (e) {}
+    });
     navigatePage(pageFromHash(), false);
   }
   function setDashboardLayout(mode) {
@@ -266,6 +304,10 @@
   }
   function setupDashboardDecor() {
     document.body.classList.add('qrd-center');
+    if (isIOSBrowser()) {
+      document.documentElement.classList.add('qrd-ios-browser');
+      try { history.scrollRestoration = 'manual'; } catch (e) {}
+    }
     document.body.insertAdjacentHTML('afterbegin', dashboardNav());
     var header = document.querySelector('.tbar .sp');
     if (header) header.insertAdjacentHTML('afterbegin',
@@ -969,7 +1011,12 @@
     Promise.all([api('GET', 'list'), localAll()]).then(function (a) { ui.list = a[0].list || []; ui.local = a[1] || {}; ui.asks = a[0].asks || []; ui.bookings = a[0].bookings || []; ui.tickets = a[0].tickets || []; ui.qr = a[0].qr || ui.qr; ui.recent = a[0].recent || []; qrPanel(); bookings(); asks(); serviceTickets(); recent(); table(); stats(); disk(); backfill(); }).catch(function (e) { $('tbl').innerHTML = '<div class="emp"><i>⚠️</i>' + esc(e.message) + '</div>'; });
     connect(); bootWatch();
     document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible' && (!ui.es || ui.es.readyState === 2)) connect(); });
-    window.addEventListener('beforeunload', function (e) { if (Object.keys(ui.local).length || ui.queue.some(function (q) { return q.st === 'ready' || q.st === 'saving'; })) { e.preventDefault(); e.returnValue = ''; } });
+    window.addEventListener('beforeunload', function (e) {
+      var workInProgress = ui.queue.some(function (q) { return q.st === 'ready' || q.st === 'saving' || q.st === 'reading'; });
+      /* IndexedDB persists across a normal section reload; don't show a needless warning. */
+      if (ui.safeSectionNavigation && !workInProgress) return;
+      if (Object.keys(ui.local).length || workInProgress) { e.preventDefault(); e.returnValue = ''; }
+    });
   }
   if (C.auth) boot(); else login();
 })();
