@@ -62,6 +62,22 @@
     o.addEventListener('click', function (e) { if (e.target === o) close(); });
     setTimeout(close, 2400);
   }
+  /* Keep the webpage at its natural scale; medical image zoom remains available in .pxv. */
+  function preventPageZoom() {
+    if (C.missing) return;
+    function isMedicalViewer(target) {
+      return !!(target && target.closest && target.closest('.pxv'));
+    }
+    ['gesturestart', 'gesturechange'].forEach(function (type) {
+      document.addEventListener(type, function (e) {
+        if (!isMedicalViewer(e.target) && e.cancelable) e.preventDefault();
+      }, { capture: true, passive: false });
+    });
+    document.addEventListener('dblclick', function (e) {
+      if (!isMedicalViewer(e.target) && e.cancelable) e.preventDefault();
+    }, { passive: false });
+  }
+  preventPageZoom();
   function mount() { splash(); }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mount);
   else setTimeout(mount, 0);
