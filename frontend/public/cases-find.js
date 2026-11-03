@@ -56,7 +56,7 @@
       '<button class="btn w" type="submit" id="bgo">إرسال طلب الحجز ←</button></form></div>' +
     '</section>' +
     '<div class="pv2-trust"><div><i>🔒</i><span>خصوصية بياناتك</span></div><div><i>⚡</i><span>خطوات سريعة</span></div><div><i>📱</i><span>كل حاجة من موبايلك</span></div></div>' +
-    '<p class="pv2-footer">نتمنالك دوام الصحة والعافية ♥</p><p class="pv2-analytics-note">يتم تسجيل عدد زيارات رابط الباركود، وموقع عام تقريبي إن توفر، دون طلب الوصول لموقع جهازك.</p>' +
+    '<p class="pv2-footer">نتمنالك دوام الصحة والعافية ♥</p><p class="pv2-analytics-note">يتم احتساب مرات فتح رابط الباركود فقط، بدون تحديد موقع المريض أو تسجيل مكانه.</p>' +
   '</div>';
   function chooseJourney(which) {
     var booking = which === 'booking', result = which === 'results';
