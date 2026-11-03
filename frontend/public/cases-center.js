@@ -49,7 +49,14 @@
     check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>', shield: '<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M9 12l2 2 4-4"/>',
     phone: '<path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2"/>',
     moon: '<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/>', sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
-    bolt: '<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>'
+    bolt: '<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>',
+    dots: '<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>',
+    edit: '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/>',
+    mega: '<path d="M3 11v2a1 1 0 0 0 1 1h2l5 4V6L6 10H4a1 1 0 0 0-1 1z"/><path d="M15 9a4 4 0 0 1 0 6M18 6a8 8 0 0 1 0 12"/>',
+    au: '<path d="M12 19V5M6 11l6-6 6 6"/>', ad: '<path d="M12 5v14M6 13l6 6 6-6"/>',
+    img: '<rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-9 9"/>',
+    inbox: '<path d="M3 13l3-8h12l3 8v6a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><path d="M3 13h5l1 3h6l1-3h5"/>',
+    trend: '<path d="M3 17l6-6 4 4 8-8M15 7h6v6"/>', trendD: '<path d="M3 7l6 6 4-4 8 8M15 17h6v-6"/>'
   };
   function ic(n, c) { return '<svg class="i' + (c ? ' ' + c : '') + '" viewBox="0 0 24 24">' + (ICO[n] || '') + '</svg>'; }
   var EXC = [[/مقطع|ct/i, '#4F46E5'], [/رنين|mri/i, '#8B5CF6'], [/سونار|موجات|ultra/i, '#06B6D4'], [/ماموجرا|mammo/i, '#EC4899'], [/دوبلر|doppler/i, '#F43F5E'], [/بانوراما|panor/i, '#F59E0B'], [/كثافة|dexa/i, '#10B981'], [/عادية|x-?ray/i, '#64748B']];
@@ -138,16 +145,18 @@
       ['reports', '📤', 'طلبات التقارير'],
       ['upload', '⇧', 'رفع ملفات PDF / DICOM'],
       ['cases', '▥', 'الحالات'],
+      ['activity', '◷', 'آخر مرات الفتح'],
       ['qr', '▦', 'باركود المركز'],
       ['design', '◉', 'شكل صفحة المريض'],
-      ['activity', '◷', 'آخر مرات الفتح'],
+      ['ads', '📣', 'الإعلانات'],
       ['settings', '⚙', 'الإعدادات']
     ];
     return '<aside class="qrd-nav" id="dashSidebar" aria-label="قائمة QR Patient">' +
       '<div class="qrd-nav-brand"><span class="qrd-nav-logo">▦</span><div><b>QR Patient</b><small>إدارة صور وملفات المرضى</small></div></div>' +
       '<nav class="qrd-nav-list" aria-label="أقسام الصفحة">' +
       items.map(function (x) {
-        return '<a href="' + (isIOSBrowser() ? pageUrl(x[0]) : '#page-' + x[0]) + '" data-page="' + x[0] + '"' +
+        var grp = { bookings: 'طلبات المرضى', upload: 'الحالات', qr: 'المركز' }[x[0]];
+        return (grp ? '<p class="qrd-nav-grp">' + grp + '</p>' : '') + '<a href="' + (isIOSBrowser() ? pageUrl(x[0]) : '#page-' + x[0]) + '" data-page="' + x[0] + '"' +
           (x[0] === 'dashboard' ? ' class="on" aria-current="page"' : '') +
           '><span>' + x[1] + '</span><b>' + x[2] + '</b>' +
           (['bookings','results','complaints','reports'].indexOf(x[0]) >= 0 ? '<em class="qrd-nav-count" data-count="' + x[0] + '">0</em>' : '') + '</a>';
@@ -156,12 +165,13 @@
       '<small>كل الملفات والطلبات في مكان واحد</small></div></aside>';
   }
   function updateNavCount(name, n) {
+    dashSoon();
     var el = document.querySelector('[data-count="' + name + '"]');
     if (el) { el.textContent = n0(n); el.hidden = !n; }
   }
   /* iOS Safari sometimes leaves hidden/composited panels blank after hash-only SPA navigation.
      On Apple mobile devices open each section as an actual document navigation instead. */
-  var QRD_PAGES = /^(dashboard|bookings|results|complaints|reports|upload|cases|qr|design|activity|settings)$/;
+  var QRD_PAGES = /^(dashboard|bookings|results|complaints|reports|upload|cases|qr|design|ads|activity|settings)$/;
   function isIOSBrowser() {
     var ua = String(navigator.userAgent || '');
     return /iP(?:hone|ad|od)/i.test(ua) ||
@@ -247,6 +257,7 @@
       ['cases', 'الحالات والنتائج', 'البحث عن الحالات المرفوعة وإدارتها'],
       ['qr', 'باركود المركز', 'رابط الباركود الثابت وطرق طباعته ومشاركته'],
       ['design', 'شكل صفحة المريض', 'اختيار التصميم اللي يظهر للمرضى على موبايلهم'],
+      ['ads', 'الإعلانات', 'اكتب إعلان أو عرض يظهر للمرضى في السلايدر اللي فوق صفحتهم'],
       ['activity', 'آخر مرات الفتح', 'سجل فتح نتائج الأشعة وروابط الحالات'],
       ['settings', 'إعدادات وتخزين الجهاز', 'حالة مساحة التخزين ونسخة الملفات المحلية']
     ];
@@ -268,7 +279,6 @@
       if (node) (parent || bodies[name]).appendChild(node);
       return node;
     };
-    move('dashboard', '.hero2');
     var homeGrid = document.createElement('div'); homeGrid.className = 'qrd-home-grid'; bodies.dashboard.appendChild(homeGrid);
     move('dashboard', '#qrStats', homeGrid);
     var homeRecent = document.createElement('section'); homeRecent.className = 'qrd-home-recent';
@@ -282,7 +292,10 @@
     move('cases', '.kmain .card.list');
     move('qr', '#fx');
     var how = document.querySelector('.kside .how'); if (how) move('qr', how.closest('.opt'));
-    move('design', '#thm');
+    move('design', '.hero2'); move('design', '#thm');
+    move('qr', '#qrStats');
+    var adsBox = document.createElement('div'); adsBox.id = 'adsBox'; bodies.ads.appendChild(adsBox);
+    var lx = document.createElement('div'); lx.id = 'qrdX'; lx.className = 'lx'; bodies.dashboard.insertBefore(lx, bodies.dashboard.firstChild);
     move('activity', '#recentViews');
     move('settings', '#disk');
     if (oldGrid.parentNode) oldGrid.parentNode.removeChild(oldGrid);
@@ -354,6 +367,7 @@
     rec.forEach(function (r) { var at = String(r.at || ''); if (r.kind !== 'fixed') return; if (at.slice(0, 10) === td) hrs[+at.slice(11, 13) || 0]++; else if (at.slice(0, 10) === y) yc++; });
     var today = q.today || 0, views = 0; ui.list.forEach(function (r) { views += r.views || 0; });
     var reqs = (ui.bookings || []).length + (ui.tickets || []).length + (ui.asks || []).length;
+    var D = ui.dash; if (D) { today = D.qr.today; yc = D.qr.yday; hrs = D.hours.slice(); views = D.views.total; reqs = D.req.total; }
     var set = function (id, v) { var e = $(id); if (e && e.dataset.v !== String(v)) { e.dataset.v = v; count(e, v); } };
     set('dK1', today); set('dK2', views); set('dK3', reqs);
     var t = $('dK1t'); if (t) t.textContent = yc ? (today >= yc ? '▲ ' : '▼ ') + Math.abs(Math.round((today - yc) / yc * 100)) + '% عن امبارح' : (q.total ? 'الإجمالي ' + n0(q.total) + ' مرة' : 'لسه مفيش فتح');
@@ -477,7 +491,7 @@
   }
   function count(el, to) { var t0 = performance.now(); (function f(t) { var k = Math.min(1, (t - t0) / 900), e = 1 - Math.pow(1 - k, 3); el.textContent = n0(to * e); if (k < 1) requestAnimationFrame(f); })(t0); }
   function stats() {
-    setTimeout(function () { try { dHome(); } catch (e) {} }, 0);
+    setTimeout(function () { try { dHome(); } catch (e) {} }, 0); dashSoon();
     var td = ymd(), mo = td.slice(0, 7), a = 0, b = 0, v = 0;
     ui.list.forEach(function (r) { var d = String(r.at || '').slice(0, 10); if (d === td) a++; if (d.slice(0, 7) === mo) b++; v += r.views || 0; });
     [[$('s1'), a], [$('s2'), b], [$('s3'), v], [$('s4'), Object.keys(ui.local).length]].forEach(function (x) { if (x[0] && x[0].dataset.v !== String(x[1])) { x[0].dataset.v = x[1]; count(x[0], x[1]); } });
@@ -798,17 +812,29 @@
   function qxShell(key, cols, rows, empty, countLabel) {
     return '<section class="qx" data-qx="' + key + '"><div class="qx-bar"><label class="qx-s">' + ic('search') + '<input type="search" placeholder="ابحث بالاسم أو الموبايل أو التفاصيل" data-qx-q></label>' +
       '<span class="qx-n" data-qx-n>' + rows.length + ' ' + countLabel + '</span></div>' +
-      (rows.length ? '<div class="qx-h">' + cols.map(function (c) { return '<span>' + c + '</span>'; }).join('') + '</div><div class="qx-list">' + rows.join('') + '</div><p class="qx-none" hidden>مفيش نتايج للبحث ده</p>'
+      (rows.length ? '<div class="qx-h">' + cols.map(function (c) { return '<span>' + c + '</span>'; }).join('') + '</div><div class="qx-list">' + rows.join('') + '</div><p class="qx-none" hidden>مفيش نتايج للبحث ده</p>' +
+        '<div class="lx-pg qx-pg" hidden><span data-qx-r></span><div><button type="button" class="btn g sm" data-qx-p="-1">→ السابق</button><b data-qx-pn></b><button type="button" class="btn g sm" data-qx-p="1">التالي ←</button></div></div>'
         : '<div class="qx-empty"><span>✅</span><b>' + empty + '</b><small>أول ما يوصل طلب جديد هيظهر هنا لحظيًا</small></div>') + '</section>';
   }
+  /* 5.15 · search + 12 rows per page; a row's details open on click */
   function qxWire(el, countLabel) {
+    el.classList.remove('qrd-data-pending');
     var q = el.querySelector('[data-qx-q]'); if (!q) return;
-    q.oninput = function () {
-      var v = q.value.trim().toLowerCase(), n = 0;
-      [].forEach.call(el.querySelectorAll('.qx-r'), function (r) { var ok = !v || r.textContent.toLowerCase().indexOf(v) > -1; r.hidden = !ok; if (ok) n++; });
-      var c = el.querySelector('[data-qx-n]'); if (c) c.textContent = n + ' ' + countLabel; var none = el.querySelector('.qx-none'); if (none) none.hidden = !!n;
-    };
+    var PER = 12, pg = 0, R = [].slice.call(el.querySelectorAll('.qx-r'));
+    function apply() {
+      var v = q.value.trim().toLowerCase(), M = R.filter(function (r) { return !v || r.textContent.toLowerCase().indexOf(v) > -1; }), pages = Math.max(1, Math.ceil(M.length / PER));
+      pg = Math.max(0, Math.min(pg, pages - 1));
+      R.forEach(function (r) { r.hidden = true; }); M.slice(pg * PER, pg * PER + PER).forEach(function (r) { r.hidden = false; });
+      var c = el.querySelector('[data-qx-n]'); if (c) c.textContent = M.length + ' ' + countLabel; var none = el.querySelector('.qx-none'); if (none) none.hidden = !!M.length;
+      var bar = el.querySelector('.qx-pg'); if (!bar) return; bar.hidden = M.length <= PER;
+      bar.querySelector('[data-qx-r]').textContent = 'عرض ' + (M.length ? pg * PER + 1 : 0) + '–' + Math.min(M.length, pg * PER + PER) + ' من ' + M.length;
+      bar.querySelector('[data-qx-pn]').textContent = (pg + 1) + ' / ' + pages;
+      bar.querySelector('[data-qx-p="-1"]').disabled = !pg; bar.querySelector('[data-qx-p="1"]').disabled = pg >= pages - 1;
+    }
+    q.oninput = function () { pg = 0; apply(); };
+    [].forEach.call(el.querySelectorAll('[data-qx-p]'), function (b) { b.onclick = function () { pg += +b.dataset.qxP; apply(); }; });
     [].forEach.call(el.querySelectorAll('.qx-note'), function (x) { x.onclick = function () { x.classList.toggle('open'); }; });
+    apply();
   }
   function serviceTickets() {
     var rows = ui.tickets || [];
@@ -901,6 +927,147 @@
     });
   }
 
+  /* ════════ 5.15 · admin look (Laravel/Filament style): honest numbers, stat widgets, data tables, ads ════════ */
+  function dashSoon() { clearTimeout(ui.dashT); ui.dashT = setTimeout(function () { api('GET', 'dash').then(function (x) { ui.dash = x.dash || ui.dash; dashX(); dHome(); }).catch(function () {}); }, 700); }
+  function pct(a, b) { return b ? Math.round((a - b) / b * 100) : 0; }
+  function lxSpark(arr, c) {
+    if (!arr || arr.filter(function (v) { return v; }).length < 2) return '';
+    var mx = Math.max.apply(null, arr.concat([1])), n = arr.length, P = arr.map(function (v, i) { return [(i / (n - 1 || 1) * 120).toFixed(1), (34 - v / mx * 28).toFixed(1)]; });
+    var d = 'M' + P.map(function (p) { return p[0] + ' ' + p[1]; }).join(' L');
+    return '<svg class="lx-sp" viewBox="0 0 120 36" preserveAspectRatio="none" aria-hidden="true"><path d="' + d + ' L120 36 L0 36Z" fill="' + c + '" opacity=".12"/><path d="' + d + '" fill="none" stroke="' + c + '" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round"/></svg>';
+  }
+  function lxStat(o) {
+    return '<div class="lx-st" style="--c:' + o.c + '"><div class="lx-st-h"><span class="lx-st-l">' + o.l + '</span><span class="lx-st-i">' + ic(o.i) + '</span></div>' +
+      '<b class="lx-st-v">' + n0(o.v) + '</b><p class="lx-st-d ' + (o.tone || '') + '">' + (o.ti ? ic(o.ti) : '') + '<span>' + o.d + '</span></p>' + (o.sp ? lxSpark(o.sp, o.c) : '') + '</div>';
+  }
+  function casesPerDay() {
+    var out = [], i, m = {}; ui.list.forEach(function (r) { var d = String(r.at || '').slice(0, 10); m[d] = (m[d] || 0) + 1; });
+    for (i = 13; i >= 0; i--) out.push(m[ymd(new Date(Date.now() - i * 864e5))] || 0); return out;
+  }
+  var DAYW = ['أحد', 'اتنين', 'تلات', 'أربع', 'خميس', 'جمعة', 'سبت'];
+  function lxChart(D) {
+    var mode = ui.lxMode || 'today', cols = [], xl = [], mx = 1, i;
+    if (mode === 'today') {
+      for (i = 0; i < 24; i++) { cols.push([D.hours[i] || 0]); mx = Math.max(mx, D.hours[i] || 0); }
+      xl = ['12ص', '3ص', '6ص', '9ص', '12م', '3م', '6م', '9م'];
+    } else {
+      D.days.forEach(function (d) { cols.push([d.qr, d.views]); mx = Math.max(mx, d.qr, d.views); });
+    }
+    var step = Math.max(1, Math.ceil(mx / 4)), top = step * 4, now = new Date().getHours();
+    var grid = [4, 3, 2, 1, 0].map(function (k) { return '<div class="lx-gl" style="bottom:' + (k * 25) + '%"><span>' + n0(step * k) + '</span></div>'; }).join('');
+    var bars = cols.map(function (c, j) {
+      var tip = mode === 'today' ? (((j % 12) || 12) + (j < 12 ? ' ص' : ' م') + ' — ' + c[0] + ' فتح') : (function () { var d = D.days[j], dt = new Date(d.day + 'T12:00:00'); return DAYW[dt.getDay()] + ' ' + (+d.day.slice(8)) + '/' + (+d.day.slice(5, 7)) + ' — باركود ' + d.qr + ' · نتائج ' + d.views; })();
+      return '<div class="lx-col' + (mode === 'today' && j === now ? ' now' : '') + '" data-tip="' + esc(tip) + '">' + c.map(function (v, k) { return '<i class="s' + k + '" style="height:' + (v ? Math.max(3, v / top * 100) : 0) + '%"></i>'; }).join('') + '</div>';
+    }).join('');
+    if (mode !== 'today') xl = D.days.map(function (d, j) { return j % 2 ? '' : (+d.day.slice(8)) + '/' + (+d.day.slice(5, 7)); });
+    return '<div class="lx-ch-plot"><div class="lx-grid">' + grid + '</div><div class="lx-bars m-' + mode + '">' + bars + '</div></div>' +
+      '<div class="lx-xl m-' + mode + '">' + xl.map(function (t) { return '<span>' + t + '</span>'; }).join('') + '</div>';
+  }
+  function dashX() {
+    var el = $('qrdX'), D = ui.dash; if (!el) return;
+    if (!D) { el.innerHTML = '<div class="lx-stats">' + [1, 2, 3, 4].map(function () { return '<div class="lx-st sk"></div>'; }).join('') + '</div>'; return; }
+    var qd = pct(D.qr.today, D.qr.yday), R = D.req;
+    var reqLine = [['حجز', R.bookings], ['نتائج', R.results], ['شكاوى', R.complaints], ['تقارير', R.reports]].filter(function (x) { return x[1]; }).map(function (x) { return x[0] + ' ' + x[1]; }).join(' · ') || 'مفيش طلبات مستنية';
+    var stats = lxStat({ l: 'فتح الباركود الثابت النهارده', v: D.qr.today, i: 'qr', c: '#0D9488', sp: D.days.map(function (d) { return d.qr; }),
+        d: D.qr.yday ? (Math.abs(qd) + '% ' + (qd >= 0 ? 'زيادة' : 'أقل') + ' عن امبارح (' + n0(D.qr.yday) + ')') : 'الإجمالي ' + n0(D.qr.total) + ' مرة', tone: D.qr.yday ? (qd >= 0 ? 'up' : 'dn') : '', ti: D.qr.yday ? (qd >= 0 ? 'trend' : 'trendD') : '' }) +
+      lxStat({ l: 'مرات فتح النتائج النهارده', v: D.views.today, i: 'eye', c: '#6366F1', sp: D.days.map(function (d) { return d.views; }), d: 'الإجمالي ' + n0(D.views.total) + ' مرة · امبارح ' + n0(D.views.yday) }) +
+      lxStat({ l: 'الحالات المرفوعة', v: D.cases.total, i: 'file', c: '#D97706', sp: casesPerDay(), d: 'النهارده ' + n0(D.cases.today) + ' · الشهر ده ' + n0(D.cases.month) + (D.cases.unseen ? ' · ' + n0(D.cases.unseen) + ' لسه متفتحتش' : '') }) +
+      lxStat({ l: 'طلبات مستنية رد', v: R.total, i: 'inbox', c: '#E11D48', d: reqLine, tone: R.total ? 'warn' : 'up' });
+    var mode = ui.lxMode || 'today';
+    var follow = [['bookings', 'today', 'طلبات حجز الأشعة', R.bookings, '#4F46E5'], ['results', 'eye', 'طلبات النتائج', R.results, '#0D9488'], ['complaints', 'wa', 'الشكاوى', R.complaints, '#E11D48'], ['reports', 'file', 'طلبات التقارير', R.reports, '#D97706']];
+    var recentRows = (ui.recent || []).slice(0, 8).map(function (e) {
+      var v = VIA[e.via] || VIA.qr;
+      return '<tr data-vt="' + esc(e.token) + '"><td><div class="lx-pt">' + qxAv(e.patient) + '<b>' + esc(e.patient || '—') + '</b></div></td><td>' + (e.exam ? '<span class="lx-b" style="--x:' + exColor(e.exam) + '">' + esc(e.exam) + '</span>' : '—') + '</td>' +
+        '<td><span class="lx-via ' + (e.via === 'fixed' ? 'f' : 'q') + '">' + v[0] + ' ' + v[1] + '</span></td><td class="mut">' + esc(e.dev || '—') + '</td><td class="mut">' + when(e.at) + '</td></tr>';
+    }).join('');
+    el.innerHTML = '<div class="lx-stats">' + stats + '</div>' +
+      '<div class="lx-row"><section class="lx-card lx-chart"><div class="lx-ch"><div><h3>فتح الباركود</h3><small>' + (mode === 'today' ? 'النهارده بالساعة — الباركود الثابت' : 'آخر 14 يوم') + '</small></div>' +
+        '<div class="lx-seg" role="group"><button type="button" data-lxm="today" class="' + (mode === 'today' ? 'on' : '') + '">النهارده</button><button type="button" data-lxm="days" class="' + (mode === 'days' ? 'on' : '') + '">14 يوم</button></div></div>' +
+        (mode === 'days' ? '<div class="lx-lg"><span><i class="s0"></i>الباركود الثابت</span><span><i class="s1"></i>فتح النتائج</span></div>' : '') + lxChart(D) + '</section>' +
+      '<section class="lx-card lx-follow"><div class="lx-ch"><div><h3>محتاج متابعة</h3><small>الطلبات اللي لسه مارديتش عليها</small></div></div><div class="lx-fl">' +
+        follow.map(function (f) { return '<button type="button" data-page-nav="' + f[0] + '" style="--c:' + f[4] + '"><span class="lx-fi">' + ic(f[1]) + '</span><b>' + f[2] + '</b><em class="' + (f[3] ? 'on' : '') + '">' + n0(f[3]) + '</em></button>'; }).join('') +
+        '</div><div class="lx-qa"><button type="button" class="btn" data-lxq="pdf">' + ic('file') + ' ارفع PDF</button><button type="button" class="btn g" data-lxq="dicom">🩻 DICOM</button><button type="button" class="btn g" data-page-nav="ads">' + ic('mega') + ' إعلان</button></div></section></div>' +
+      '<section class="lx-card lx-recent"><div class="lx-ch"><div><h3>آخر مرات فتح النتائج</h3><small>مين فتح نتيجته وإمتى ومن أنهي باركود</small></div><button type="button" class="btn g sm" data-page-nav="activity">السجل كله ←</button></div>' +
+        (recentRows ? '<div class="lx-tw"><table class="lx-t"><thead><tr><th>المريض</th><th>الفحص</th><th>فتحها من</th><th>الجهاز</th><th>الوقت</th></tr></thead><tbody>' + recentRows + '</tbody></table></div>' : '<p class="lx-emp">لسه مفيش فتح لنتائج الأشعة — هتظهر هنا لحظيًا.</p>') + '</section>';
+    [].forEach.call(el.querySelectorAll('[data-lxm]'), function (b) { b.onclick = function () { ui.lxMode = b.dataset.lxm; dashX(); }; });
+    [].forEach.call(el.querySelectorAll('[data-vt]'), function (r) { r.onclick = function () { viewsModal(r.dataset.vt); }; });
+    [].forEach.call(el.querySelectorAll('[data-lxq]'), function (b) { b.onclick = function () { var k = b.dataset.lxq; navigatePage('upload', true); setTimeout(function () { if (k === 'pdf') { var f = $('fi'); if (f) f.click(); } else dicomPick(); }, 200); }; });
+  }
+
+  /* ── ads: written here, shown to patients in their page's slider ── */
+  var PAL = { a: ['#0F766E', '#14B8A6'], b: ['#145FB4', '#2CA7EC'], c: ['#EA580C', '#F97316'], d: ['#7357C5', '#A78BFA'], e: ['#267CB4', '#6CC4E8'], f: ['#247D5B', '#55B68C'] };
+  function adsLoad() { api('GET', 'ads').then(function (x) { ui.ads = x.ads || []; adsUI(); }).catch(function () { ui.ads = ui.ads || []; adsUI(); }); }
+  function adImg(file) {
+    return new Promise(function (ok, no) {
+      var u = URL.createObjectURL(file), I = new Image();
+      I.onload = function () { var k = Math.min(1, 1000 / I.width, 600 / I.height), w = Math.round(I.width * k), h = Math.round(I.height * k), cv = document.createElement('canvas'); cv.width = w; cv.height = h; cv.getContext('2d').drawImage(I, 0, 0, w, h); URL.revokeObjectURL(u);
+        var q = 0.84, d = cv.toDataURL('image/jpeg', q); while (d.length > 520000 && q > 0.4) { q -= 0.12; d = cv.toDataURL('image/jpeg', q); } ok(d); };
+      I.onerror = function () { no(new Error('الملف ده مش صورة')); }; I.src = u;
+    });
+  }
+  function adState(a) { var td = ymd(); if (!a.active) return ['of', 'موقوف']; if (a.ends && a.ends < td) return ['ex', 'خلص']; return ['on', 'شغال']; }
+  function adPrev() {
+    var w = $('adPv'); if (!w || !window.OZAds) return; var f = ui.adEdit, p = PAL[ui.theme || C.theme] || PAL.a;
+    w.style.setProperty('--pp', p[0]); w.style.setProperty('--pp2', p[1]);
+    w.innerHTML = '<div class="pvs"><div class="pvs-tr">' + OZAds.slide({ title: f.title || 'عنوان الإعلان', body: f.body, tag: f.tag, art: f.art, image: f.image, cta: f.cta, ad: true }, true) + '</div><div class="pvs-dots"><button class="on" type="button"><i></i></button><button type="button"><i></i></button><button type="button"><i></i></button></div></div>';
+  }
+  function adsUI() {
+    var el = $('adsBox'); if (!el || !window.OZAds) return;
+    var f = ui.adEdit = ui.adEdit || { art: 'offer', cta: 'book', active: true, title: '', body: '', tag: 'عرض خاص', image: '', ends: '' }, L = ui.ads || [];
+    var arts = OZAds.ARTS.map(function (a) { return '<button type="button" data-art="' + a[0] + '" class="' + (!f.image && f.art === a[0] ? 'on' : '') + '"><span class="ad-mini">' + OZAds.art(a[0]) + '</span><small>' + a[1] + '</small></button>'; }).join('') +
+      '<button type="button" data-art="img" class="' + (f.image ? 'on' : '') + '"><span class="ad-mini im">' + (f.image ? '<img src="' + f.image + '" alt="">' : ic('img')) + '</span><small>' + (f.image ? 'غيّر الصورة' : 'صورة من عندك') + '</small></button>';
+    var rows = L.map(function (a, i) {
+      var s = adState(a);
+      return '<tr data-ad="' + a.id + '"><td><div class="lx-pt"><span class="ad-th">' + (a.image ? '<img src="' + a.image + '" alt="">' : OZAds.art(a.art)) + '</span><div><b>' + esc(a.title) + '</b><span class="n">' + esc(a.body || '—') + '</span></div></div></td>' +
+        '<td>' + (a.tag ? '<span class="lx-b" style="--x:#D97706">' + esc(a.tag) + '</span>' : '—') + '</td><td class="mut">' + (a.cta ? OZAds.CTA[a.cta] : 'بدون') + '</td>' +
+        '<td><span class="lx-st2 ' + s[0] + '">' + s[1] + '</span></td><td class="mut">' + (a.ends ? (+a.ends.slice(8)) + '/' + (+a.ends.slice(5, 7)) + '/' + a.ends.slice(0, 4) : 'مفتوح') + '</td>' +
+        '<td class="lx-acts"><button class="lx-ib" data-ada="up" data-tip="لفوق"' + (i ? '' : ' disabled') + '>' + ic('au') + '</button><button class="lx-ib" data-ada="down" data-tip="لتحت"' + (i < L.length - 1 ? '' : ' disabled') + '>' + ic('ad') + '</button>' +
+        '<button class="lx-ib" data-ada="edit" data-tip="تعديل">' + ic('edit') + '</button><button class="lx-ib" data-ada="toggle" data-tip="' + (a.active ? 'وقّف' : 'شغّل') + '">' + ic(a.active ? 'pause' : 'play') + '</button><button class="lx-ib dl" data-ada="delete" data-tip="امسح">' + ic('trash') + '</button></td></tr>';
+    }).join('');
+    el.innerHTML = '<div class="lx-ads"><section class="lx-card ad-form"><div class="lx-ch"><div><h3>' + (f.id ? '✎ تعديل الإعلان' : '📣 إعلان جديد') + '</h3><small>بيظهر للمرضى في السلايدر اللي في أول صفحتهم، بعد شريحة «ألف سلامة»</small></div></div>' +
+      '<div class="ad-grid"><div class="ad-fields">' +
+        '<label class="l" for="adT">عنوان الإعلان *</label><input class="fld" id="adT" maxlength="70" placeholder="مثلاً: خصم 20% على السونار" value="' + esc(f.title) + '">' +
+        '<label class="l" for="adB">سطر توضيحي</label><input class="fld" id="adB" maxlength="120" placeholder="مثلاً: العرض لحد آخر الشهر — احجز من موبايلك" value="' + esc(f.body) + '">' +
+        '<div class="ad-2"><div><label class="l" for="adG">الشارة الصغيرة</label><input class="fld" id="adG" maxlength="24" placeholder="عرض خاص" value="' + esc(f.tag) + '"></div>' +
+        '<div><label class="l" for="adC">الزرار اللي في الإعلان</label><select class="fld" id="adC"><option value="">بدون زرار</option>' + Object.keys(OZAds.CTA).map(function (k) { return '<option value="' + k + '"' + (f.cta === k ? ' selected' : '') + '>' + OZAds.CTA[k] + '</option>'; }).join('') + '</select></div></div>' +
+        '<label class="l">الرسمة أو الصورة</label><div class="ad-arts">' + arts + '</div><input type="file" id="adF" accept="image/png,image/jpeg,image/webp" hidden>' +
+        '<div class="ad-2"><div><label class="l" for="adE">آخر يوم للإعلان (اختياري)</label><input class="fld" id="adE" type="date" value="' + esc(f.ends || '') + '"></div>' +
+        '<div><label class="l">الظهور</label><label class="ad-sw"><input type="checkbox" id="adA"' + (f.active !== false ? ' checked' : '') + '><i></i><span>يظهر للمرضى</span></label></div></div>' +
+      '</div><div class="ad-pw"><small>كده هيظهر للمريض</small><div class="pvd ad-prev" id="adPv"></div>' +
+        '<div class="ad-btns"><button type="button" class="btn" id="adS">💾 ' + (f.id ? 'احفظ التعديل' : 'انشر الإعلان') + '</button>' + (f.id ? '<button type="button" class="btn g" id="adX">إلغاء</button>' : '') + '</div></div></div></section>' +
+      '<section class="lx-card ad-list"><div class="lx-ch"><div><h3>الإعلانات</h3><small>' + (L.length ? L.length + ' إعلان · الترتيب هو ترتيب ظهورهم في السلايدر' : 'لسه مفيش إعلانات') + '</small></div></div>' +
+        (rows ? '<div class="lx-tw"><table class="lx-t"><thead><tr><th>الإعلان</th><th>الشارة</th><th>الزرار</th><th>الحالة</th><th>لحد</th><th></th></tr></thead><tbody>' + rows + '</tbody></table></div>'
+          : '<p class="lx-emp">📣 اكتب أول إعلان من الفورم — هيظهر للمرضى على طول في صفحتهم.</p>') + '</section></div>';
+    adPrev();
+    var bind = function (id, k) { var i = $(id); if (i) i.oninput = i.onchange = function () { f[k] = i.type === 'checkbox' ? i.checked : i.value; if (k !== 'active' && k !== 'ends') adPrev(); }; };
+    bind('adT', 'title'); bind('adB', 'body'); bind('adG', 'tag'); bind('adC', 'cta'); bind('adE', 'ends'); bind('adA', 'active');
+    [].forEach.call(el.querySelectorAll('[data-art]'), function (b) { b.onclick = function () {
+      if (b.dataset.art === 'img') return $('adF').click();
+      f.art = b.dataset.art; f.image = ''; [].forEach.call(el.querySelectorAll('[data-art]'), function (x) { x.classList.toggle('on', x === b); }); adPrev();
+    }; });
+    $('adF').onchange = function () { var file = this.files[0]; this.value = ''; if (!file) return; adImg(file).then(function (d) { f.image = d; adsUI(); }).catch(function (e) { toast(e.message); }); };
+    $('adS').onclick = function () {
+      if (!String(f.title || '').trim()) { $('adT').focus(); toast('اكتب عنوان الإعلان'); return; }
+      var b = this; b.disabled = true;
+      api('POST', 'ads', { id: f.id, title: f.title, body: f.body, tag: f.tag, art: f.art, image: f.image, cta: f.cta, ends: f.ends, active: f.active !== false })
+        .then(function (x) { ui.ads = x.ads || []; toast(f.id ? '✅ اتحفظ التعديل' : '📣 الإعلان اتنشر — المرضى هيشوفوه في صفحتهم'); ui.adEdit = null; adsUI(); dashSoon(); })
+        .catch(function (e) { b.disabled = false; toast(e.message); });
+    };
+    if ($('adX')) $('adX').onclick = function () { ui.adEdit = null; adsUI(); };
+    [].forEach.call(el.querySelectorAll('[data-ada]'), function (b) { b.onclick = function () {
+      var id = +b.closest('[data-ad]').dataset.ad, k = b.dataset.ada, a = L.filter(function (x) { return x.id === id; })[0];
+      if (k === 'edit') { ui.adEdit = { id: a.id, title: a.title, body: a.body, tag: a.tag, art: a.art, image: a.image, cta: a.cta, ends: a.ends, active: a.active }; adsUI(); el.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
+      if (k === 'delete' && !confirm('تمسح إعلان «' + a.title + '»؟')) return;
+      b.disabled = true;
+      api('POST', 'ads/' + id + '/' + k).then(function (x) { ui.ads = x.ads || []; if (ui.adEdit && ui.adEdit.id === id && k === 'delete') ui.adEdit = null; adsUI(); dashSoon(); }).catch(function (e) { b.disabled = false; toast(e.message); });
+    }; });
+  }
+  document.addEventListener('click', function (e) {
+    var m = e.target.closest && e.target.closest('[data-menu]');
+    [].forEach.call(document.querySelectorAll('.lx-dd'), function (d) { if (!m || d !== m.nextElementSibling) d.hidden = true; });
+    if (m) { var dd = m.nextElementSibling; dd.hidden = !dd.hidden; }
+  });
+
   /* ── the list ── */
   function inF(r) {
     var d = String(r.at || '').slice(0, 10);
@@ -924,26 +1091,33 @@
     var q = ui.q.toLowerCase(), L = ui.list.filter(inF).filter(function (r) { return !q || String(r.patient).toLowerCase().indexOf(q) > -1 || String(r.phone || '').indexOf(q) > -1 || String(r.exam || '').toLowerCase().indexOf(q) > -1; });
     var lc = $('lc'); if (lc) lc.textContent = L.length ? L.length + ' حالة' : '';
     if (!L.length) { var srch = q || ui.f !== 'all'; $('tbl').innerHTML = '<div class="emp"><svg class="ill" viewBox="0 0 120 96" fill="none"><rect x="26" y="14" width="56" height="70" rx="10" fill="#EEF2FF" stroke="#C7CAF7" stroke-width="2"/><path d="M38 34h32M38 46h24M38 58h28" stroke="#A5B4FC" stroke-width="4" stroke-linecap="round"/>' + (srch ? '<circle cx="84" cy="62" r="16" fill="#fff" stroke="#6366F1" stroke-width="4"/><path d="M96 74l10 10" stroke="#6366F1" stroke-width="5" stroke-linecap="round"/>' : '<circle cx="88" cy="66" r="16" fill="url(#eg)"/><path d="M88 58v16M80 66h16" stroke="#fff" stroke-width="4" stroke-linecap="round"/><defs><linearGradient id="eg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#4F46E5"/><stop offset="1" stop-color="#06B6D4"/></linearGradient></defs>') + '</svg><b>' + (srch ? 'مفيش حالات هنا' : 'لسه مفيش حالات') + '</b>' + (srch ? 'غيّر البحث أو الفلتر' : 'اسحب أول PDF فوق وهيطلعله باركود على طول') + '</div>'; return; }
-    var G = [], cur = null;
-    L.slice(0, 300).forEach(function (r) { var d = dayOf(r.at); if (!cur || cur.d !== d) { cur = { d: d, L: [] }; G.push(cur); } cur.L.push(r); });
-    var idx = 0;
-    $('tbl').innerHTML = G.map(function (g) {
-      return '<div class="dg"><div class="dh"><span>' + esc(g.d) + '</span><em>' + g.L.length + '</em></div>' + g.L.map(function (r) {
-        var i = idx++, loc = ui.local[r.token], days = r.cached ? Math.max(1, Math.ceil((r.cache_until - Date.now()) / 864e5)) : 0;
-        var src = !r.active ? '<span class="tg of">⏸ موقوفة</span>' : (loc ? '<span class="tg lc" title="الملف الأصلي على الكمبيوتر ده">💾 الجهاز ده</span>' : '') + (r.cached ? '<span class="tg nw" title="نسخة مشفّرة مؤقتة على السيرفر">☁ ' + days + ' يوم</span>' : '') + (!loc && !r.cached ? '<span class="tg wr">⚠ على جهاز تاني</span>' : '') + (r.wrapped ? '<span class="tg pn" title="المريض يلاقيها بالباركود الثابت">📌</span>' : (r.phone ? '' : '<span class="tg of" title="من غير موبايل — مش هتتلاقى بالباركود الثابت">📵</span>'));
-        var qr = loc ? '<div class="cq" data-qr="' + r.token + '" title="كبّر الباركود"><div class="fx' + (loc.thumb ? ' two' : '') + '"><div class="fa">' + qrSvg(linkOf(r.token)) + '</div>' + (loc.thumb ? '<div class="fb"><img src="' + loc.thumb + '" alt=""></div>' : '') + '</div></div>' : '<div class="cq na" title="الباركود متاح على الجهاز اللي اترفعت منه"><div class="fx"><div class="fa">▦</div></div></div>';
-        return '<div class="cr' + (r.active ? '' : ' off') + '" style="--i:' + Math.min(i, 14) + ';--x:' + exColor(r.exam) + '" data-t="' + r.token + '">' + qr +
-          '<div class="cm"><span class="av">' + esc(String(r.patient || '؟').trim().charAt(0)) + '</span><div><b title="' + esc(r.patient) + '">' + esc(r.patient) + '</b><span class="n">' + esc(r.phone || '—') + '</span></div></div>' +
-          '<div class="ce"><span class="ex"><i></i>' + esc(r.exam || 'فحص') + '</span>' + (r.pages ? '<small>' + (r.kind === 'dicom' ? '🩻 DICOM · ' + r.pages + ' صورة' : r.pages + ' صفحة') + ' · ' + mb(r.size) + '</small>' : '') + '</div>' +
-          '<div class="ct">' + hmOf(r.at) + '<small>اتحفظت</small></div><div class="cs">' + src + '</div>' +
-          '<div class="cv"><span class="vw' + (r.views ? ' on' : '') + '" data-vw="' + r.token + '" title="مين فتح الحالة وإمتى" id="vw-' + r.token + '">' + ic('eye') + (r.views ? r.views : 'لسه') + '</span><small id="lv-' + r.token + '">' + (r.last_view ? when(r.last_view) : '') + '</small></div>' +
-          '<div class="ca">' + (loc && r.active ? '<button class="ic2" data-a="qr" data-tip="الباركود">' + ic('qr') + '</button><button class="ic2" data-a="print" data-tip="اطبع استيكر">' + ic('print') + '</button>' + (r.phone ? '<button class="ic2 wa" data-a="wa" data-tip="واتساب للمريض">' + ic('wa') + '</button>' : '') : '') +
-          (r.active ? '<button class="ic2" data-a="stop" data-tip="وقّف — الباركود مش هيفتح">' + ic('pause') + '</button>' : '<button class="ic2 go" data-a="start">' + ic('play') + ' شغّل</button>') + '<button class="ic2 dl" data-a="del" data-tip="امسح">' + ic('trash') + '</button></div></div>';
-      }).join('') + '</div>';
-    }).join('');
+    /* 5.15 · one data table, paged (20 per page), day groups as thin separators, extra actions in a menu */
+    var PER = 20, key = ui.f + '|' + q; if (ui.cpKey !== key) { ui.cpKey = key; ui.cp = 0; }
+    var pages = Math.ceil(L.length / PER); ui.cp = Math.max(0, Math.min(ui.cp || 0, pages - 1));
+    var P = L.slice(ui.cp * PER, ui.cp * PER + PER), last = '', body = '';
+    P.forEach(function (r) {
+      var d = dayOf(r.at); if (d !== last) { last = d; var n = L.filter(function (x) { return dayOf(x.at) === d; }).length; body += '<tr class="lx-g"><td colspan="7"><span>' + esc(d) + '</span><em>' + n + ' حالة</em></td></tr>'; }
+      var loc = ui.local[r.token], days = r.cached ? Math.max(1, Math.ceil((r.cache_until - Date.now()) / 864e5)) : 0;
+      var st = !r.active ? '<span class="lx-st2 of">⏸ موقوفة</span>' : (loc ? '<span class="lx-st2 on" title="الملف الأصلي على الكمبيوتر ده">💾 الجهاز ده</span>' : '') + (r.cached ? '<span class="lx-st2 nw" title="نسخة مشفّرة مؤقتة على السيرفر">☁ ' + days + ' يوم</span>' : '') + (!loc && !r.cached ? '<span class="lx-st2 ex">⚠ جهاز تاني</span>' : '') + (r.wrapped ? '<span class="lx-st2 pn" title="المريض يلاقيها بالباركود الثابت">📌 ثابت</span>' : (r.phone ? '' : '<span class="lx-st2 of" title="من غير موبايل — مش هتتلاقى بالباركود الثابت">📵</span>'));
+      var qr = loc ? '<button type="button" class="lx-q" data-qr="' + r.token + '" title="كبّر الباركود">' + qrSvg(linkOf(r.token)) + '</button>' : '<span class="lx-q na" title="الباركود متاح على الجهاز اللي اترفعت منه">▦</span>';
+      var acts = (loc && r.active ? '<button class="lx-ib" data-a="qr" data-tip="الباركود">' + ic('qr') + '</button><button class="lx-ib" data-a="print" data-tip="اطبع استيكر">' + ic('print') + '</button>' + (r.phone ? '<button class="lx-ib wa" data-a="wa" data-tip="واتساب للمريض">' + ic('wa') + '</button>' : '') : '') +
+        '<div class="lx-mn"><button type="button" class="lx-ib" data-menu data-tip="المزيد">' + ic('dots') + '</button><div class="lx-dd" hidden>' +
+        (r.active ? '<button data-a="stop">' + ic('pause') + ' وقّف الحالة</button>' : '<button data-a="start">' + ic('play') + ' شغّل الحالة</button>') +
+        '<button data-a="views">' + ic('eye') + ' مين فتحها</button><button data-a="del" class="dl">' + ic('trash') + ' امسح الحالة</button></div></div>';
+      body += '<tr class="lx-cr' + (r.active ? '' : ' off') + '" data-t="' + r.token + '" style="--x:' + exColor(r.exam) + '">' +
+        '<td><div class="lx-pt">' + qr + '<div><b title="' + esc(r.patient) + '">' + esc(r.patient) + '</b><span class="n">' + esc(r.phone || '—') + '</span></div></div></td>' +
+        '<td><span class="lx-b" style="--x:' + exColor(r.exam) + '">' + esc(r.exam || 'فحص') + '</span></td>' +
+        '<td class="mut">' + (r.kind === 'dicom' ? '🩻 DICOM · ' + (r.pages || 0) + ' صورة' : 'PDF · ' + (r.pages || 1) + ' صفحة') + '<small>' + mb(r.size || 0) + '</small></td>' +
+        '<td class="mut">' + hmOf(r.at) + '</td>' +
+        '<td><button type="button" class="vw' + (r.views ? ' on' : '') + '" data-vw="' + r.token + '" title="مين فتح الحالة وإمتى" id="vw-' + r.token + '">' + ic('eye') + (r.views ? r.views : 'لسه') + '</button><small class="lv" id="lv-' + r.token + '">' + (r.last_view ? when(r.last_view) : '') + '</small></td>' +
+        '<td><div class="lx-sts">' + st + '</div></td><td class="lx-acts">' + acts + '</td></tr>';
+    });
+    $('tbl').innerHTML = '<div class="lx-tw"><table class="lx-t lx-ct"><thead><tr><th>المريض</th><th>الفحص</th><th>الملف</th><th>اترفعت</th><th>الفتح</th><th>الحالة</th><th></th></tr></thead><tbody>' + body + '</tbody></table></div>' +
+      (pages > 1 ? '<div class="lx-pg"><span>عرض ' + (ui.cp * PER + 1) + '–' + Math.min(L.length, ui.cp * PER + PER) + ' من ' + L.length + '</span><div><button type="button" class="btn g sm" data-pg="-1"' + (ui.cp ? '' : ' disabled') + '>→ السابق</button><b>' + (ui.cp + 1) + ' / ' + pages + '</b><button type="button" class="btn g sm" data-pg="1"' + (ui.cp < pages - 1 ? '' : ' disabled') + '>التالي ←</button></div></div>' : '');
     [].forEach.call($('tbl').querySelectorAll('[data-qr]'), function (x) { x.onclick = function () { showQr(x.dataset.qr); }; });
     [].forEach.call($('tbl').querySelectorAll('[data-vw]'), function (x) { x.onclick = function () { viewsModal(x.dataset.vw); }; });
-    [].forEach.call($('tbl').querySelectorAll('[data-a]'), function (b) { b.onclick = function () { act(b.closest('[data-t]').dataset.t, b.dataset.a, b); }; });
+    [].forEach.call($('tbl').querySelectorAll('[data-pg]'), function (x) { x.onclick = function () { ui.cp += +x.dataset.pg; table(); var t = $('tbl'); if (t) t.scrollIntoView({ block: 'start', behavior: 'smooth' }); }; });
+    [].forEach.call($('tbl').querySelectorAll('[data-a]'), function (b) { b.onclick = function () { var dd = b.closest('.lx-dd'); if (dd) dd.hidden = true; if (b.dataset.a === 'views') return viewsModal(b.closest('[data-t]').dataset.t); act(b.closest('[data-t]').dataset.t, b.dataset.a, b); }; });
   }
   /* ── 4.98 · access log: every time a patient opens his case ── */
   var VIA = { qr: ['▦', 'باركود الحالة'], fixed: ['📌', 'الباركود الثابت'] }, SRC = { cache: '☁ من السيرفر', center: '💻 من جهاز المركز' };
@@ -1067,6 +1241,7 @@
         return fetch(BASE + '/relay/' + m.ticket, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/octet-stream' }, body: rec.blob });
       }).catch(function () {});
     });
+    ['qr-open', 'view', 'ticket', 'booking', 'ask'].forEach(function (k) { es.addEventListener(k, dashSoon); });
     es.addEventListener('qr-open', function (ev) {
       var m = {}; try { m = JSON.parse(ev.data); } catch (e) { return; }
       ui.qr = m.qr || ui.qr; qrPanel(); dHome();
@@ -1114,7 +1289,7 @@
     if (ui.prefill && ui.page === 'upload') {
       toast('📂 جهزنا بيانات المريض — اختار ملف PDF من زر رفع الملفات');
     }
-    Promise.all([api('GET', 'list'), localAll()]).then(function (a) { ui.list = a[0].list || []; ui.local = a[1] || {}; ui.asks = a[0].asks || []; ui.bookings = a[0].bookings || []; ui.tickets = a[0].tickets || []; ui.qr = a[0].qr || ui.qr; ui.recent = a[0].recent || []; qrPanel(); bookings(); asks(); serviceTickets(); recent(); table(); stats(); disk(); backfill(); dHome(); }).catch(function (e) {
+    Promise.all([api('GET', 'list'), localAll()]).then(function (a) { ui.list = a[0].list || []; ui.local = a[1] || {}; ui.asks = a[0].asks || []; ui.bookings = a[0].bookings || []; ui.tickets = a[0].tickets || []; ui.qr = a[0].qr || ui.qr; ui.recent = a[0].recent || []; ui.dash = a[0].dash || null; dashX(); adsLoad(); qrPanel(); bookings(); asks(); serviceTickets(); recent(); table(); stats(); disk(); backfill(); dHome(); }).catch(function (e) {
       var message='تعذّر تحميل بيانات القسم. جرّب تحديث الصفحة أو اتأكد من اتصال الإنترنت.';
       ['bookings','asks','complaints','reportRequests'].forEach(function (id) {
         var box=$(id); if (box) box.innerHTML='<div class="qrd-data-error" role="alert">⚠️ '+message+'</div>';

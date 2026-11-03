@@ -11,50 +11,20 @@
   document.body.className = 'v f';
   /* 5.14 · hero slider — drawn radiology scenes (CT, reading room, chest X-ray, result on the phone), auto-plays + swipe */
   function PVS_HTML() {
-    var A = '#7DE3F4', ribs = '', i;
-    for (i = 0; i < 6; i++) { var y = 46 + i * 13; ribs += '<path d="M108 ' + y + 'q-26 -4 -40 ' + (12 + i) + '"/><path d="M112 ' + y + 'q26 -4 40 ' + (12 + i) + '"/>'; }
-    var ART = [
-      /* CT scanner with a patient sliding in */
-      '<svg viewBox="0 0 220 170" aria-hidden="true"><defs><radialGradient id="pg1" cx=".5" cy=".45" r=".55"><stop offset="0" stop-color="' + A + '" stop-opacity=".45"/><stop offset="1" stop-color="' + A + '" stop-opacity="0"/></radialGradient><linearGradient id="pg2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F6FAFC"/><stop offset="1" stop-color="#BFD0DB"/></linearGradient></defs>' +
-        '<circle cx="118" cy="78" r="86" fill="url(#pg1)"/><path d="M0 146h220" stroke="#ffffff" stroke-opacity=".14" stroke-width="2"/>' +
-        '<rect x="30" y="92" width="34" height="52" rx="6" fill="#9FB3C1"/><rect x="4" y="84" width="140" height="9" rx="4.5" fill="#E9F0F5"/>' +
-        '<g class="pvs-slide-in"><rect x="26" y="70" width="88" height="15" rx="7.5" fill="#4F9DCB"/><circle cx="18" cy="76" r="9" fill="#F0C6A2"/><path d="M10 72q8-9 17-2" fill="none" stroke="#3B2A22" stroke-width="4" stroke-linecap="round"/></g>' +
-        '<path fill="url(#pg2)" fill-rule="evenodd" d="M114 22h8a44 44 0 0 1 44 44v24a44 44 0 0 1-44 44h-8a44 44 0 0 1-44-44V66a44 44 0 0 1 44-44zM118 46a28 28 0 1 0 0 56a28 28 0 1 0 0-56z"/>' +
-        '<circle class="pvs-spin" cx="118" cy="74" r="32" fill="none" stroke="' + A + '" stroke-width="3" stroke-dasharray="22 12" stroke-linecap="round"/>' +
-        '<rect x="80" y="130" width="76" height="16" rx="6" fill="#A9BDCA"/><rect x="132" y="30" width="22" height="8" rx="4" fill="#0B2530" opacity=".85"/><circle class="pvs-blink" cx="137" cy="34" r="2" fill="#4ADE80"/><circle cx="144" cy="34" r="2" fill="' + A + '"/></svg>',
-      /* reading room: doctor reviewing two CT slices */
-      '<svg viewBox="0 0 220 170" aria-hidden="true"><g transform="translate(220 0) scale(-1 1)"><defs><radialGradient id="pg3" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#E6EEF3"/><stop offset=".7" stop-color="#7F95A3"/><stop offset="1" stop-color="#2B3B45"/></radialGradient></defs>' +
-        '<rect x="6" y="20" width="128" height="86" rx="9" fill="#0A1B24" stroke="#36586A" stroke-width="2"/><rect x="13" y="27" width="114" height="72" rx="4" fill="#040D13"/>' +
-        '<g><ellipse cx="42" cy="63" rx="21" ry="27" fill="url(#pg3)"/><path d="M36 54q6-6 12 0q-2 10-6 14q-4-4-6-14z" fill="#0A1B24"/><ellipse cx="98" cy="63" rx="21" ry="27" fill="url(#pg3)"/><path d="M92 56q6-5 12 0q-1 8-6 12q-5-4-6-12z" fill="#0A1B24"/></g>' +
-        '<rect class="pvs-scan" x="13" y="27" width="114" height="3" fill="' + A + '" opacity=".75"/>' +
-        '<rect x="62" y="106" width="16" height="22" fill="#28424F"/><rect x="40" y="128" width="60" height="6" rx="3" fill="#36586A"/><path d="M0 140h220" stroke="#fff" stroke-opacity=".14" stroke-width="2"/>' +
-        '<path d="M150 170v-62q0-26 30-26h4q30 0 30 26v62z" fill="#F3F7FA"/><path d="M170 84l14 22 14-22z" fill="#5AA9D6"/><path d="M182 106v40M162 104q-6 26 8 36" fill="none" stroke="#9FB3C1" stroke-width="2.5"/><circle cx="170" cy="142" r="4" fill="#9FB3C1"/>' +
-        '<rect x="176" y="68" width="16" height="16" rx="5" fill="#E3AE88"/><circle cx="184" cy="54" r="17" fill="#EDBB95"/><path d="M167 52q0-20 19-19q16 1 15 17q-8-8-20-6q-8 1-14 8z" fill="#2E211B"/><circle cx="170" cy="56" r="2" fill="#2E211B"/></g></svg>',
-      /* chest X-ray on a lightbox */
-      '<svg viewBox="0 0 220 170" aria-hidden="true"><rect x="36" y="10" width="148" height="150" rx="12" fill="#0A141B" stroke="#33505F" stroke-width="2"/>' +
-        '<path d="M60 150q0-70 18-96q14-16 32-16t32 16q18 26 18 96z" fill="#9FB3C1" opacity=".28"/>' +
-        '<path d="M104 50q-30 2-36 40q-4 34 8 52q16 4 28-6z" fill="#06101A"/><path d="M116 50q30 2 36 40q4 34-8 52q-16 4-28-6z" fill="#06101A"/>' +
-        '<g fill="none" stroke="#DDE8EF" stroke-opacity=".75" stroke-width="3" stroke-linecap="round">' + ribs + '<path d="M80 42q20-8 28 2M140 42q-20-8-28 2"/></g>' +
-        '<path d="M110 36v116" stroke="#E7EFF4" stroke-width="7" stroke-dasharray="6 3" opacity=".8"/>' +
-        '<circle class="pvs-ring" cx="134" cy="96" r="14" fill="none" stroke="' + A + '" stroke-width="2.5"/></svg>',
-      /* the result on the patient's phone */
-      '<svg viewBox="0 0 220 170" aria-hidden="true"><defs><radialGradient id="pg4" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="' + A + '" stop-opacity=".4"/><stop offset="1" stop-color="' + A + '" stop-opacity="0"/></radialGradient></defs><circle cx="110" cy="86" r="80" fill="url(#pg4)"/>' +
-        '<rect x="70" y="8" width="80" height="154" rx="16" fill="#0B1A22" stroke="#E3ECF2" stroke-width="3"/><rect x="77" y="18" width="66" height="134" rx="9" fill="#F4F8FB"/>' +
-        '<rect x="82" y="24" width="56" height="58" rx="6" fill="#0A141B"/><path d="M108 32q-16 2-19 22q-2 16 4 24h14zM112 32q16 2 19 22q2 16-4 24h-14z" fill="#33505F"/><path d="M110 30v50" stroke="#DDE8EF" stroke-width="3"/>' +
-        '<rect x="84" y="90" width="42" height="5" rx="2.5" fill="#B8C7D1"/><rect x="84" y="100" width="30" height="5" rx="2.5" fill="#D3DEE5"/><rect x="84" y="118" width="52" height="16" rx="8" fill="#0E7C86"/>' +
-        '<g class="pvs-pop"><circle cx="150" cy="40" r="15" fill="#22C55E"/><path d="M143 40l5 5 9-10" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></g>' +
-        '<g class="pvs-pop2"><rect x="28" y="92" width="44" height="30" rx="8" fill="#fff"/><text x="50" y="112" text-anchor="middle" font-size="12" font-weight="800" fill="#E11D48" font-family="sans-serif">PDF</text></g></svg>'
+    var Z = window.OZAds; if (!Z) return '';
+    var base = [
+      { art: 'ct', tag: 'QR Patient', title: 'ألف سلامة عليك 🤍', body: 'إزاي نقدر نساعدك النهارده؟' },
+      { art: 'doc', tag: 'تقارير الأشعة', title: 'تقارير دقيقة.. وسرعة في الخدمة', body: 'فريق متخصص وأحدث أجهزة التصوير' },
+      { art: 'xray', tag: 'كل الفحوصات', title: 'مقطعية، رنين، سونار وعادية', body: 'احجز فحصك من موبايلك في دقيقة', cta: 'book' },
+      { art: 'phone', tag: 'نتيجتك معاك', title: 'نتيجتك على موبايلك', body: 'التقرير وصور الأشعة معاك في أي وقت', cta: 'results' }
     ];
-    var TX = [
-      ['QR Patient', '<h1 id="patient-title">ألف سلامة عليك 🤍</h1>', 'إزاي نقدر نساعدك النهارده؟'],
-      ['تقارير الأشعة', '<b>تقارير دقيقة.. وسرعة في الخدمة</b>', 'فريق متخصص وأحدث أجهزة التصوير'],
-      ['كل الفحوصات', '<b>مقطعية، رنين، سونار وعادية</b>', 'احجز فحصك من موبايلك في دقيقة'],
-      ['نتيجتك معاك', '<b>نتيجتك على موبايلك</b>', 'التقرير وصور الأشعة معاك في أي وقت']
-    ];
+    /* 5.15 · the center's own ads come right after the welcome slide */
+    var ads = (C.ads || []).slice(0, 6).map(function (a) { a.ad = true; return a; });
+    var L = [base[0]].concat(ads, base.slice(1)), i;
     var h = '<div class="pvs" id="pvs" role="region" aria-roledescription="carousel" aria-label="عن المركز"><div class="pvs-tr" id="pvsTr">';
-    for (i = 0; i < ART.length; i++) h += '<div class="pvs-s' + (i ? '' : ' on') + '" role="group" aria-roledescription="slide" aria-label="' + (i + 1) + ' من ' + ART.length + '"' + (i ? ' aria-hidden="true"' : '') + '><div class="pvs-art">' + ART[i] + '</div><div class="pvs-tx"><span class="pvs-k">' + TX[i][0] + '</span>' + TX[i][1] + '<small>' + TX[i][2] + '</small></div></div>';
+    for (i = 0; i < L.length; i++) h += Z.slide(L[i], !i, !i);
     h += '</div><div class="pvs-dots" role="tablist">';
-    for (i = 0; i < ART.length; i++) h += '<button type="button" role="tab" aria-label="شريحة ' + (i + 1) + '"' + (i ? '' : ' class="on" aria-selected="true"') + '><i></i></button>';
+    for (i = 0; i < L.length; i++) h += '<button type="button" role="tab" aria-label="شريحة ' + (i + 1) + '"' + (i ? '' : ' class="on" aria-selected="true"') + '><i></i></button>';
     return h + '</div></div>';
   }
   function pvsWire() {
@@ -69,6 +39,7 @@
     }
     function plan() { clearTimeout(timer); if (!still && !document.hidden) timer = setTimeout(function () { go(cur + 1); }, WAIT); }
     D.forEach(function (d, k) { d.onclick = function () { go(k); }; });
+    box.addEventListener('click', function (e) { var c = e.target.closest && e.target.closest('[data-cta]'); if (!c) return; var w = c.dataset.cta === 'book' ? 'booking' : c.dataset.cta, t = document.querySelector('.pvd-tab [data-pvd="' + w + '"]'); if (t) t.click(); else chooseJourney(w); });
     var x0 = null, y0 = 0, dx = 0, w = 1, lock = 0;
     tr.addEventListener('touchstart', function (e) { var t = e.touches[0]; x0 = t.clientX; y0 = t.clientY; dx = 0; lock = 0; w = box.offsetWidth || 1; clearTimeout(timer); }, { passive: true });
     tr.addEventListener('touchmove', function (e) { if (x0 == null) return; var t = e.touches[0], ddx = t.clientX - x0, ddy = t.clientY - y0;
