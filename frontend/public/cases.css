@@ -571,14 +571,14 @@ html.tb .v .btn:focus-visible,html.td .v .btn:focus-visible{outline:3px solid va
 .thm .thg button:focus-visible{outline:3px solid #818CF8;outline-offset:2px}
 
 /* First screen: explicit choices for radiology result vs appointment. */
-.patient-chooser{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:20px;animation:up .55s .12s both}
-.patient-chooser button{appearance:none;-webkit-appearance:none;border:1.5px solid var(--pl);color:var(--pi);background:var(--pc);border-radius:22px;padding:15px 10px;min-width:0;min-height:124px;box-shadow:var(--psh);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer;text-align:center;transition:transform .2s,border-color .2s,background .2s}
+.patient-chooser{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:20px;animation:none}
+.patient-chooser button{appearance:none;-webkit-appearance:none;border:1.5px solid var(--pl);color:var(--pi);background:var(--pc);border-radius:22px;padding:15px 10px;min-width:0;min-height:124px;box-shadow:var(--psh);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer;text-align:center;transition:none}
 .patient-chooser button span{font-size:27px;line-height:1.2}
 .patient-chooser button b{font-size:17px;line-height:1.35;white-space:nowrap}
 .patient-chooser button small{font-size:11px;color:var(--pm);line-height:1.5}
 .patient-chooser button.on{border-color:var(--pp2);background:var(--pri)}
 .patient-chooser button.on b{color:var(--pp)}
-.patient-chooser button:active{transform:scale(.96)}
+.patient-chooser button:active{transform:none}
 .patient-chooser button:focus-visible{outline:3px solid var(--pp2);outline-offset:3px}
 .patient-panel[hidden]{display:none!important}
 .patient-panel .srch{margin-top:14px}
@@ -671,19 +671,19 @@ html.patient-daylight .v .pv2-hero .ttl{font-size:clamp(27px,6.5vw,36px)!importa
 .pv2-section-title span{display:block;font-size:11px;font-weight:800;color:var(--pp);margin-bottom:3px}
 .pv2-section-title h2{font-size:19px;font-weight:800;color:var(--pi);margin:0}
 .pv2-section-title>small{color:var(--pm);font-size:11px;text-align:left}
-.pv2-page .patient-chooser{margin:0;gap:12px;grid-template-columns:repeat(2,minmax(0,1fr));animation:pv2Rise .55s .1s both}
-.pv2-page .patient-chooser button.pv2-service{position:relative;min-width:0;min-height:183px;border:1.5px solid var(--pl);border-radius:24px;background:var(--pc);padding:17px 12px 14px;box-shadow:var(--psh);color:var(--pi);display:flex;align-items:flex-start;justify-content:flex-start;text-align:right;gap:6px;transition:transform .3s cubic-bezier(.2,.8,.2,1),box-shadow .3s,border-color .25s}
-.pv2-page .pv2-service-icon{display:grid;place-items:center;width:48px;height:48px;border-radius:16px;background:var(--pri);font-size:24px;margin-bottom:6px;transition:transform .35s cubic-bezier(.2,.8,.2,1)}
+.pv2-page .patient-chooser{margin:0;gap:12px;grid-template-columns:repeat(2,minmax(0,1fr));animation:none}
+.pv2-page .patient-chooser button.pv2-service{position:relative;min-width:0;min-height:183px;border:1.5px solid var(--pl);border-radius:24px;background:var(--pc);padding:17px 12px 14px;box-shadow:var(--psh);color:var(--pi);display:flex;align-items:flex-start;justify-content:flex-start;text-align:right;gap:6px;transition:none}
+.pv2-page .pv2-service-icon{display:grid;place-items:center;width:48px;height:48px;border-radius:16px;background:var(--pri);font-size:24px;margin-bottom:6px;transition:none}
 .pv2-page .pv2-service b{font-size:18px;font-weight:800;color:var(--pi);line-height:1.3}
 .pv2-page .pv2-service small{font-size:11px;line-height:1.5;color:var(--pm)}
-.pv2-page .pv2-service-go{width:29px;height:29px;border-radius:11px;display:grid;place-items:center;color:var(--pp);background:var(--pri);position:absolute;bottom:13px;left:13px;font-size:18px;transition:transform .25s;background .25s}
+.pv2-page .pv2-service-go{width:29px;height:29px;border-radius:11px;display:grid;place-items:center;color:var(--pp);background:var(--pri);position:absolute;bottom:13px;left:13px;font-size:18px;transition:none}
 .pv2-page .pv2-service.on{border-color:var(--pp);background:var(--pc)}
-.pv2-page .pv2-service.on .pv2-service-go{color:#fff;background:var(--pp);transform:translateX(-3px)}
+.pv2-page .pv2-service.on .pv2-service-go{color:#fff;background:var(--pp);transform:none}
 @media(hover:hover) and (pointer:fine){
-  .pv2-page .pv2-service:hover{transform:translateY(-5px);border-color:var(--pp2);box-shadow:0 24px 44px -24px rgba(15,42,46,.28)}
-  .pv2-page .pv2-service:hover .pv2-service-icon{transform:rotate(-6deg) scale(1.08)}
+  .pv2-page .pv2-service:hover{transform:none;border-color:var(--pp2)}
+  .pv2-page .pv2-service:hover .pv2-service-icon{transform:none}
 }
-.pv2-page .pv2-service:active{transform:scale(.975)}
+.pv2-page .pv2-service:active{transform:none}
 .pv2-action-hint{margin:14px 0 16px;color:var(--pm);font-size:12px;text-align:center}
 .pv2-page .patient-panel{scroll-margin-top:16px;animation:pv2Panel .42s cubic-bezier(.16,1,.3,1) both}
 .pv2-page .patient-panel[hidden]{display:none!important}
@@ -1550,43 +1550,54 @@ html.patient-daylight body.v .pv2-page .pv3-radiology-hero .ttl span{
   0%,100%{box-shadow:0 0 0 3px rgba(55,255,191,.10);opacity:.85}
   50%{box-shadow:0 0 0 8px rgba(55,255,191,.08);opacity:1}
 }
-/* The 4 cards never shrink their icon or the whole card on tap.
-   Only the arrow and border respond; maintains consistent target sizes on iOS. */
-html.patient-daylight body.v .pv2-page .patient-chooser button.pv2-service{
-  flex-shrink:0;transition:border-color .25s,box-shadow .25s,background-color .25s,filter .25s;
-  transform:none!important;will-change:auto;
-  animation:pv3CardIn .48s ease-out both;
+/* v5.11 Safari/iOS: four completely static, crisp service cards.
+   No filter-based entry animation or transforms on parent, button, icons, arrows. */
+html.patient-daylight body.v .pv2-page .patient-chooser{
+  animation:none!important;transition:none!important;filter:none!important;
+  -webkit-filter:none!important;backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;transform:none!important;
+  opacity:1!important;will-change:auto!important;
 }
-html.patient-daylight body.v .pv2-page .patient-chooser button.pv2-service:nth-child(2){animation-delay:.06s}
-html.patient-daylight body.v .pv2-page .patient-chooser button.pv2-service:nth-child(3){animation-delay:.12s}
-html.patient-daylight body.v .pv2-page .patient-chooser button.pv2-service:nth-child(4){animation-delay:.18s}
+html.patient-daylight body.v .pv2-page .patient-chooser button.pv2-service,
 html.patient-daylight body.v .pv2-page .patient-chooser button.pv2-service:hover,
-html.patient-daylight body.v .pv2-page .patient-chooser button.pv2-service:active{
-  transform:none!important;filter:none;
+html.patient-daylight body.v .pv2-page .patient-chooser button.pv2-service:focus,
+html.patient-daylight body.v .pv2-page .patient-chooser button.pv2-service:active,
+html.patient-daylight body.v .pv2-page .patient-chooser button.pv2-service.on{
+  flex-shrink:0;animation:none!important;transition:none!important;
+  filter:none!important;-webkit-filter:none!important;
+  backdrop-filter:none!important;-webkit-backdrop-filter:none!important;
+  transform:none!important;translate:none!important;scale:1!important;
+  opacity:1!important;will-change:auto!important;
 }
 html.patient-daylight body.v .pv2-page .patient-chooser button.pv2-service:active{
   background:var(--pin);border-color:var(--pp);
 }
-html.patient-daylight body.v .pv2-page .patient-chooser .pv2-service-icon{
-  display:grid;place-items:center;flex:0 0 43px!important;
-  width:43px!important;height:43px!important;min-width:43px!important;
-  min-height:43px!important;max-width:43px!important;max-height:43px!important;
-  font-size:23px!important;line-height:1;transform:none!important;
-  animation:none!important;transition:background-color .25s!important;
-}
+html.patient-daylight body.v .pv2-page .patient-chooser .pv2-service-icon,
 html.patient-daylight body.v .pv2-page .patient-chooser button.pv2-service:hover .pv2-service-icon,
 html.patient-daylight body.v .pv2-page .patient-chooser button.pv2-service:focus .pv2-service-icon,
-html.patient-daylight body.v .pv2-page .patient-chooser button.pv2-service:active .pv2-service-icon{
-  transform:none!important;flex-basis:43px!important;
+html.patient-daylight body.v .pv2-page .patient-chooser button.pv2-service:active .pv2-service-icon,
+html.patient-daylight body.v .pv2-page .patient-chooser button.pv2-service.on .pv2-service-icon{
+  display:grid;place-items:center;
+  flex:0 0 43px!important;
+  width:43px!important;height:43px!important;
+  min-width:43px!important;min-height:43px!important;
+  max-width:43px!important;max-height:43px!important;
+  font-size:23px!important;line-height:1;
+  animation:none!important;transition:none!important;
+  filter:none!important;-webkit-filter:none!important;
+  backdrop-filter:none!important;-webkit-backdrop-filter:none!important;
+  transform:none!important;translate:none!important;scale:1!important;
+  opacity:1!important;will-change:auto!important;
 }
-html.patient-daylight body.v .pv2-page .patient-chooser .pv2-service-go{
-  transform:none;transition:color .2s,background-color .2s,translate .2s;
-}
+html.patient-daylight body.v .pv2-page .patient-chooser .pv2-service-go,
 html.patient-daylight body.v .pv2-page .patient-chooser button.pv2-service:hover .pv2-service-go,
+html.patient-daylight body.v .pv2-page .patient-chooser button.pv2-service:active .pv2-service-go,
 html.patient-daylight body.v .pv2-page .patient-chooser button.pv2-service.on .pv2-service-go{
-  transform:none!important;translate:-3px 0;
+  animation:none!important;transition:none!important;
+  filter:none!important;-webkit-filter:none!important;
+  transform:none!important;translate:none!important;scale:1!important;
+  opacity:1!important;will-change:auto!important;
 }
-@keyframes pv3CardIn{from{opacity:0;filter:blur(2px)}to{opacity:1;filter:none}}
 .pv3-notification-bar{
   display:flex;align-items:center;gap:10px;margin:16px 0 5px;padding:14px 12px;
   border-radius:21px;border:1px solid #CFEDE4;
