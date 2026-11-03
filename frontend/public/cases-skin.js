@@ -25,9 +25,9 @@
       '<div class="pv2-splash-orb o1"></div><div class="pv2-splash-orb o2"></div>' +
       '<div class="pv2-welcome-logo">' + logo('') + '</div>' +
       '<span class="pv2-splash-eyebrow">✦ بوابة المريض الإلكترونية</span>' +
-      '<h1>ألف سلامة <span>عليك ♥</span></h1>' +
+      '<h1>تقارير دقيقة <span>وسرعة في الخدمة</span></h1>' +
       '<p class="pv2-welcome-name">' + esc(nm2) + '</p>' +
-      '<p class="pv2-splash-sub">احجز أشعتك أو اطّمن على نتيجتك<br>بخطوات بسيطة من موبايلك</p>' +
+      '<p class="pv2-splash-sub">فريق متخصص وأحدث أجهزة التصوير<br>وخدماتك متاحة من موبايلك</p>' +
       '<div class="pv2-welcome-steps"><span>📅 حجز الأشعة</span><span>🩻 نتائج الفحوصات</span></div>' +
       '<button type="button" class="pv2-enter">ابدأ الآن <span aria-hidden="true">←</span></button>' +
       '<small class="pv2-welcome-foot">خدمة سهلة · خصوصية بياناتك</small>' +
