@@ -199,7 +199,7 @@ function html(res, code, s) { res.writeHead(code, { 'Content-Type': 'text/html; 
 
 /* ════════ public routes ════════ */
 async function handle(req, res, pathname) {
-  let m = /^\/k\/([A-Za-z0-9]{8})(\/(login|logout|list|live|case|relay|item|fixed|wa|ask|bookings|logo|views|theme)(\/[A-Za-z0-9]{1,20})?(\/(stop|start|delete|wrap|done))?)?\/?$/.exec(pathname);
+  let m = /^\/k\/([A-Za-z0-9]{8})(\/(login|logout|list|qr|live|case|relay|item|fixed|wa|ask|bookings|logo|views|theme)(\/[A-Za-z0-9]{1,20})?(\/(stop|start|delete|wrap|done))?)?\/?$/.exec(pathname);
   if (m) return centerRoute(req, res, m);
   m = /^\/h\/([A-Za-z0-9]{8})(\/(find|ask|book))?\/?$/.exec(pathname);
   if (m) return findRoute(req, res, m[1], m[3] || '');
@@ -232,6 +232,7 @@ async function centerRoute(req, res, m) {
   if (!me) { send(res, 401, { message: 'سجّل دخول الأول', login: true }); return true; }
   const cid = site.customer_id;
 
+  if (sub === 'qr' && req.method === 'GET') { send(res, 200, { qr: qrStatsOf(cid) }); return true; }
   if (sub === 'list' && req.method === 'GET') {
     const rows = db.prepare('SELECT * FROM case_item WHERE customer_id = ? ORDER BY id DESC LIMIT 500').all(cid).map(itemOut);
     const recent = db.prepare('SELECT v.token, v.at, v.dev, v.via, v.src, i.patient, i.exam FROM case_view v JOIN case_item i ON i.token = v.token WHERE v.customer_id = ? ORDER BY v.id DESC LIMIT 30').all(cid);
