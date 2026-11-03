@@ -10,7 +10,7 @@
 (function () {
   'use strict';
   var C = window.CD || {}, BASE = '/k/' + C.code, $ = function (id) { return document.getElementById(id); }, K = window.OZK;
-  var ui = { logo: C.logo || '', logoImg: null, recent: [], vwOpen: '', asks: [], bookings: [], wa: C.wa || '', prefill: null, list: [], local: {}, q: '', f: 'all', queue: [], live: false, es: null, fixed: !!C.fixedOn, dir: null, dirName: '', seen: {}, watchT: 0, pend: {}, auto: false, lastScan: 0 };
+  var ui = { logo: C.logo || '', logoImg: null, recent: [], vwOpen: '', asks: [], bookings: [], qr: null, wa: C.wa || '', prefill: null, list: [], local: {}, q: '', f: 'all', queue: [], live: false, es: null, fixed: !!C.fixedOn, dir: null, dirName: '', seen: {}, watchT: 0, pend: {}, auto: false, lastScan: 0 };
   var QID = 0;
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function toast(t) { var el = $('toast'); if (!el) return; el.textContent = t; el.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(function () { el.classList.remove('on'); }, 3000); }
@@ -131,6 +131,7 @@
       '<section class="hero2"><div class="hl"><button class="clogo' + (ui.logo ? ' img' : '') + '" id="lgo" type="button" title="لوجو المركز"><span data-logo>' + logoTag() + '</span><em>' + (ui.logo ? 'غيّر' : '+ لوجو') + '</em></button>' +
           '<div><small>QR Patient</small><h1>' + esc(C.center) + '</h1><p>ارفع PDF الحالة واطبع الباركود — والمريض يفتح نتيجته من موبايله.</p></div></div>' +
         '<div class="hs"><div><b id="s1">0</b><span>النهارده</span></div><div><b id="s2">0</b><span>الشهر ده</span></div><div><b id="s3">0</b><span>مرة اتفتحت</span></div><div><b id="s4">0</b><span>على الجهاز ده</span></div></div></section>' +
+      '<section class="qrc" id="qrStats" aria-label="إحصائيات فتح الباركود"><div class="qrc-loading">📊 جاري تحميل إحصائيات فتح الباركود…</div></section>' +
       '<div class="kgrid"><div class="kmain">' +
         '<div id="mwda"></div><div class="upz"><div class="drop" id="drop"><span class="beam"></span>' +
           '<div class="pis"><button class="pi pdf" id="pkP" type="button" title="ارفع PDF"><span class="pg"><svg viewBox="0 0 48 56"><path d="M8 2h22l12 12v36a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4V6a4 4 0 0 1 4-4z" fill="#fff"/><path d="M30 2v12h12" fill="#FECACA"/><rect x="0" y="28" width="34" height="16" rx="4" fill="#E11D48"/><text x="17" y="40" text-anchor="middle" font-size="11" font-weight="800" fill="#fff" font-family="Arial,sans-serif">PDF</text></svg></span><b>PDF</b><small>تقرير / نتيجة</small></button>' +
@@ -180,6 +181,29 @@
     [[$('s1'), a], [$('s2'), b], [$('s3'), v], [$('s4'), Object.keys(ui.local).length]].forEach(function (x) { if (x[0] && x[0].dataset.v !== String(x[1])) { x[0].dataset.v = x[1]; count(x[0], x[1]); } });
   }
 
+  /* Live QR analytics: direct openings of fixed /h and per-case /v links.
+     Does not expose patient name, raw IP address or precise position. */
+  function qrPanel() {
+    var root = $('qrStats'), q = ui.qr;
+    if (!root || !q) return;
+    var L = q.recent || [];
+    var recent = L.length ? L.slice(0, 6).map(function (x, i) {
+      var location = [x.city, x.country].filter(Boolean).join('، ') || 'الموقع غير متاح';
+      return '<div class="qrc-visit" style="animation-delay:' + i * 45 + 'ms">' +
+        '<span class="qrc-visit-icon">' + (x.kind === 'report' ? '🩻' : '▦') + '</span>' +
+        '<div><b>' + esc(location) + '</b><small>' + (x.kind === 'report' ? 'باركود نتيجة منفصلة' : 'الباركود الثابت') + '</small></div>' +
+        '<time>' + esc(when(x.at)) + '</time></div>';
+    }).join('') : '<p class="qrc-empty">أول ما حد يفتح الباركود، هتشوف الزيارة هنا.</p>';
+    root.innerHTML =
+      '<div class="qrc-head"><div class="qrc-head-icon">▦</div><div class="qrc-head-copy"><small>QR ANALYTICS</small><h2>عداد فتح الباركود</h2><p>بيتحسب لما صفحة الباركود تتفتح، سواء بالمسح أو بفتح الرابط مباشرة.</p></div><span class="qrc-tag"><i></i> تحديث لحظي</span></div>' +
+      '<div class="qrc-metrics">' +
+        '<div class="qrc-stat"><span>📊 كل الفتحات</span><strong>' + n0(q.total) + '</strong><small>من يوم تفعيل العداد</small></div>' +
+        '<div class="qrc-stat"><span>📅 فتحات النهارده</span><strong>' + n0(q.today) + '</strong><small>بتتحدث مباشرة</small></div>' +
+        '<div class="qrc-stat"><span>📌 باركود المركز</span><strong>' + n0(q.fixed) + '</strong><small>الباركود الثابت على الورق</small></div>' +
+        '<div class="qrc-stat"><span>🩻 باركود النتائج</span><strong>' + n0(q.report) + '</strong><small>روابط النتائج المنفصلة</small></div>' +
+      '</div><div class="qrc-lower"><div class="qrc-latest"><h3>📍 آخر الأماكن التقريبية</h3>' + recent + '</div>' +
+        '<p class="qrc-disclosure">المكان بيظهر على مستوى المدينة أو الدولة لو شركة الاستضافة وفّرته، ومش GPS. من غير تخزين IP أو بيانات تعريف المريض. إعادة فتح الرابط ممكن تتحسب تاني.</p></div>';
+  }
   /* ── option 2: the fixed barcode on every report ── */
   /* 5.01 · the look of the patient's pages (A «نَفَس» / C «دفا») — the patient can switch to night mode himself */
   function themeCard() {
@@ -627,7 +651,10 @@
   function connect() {
     try { if (ui.es) ui.es.close(); } catch (e) {}
     var es = new EventSource(BASE + '/live'); ui.es = es;
-    es.addEventListener('hello', function () { setLive(true); });
+    es.addEventListener('hello', function () {
+      setLive(true);
+      api('GET', 'qr').then(function (x) { ui.qr = x.qr || ui.qr; qrPanel(); }).catch(function () {});
+    });
     es.onerror = function () { setLive(false); };
     es.addEventListener('need', function (ev) {
       var m = {}; try { m = JSON.parse(ev.data); } catch (e) { return; }
@@ -635,6 +662,10 @@
         if (!rec || !rec.blob) return fetch(BASE + '/relay/' + m.ticket + '?miss=1', { method: 'POST', credentials: 'same-origin' });
         return fetch(BASE + '/relay/' + m.ticket, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/octet-stream' }, body: rec.blob });
       }).catch(function () {});
+    });
+    es.addEventListener('qr-open', function (ev) {
+      var m = {}; try { m = JSON.parse(ev.data); } catch (e) { return; }
+      ui.qr = m.qr || ui.qr; qrPanel();
     });
     es.addEventListener('booking', function (ev) {
       var m = {}; try { m = JSON.parse(ev.data); } catch (e) { return; }
@@ -667,7 +698,7 @@
   }
   function boot() {
     shell();
-    Promise.all([api('GET', 'list'), localAll()]).then(function (a) { ui.list = a[0].list || []; ui.local = a[1] || {}; ui.asks = a[0].asks || []; ui.bookings = a[0].bookings || []; ui.recent = a[0].recent || []; bookings(); asks(); recent(); table(); stats(); disk(); backfill(); }).catch(function (e) { $('tbl').innerHTML = '<div class="emp"><i>⚠️</i>' + esc(e.message) + '</div>'; });
+    Promise.all([api('GET', 'list'), localAll()]).then(function (a) { ui.list = a[0].list || []; ui.local = a[1] || {}; ui.asks = a[0].asks || []; ui.bookings = a[0].bookings || []; ui.qr = a[0].qr || ui.qr; ui.recent = a[0].recent || []; qrPanel(); bookings(); asks(); recent(); table(); stats(); disk(); backfill(); }).catch(function (e) { $('tbl').innerHTML = '<div class="emp"><i>⚠️</i>' + esc(e.message) + '</div>'; });
     connect(); bootWatch();
     document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible' && (!ui.es || ui.es.readyState === 2)) connect(); });
     window.addEventListener('beforeunload', function (e) { if (Object.keys(ui.local).length || ui.queue.some(function (q) { return q.st === 'ready' || q.st === 'saving'; })) { e.preventDefault(); e.returnValue = ''; } });
