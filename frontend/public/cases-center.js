@@ -182,7 +182,8 @@
   }
   function navigatePage(page, push) {
     var selected = QRD_PAGES.test(page) ? page : 'dashboard';
-    if (push && selected !== ui.page && isIOSBrowser()) {
+    if (push && selected === ui.page) return;
+    if (push && isIOSBrowser()) {
       /* Real page transition avoids repeated blank white views on iPhone Safari/WebKit.
          Don't interrupt an in-progress file upload or an unsaved queue item. */
       if (ui.queue.some(function (item) { return item.st === 'ready' || item.st === 'saving' || item.st === 'reading'; })) {
@@ -286,7 +287,9 @@
     window.addEventListener('hashchange', function () { navigatePage(pageFromHash(), false); });
     window.addEventListener('popstate', function () { navigatePage(pageFromHash(), false); });
     /* Restore the correct section when Safari returns from Back/Forward Cache. */
-    if (isIOSBrowser()) window.addEventListener('pageshow', function () {
+    if (isIOSBrowser()) window.addEventListener('pageshow', function (event) {
+      /* Only BFCache restores need to reconcile state; initial paint was already built correctly. */
+      if (!event.persisted) return;
       navigatePage(pageFromHash(), false);
       try { window.scrollTo(0, 0); } catch (e) {}
     });
