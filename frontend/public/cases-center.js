@@ -372,7 +372,7 @@
           (dirOk ? '<div class="watch" id="wt"></div>' : '') + '</div>' +
         '<div class="queue" id="qu"></div>' +
         '<section class="card list"><div class="ch"><div class="h"><h2>الحالات</h2><small id="lc"></small></div><div class="srch">' + ic('search') + '<input class="fld q" id="q" placeholder="اسم المريض أو الموبايل أو الفحص"></div></div><div class="seg" id="fl"></div><div id="tbl"><div class="sk"></div><div class="sk" style="opacity:.7"></div><div class="sk" style="opacity:.45"></div></div></section>' +
-      '</div><aside class="kside"><div id="bookings"></div><div id="asks"></div><div id="complaints"></div><div id="reportRequests"></div><div class="opt fxc" id="fx"></div>' +
+      '</div><aside class="kside"><div id="bookings" class="qrd-data-pending">جار تحميل حجوزات الأشعة…</div><div id="asks" class="qrd-data-pending">جار تحميل طلبات النتائج…</div><div id="complaints" class="qrd-data-pending">جار تحميل شكاوى المرضى…</div><div id="reportRequests" class="qrd-data-pending">جار تحميل طلبات التقارير…</div><div class="opt fxc" id="fx"></div>' +
         '<div class="opt"><h3>' + ic('qr') + ' باركود لكل حالة <span class="tg ok">شغال دايماً</span></h3><div class="how"><div><span>1</span>اسحب PDF الحالة واكتب اسم المريض</div><div><span>2</span>اطبع الاستيكر أو ابعته واتساب</div><div><span>3</span>المريض يمسحه ويشوف أشعته على طول</div></div></div>' +
         '<div class="opt thm" id="thm"></div>' +
         '<div class="opt rec" id="recentViews"><h3>' + ic('eye') + ' آخر مرات الفتح</h3><div id="rec"></div></div>' +
@@ -1025,7 +1025,14 @@
     if (ui.prefill && ui.page === 'upload') {
       toast('📂 جهزنا بيانات المريض — اختار ملف PDF من زر رفع الملفات');
     }
-    Promise.all([api('GET', 'list'), localAll()]).then(function (a) { ui.list = a[0].list || []; ui.local = a[1] || {}; ui.asks = a[0].asks || []; ui.bookings = a[0].bookings || []; ui.tickets = a[0].tickets || []; ui.qr = a[0].qr || ui.qr; ui.recent = a[0].recent || []; qrPanel(); bookings(); asks(); serviceTickets(); recent(); table(); stats(); disk(); backfill(); }).catch(function (e) { $('tbl').innerHTML = '<div class="emp"><i>⚠️</i>' + esc(e.message) + '</div>'; });
+    Promise.all([api('GET', 'list'), localAll()]).then(function (a) { ui.list = a[0].list || []; ui.local = a[1] || {}; ui.asks = a[0].asks || []; ui.bookings = a[0].bookings || []; ui.tickets = a[0].tickets || []; ui.qr = a[0].qr || ui.qr; ui.recent = a[0].recent || []; qrPanel(); bookings(); asks(); serviceTickets(); recent(); table(); stats(); disk(); backfill(); }).catch(function (e) {
+      var message='تعذّر تحميل بيانات القسم. جرّب تحديث الصفحة أو اتأكد من اتصال الإنترنت.';
+      ['bookings','asks','complaints','reportRequests'].forEach(function (id) {
+        var box=$(id); if (box) box.innerHTML='<div class="qrd-data-error" role="alert">⚠️ '+message+'</div>';
+      });
+      var tbl=$('tbl'); if (tbl) tbl.innerHTML='<div class="emp"><i>⚠️</i>'+esc(e.message)+'</div>';
+      var qr=$('qrStats'); if (qr) qr.innerHTML='<div class="qrd-data-error" role="alert">⚠️ '+message+'</div>';
+    });
     connect(); bootWatch();
     document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible' && (!ui.es || ui.es.readyState === 2)) connect(); });
     window.addEventListener('beforeunload', function (e) {
