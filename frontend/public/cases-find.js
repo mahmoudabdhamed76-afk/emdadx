@@ -78,8 +78,8 @@
         '<label class="l" for="rp">رقم الموبايل *</label><input class="fld n" id="rp" type="tel" inputmode="tel" autocomplete="tel" maxlength="20" dir="ltr" placeholder="01xxxxxxxxx">' +
         '<label class="l" for="rm">نوع التقرير أو تفاصيل طلبك *</label><textarea class="fld" id="rm" maxlength="1200" rows="3" placeholder="عايز تقرير لإيه؟ اكتب تفاصيل الفحص المطلوب"></textarea>' +
         '<label class="l" for="rfiles">صور الطلب أو الأشعة * (من 1 إلى 3 صور)</label>' +
-        '<div class="pv2-upload-images"><input id="rfiles" class="fld" type="file" accept="image/jpeg,image/png,image/webp" multiple>' +
-          '<p>JPG أو PNG أو WebP · حد أقصى 4 ميجا لكل صورة</p><div id="rpreview" class="pv2-image-preview"></div></div>' +
+        '<div class="pv2-upload-images"><input id="rfiles" class="fld" type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif" multiple>' +
+          '<p>صور JPG أو PNG أو WebP أو صور الآيفون · هنجهز الصور الكبيرة تلقائيًا</p><div id="rpreview" class="pv2-image-preview"></div></div>' +
         '<p class="booking-note">🔒 الصور محفوظة بشكل مشفر، وبتتمسح من النظام بعد 30 يوم. المركز هيشوف طلبك ويتواصل معاك.</p>' +
         '<div class="booking-msg" id="rmsg" role="status" aria-live="polite"></div>' +
         '<button class="btn w" id="rgo" type="submit">إرسال طلب التقرير والصور ←</button>' +
@@ -190,8 +190,8 @@
       if(!files.length)return;
       if(files.length>3) { $('rmsg').textContent='اختار 3 صور بالكتير';$('rmsg').className='booking-msg err';return; }
       files.forEach(function(file){
-        if(['image/jpeg','image/png','image/webp'].indexOf(file.type)<0||file.size>4*1048576){
-          $('rmsg').textContent='الصور لازم تكون JPG أو PNG أو WebP، كل واحدة أقل من 4 ميجا';
+        if(['image/jpeg','image/png','image/webp','image/heic','image/heif'].indexOf(file.type)<0||file.size>24*1048576){
+          $('rmsg').textContent='اختار صورة مدعومة، والملف الأصلي يكون أقل من 24 ميجا';
           $('rmsg').className='booking-msg err';return;
         }
         var img=document.createElement('img');img.alt='معاينة '+file.name;
@@ -199,9 +199,46 @@
       });
     };
     function fileData(file) {
-      return new Promise(function(resolve,reject){
-        var reader=new FileReader();reader.onload=function(){resolve({name:file.name,data:String(reader.result||'')});};
-        reader.onerror=function(){reject(Error('مش قادر أقرأ الصورة، جرّب صورة تانية'));};reader.readAsDataURL(file);
+      return new Promise(function(resolve,reject) {
+        var allowed=['image/jpeg','image/png','image/webp','image/heic','image/heif'];
+        if(allowed.indexOf(file.type)<0||!file.size||file.size>24*1048576) {
+          reject(Error('اختار صورة JPG أو PNG أو WebP أو HEIC بحجم أقل من 24 ميجا'));return;
+        }
+        if(file.size<=4*1048576 && ['image/jpeg','image/png','image/webp'].indexOf(file.type)>=0) {
+          var reader=new FileReader();
+          reader.onload=function(){resolve({name:file.name,data:String(reader.result||'')});};
+          reader.onerror=function(){reject(Error('مش قادر أقرأ الصورة، جرّب صورة تانية'));};
+          reader.readAsDataURL(file);return;
+        }
+        /* Large iPhone/HEIC pictures are converted to a bounded JPEG in the browser. */
+        var url;
+        try{url=URL.createObjectURL(file);}catch(e){reject(Error('تعذر فتح الصورة'));return;}
+        var img=new Image();
+        var finish=function(){try{URL.revokeObjectURL(url);}catch(e){}};
+        img.onerror=function(){finish();reject(Error('تعذر تحويل الصورة. اختار نسخة JPG أو خُد Screenshot للصورة.'));};
+        img.onload=function(){
+          try {
+            var maxEdge=2400, factor=Math.min(1,maxEdge/Math.max(img.naturalWidth,img.naturalHeight,1));
+            var canvas=document.createElement('canvas');
+            canvas.width=Math.max(1,Math.round(img.naturalWidth*factor));
+            canvas.height=Math.max(1,Math.round(img.naturalHeight*factor));
+            var ctx=canvas.getContext('2d');
+            if(!ctx)throw Error('canvas');
+            ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);
+            ctx.drawImage(img,0,0,canvas.width,canvas.height);
+            var data='',quality=[0.90,0.80,0.69];
+            for(var k=0;k<quality.length;k++){
+              data=canvas.toDataURL('image/jpeg',quality[k]);
+              if(data.length<5550000)break;
+            }
+            finish();
+            if(!/^data:image\/jpeg;base64,/.test(data)||data.length>5550000) {
+              reject(Error('الصورة كبيرة بعد التحويل؛ جرّب صورة أصغر.'));return;
+            }
+            resolve({name:file.name.replace(/\.(heic|heif|png|webp)$/i,'')+'.jpg',data:data});
+          }catch(e){finish();reject(Error('مش قادر أجهز الصورة؛ جرّب JPG أو Screenshot.'));}
+        };
+        img.src=url;
       });
     }
     form.onsubmit=function(e){
@@ -211,8 +248,8 @@
       if(name.length<3||!phone||message.length<8) {
         msg.textContent='كمّل الاسم والموبايل الصحيح وتفاصيل التقرير المطلوب.';msg.className='booking-msg err';return;
       }
-      if(files.length<1||files.length>3||files.some(function(f){return ['image/jpeg','image/png','image/webp'].indexOf(f.type)<0||f.size>4*1048576||f.size===0;})){
-        msg.textContent='ارفع من 1 إلى 3 صور JPG أو PNG أو WebP؛ الصورة أقل من 4 ميجا.';
+      if(files.length<1||files.length>3||files.some(function(f){return ['image/jpeg','image/png','image/webp','image/heic','image/heif'].indexOf(f.type)<0||f.size>24*1048576||f.size===0;})){
+        msg.textContent='ارفع من 1 إلى 3 صور مدعومة. الصور الكبيرة هنحوّلها تلقائيًا.';
         msg.className='booking-msg err';return;
       }
       btn.disabled=true;btn.textContent='بنبعت الطلب والصور…';msg.textContent='';msg.className='booking-msg';
