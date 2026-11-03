@@ -57,9 +57,24 @@
       });
     });
   }
-  function registration(){
-    /* Register a separate worker for QR Patient to avoid replacing ERP's SW. */
-    return navigator.serviceWorker.register('/qr-sw.js',{scope:center?'/k/':'/h/'});
+  async function registration(){
+    /* Separate QR worker, activated before subscribing (important for iOS PWA). */
+    var reg=await navigator.serviceWorker.register('/qr-sw.js',{scope:center?'/k/':'/h/'});
+    if(!reg.active){
+      var worker=reg.installing||reg.waiting;
+      if(worker && worker.state!=='activated'){
+        await new Promise(function(resolve,reject){
+          var done=false;
+          function finish(err){if(done)return;done=true;if(err)reject(err);else resolve();}
+          worker.addEventListener('statechange',function(){
+            if(worker.state==='activated')finish();
+            else if(worker.state==='redundant')finish(Error('تعذر تشغيل خدمة الإشعارات'));
+          });
+          setTimeout(function(){finish(Error('خدمة الإشعارات لسه مش جاهزة؛ افتح التطبيق مرة تانية'));},12000);
+        });
+      }
+    }
+    return reg;
   }
   function showError(err){
     status(err && err.message ? err.message : 'مش قادر أفعّل الإشعارات دلوقتي.');
