@@ -51,3 +51,24 @@
   }
   window.OZK = { b64u: b64u, unb64u: unb64u, last10: last10, digits: digits, normName: normName, wrap: wrap, unwrap: unwrap, wrap2: wrap2, unwrap2: unwrap2 };
 })();
+/* 5.17 · honest barcode counts: a page open counts only when a real person sees it —
+   the page has to run in a visible tab for 1.5 s (link previews, bots and prefetch never do),
+   once per visitor every 30 minutes, and never on the center's own devices. */
+(function () {
+  'use strict';
+  var C = window.CD || {}, p = location.pathname;
+  if (/^\/k\//.test(p)) { if (C.auth) try { localStorage.setItem('qrd-staff', '1'); } catch (e) {} return; }
+  var m = /^\/(h\/[A-Za-z0-9]{8}|v\/[A-Za-z0-9]{12})\/?$/.exec(p); if (!m || C.missing) return;
+  try { if (localStorage.getItem('qrd-staff')) return; } catch (e) {}
+  var key = 'ozx_seen:' + m[1], vid = '';
+  try { if (Date.now() - (+sessionStorage.getItem(key) || 0) < 30 * 60e3) return; } catch (e) {}
+  try { vid = localStorage.getItem('ozx_vid') || ''; if (!vid) { vid = Math.random().toString(36).slice(2) + Date.now().toString(36); localStorage.setItem('ozx_vid', vid); } } catch (e) {}
+  var sent = false, t = 0;
+  function go() {
+    if (sent || document.visibilityState !== 'visible') return; sent = true;
+    try { sessionStorage.setItem(key, String(Date.now())); } catch (e) {}
+    try { fetch('/' + m[1] + '/seen', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ vid: vid, h: /[?&]h=1\b/.test(location.search) }), keepalive: true, credentials: 'omit' }).catch(function () {}); } catch (e) {}
+  }
+  function arm() { clearTimeout(t); if (document.visibilityState === 'visible') t = setTimeout(go, 1500); }
+  document.addEventListener('visibilitychange', arm); arm();
+})();

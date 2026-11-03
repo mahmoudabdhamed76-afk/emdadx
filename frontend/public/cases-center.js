@@ -10,7 +10,7 @@
 (function () {
   'use strict';
   var C = window.CD || {}, BASE = '/k/' + C.code, $ = function (id) { return document.getElementById(id); }, K = window.OZK;
-  var ui = { logo: C.logo || '', logoImg: null, recent: [], vwOpen: '', asks: [], bookings: [], tickets: [], qr: null, page: 'dashboard', dicomMounted: false, layout: C.layout === 'violet' ? 'violet' : 'teal', wa: C.wa || '', prefill: null, list: [], local: {}, q: '', f: 'all', queue: [], live: false, es: null, fixed: !!C.fixedOn, dir: null, dirName: '', seen: {}, watchT: 0, pend: {}, auto: false, lastScan: 0 };
+  var ui = { logo: C.logo || '', logoImg: null, recent: [], vwOpen: '', asks: [], bookings: [], tickets: [], qr: null, page: 'dashboard', dicomMounted: false, layout: C.layout === 'violet' ? 'violet' : 'teal', wa: C.wa || '', prefill: null, list: [], local: {}, q: '', f: 'all', queue: [], live: false, es: null, fixed: !!C.fixedOn, dir: null, dirName: '', seen: {}, watchT: 0, pend: {}, auto: false, lastScan: 0, upl: {}, dirFiles: [] };
   var QID = 0;
   /* 5.13 · night mode for the center's QR page (remembered on this computer) */
   function qrdDarkGet() { try { var v = localStorage.getItem('qrd-dark'); if (v === '1') return true; if (v === '0') return false; } catch (e) {} return false; }
@@ -663,7 +663,7 @@
     if (!files.length) { if (!other.length) toast('اختار ملفات PDF أو DICOM'); return; }
     files.forEach(function (f) {
       if (f.size > C.maxMb * 1048576) return toast(f.name + ' أكبر من ' + C.maxMb + ' ميجا');
-      var q = { id: ++QID, file: f, name: f.name, size: f.size, pages: 0, thumb: '', patient: '', phone: '', exam: '', st: 'ready', af: '', dir: !!fromDir };
+      var q = { id: ++QID, file: f, name: f.name, size: f.size, pages: 0, thumb: '', patient: '', phone: '', exam: '', st: 'ready', af: '', dir: !!fromDir, dkey: fromDir ? f.name + '|' + f.size + '|' + f.lastModified : '' };
       if (ui.prefill && files.length === 1) { q.patient = ui.prefill.patient || ''; q.phone = ui.prefill.phone || ''; }
       var g = f.name.replace(/\.pdf$/i, '').replace(/[_\-.]+/g, ' ').replace(/\d{5,}/g, ' ').replace(/\s+/g, ' ').trim(); 
       if (!q.patient && /[؀-ۿ]/.test(g)) q.patient = g.slice(0, 80);
@@ -698,6 +698,7 @@
     });
   }
   function queue() {
+    setTimeout(dirList, 0);
     var el = $('qu'), L = ui.queue.filter(function (q) { return q.st !== 'gone'; });
     if (!L.length) { el.innerHTML = ''; return; }
     var ready = L.filter(function (q) { return q.st === 'ready' || q.st === 'err'; }).length;
@@ -755,6 +756,7 @@
       .then(function (r) {
         ui.local[r.item.token] = { key: rawKey, size: r.blob.size, thumb: q.thumb };
         ui.list.unshift(r.item); q.st = 'done'; q.token = r.item.token; q.wrapped = !!(wrapped || wrapped2); q.file = null;
+        if (q.dkey) { ui.upl[q.dkey] = r.item.token; hSet('upl:' + C.code, ui.upl); dirList(); }
         if (K.last10(q.phone) && ui.asks.some(function (a) { return K.last10(a.phone) === K.last10(q.phone); })) api('POST', 'ask', { phone: q.phone }).then(function (x) { ui.asks = x.asks || []; asks(); toast('✅ ' + q.patient + ' اتحفظت — وطلبه اتقفل'); }).catch(function () {});
         queue(); table(); stats(); disk();
         var open = ui.queue.filter(function (x) { return x.st !== 'gone' && x.st !== 'done'; }).length;
@@ -770,39 +772,63 @@
     if (!ui.dir) { el.className = 'watch'; el.innerHTML = '<span class="wi">📂</span><div style="flex:1"><b>اربط فولدر سيرفر الطباعة</b><small>أي PDF جديد يتحفظ في الفولدر ده بيظهر هنا لوحده — مش محتاج تسحبه.</small></div><button class="btn sm" id="wpk">📂 اختار الفولدر</button>'; $('wpk').onclick = pickDir; return; }
     if (ui.dirNeed) { el.className = 'watch'; el.innerHTML = '<span class="wi">⏸</span><div style="flex:1"><b>فولدر «' + esc(ui.dirName) + '»</b><small>المتصفح محتاج إذنك تاني عشان يكمّل يراقب الفولدر.</small></div><button class="btn sm" id="wgo">▶ كمّل المراقبة</button><button class="btn g sm" id="wx">فك الربط</button>'; $('wgo').onclick = function () { ui.dir.requestPermission({ mode: 'read' }).then(function (p) { if (p === 'granted') { ui.dirNeed = false; startWatch(); } }); }; $('wx').onclick = unlink; return; }
     el.className = 'watch on'; el.innerHTML = '<span class="wi">👀</span><div style="flex:1"><b>بيراقب فولدر «' + esc(ui.dirName) + '»</b><small id="wls">' + (ui.lastScan ? 'آخر فحص ' + new Date(ui.lastScan).toLocaleTimeString('ar-EG', { hour: 'numeric', minute: '2-digit', second: '2-digit' }) : 'بيبدأ…') + '</small></div><label><input type="checkbox" id="wau"' + (ui.auto ? ' checked' : '') + '> احفظ لوحده لو لقيت الاسم والموبايل في الملف</label><button class="btn g sm" id="wsc">↻ افحص دلوقتي</button><button class="btn g sm" id="wx">فك الربط</button>';
+    el.insertAdjacentHTML('beforeend', '<div class="wf" id="wfl"></div>'); dirList();
     $('wau').onchange = function () { ui.auto = this.checked; hSet('auto:' + C.code, ui.auto); };
     $('wsc').onclick = function () { scan(); }; $('wx').onclick = unlink;
   }
-  function unlink() { clearInterval(ui.watchT); ui.dir = null; ui.dirNeed = false; hSet('dir:' + C.code, undefined); watchBar(); toast('اتفك ربط الفولدر'); }
+  /* 5.17 · everything in the watched folder, newest first, with what happened to each file */
+  function dirList() {
+    var el = $('wfl'); if (!el) return; var all = (ui.dirFiles || []).slice().sort(function (a, b) { return b.f.lastModified - a.f.lastModified; });
+    var inQ = {}; ui.queue.forEach(function (q) { if (q.dkey && q.st !== 'gone') inQ[q.dkey] = q.st; });
+    var td = ymd(), f = ui.dirF || 'today', qv = (ui.dirQ || '').toLowerCase();
+    var isToday = function (x) { return ymd(new Date(x.f.lastModified)) === td; };
+    var nT = all.filter(isToday).length, L = all.filter(function (x) { return (f === 'all' || isToday(x)) && (!qv || x.f.name.toLowerCase().indexOf(qv) > -1); });
+    var nNew = all.filter(function (x) { return !ui.upl[x.key] && !inQ[x.key] && !ui.list.some(function (r) { return r.name === x.f.name; }); }).length, show = L.slice(0, ui.dirMore ? 400 : 30);
+    var names = {}; ui.list.forEach(function (r) { if (r.name) names[r.name] = 1; });
+    var stOf = function (x) { if (ui.upl[x.key] || names[x.f.name]) return '<span class="lx-st2 on">✓ اترفعت</span>'; var q = inQ[x.key]; if (q === 'done') return '<span class="lx-st2 on">✓ اترفعت</span>'; if (q) return '<span class="lx-st2 nw">⏳ في الطابور</span>'; return '<button type="button" class="btn sm" data-wf="' + esc(x.key) + '">⇧ ارفع</button>'; };
+    el.innerHTML = '<div class="wf-h"><b>📁 ملفات الفولدر</b><span class="wf-n">' + all.length + ' ملف · ' + nT + ' النهارده' + (nNew ? ' · <em>' + nNew + ' لسه مترفعتش</em>' : '') + '</span>' +
+      '<div class="lx-seg"><button type="button" data-wff="today" class="' + (f === 'today' ? 'on' : '') + '">النهارده</button><button type="button" data-wff="all" class="' + (f === 'all' ? 'on' : '') + '">الكل</button></div>' +
+      '<label class="qx-s wf-s">' + ic('search') + '<input type="search" id="wfq" placeholder="اسم الملف" value="' + esc(ui.dirQ || '') + '"></label></div>' +
+      (show.length ? '<div class="lx-tw"><table class="lx-t wf-t"><thead><tr><th>الملف</th><th>الحجم</th><th>اتحفظ في الفولدر</th><th></th></tr></thead><tbody>' + show.map(function (x) {
+        return '<tr><td><div class="lx-pt"><span class="wf-ic">PDF</span><b title="' + esc(x.f.name) + '">' + esc(x.f.name) + '</b></div></td><td class="mut">' + mb(x.f.size) + '</td><td class="mut">' + when(ymd(new Date(x.f.lastModified)) + ' ' + ('0' + new Date(x.f.lastModified).getHours()).slice(-2) + ':' + ('0' + new Date(x.f.lastModified).getMinutes()).slice(-2)) + '</td><td class="lx-acts">' + stOf(x) + '</td></tr>';
+      }).join('') + '</tbody></table></div>' + (L.length > show.length ? '<button type="button" class="btn g sm wf-more" id="wfm">اعرض كله (' + L.length + ')</button>' : '')
+        : '<p class="lx-emp">' + (all.length ? 'مفيش ملفات ' + (f === 'today' ? 'النهارده — دوس «الكل»' : 'بالاسم ده') : 'الفولدر فاضي — أول ما سيرفر الطباعة يحفظ PDF هيظهر هنا') + '</p>');
+    [].forEach.call(el.querySelectorAll('[data-wff]'), function (b) { b.onclick = function () { ui.dirF = b.dataset.wff; dirList(); }; });
+    var qi = $('wfq'); if (qi) qi.oninput = function () { ui.dirQ = qi.value; var pos = qi.selectionStart; dirList(); var n = $('wfq'); if (n) { n.focus(); try { n.setSelectionRange(pos, pos); } catch (e) {} } };
+    var mo = $('wfm'); if (mo) mo.onclick = function () { ui.dirMore = true; dirList(); };
+    [].forEach.call(el.querySelectorAll('[data-wf]'), function (b) { b.onclick = function () { var x = all.filter(function (y) { return y.key === b.dataset.wf; })[0]; if (!x) return; add([x.f], true); dirList(); var qu = $('qu'); if (qu) qu.scrollIntoView({ behavior: 'smooth', block: 'start' }); }; });
+  }
+  function unlink() { clearInterval(ui.watchT); ui.dir = null; ui.dirFiles = []; ui.dirNeed = false; hSet('dir:' + C.code, undefined); watchBar(); toast('اتفك ربط الفولدر'); }
   function pickDir() {
     window.showDirectoryPicker({ mode: 'read', id: 'ozx-print' }).then(function (h) {
       ui.dir = h; ui.dirName = h.name; ui.dirNeed = false; hSet('dir:' + C.code, h);
-      return listDir(h).then(function (all) { all.forEach(function (x) { ui.seen[x.key] = 1; }); hSet('seen:' + C.code, Object.keys(ui.seen).slice(-3000)); toast('👀 بيراقب «' + h.name + '» — أي PDF جديد هيظهر هنا (' + all.length + ' ملف قديم اتساب)'); startWatch(); });
+      return listDir(h).then(function (all) { all.forEach(function (x) { ui.seen[x.key] = 1; }); hSet('seen:' + C.code, Object.keys(ui.seen).slice(-3000)); ui.dirFiles = all; toast('👀 بيراقب «' + h.name + '» — فيه ' + all.length + ' ملف PDF ظاهرين تحت، وأي ملف جديد هيدخل لوحده'); startWatch(); });
     }).catch(function (e) { if (e && e.name !== 'AbortError') toast('مش قادر أفتح الفولدر'); });
   }
   function listDir(h) {
     var out = [];
     return (async function () { for await (var ent of h.values()) { if (ent.kind === 'file' && /\.pdf$/i.test(ent.name)) { try { var f = await ent.getFile(); out.push({ f: f, key: f.name + '|' + f.size + '|' + f.lastModified }); } catch (e) {} } } return out; })();
   }
-  function startWatch() { clearInterval(ui.watchT); watchBar(); scan(); ui.watchT = setInterval(scan, 12000); }
+  function startWatch() { clearInterval(ui.watchT); watchBar(); scan(); ui.watchT = setInterval(scan, 4000); }
   function scan() {
     if (!ui.dir || ui.dirNeed || scan.busy) return; scan.busy = true;
     listDir(ui.dir).then(function (all) {
       var fresh = [];
       all.forEach(function (x) {
         if (ui.seen[x.key]) return;
-        var p = ui.pend[x.f.name];   /* wait until the print server finished writing it (same size twice) */
-        if (!p || p !== x.f.size || Date.now() - x.f.lastModified < 4000) { ui.pend[x.f.name] = x.f.size; return; }
+        var p = ui.pend[x.f.name], age = Date.now() - x.f.lastModified;   /* wait until the print server finished writing it (same size twice, or untouched for 5 s) */
+        if (age < 5000 && (!p || p !== x.f.size)) { ui.pend[x.f.name] = x.f.size; return; }
         delete ui.pend[x.f.name]; ui.seen[x.key] = 1; fresh.push(x.f);
       });
       if (fresh.length) { hSet('seen:' + C.code, Object.keys(ui.seen).slice(-3000)); add(fresh, true); }
+      ui.dirFiles = all; dirList();
       ui.lastScan = Date.now(); var w = $('wls'); if (w) w.textContent = 'آخر فحص ' + new Date(ui.lastScan).toLocaleTimeString('ar-EG', { hour: 'numeric', minute: '2-digit', second: '2-digit' });
     }).catch(function (e) { if (e && e.name === 'NotAllowedError') { ui.dirNeed = true; clearInterval(ui.watchT); watchBar(); } }).then(function () { scan.busy = false; });
   }
   function bootWatch() {
     if (!('showDirectoryPicker' in window)) return;
-    Promise.all([hGet('dir:' + C.code), hGet('seen:' + C.code), hGet('auto:' + C.code)]).then(function (a) {
-      (a[1] || []).forEach(function (k) { ui.seen[k] = 1; }); ui.auto = !!a[2];
+    Promise.all([hGet('dir:' + C.code), hGet('seen:' + C.code), hGet('auto:' + C.code), hGet('upl:' + C.code)]).then(function (a) {
+      (a[1] || []).forEach(function (k) { ui.seen[k] = 1; }); ui.auto = !!a[2]; ui.upl = a[3] || {};
       var h = a[0]; if (!h) return watchBar();
       ui.dir = h; ui.dirName = h.name;
       h.queryPermission({ mode: 'read' }).then(function (p) { if (p === 'granted') startWatch(); else { ui.dirNeed = true; watchBar(); } }).catch(function () { ui.dirNeed = true; watchBar(); });

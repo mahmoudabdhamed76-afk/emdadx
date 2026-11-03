@@ -40,7 +40,7 @@
     if (!(window.crypto && crypto.subtle)) return box('⚠️', 'المتصفح ده قديم', 'افتح اللينك من Chrome أو Safari.');
     box('spin', 'بنجيب الحالة…', '', '<div class="bar"><i id="pr" style="width:4%"></i></div><p id="prt" style="margin-top:6px"></p>');
     var viaH = false; try { viaH = /^\/h\//.test(sessionStorage.getItem('ozx_back') || ''); } catch (e) {}
-    fetch(location.pathname.replace(/\/$/, '') + '/file' + (viaH ? '?h=1' : ''), { cache: 'no-store' }).then(function (r) {
+    fetch(location.pathname.replace(/\/$/, '') + '/file' + (viaH ? '?h=1' : '') + (function () { try { return localStorage.getItem('qrd-staff') ? (viaH ? '&' : '?') + 's=1' : ''; } catch (e) { return ''; } })(), { cache: 'no-store' }).then(function (r) {
       if (!r.ok) return r.json().catch(function () { return {}; }).then(function (j) { var e = new Error(j.message || 'محصلش'); e.j = j; e.status = r.status; throw e; });
       var total = Number(r.headers.get('Content-Length')) || C.size || 0, src = r.headers.get('X-Source');
       if (!r.body || !r.body.getReader) return r.arrayBuffer().then(function (b) { return { buf: b, src: src }; });

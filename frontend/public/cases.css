@@ -2309,3 +2309,16 @@ html.qrd-dark .lx-st,html.qrd-dark .lx-card{animation:axRise .5s cubic-bezier(.2
 .rp-hr b{display:flex;align-items:baseline;justify-content:flex-end;gap:5px;direction:ltr}
 body.qrd-center #qrd-page-complaints>.qrd-page-body,body.qrd-center #qrd-page-reports>.qrd-page-body{max-width:none!important;margin:0!important}
 html.qrd-dark body.k .btn.g.red-t{color:#FF6B6B!important}html.qrd-dark body.k .btn.red{background:#FF6B6B!important;color:#000!important}
+
+/* ════════════════ 5.17 · the watched folder's files, right under the watch bar ════════════════ */
+.watch.on{flex-wrap:wrap}
+.wf{flex-basis:100%;margin-top:12px;background:var(--card,#fff);border:1px solid var(--line,#E4E7F2);border-radius:12px;overflow:hidden}
+.wf-h{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 12px;border-bottom:1px solid var(--line,#E4E7F2)}
+.wf-h b{font-size:13.5px;color:var(--ink)}.wf-n{font-size:12px;color:var(--mut);flex:1}.wf-n em{font-style:normal;color:#B45309;font-weight:700}
+.wf-s{max-width:220px;height:34px}
+.wf-t td{padding:7px 12px}.wf-t .lx-pt b{max-width:420px;font-weight:600;font-size:13px}
+.wf-ic{flex:none;font-size:9.5px;font-weight:800;color:#fff;background:#E11D48;border-radius:5px;padding:3px 5px}
+.wf-more{margin:8px 12px 10px}
+.wf .lx-emp{padding:16px}
+html.qrd-dark .wf-n em{color:#FFBD5C}
+.wf-t .lx-pt b{unicode-bidi:plaintext;text-align:right}
