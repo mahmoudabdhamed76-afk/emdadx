@@ -859,9 +859,11 @@
     }
     return walk(h, '', 0).then(function () { return out; });
   }
+  document.addEventListener('visibilitychange', function qrdScanVis() { if (!document.hidden && ui.watchT) scan(); });
   function startWatch() { clearInterval(ui.watchT); watchBar(); scan(); ui.watchT = setInterval(scan, 5000); }
   function scan() {
-    if (!ui.dir || ui.dirNeed || scan.busy) return; scan.busy = true;
+    /* 5.27 · the folder is only walked while this tab is on screen (a hidden tab catches up the moment it's back) */
+    if (!ui.dir || ui.dirNeed || scan.busy || document.hidden) return; scan.busy = true;
     listDir(ui.dir).then(function (all) {
       var fresh = [], dnew = [];
       all.forEach(function (x) {

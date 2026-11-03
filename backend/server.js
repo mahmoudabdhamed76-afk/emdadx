@@ -176,6 +176,7 @@ const MIME = {
   '.map': 'application/json; charset=utf-8'
 };
 const COMPRESSIBLE = new Set(['.html', '.js', '.css', '.json', '.svg', '.map']);
+const GZ_CACHE = new Map(); let GZ_BYTES = 0;
 function serveStatic(res, filePath) {
   fs.stat(filePath, (stErr, st) => {
     if (stErr || !st.isFile()) { res.writeHead(404); res.end('Not found'); return; }
@@ -186,6 +187,8 @@ function serveStatic(res, filePath) {
       'Content-Type':  MIME[ext] || 'application/octet-stream',
       'Cache-Control': isHtml ? 'no-cache, no-store, must-revalidate'
                      : (ext === '.woff2' || ext === '.woff') ? 'public, max-age=31536000, immutable'
+                     /* a file asked for with ?v=<release> never changes under that URL — the next release asks for a new one */
+                     : (/[?&]v=\w/.test((res.req && res.req.url) || '') && (ext === '.js' || ext === '.css')) ? 'public, max-age=31536000, immutable'
                      : 'no-cache',
       'ETag': etag,
       'Vary': 'Accept-Encoding',
@@ -201,7 +204,11 @@ function serveStatic(res, filePath) {
       if (err) { res.writeHead(404); res.end('Not found'); return; }
       const accept = String((res.req && res.req.headers && res.req.headers['accept-encoding']) || '');
       if (COMPRESSIBLE.has(ext) && data.length > 1024 && /\bgzip\b/.test(accept)) {
-        zlib.gzip(data, (gzErr, gz) => {
+        /* compress each file once per version (size+mtime), not on every request */
+        const ck = filePath + '|' + etag, hit = GZ_CACHE.get(ck);
+        if (hit) { baseHeaders['Content-Encoding'] = 'gzip'; baseHeaders['Content-Length'] = hit.length; res.writeHead(200, baseHeaders); res.end(hit); return; }
+        zlib.gzip(data, { level: 9 }, (gzErr, gz) => {
+          if (!gzErr && gz) { GZ_CACHE.set(ck, gz); GZ_BYTES += gz.length; if (GZ_BYTES > 64 * 1024 * 1024) { GZ_CACHE.clear(); GZ_BYTES = 0; } }
           if (res.headersSent || res.writableEnded) return;
           const out = (!gzErr && gz) ? gz : data;
           if (!gzErr && gz) baseHeaders['Content-Encoding'] = 'gzip';

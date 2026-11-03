@@ -13,6 +13,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
+const zlib = require('node:zlib');
 const { db, DATA_DIR } = require('../db');
 const webpush = require('./webpush');
 
@@ -207,14 +208,14 @@ function monthEdge(m) { const [y, mo] = m.split('-').map(Number); const n = mo =
 function prevMonth(m) { const [y, mo] = m.split('-').map(Number); return mo === 1 ? (y - 1) + '-12' : y + '-' + String(mo - 1).padStart(2, '0'); }
 /* 5.21 · everything the monthly report needs, for one month and the one before it */
 function reportOf(cid, m) {
-  const one = (q, ...a) => (db.prepare(q).get(cid, ...a) || {}).n || 0;
+  const one = (q, ...a) => (Q(q).get(cid, ...a) || {}).n || 0;
   const part = mm => {
     const [a, b] = monthEdge(mm), r = ratingsOf(cid, a, b);
     return {
       month: mm, cases: one('SELECT COUNT(*) n FROM case_item WHERE customer_id = ? AND created_at >= ? AND created_at < ?', a, b),
       dicom: one("SELECT COUNT(*) n FROM case_item WHERE customer_id = ? AND kind = 'dicom' AND created_at >= ? AND created_at < ?", a, b),
       views: one('SELECT COUNT(*) n FROM case_view WHERE customer_id = ? AND at >= ? AND at < ?', a, b),
-      opened: one('SELECT COUNT(DISTINCT v.token) n FROM case_view v JOIN case_item i ON i.token = v.token WHERE v.customer_id = ? AND i.created_at >= ? AND i.created_at < ?', a, b),
+      opened: one('SELECT COUNT(*) n FROM case_item i WHERE i.customer_id = ? AND i.created_at >= ? AND i.created_at < ? AND EXISTS (SELECT 1 FROM case_view v WHERE v.token = i.token)', a, b),
       qr: one("SELECT COALESCE(SUM(n),0) n FROM case_qr_hour WHERE customer_id = ? AND kind = 'fixed' AND day >= ? AND day < ?", a, b),
       bookings: one('SELECT COUNT(*) n FROM case_booking WHERE customer_id = ? AND at >= ? AND at < ?', a, b),
       bookDone: one("SELECT COUNT(*) n FROM case_booking WHERE customer_id = ? AND status != 'new' AND at >= ? AND at < ?", a, b),
@@ -241,6 +242,14 @@ function reportOf(cid, m) {
   [cur, prev].forEach(x => { delete x._r; delete x._a; delete x._b; });
   return { center: site.center_name || '', cur, prev, days, exams, bookExams, subj, hours, tags: Object.keys(tags).map(k => [k, tags[k]]).sort((x, y) => y[1] - x[1]), notes, made: nowTs() };
 }
+/* 5.27 · indexes for the dashboard, the monthly report and the results log — every count is a range on (center, time) */
+try { db.exec(`CREATE INDEX IF NOT EXISTS ix_case_view_cat ON case_view (customer_id, at);
+CREATE INDEX IF NOT EXISTS ix_case_item_cat ON case_item (customer_id, created_at);
+CREATE INDEX IF NOT EXISTS ix_case_booking_at ON case_booking (customer_id, at);
+CREATE INDEX IF NOT EXISTS ix_case_sr_at ON case_service_request (customer_id, kind, at);
+CREATE INDEX IF NOT EXISTS ix_case_ask_at ON case_ask (customer_id, at);
+CREATE INDEX IF NOT EXISTS ix_case_view_cid ON case_view (customer_id, id);`); db.exec('PRAGMA optimize'); } catch (e) { console.error('[cases] 5.27 index', e.message); }
+const STMT = new Map(); function Q(sql) { let s = STMT.get(sql); if (!s) { s = db.prepare(sql); STMT.set(sql, s); } return s; }
 /* 5.25 · the rating pop-up is the center's to word: on/off per page, delay, texts, promo lines, icon and its size */
 try { if (!db.prepare('PRAGMA table_info(case_site)').all().some(c => c.name === 'pop_cfg')) db.exec('ALTER TABLE case_site ADD COLUMN pop_cfg TEXT'); } catch (e) { console.error('[cases] 5.25 migrate', e.message); }
 const POP_ICONS = ['logo', 'star', 'heart', 'smile', 'gift', 'none'], POP_SIZES = ['s', 'm', 'l', 'xl'];
@@ -276,8 +285,12 @@ function dashOf(cid) {
   const now = nowTs(), td = now.slice(0, 10), mo = td.slice(0, 7);
   const dOf = k => { const d = new Date(td + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() - k); return d.toISOString().slice(0, 10); };
   const yd = dOf(1), from = dOf(29);
-  const c = db.prepare('SELECT COUNT(*) total, SUM(substr(created_at,1,10) = ?) today, SUM(substr(created_at,1,7) = ?) month, SUM(active = 0) off, SUM(views = 0 AND active = 1) unseen FROM case_item WHERE customer_id = ?').get(td, mo, cid) || {};
-  const v = db.prepare('SELECT COUNT(*) total, SUM(substr(at,1,10) = ?) today, SUM(substr(at,1,10) = ?) yday FROM case_view WHERE customer_id = ?').get(td, yd, cid) || {};
+  const n1 = (q, ...a) => (Q(q).get(...a) || {}).n || 0;
+  const c = Q('SELECT COUNT(*) total, SUM(active = 0) off, SUM(views = 0 AND active = 1) unseen, COALESCE(SUM(views),0) vt FROM case_item WHERE customer_id = ?').get(cid) || {};
+  c.today = n1('SELECT COUNT(*) n FROM case_item WHERE customer_id = ? AND created_at >= ?', cid, td);
+  c.month = n1('SELECT COUNT(*) n FROM case_item WHERE customer_id = ? AND created_at >= ?', cid, mo + '-01');
+  const v = { total: c.vt || 0,   /* every result view bumps case_item.views alongside its case_view row */ today: n1('SELECT COUNT(*) n FROM case_view WHERE customer_id = ? AND at >= ?', cid, td),
+    yday: n1('SELECT COUNT(*) n FROM case_view WHERE customer_id = ? AND at >= ? AND at < ?', cid, yd, td) };
   const st = db.prepare('SELECT total, count_fixed, count_report FROM case_qr_stat WHERE customer_id = ?').get(cid) || {};
   const hRows = db.prepare('SELECT day, hour, kind, n FROM case_qr_hour WHERE customer_id = ? AND day >= ?').all(cid, from);
   const vRows = db.prepare('SELECT substr(at,1,10) day, COUNT(*) n FROM case_view WHERE customer_id = ? AND at >= ? GROUP BY 1').all(cid, from);
@@ -287,7 +300,7 @@ function dashOf(cid) {
   let qToday = 0, qYday = 0;
   hRows.forEach(r => { if (r.kind !== 'fixed') return; if (di[r.day] != null) days[di[r.day]].qr += r.n; if (r.day === td) { hours[r.hour] += r.n; qToday += r.n; } if (r.day === yd) qYday += r.n; });
   vRows.forEach(r => { if (di[r.day] != null) days[di[r.day]].views = r.n; });
-  const one = q => (db.prepare(q).get(cid) || {}).n || 0;
+  const one = q => (Q(q).get(cid) || {}).n || 0;
   const req = {
     bookings: one("SELECT COUNT(*) n FROM case_booking WHERE customer_id = ? AND status = 'new'"),
     results: one('SELECT COUNT(*) n FROM case_ask WHERE customer_id = ? AND done = 0'),
@@ -441,7 +454,19 @@ const MISS = new Map();
 function limited(key, max, ms) { const now = Date.now(), x = MISS.get(key); if (x && now - x.t < ms) { x.n++; return x.n > max; } MISS.set(key, { n: 1, t: now }); return false; }
 setInterval(() => { const now = Date.now(); for (const [k, x] of MISS) if (now - x.t > 3600e3) MISS.delete(k); }, 600e3).unref();
 
-function send(res, code, o, h) { res.writeHead(code, Object.assign({ 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' }, h || {})); res.end(JSON.stringify(o)); }
+/* 5.27 · JSON and pages go out gzipped when the browser accepts it (lists, ratings, the center page with its slides) */
+function zout(res, code, h, body) {
+  const buf = Buffer.isBuffer(body) ? body : Buffer.from(String(body), 'utf8');
+  const ae = String((res.req && res.req.headers['accept-encoding']) || '');
+  h.Vary = 'Accept-Encoding';
+  if (buf.length < 1400 || !/\bgzip\b/.test(ae)) { h['Content-Length'] = buf.length; res.writeHead(code, h); res.end(buf); return; }
+  zlib.gzip(buf, { level: 6 }, (err, gz) => {
+    if (res.headersSent || res.writableEnded) return;
+    if (err) { h['Content-Length'] = buf.length; res.writeHead(code, h); res.end(buf); return; }
+    h['Content-Encoding'] = 'gzip'; h['Content-Length'] = gz.length; res.writeHead(code, h); res.end(gz);
+  });
+}
+function send(res, code, o, h) { zout(res, code, Object.assign({ 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' }, h || {}), JSON.stringify(o)); }
 function readJson(req, max) {
   return new Promise((ok, no) => { const ch = []; let n = 0; req.on('data', c => { n += c.length; if (n > max) { no(Object.assign(new Error('كبير'), { status: 413 })); req.destroy(); } else ch.push(c); }); req.on('end', () => { try { ok(JSON.parse(Buffer.concat(ch).toString('utf8') || '{}')); } catch (e) { no(Object.assign(new Error('bad'), { status: 400 })); } }); req.on('error', no); });
 }
@@ -451,9 +476,9 @@ function page(title, body, css, js, manifestUrl) {
   return '<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover' + (css === 'v' ? ',maximum-scale=1,user-scalable=no' : '') + '"><meta name="robots" content="noindex,nofollow"><meta name="referrer" content="no-referrer"><meta name="theme-color" content="#0E9F9A">' +
     '<title>' + esc(title) + '</title><link rel="icon" href="/icons/favicon-32.png">' +
     (manifestUrl ? '<link rel="manifest" href="'+esc(manifestUrl)+'"><link rel="apple-touch-icon" href="'+esc(manifestUrl.replace('/manifest','/icon'))+'"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default">' : '') +
-    '<link rel="stylesheet" href="/fonts/fonts.css"><link rel="stylesheet" href="/cases.css?v=528"></head><body class="' + css + '">' + body + js + '</body></html>';
+    '<link rel="stylesheet" href="/fonts/fonts.css"><link rel="stylesheet" href="/cases.css?v=529"></head><body class="' + css + '">' + body + js + '</body></html>';
 }
-function html(res, code, s) { res.writeHead(code, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store', 'X-Frame-Options': 'DENY', 'Referrer-Policy': 'no-referrer' }); res.end(s); }
+function html(res, code, s) { zout(res, code, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store', 'X-Frame-Options': 'DENY', 'Referrer-Policy': 'no-referrer' }, s); }
 
 /* ════════ public routes ════════ */
 async function handle(req, res, pathname) {
@@ -497,7 +522,7 @@ async function centerRoute(req, res, m) {
     if (req.method !== 'GET') return false;
     const CD = { code, center: site.center_name || '', logo: site.logo || '', theme: site.theme || 'a', layout: site.dashboard_layout === 'violet' ? 'violet' : 'teal', auth: me, cacheDays: CACHE_DAYS, maxMb: MAX_MB, pub: me ? pubOf(site) : '', fixedOn: !!site.fixed_on, wa: me ? (site.wa || '') : '', waDefault: me && !site.wa ? waFor(cid0(site), '') : '' };
     if (me) db.prepare('UPDATE case_site SET last_seen = ? WHERE customer_id = ?').run(nowTs(), site.customer_id);
-    html(res, 200, page('QR Patient — ' + (site.center_name || ''), '<div id="app"></div>', 'k', '<script>window.CD=' + json(CD) + '</script><script src="/vendor/qrcode.js"></script><script src="/cases-kit.js?v=528"></script><script src="/cases-dicom.js?v=528"></script><script src="/cases-pacs.js?v=528"></script><script src="/cases-ads.js?v=528"></script><script src="/cases-center.js?v=528"></script><script src="/cases-push.js?v=528"></script>', '/k/'+code+'/manifest'));
+    html(res, 200, page('QR Patient — ' + (site.center_name || ''), '<div id="app"></div>', 'k', '<script>window.CD=' + json(CD) + '</script><script src="/vendor/qrcode.js"></script><script src="/cases-kit.js?v=529"></script><script src="/cases-dicom.js?v=529"></script><script src="/cases-pacs.js?v=529"></script><script src="/cases-ads.js?v=529"></script><script src="/cases-center.js?v=529"></script><script src="/cases-push.js?v=529"></script>', '/k/'+code+'/manifest'));
     return true;
   }
   if (sub === 'manifest' && req.method === 'GET') { respondManifest(res,site,'k');return true; }
@@ -819,7 +844,7 @@ async function viewRoute(req, res, token, file) {
   if (!file) {
     if (!it) { if (limited('vx:' + ip, 40, 600e3)) { send(res, 429, { message: 'حاولت كتير' }); return true; } }
     const CD = it ? { token, kind: it.kind || 'pdf', center: it.center_name || '', logo: it.site_logo || '', theme: it.site_theme || 'a', patient: it.patient, exam: it.exam || '', at: it.created_at, pages: it.pages || 0, size: it.size, name: it.file_name || '', active: !!(it.active && it.site_on), ready: !!(it.cached && it.cache_until > Date.now()) || online(it.customer_id), wa: waFor(it.customer_id, it.site_wa), pub: it.site_pub || '', rateTags: RATE_TAGS, pop: popCfg(it.site_pop) } : { missing: true };
-    html(res, it ? 200 : 404, page(it ? 'نتيجة الفحص — ' + (it.center_name || '') : 'الحالة مش موجودة', '<div id="app"></div>', 'v', '<script>window.CD=' + json(CD) + '</script><script src="/cases-kit.js?v=528"></script>' + (it && it.kind === 'dicom' ? '<script src="/cases-pacs.js?v=528"></script>' : '<script src="/vendor/pdfjs/pdf.min.js"></script>') + '<script src="/cases-skin.js?v=528"></script><script src="/cases-view.js?v=528"></script>'));
+    html(res, it ? 200 : 404, page(it ? 'نتيجة الفحص — ' + (it.center_name || '') : 'الحالة مش موجودة', '<div id="app"></div>', 'v', '<script>window.CD=' + json(CD) + '</script><script src="/cases-kit.js?v=529"></script>' + (it && it.kind === 'dicom' ? '<script src="/cases-pacs.js?v=529"></script>' : '<script src="/vendor/pdfjs/pdf.min.js"></script>') + '<script src="/cases-skin.js?v=529"></script><script src="/cases-view.js?v=529"></script>'));
     return true;
   }
   if (!it) { send(res, 404, { message: 'الحالة مش موجودة' }); return true; }
@@ -999,7 +1024,7 @@ async function findRoute(req, res, pub, sub) {
     if (req.method !== 'GET') return false;
     if (!site) { if (limited('hx:' + ip, 30, 600e3)) { send(res, 429, { message: 'حاولت كتير' }); return true; } }
     const CD = site ? { pub, center: site.center_name || '', logo: site.logo || '', theme: site.theme || 'a', on: !!site.fixed_on, wa: waFor(site.customer_id, site.wa), ads: adsOf(site.customer_id), base: site.slides_base !== 0, slideMs: site.slide_ms || 5200, seeded: true, pop: popCfg(site.pop_cfg) } : { missing: true };
-    html(res, site ? 200 : 404, page(site ? 'نتيجتك — ' + (site.center_name || '') : 'اللينك مش شغال', '<div id="app"></div>', 'v', '<script>window.CD=' + json(CD) + '</script><script src="/cases-kit.js?v=528"></script><script src="/cases-skin.js?v=528"></script><script src="/cases-ads.js?v=528"></script><script src="/cases-find.js?v=528"></script><script src="/cases-push.js?v=528"></script>',site?'/h/'+pub+'/manifest':null));
+    html(res, site ? 200 : 404, page(site ? 'نتيجتك — ' + (site.center_name || '') : 'اللينك مش شغال', '<div id="app"></div>', 'v', '<script>window.CD=' + json(CD) + '</script><script src="/cases-kit.js?v=529"></script><script src="/cases-skin.js?v=529"></script><script src="/cases-ads.js?v=529"></script><script src="/cases-find.js?v=529"></script><script src="/cases-push.js?v=529"></script>',site?'/h/'+pub+'/manifest':null));
     return true;
   }
   if (req.method !== 'POST') return false;
