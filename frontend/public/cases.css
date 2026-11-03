@@ -616,3 +616,127 @@ html.tb .v .btn:focus-visible,html.td .v .btn:focus-visible{outline:3px solid va
   .booking-grid{gap:7px}.booking-card{padding:14px}
 }
 @media(prefers-reduced-motion:reduce){.patient-panel,.patient-chooser{animation:none}}
+
+
+/* ═══════════════════════════════════════════════════════════════
+   Patient Portal V2 · 6 daylight themes / landing / calmer motion
+   All themes use light surfaces; medical image viewer keeps its dark canvas.
+   ═══════════════════════════════════════════════════════════════ */
+html.patient-daylight{color-scheme:light}
+html.patient-daylight #dkb{display:none!important}
+html.patient-daylight .v input,html.patient-daylight .v select,html.patient-daylight .v textarea{color-scheme:light}
+html.td{--pb:#F6F3FF;--pb2:#FFF;--pc:#fff;--pi:#2A204A;--pm:#70688D;--pp:#7357C5;--pp2:#A78BFA;--pl:#E9E1FC;--pin:#FAF8FF;--pacc:#D94675;--pbtn:linear-gradient(135deg,#7255C8,#B19AF7);--pbc:#fff;--psh:0 22px 46px -27px rgba(76,49,138,.32);--pri:#F1EAFF;--pri2:#ECECFF}
+html.te{--pb:#F2F8FF;--pb2:#FFF;--pc:#fff;--pi:#153451;--pm:#627D93;--pp:#267CB4;--pp2:#6CC4E8;--pl:#DDEEF9;--pin:#F7FCFF;--pacc:#D4476B;--pbtn:linear-gradient(135deg,#2381BA,#53B8DF);--pbc:#fff;--psh:0 22px 48px -27px rgba(22,93,137,.25);--pri:#E2F3FD;--pri2:#EDF8FF}
+html.tf{--pb:#F3FAF5;--pb2:#FFF;--pc:#fff;--pi:#183B33;--pm:#668377;--pp:#247D5B;--pp2:#55B68C;--pl:#DEEFE3;--pin:#F7FCF8;--pacc:#C94570;--pbtn:linear-gradient(135deg,#277F5E,#64BA8F);--pbc:#fff;--psh:0 20px 46px -25px rgba(19,94,62,.27);--pri:#E2F5E9;--pri2:#F0F9F4}
+html.td body.v{background:linear-gradient(155deg,#F6F3FF,var(--pb2) 64%) fixed}
+html.te body.v{background:linear-gradient(155deg,#F2F8FF,#FFF 65%) fixed}
+html.tf body.v{background:linear-gradient(155deg,#F3FAF5,#FFF 70%) fixed}
+html.patient-daylight .v .ttl{color:var(--pi)!important}
+html.patient-daylight .v .btn{color:#fff}
+html.patient-daylight .v .btn.g{color:var(--pi)}
+html.tc.patient-daylight .v .btn.ask2{color:#fff;background:var(--pbtn)}
+html.tc.patient-daylight .v .rc{background:var(--pc);border:1px solid var(--pl);border-radius:20px;padding:14px;box-shadow:var(--psh)}
+.sw2.d i:nth-child(1){background:#F6F3FF;border:1px solid #E9E1FC}.sw2.d i:nth-child(2){background:#B19AF7}.sw2.d i:nth-child(3){background:#7357C5}
+.sw2.e i:nth-child(1){background:#F2F8FF;border:1px solid #DDEEF9}.sw2.e i:nth-child(2){background:#6CC4E8}.sw2.e i:nth-child(3){background:#267CB4}
+.sw2.f i:nth-child(1){background:#F3FAF5;border:1px solid #DEEFE3}.sw2.f i:nth-child(2){background:#55B68C}.sw2.f i:nth-child(3){background:#247D5B}
+.thm .thg{grid-template-columns:repeat(2,minmax(0,1fr))}
+.thm .thg button.on{border-color:#0F766E;box-shadow:0 0 0 3px rgba(15,118,110,.12)}
+@media(min-width:1180px){.thm .thg{grid-template-columns:repeat(3,minmax(0,1fr))}}
+
+/* Spacious hero with a lightweight medical pulse motif */
+.tx .v > .w.pv2-page{max-width:550px;padding:calc(15px + env(safe-area-inset-top,0px)) 16px calc(40px + env(safe-area-inset-bottom,0px))}
+.pv2-page .pv2-top{margin:4px 0 18px}
+.pv2-page .pv2-top .tlg{border-radius:18px;width:54px;height:54px}
+.pv2-page .pv2-top .tn b{font-size:15px}
+.pv2-online{margin-inline-start:auto;font-size:11.5px;font-weight:800;border:1px solid var(--pl);border-radius:999px;background:var(--pc);padding:8px 11px;color:var(--pp);white-space:nowrap;display:inline-flex;align-items:center;gap:6px}
+.pv2-online i,.pv2-chip-dot{width:7px;height:7px;border-radius:50%;background:#22C55E;box-shadow:0 0 0 4px rgba(34,197,94,.12)}
+.pv2-page .pv2-hero{position:relative;overflow:hidden;min-height:229px;background:linear-gradient(132deg,var(--pp),var(--pp2));color:#fff;border-radius:30px;padding:23px 24px;box-shadow:0 23px 42px -28px var(--pp);display:flex;align-items:center;isolation:isolate;animation:pv2Rise .6s cubic-bezier(.16,1,.3,1) both}
+.pv2-hero-bg{position:absolute;inset:0;z-index:-1;pointer-events:none}
+.pv2-hero-bg i{position:absolute;border-radius:50%;border:1px solid rgba(255,255,255,.18);width:265px;height:265px;left:-92px;top:-110px}
+.pv2-hero-bg i:nth-child(2){width:170px;height:170px;left:-45px;top:-65px}
+.pv2-hero-bg i:nth-child(3){width:340px;height:340px;right:-160px;left:auto;top:70px;background:rgba(255,255,255,.055);border:0}
+.pv2-hero-copy{position:relative;z-index:2;max-width:74%}
+.pv2-eyebrow{display:inline-flex;align-items:center;font-size:11px;letter-spacing:.1px;font-weight:700;background:rgba(255,255,255,.15);padding:7px 11px;border:1px solid rgba(255,255,255,.14);border-radius:999px}
+html.patient-daylight .v .pv2-hero .ttl{font-size:clamp(27px,6.5vw,36px)!important;line-height:1.2;margin:15px 0 9px;font-family:'IBM Plex Sans Arabic','Cairo',sans-serif;font-weight:800;color:#fff!important;letter-spacing:-.5px}
+.pv2-hero .ttl span{color:#fff;display:inline-block;animation:pv2Heartbeat 3.5s ease-in-out infinite}
+.pv2-hero-copy>p{font-size:12.5px;line-height:1.9;margin:0;opacity:.94}
+.pv2-hero-chip{display:inline-flex;gap:10px;align-items:center;margin-top:17px;font-size:11.5px;font-weight:800;background:rgba(255,255,255,.13);border:1px solid rgba(255,255,255,.2);border-radius:999px;padding:8px 12px}
+.pv2-hero-art{width:122px;height:122px;position:absolute;left:13px;top:42px;display:grid;place-items:center;opacity:.92;pointer-events:none}
+.pv2-art-ring{position:absolute;inset:14px;border-radius:50%;border:2px solid rgba(255,255,255,.38);animation:pv2Breathe 5s ease-in-out infinite}
+.pv2-art-ring.r2{inset:0;border-color:rgba(255,255,255,.13);animation-delay:-1.4s}
+.pv2-art-core{width:58px;height:58px;display:grid;place-items:center;border-radius:20px;color:var(--pp);font-size:26px;background:#fff;box-shadow:0 12px 22px rgba(0,0,0,.12);animation:pv2Float 5s ease-in-out infinite}
+.pv2-art-ecg{position:absolute;left:10px;right:10px;bottom:-3px;width:110px;height:33px;color:rgba(255,255,255,.75)}
+.pv2-art-ecg path{stroke-dasharray:250;stroke-dashoffset:250;animation:pv2Draw 2.4s ease-out .45s forwards}
+.pv2-section-title{display:flex;align-items:end;justify-content:space-between;gap:12px;margin:26px 1px 13px}
+.pv2-section-title span{display:block;font-size:11px;font-weight:800;color:var(--pp);margin-bottom:3px}
+.pv2-section-title h2{font-size:19px;font-weight:800;color:var(--pi);margin:0}
+.pv2-section-title>small{color:var(--pm);font-size:11px;text-align:left}
+.pv2-page .patient-chooser{margin:0;gap:12px;grid-template-columns:repeat(2,minmax(0,1fr));animation:pv2Rise .55s .1s both}
+.pv2-page .patient-chooser button.pv2-service{position:relative;min-width:0;min-height:183px;border:1.5px solid var(--pl);border-radius:24px;background:var(--pc);padding:17px 12px 14px;box-shadow:var(--psh);color:var(--pi);display:flex;align-items:flex-start;justify-content:flex-start;text-align:right;gap:6px;transition:transform .3s cubic-bezier(.2,.8,.2,1),box-shadow .3s,border-color .25s}
+.pv2-page .pv2-service-icon{display:grid;place-items:center;width:48px;height:48px;border-radius:16px;background:var(--pri);font-size:24px;margin-bottom:6px;transition:transform .35s cubic-bezier(.2,.8,.2,1)}
+.pv2-page .pv2-service b{font-size:18px;font-weight:800;color:var(--pi);line-height:1.3}
+.pv2-page .pv2-service small{font-size:11px;line-height:1.5;color:var(--pm)}
+.pv2-page .pv2-service-go{width:29px;height:29px;border-radius:11px;display:grid;place-items:center;color:var(--pp);background:var(--pri);position:absolute;bottom:13px;left:13px;font-size:18px;transition:transform .25s;background .25s}
+.pv2-page .pv2-service.on{border-color:var(--pp);background:var(--pc)}
+.pv2-page .pv2-service.on .pv2-service-go{color:#fff;background:var(--pp);transform:translateX(-3px)}
+@media(hover:hover) and (pointer:fine){
+  .pv2-page .pv2-service:hover{transform:translateY(-5px);border-color:var(--pp2);box-shadow:0 24px 44px -24px rgba(15,42,46,.28)}
+  .pv2-page .pv2-service:hover .pv2-service-icon{transform:rotate(-6deg) scale(1.08)}
+}
+.pv2-page .pv2-service:active{transform:scale(.975)}
+.pv2-action-hint{margin:14px 0 16px;color:var(--pm);font-size:12px;text-align:center}
+.pv2-page .patient-panel{scroll-margin-top:16px;animation:pv2Panel .42s cubic-bezier(.16,1,.3,1) both}
+.pv2-page .patient-panel[hidden]{display:none!important}
+.pv2-page .patient-panel .srch,.pv2-page .patient-panel .booking-card{margin:0 0 14px;background:var(--pc);border:1px solid var(--pl);border-radius:26px;padding:20px;box-shadow:var(--psh)}
+.pv2-page .patient-panel .booking-heading{margin-bottom:16px}
+.pv2-page .patient-panel .booking-heading b{font-size:18px;color:var(--pi)}
+.pv2-page .patient-panel .booking-heading small{font-size:12px;color:var(--pm)}
+.pv2-page .patient-panel .booking-heading>span{border-radius:17px;background:var(--pri);width:51px;height:51px}
+.pv2-page .patient-panel .fld{background:var(--pin);color:var(--pi);border-color:var(--pl)}
+.pv2-page #ph{font-weight:700;font-size:21px!important;letter-spacing:.8px}
+.pv2-page .patient-panel .btn.w{min-height:56px}
+.pv2-page .patient-panel .miss{margin-top:12px;box-shadow:var(--psh);border-color:var(--pl)}
+.pv2-trust{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin-top:23px}
+.pv2-trust div{min-width:0;background:var(--pc);border:1px solid var(--pl);border-radius:17px;padding:13px 6px;display:flex;align-items:center;flex-direction:column;gap:7px;box-shadow:0 10px 24px -24px var(--pi)}
+.pv2-trust i{font-size:22px;font-style:normal}
+.pv2-trust span{font-size:10.5px;color:var(--pm);font-weight:700;text-align:center;line-height:1.45}
+.pv2-footer{margin:26px 0 0;text-align:center;font-size:11.5px;color:var(--pm)}
+/* Short, optional intro; never blocks report viewing */
+.pv2-splw{background:var(--pb);display:flex;align-items:center;justify-content:center}
+.pv2-splw .pv2-splash{position:relative;width:100%;max-width:520px;min-height:100%;display:flex;align-items:center;flex-direction:column;justify-content:center;text-align:center;padding:calc(36px + env(safe-area-inset-top,0px)) 24px calc(35px + env(safe-area-inset-bottom,0px));overflow:hidden}
+.pv2-splash-orb{position:absolute;border-radius:50%;background:radial-gradient(circle,var(--pri),transparent 72%);width:360px;height:360px;top:-210px;left:-145px;animation:pv2Float 8s ease-in-out infinite}
+.pv2-splash-orb.o2{top:auto;left:auto;bottom:-240px;right:-155px;animation-delay:-3s}
+.pv2-welcome-logo{z-index:1;width:103px;height:103px;border-radius:30px;display:grid;place-items:center;background:#fff;border:1px solid var(--pl);box-shadow:var(--psh);animation:pv2Pop .7s cubic-bezier(.2,1.2,.3,1) both}
+.pv2-welcome-logo img{width:88px;height:88px;object-fit:contain}
+.pv2-welcome-logo .ini{font-size:50px;color:var(--pp)}
+.pv2-splash-eyebrow{z-index:1;color:var(--pp);background:var(--pri);border-radius:999px;padding:8px 15px;font-size:12px;font-weight:800;margin-top:32px}
+.pv2-splash h1{z-index:1;color:var(--pi);font-family:'Zain','IBM Plex Sans Arabic',sans-serif;font-size:clamp(44px,13vw,64px);line-height:1.1;font-weight:800;margin:16px 0 8px;animation:pv2Rise .8s .08s both}
+.pv2-splash h1 span{color:var(--pp)}
+.pv2-welcome-name{font-weight:800;font-size:21px;color:var(--pi);margin:0 0 10px}
+.pv2-splash-sub{font-size:14px;line-height:1.9;color:var(--pm);margin-top:12px}
+.pv2-welcome-steps{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;margin:16px 0 25px}
+.pv2-welcome-steps span{font-size:12px;font-weight:800;padding:9px 13px;background:var(--pc);color:var(--pp);border:1px solid var(--pl);border-radius:99px}
+.pv2-enter{position:relative;display:flex;align-items:center;justify-content:space-between;gap:18px;background:var(--pbtn);color:#fff;border:0;border-radius:17px;box-shadow:var(--psh);padding:16px 22px;min-height:57px;max-width:340px;width:100%;font-size:16px;font-weight:800;cursor:pointer}
+.pv2-enter span{font-size:23px}
+.pv2-welcome-foot{margin-top:17px;font-size:11.5px;color:var(--pm)}
+.pv2-splw.out{opacity:0;transform:scale(1.03);transition:opacity .38s,transform .38s;pointer-events:none}
+@keyframes pv2Rise{from{opacity:0;transform:translateY(15px)}to{opacity:1;transform:none}}
+@keyframes pv2Panel{from{opacity:0;transform:translateY(15px) scale(.985)}to{opacity:1;transform:none}}
+@keyframes pv2Float{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
+@keyframes pv2Breathe{0%,100%{transform:scale(1);opacity:.65}50%{transform:scale(1.075);opacity:.95}}
+@keyframes pv2Heartbeat{0%,88%,100%{transform:scale(1)}92%{transform:scale(1.14)}96%{transform:scale(1)}}
+@keyframes pv2Draw{to{stroke-dashoffset:0}}
+@keyframes pv2Pop{from{opacity:0;transform:scale(.7)}to{opacity:1;transform:scale(1)}}
+@media(max-width:365px){
+ .pv2-page .pv2-hero{padding:20px 17px;min-height:216px}
+ .pv2-hero-art{width:92px;height:92px;left:3px;top:47px}
+ .pv2-hero-copy{max-width:80%}
+ .pv2-page .patient-chooser{gap:9px}
+ .pv2-page .patient-chooser button.pv2-service{min-height:179px;padding:13px 10px}
+ .pv2-page .pv2-service b{font-size:16px}
+ .pv2-page .pv2-service small{font-size:10px}
+ .pv2-trust{gap:6px}
+}
+@media(prefers-reduced-motion:reduce){
+ .pv2-page *, .pv2-page *::before,.pv2-page *::after,.pv2-splw *{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+}
