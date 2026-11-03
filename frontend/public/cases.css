@@ -1090,3 +1090,8 @@ body.qrd-center [id]{scroll-margin-top:95px}
 @media(prefers-reduced-motion:reduce){
   body.qrd-center *,body.qrd-center *::before,body.qrd-center *::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
 }
+
+/* Requests remain aligned in either dashboard even before new bookings arrive. */
+body.qrd-center .qrd-rail-empty{font-size:12px;color:#638075;line-height:1.6;padding:17px 14px;text-align:center;background:#FCFEFF}
+body.qrd-center .kside .bookings .ar{background:#fff}
+body.qrd-center .kside .asks:focus-within{outline:2px solid var(--qd-accent);outline-offset:2px}
