@@ -14,6 +14,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const crypto = require('node:crypto');
 const { db, DATA_DIR } = require('../db');
+const webpush = require('./webpush');
 
 db.exec(`CREATE TABLE IF NOT EXISTS case_site (
   customer_id TEXT PRIMARY KEY, center_name TEXT, code TEXT UNIQUE NOT NULL, pass TEXT NOT NULL, ver INTEGER NOT NULL DEFAULT 1,
@@ -61,6 +62,16 @@ db.exec(`CREATE TABLE IF NOT EXISTS case_service_request (
  at TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'new', updated_at TEXT
 );
 CREATE INDEX IF NOT EXISTS ix_case_service_requests ON case_service_request(customer_id, kind, status, id);`);
+/* Separate opt-in subscriptions, linked to the patient's random device token,
+   never to a phone number or to a different patient's request. */
+db.exec(`CREATE TABLE IF NOT EXISTS case_push_device (
+  token TEXT PRIMARY KEY, customer_id TEXT NOT NULL, created_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS ix_case_push_device_center ON case_push_device(customer_id);`);
+for (const [table, column] of [['case_booking','notify_device'],['case_service_request','notify_device'],['case_ask','notify_device']]) {
+  const existing = db.prepare('PRAGMA table_info('+table+')').all().map(c => c.name);
+  if (!existing.includes(column)) db.exec('ALTER TABLE '+table+' ADD COLUMN '+column+' TEXT');
+}
 /* Anonymous QR landing analytics. No geolocation or IP is saved. */
 db.exec(`CREATE TABLE IF NOT EXISTS case_qr_stat (
  customer_id TEXT PRIMARY KEY, total INTEGER NOT NULL DEFAULT 0,
@@ -191,6 +202,66 @@ function qrOpen(req, cid, kind) {
     tell(cid, 'qr-open', { qr: qrStatsOf(cid) });
   } catch (e) { console.warn('[qr-analytics]', e.message); } /* no failure can block patient access */
 }
+/* QR-specific Web Push reuses the existing VAPID delivery engine and preserves
+   per-center authorization; lock-screen bodies never include patient details. */
+function pushCenterId(cid) {
+  return 'qrc:' + crypto.createHmac('sha256',SECRET).update('center:'+cid).digest('hex').slice(0,40);
+}
+function pushPatientId(deviceToken) {
+  return 'qrp:' + crypto.createHmac('sha256',SECRET).update('patient:'+deviceToken).digest('hex').slice(0,40);
+}
+function optInDevice(cid, token) {
+  return /^[a-f0-9]{32}$/.test(String(token||'')) &&
+    !!db.prepare('SELECT 1 FROM case_push_device WHERE token = ? AND customer_id = ?').get(token,cid);
+}
+function pushCenterAlert(site,section,description,tag) {
+  const url='/k/'+site.code+'?section='+section+'#page-'+section;
+  webpush.send([pushCenterId(site.customer_id)],{
+    title:'🔔 QR Patient · '+(site.center_name||'المركز'),
+    body:description,url,tag:'qrc-'+tag
+  }).catch(e => console.warn('[qrc-push]',e.message));
+}
+function pushPatientAlert(deviceToken,pub) {
+  if (!deviceToken) return;
+  webpush.send([pushPatientId(deviceToken)],{
+    title:'🔔 تحديث طلبك من مركز الأشعة',
+    body:'المركز حدّث حالة طلبك. افتح بوابة المركز للمتابعة.',
+    url:'/h/'+pub,tag:'qrp-status'
+  }).catch(e => console.warn('[qrp-push]',e.message));
+}
+function webAppManifest(site,kind) {
+  const center=String(site.center_name||'مركز الأشعة').slice(0,90);
+  const base='/'+kind+'/'+(kind==='h'?pubOf(site):site.code);
+  return {
+    id:base,name:kind==='k'?'QR Patient · '+center:center+' · بوابة المرضى',
+    short_name:kind==='k'?'QR Patient':'بوابة الأشعة',
+    start_url:base,scope:'/'+kind+'/',display:'standalone',
+    background_color:'#F2FBF8',theme_color:'#087D70',lang:'ar',dir:'rtl',
+    icons:[
+      {src:'/icons/icon-192.png',sizes:'192x192',type:'image/png',purpose:'any maskable'},
+      {src:'/icons/icon-512.png',sizes:'512x512',type:'image/png',purpose:'any maskable'}
+    ]
+  };
+}
+function respondManifest(res,site,kind) {
+  res.writeHead(200,{'Content-Type':'application/manifest+json; charset=utf-8','Cache-Control':'public, max-age=300','X-Content-Type-Options':'nosniff'});
+  res.end(JSON.stringify(webAppManifest(site,kind)));
+}
+function respondIcon(res,site) {
+  const match=/^data:(image\/(?:png|jpeg|webp));base64,([A-Za-z0-9+/=]+)$/.exec(site.logo||'');
+  if (!match) { res.writeHead(302,{Location:'/icons/icon-192.png','Cache-Control':'public, max-age=300'});res.end();return; }
+  const buf=Buffer.from(match[2],'base64');
+  if (buf.length>250000 || !requestPhotoMime(buf)) {
+    res.writeHead(302,{Location:'/icons/icon-192.png'});res.end();return;
+  }
+  res.writeHead(200,{'Content-Type':match[1],'Content-Length':String(buf.length),'Cache-Control':'public, max-age=300','X-Content-Type-Options':'nosniff'});
+  res.end(buf);
+}
+function validOrigin(req) {
+  const source=req.headers.origin;
+  if (!source) return req.headers['sec-fetch-site'] !== 'cross-site';
+  try {return new URL(source).host===req.headers.host;}catch(_){return false;}
+}
 function bookingPhone(p) {
   let d = String(p || '').replace(/[٠-٩]/g, c => String(c.charCodeAt(0) - 0x660)).replace(/\D/g, '');
   if (d.length === 12 && d.startsWith('20')) d = d.slice(2);
@@ -238,17 +309,19 @@ function readJson(req, max) {
 }
 function itemOut(r) { return { id: r.id, token: r.token, patient: r.patient, phone: r.phone, exam: r.exam, name: r.file_name, size: r.size, pages: r.pages, at: r.created_at, views: r.views, last_view: r.last_view, active: !!r.active, cached: !!r.cached && r.cache_until > Date.now(), cache_until: r.cache_until, wrapped: !!(r.wrap || r.wrap2), wrapped2: !!r.wrap2, kind: r.kind || 'pdf' }; }
 
-function page(title, body, css, js) {
+function page(title, body, css, js, manifestUrl) {
   return '<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover' + (css === 'v' ? ',maximum-scale=1,user-scalable=no' : '') + '"><meta name="robots" content="noindex,nofollow"><meta name="referrer" content="no-referrer"><meta name="theme-color" content="#0E9F9A">' +
-    '<title>' + esc(title) + '</title><link rel="icon" href="/icons/favicon-32.png"><link rel="stylesheet" href="/fonts/fonts.css"><link rel="stylesheet" href="/cases.css?v=509"></head><body class="' + css + '">' + body + js + '</body></html>';
+    '<title>' + esc(title) + '</title><link rel="icon" href="/icons/favicon-32.png">' +
+    (manifestUrl ? '<link rel="manifest" href="'+esc(manifestUrl)+'"><link rel="apple-touch-icon" href="'+esc(manifestUrl.replace('/manifest','/icon'))+'"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default">' : '') +
+    '<link rel="stylesheet" href="/fonts/fonts.css"><link rel="stylesheet" href="/cases.css?v=510"></head><body class="' + css + '">' + body + js + '</body></html>';
 }
 function html(res, code, s) { res.writeHead(code, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store', 'X-Frame-Options': 'DENY', 'Referrer-Policy': 'no-referrer' }); res.end(s); }
 
 /* ════════ public routes ════════ */
 async function handle(req, res, pathname) {
-  let m = /^\/k\/([A-Za-z0-9]{8})(\/(login|logout|list|qr|layout|live|case|relay|item|fixed|wa|ask|bookings|tickets|ticket-image|logo|views|theme)(\/[A-Za-z0-9]{1,20})?(\/(stop|start|delete|wrap|done))?)?\/?$/.exec(pathname);
+  let m = /^\/k\/([A-Za-z0-9]{8})(\/(login|logout|list|qr|layout|live|case|relay|item|fixed|wa|ask|bookings|tickets|ticket-image|logo|views|theme|manifest|icon|push-key|push-subscribe|push-disable|push-test)(\/[A-Za-z0-9]{1,20})?(\/(stop|start|delete|wrap|done))?)?\/?$/.exec(pathname);
   if (m) return centerRoute(req, res, m);
-  m = /^\/h\/([A-Za-z0-9]{8})(\/(find|ask|book|complaint|report-request))?\/?$/.exec(pathname);
+  m = /^\/h\/([A-Za-z0-9]{8})(\/(find|ask|book|complaint|report-request|manifest|icon|push-key|push-subscribe|push-disable|push-test))?\/?$/.exec(pathname);
   if (m) return findRoute(req, res, m[1], m[3] || '');
   m = /^\/v\/([A-Za-z0-9]{12})(\/(file|ask))?\/?$/.exec(pathname);
   if (m && m[3] === 'ask') return viewAsk(req, res, m[1]);
@@ -266,9 +339,11 @@ async function centerRoute(req, res, m) {
     if (req.method !== 'GET') return false;
     const CD = { code, center: site.center_name || '', logo: site.logo || '', theme: site.theme || 'a', layout: site.dashboard_layout === 'violet' ? 'violet' : 'teal', auth: me, cacheDays: CACHE_DAYS, maxMb: MAX_MB, pub: me ? pubOf(site) : '', fixedOn: !!site.fixed_on, wa: me ? (site.wa || '') : '', waDefault: me && !site.wa ? waFor(cid0(site), '') : '' };
     if (me) db.prepare('UPDATE case_site SET last_seen = ? WHERE customer_id = ?').run(nowTs(), site.customer_id);
-    html(res, 200, page('QR Patient — ' + (site.center_name || ''), '<div id="app"></div>', 'k', '<script>window.CD=' + json(CD) + '</script><script src="/vendor/qrcode.js"></script><script src="/cases-kit.js?v=509"></script><script src="/cases-dicom.js?v=509"></script><script src="/cases-pacs.js?v=509"></script><script src="/cases-center.js?v=509"></script>'));
+    html(res, 200, page('QR Patient — ' + (site.center_name || ''), '<div id="app"></div>', 'k', '<script>window.CD=' + json(CD) + '</script><script src="/vendor/qrcode.js"></script><script src="/cases-kit.js?v=510"></script><script src="/cases-dicom.js?v=510"></script><script src="/cases-pacs.js?v=510"></script><script src="/cases-center.js?v=510"></script><script src="/cases-push.js?v=510"></script>', '/k/'+code+'/manifest'));
     return true;
   }
+  if (sub === 'manifest' && req.method === 'GET') { respondManifest(res,site,'k');return true; }
+  if (sub === 'icon' && req.method === 'GET') { respondIcon(res,site);return true; }
   if (sub === 'login' && req.method === 'POST') {
     if (limited('kl:' + code + ':' + ip, 10, 900e3)) { send(res, 429, { message: 'حاولت كتير — جرّب بعد ربع ساعة' }); return true; }
     let b = {}; try { b = await readJson(req, 2000); } catch (e) { send(res, 400, { message: 'محصلش' }); return true; }
@@ -278,6 +353,26 @@ async function centerRoute(req, res, m) {
   if (sub === 'logout' && req.method === 'POST') { send(res, 200, { ok: true }, { 'Set-Cookie': setCookie(req, site, false) }); return true; }
   if (!me) { send(res, 401, { message: 'سجّل دخول الأول', login: true }); return true; }
   const cid = site.customer_id;
+  if (sub === 'push-key' && req.method === 'GET') {
+    send(res,200,{key:webpush.publicKey(),devices:webpush.countFor(pushCenterId(cid))});return true;
+  }
+  if ((sub === 'push-subscribe' || sub === 'push-disable' || sub === 'push-test') && req.method === 'POST') {
+    if (!validOrigin(req)) {send(res,403,{message:'مصدر الطلب غير مسموح'});return true;}
+    if (limited('qrc-push:'+ip,20,3600e3)){send(res,429,{message:'طلبات كتير'});return true;}
+    let b={};try{b=await readJson(req,6500);}catch(e){send(res,400,{message:'الاشتراك غير صالح'});return true;}
+    const userId=pushCenterId(cid);
+    if (sub==='push-subscribe'){
+      try{webpush.subscribe({id:userId},b.subscription,req.headers['user-agent']);}
+      catch(e){send(res,400,{message:'الاشتراك غير صالح'});return true;}
+      send(res,200,{ok:true,devices:webpush.countFor(userId)});return true;
+    }
+    if (sub==='push-disable'){
+      db.prepare('DELETE FROM push_subs WHERE user_id = ? AND endpoint = ?').run(userId,String(b.endpoint||''));
+      send(res,200,{ok:true});return true;
+    }
+    const result=await webpush.send([userId],{title:'✅ إشعارات QR Patient شغّالة',body:'هتوصلك الطلبات الجديدة حتى لو لوحة المركز مقفولة.',url:'/k/'+code+'?section=dashboard',tag:'qrc-test'});
+    send(res,200,{ok:result.ok>0,sent:result.ok,devices:result.devices});return true;
+  }
 
   if (sub === 'qr' && req.method === 'GET') { send(res, 200, { qr: qrStatsOf(cid) }); return true; }
   if (sub === 'layout' && req.method === 'POST') {
@@ -339,10 +434,21 @@ async function centerRoute(req, res, m) {
     db.prepare('UPDATE case_site SET wa = ? WHERE customer_id = ?').run(w ? clean(b.wa, 20) : null, cid);
     send(res, 200, { ok: true, wa: w ? clean(b.wa, 20) : '' }); return true;
   }
-  if (sub === 'ask' && req.method === 'POST') {    /* ask/<id>/done, or ask with {phone} → close every open ask of that mobile (a case was just saved for it) */
-    if (arg && act === 'done') db.prepare('UPDATE case_ask SET done = 1 WHERE id = ? AND customer_id = ?').run(Number(arg), cid);
-    else { let b = {}; try { b = await readJson(req, 500); } catch (e) {} const ph = phashOf(b.phone); if (ph) db.prepare('UPDATE case_ask SET done = 1 WHERE customer_id = ? AND phash = ? AND done = 0').run(cid, ph); }
-    send(res, 200, { ok: true, asks: asksOf(cid) }); return true;
+  if (sub === 'ask' && req.method === 'POST') {  /* Center fulfills a missing-result request */
+    let open=[];
+    if (arg && act === 'done') {
+      open=db.prepare('SELECT DISTINCT notify_device FROM case_ask WHERE id = ? AND customer_id = ? AND done = 0 AND notify_device IS NOT NULL').all(Number(arg),cid);
+      db.prepare('UPDATE case_ask SET done = 1 WHERE id = ? AND customer_id = ?').run(Number(arg), cid);
+    } else {
+      let b={};try{b=await readJson(req,500);}catch(e){}
+      const ph=phashOf(b.phone);
+      if(ph){
+        open=db.prepare('SELECT DISTINCT notify_device FROM case_ask WHERE customer_id = ? AND phash = ? AND done = 0 AND notify_device IS NOT NULL').all(cid,ph);
+        db.prepare('UPDATE case_ask SET done = 1 WHERE customer_id = ? AND phash = ? AND done = 0').run(cid,ph);
+      }
+    }
+    for(const item of open) if(item.notify_device) pushPatientAlert(item.notify_device,pubOf(site));
+    send(res,200,{ok:true,asks:asksOf(cid)});return true;
   }
   if (sub === 'ticket-image' && req.method === 'GET' && arg) {
     const id = Number(arg), index = Number(new URL(req.url,'http://x').searchParams.get('i') || '0');
@@ -365,15 +471,19 @@ async function centerRoute(req, res, m) {
   if (sub === 'tickets' && req.method === 'POST' && arg && act === 'done') {
     const id = Number(arg);
     if (!Number.isSafeInteger(id) || id <= 0) { send(res,400,{message:'الطلب غير صحيح'}); return true; }
+    const oldTicket=db.prepare('SELECT notify_device FROM case_service_request WHERE id = ? AND customer_id = ?').get(id,cid);
     const result = db.prepare("UPDATE case_service_request SET status = 'done', updated_at = ? WHERE id = ? AND customer_id = ? AND status = 'new'").run(nowTs(),id,cid);
     if (!result.changes) { send(res,404,{message:'الطلب اتقفل أو مش موجود'}); return true; }
+    if (oldTicket && oldTicket.notify_device) pushPatientAlert(oldTicket.notify_device,pubOf(site));
     send(res,200,{ok:true,tickets:serviceRequestsOf(cid)}); return true;
   }
   if (sub === 'bookings' && req.method === 'POST' && arg && act === 'done') {
     const id = Number(arg);
     if (!Number.isSafeInteger(id) || id <= 0) { send(res, 400, { message: 'رقم الطلب غير صحيح' }); return true; }
+    const oldBooking=db.prepare('SELECT notify_device FROM case_booking WHERE id = ? AND customer_id = ?').get(id,cid);
     const result = db.prepare("UPDATE case_booking SET status = 'contacted', updated_at = ? WHERE id = ? AND customer_id = ? AND status = 'new'").run(nowTs(), id, cid);
     if (!result.changes) { send(res, 404, { message: 'الطلب مش موجود أو اتقفل قبل كده' }); return true; }
+    if (oldBooking && oldBooking.notify_device) pushPatientAlert(oldBooking.notify_device,pubOf(site));
     send(res, 200, { ok: true, bookings: bookingsOf(cid) }); return true;
   }
   /* 4.98 · the center's logo: shown on its pages and in the middle of every QR */
@@ -462,7 +572,7 @@ async function viewRoute(req, res, token, file) {
     if (!it) { if (limited('vx:' + ip, 40, 600e3)) { send(res, 429, { message: 'حاولت كتير' }); return true; } }
     if (it && it.active && it.site_on && who.via === 'qr') qrOpen(req, it.customer_id, 'report');
     const CD = it ? { token, kind: it.kind || 'pdf', center: it.center_name || '', logo: it.site_logo || '', theme: it.site_theme || 'a', patient: it.patient, exam: it.exam || '', at: it.created_at, pages: it.pages || 0, size: it.size, name: it.file_name || '', active: !!(it.active && it.site_on), ready: !!(it.cached && it.cache_until > Date.now()) || online(it.customer_id), wa: waFor(it.customer_id, it.site_wa), pub: it.site_pub || '' } : { missing: true };
-    html(res, it ? 200 : 404, page(it ? 'نتيجة الفحص — ' + (it.center_name || '') : 'الحالة مش موجودة', '<div id="app"></div>', 'v', '<script>window.CD=' + json(CD) + '</script>' + (it && it.kind === 'dicom' ? '<script src="/cases-pacs.js?v=509"></script>' : '<script src="/vendor/pdfjs/pdf.min.js"></script>') + '<script src="/cases-skin.js?v=509"></script><script src="/cases-view.js?v=509"></script>'));
+    html(res, it ? 200 : 404, page(it ? 'نتيجة الفحص — ' + (it.center_name || '') : 'الحالة مش موجودة', '<div id="app"></div>', 'v', '<script>window.CD=' + json(CD) + '</script>' + (it && it.kind === 'dicom' ? '<script src="/cases-pacs.js?v=510"></script>' : '<script src="/vendor/pdfjs/pdf.min.js"></script>') + '<script src="/cases-skin.js?v=510"></script><script src="/cases-view.js?v=510"></script>'));
     return true;
   }
   if (!it) { send(res, 404, { message: 'الحالة مش موجودة' }); return true; }
@@ -493,6 +603,39 @@ async function findRoute(req, res, pub, sub) {
   const find = sub === 'find';
   const ip = ipOf(req);
   const site = db.prepare('SELECT * FROM case_site WHERE pub = ? AND active = 1').get(pub);
+  if (sub === 'manifest' && req.method === 'GET') {
+    if (!site) {send(res,404,{message:'المركز غير متاح'});return true;}respondManifest(res,site,'h');return true;
+  }
+  if (sub === 'icon' && req.method === 'GET') {
+    if (!site) {send(res,404,{message:'المركز غير متاح'});return true;}respondIcon(res,site);return true;
+  }
+  if (sub === 'push-key' && req.method === 'GET') {
+    if (!site) {send(res,404,{message:'المركز غير متاح'});return true;}send(res,200,{key:webpush.publicKey()});return true;
+  }
+  if (['push-subscribe','push-disable','push-test'].includes(sub) && req.method==='POST') {
+    if(!site){send(res,404,{message:'المركز غير متاح'});return true;}
+    if(!validOrigin(req)){send(res,403,{message:'مصدر الطلب غير مسموح'});return true;}
+    if(limited('qrp-sub:'+ip,15,3600e3)){send(res,429,{message:'طلبات كتير'});return true;}
+    let b={};try{b=await readJson(req,6500);}catch(e){send(res,400,{message:'البيانات غير صحيحة'});return true;}
+    let token=String(b.deviceToken||'');
+    if(sub==='push-subscribe') {
+      if(!optInDevice(site.customer_id,token)){
+        token=crypto.randomBytes(16).toString('hex');
+        db.prepare('INSERT INTO case_push_device(token,customer_id,created_at) VALUES (?,?,?)').run(token,site.customer_id,nowTs());
+      }
+      try{webpush.subscribe({id:pushPatientId(token)},b.subscription,req.headers['user-agent']);}
+      catch(e){send(res,400,{message:'الاشتراك غير صالح'});return true;}
+      send(res,200,{ok:true,deviceToken:token});return true;
+    }
+    if(!optInDevice(site.customer_id,token)){send(res,403,{message:'التطبيق مش مسجّل على الجهاز'});return true;}
+    if(sub==='push-disable'){
+      db.prepare('DELETE FROM push_subs WHERE user_id = ? AND endpoint = ?').run(pushPatientId(token),String(b.endpoint||''));
+      send(res,200,{ok:true});return true;
+    }
+    const result=await webpush.send([pushPatientId(token)],{title:'✅ إشعارات مركز الأشعة شغّالة',
+      body:'هتوصلك تحديثات الطلبات الجديدة اللي تبعتها من التطبيق.',url:'/h/'+pub,tag:'qrp-test'});
+    send(res,200,{ok:result.ok>0,sent:result.ok,devices:result.devices});return true;
+  }
   if (sub === 'complaint' || sub === 'report-request') {
     if (req.method !== 'POST') return false;
     if (!site) { send(res,404,{message:'المركز غير متاح'}); return true; }
@@ -529,10 +672,13 @@ async function findRoute(req, res, pub, sub) {
       }
     }
     try {
-      const rec=db.prepare('INSERT INTO case_service_request(customer_id,kind,name,phone,subject,message,files_json,at) VALUES (?,?,?,?,?,?,?,?)')
-        .run(site.customer_id,kind,name,phone,subject,message,JSON.stringify(received),nowTs());
+      const notify=optInDevice(site.customer_id,b.notifyDevice)?b.notifyDevice:null;
+      const rec=db.prepare('INSERT INTO case_service_request(customer_id,kind,name,phone,subject,message,files_json,at,notify_device) VALUES (?,?,?,?,?,?,?,?,?)')
+        .run(site.customer_id,kind,name,phone,subject,message,JSON.stringify(received),nowTs(),notify);
       const id=Number(rec.lastInsertRowid);
       tell(site.customer_id,'ticket',{tickets:serviceRequestsOf(site.customer_id),kind,name});
+      pushCenterAlert(site,kind==='complaint'?'complaints':'reports',
+        kind==='complaint'?'وصلت شكوى جديدة من بوابة المرضى':'وصل طلب تقرير أشعة جديد','ticket-'+id);
       send(res,201,{ok:true,id,status:'new'});
     } catch (e) {
       for(const file of received) try { fs.unlinkSync(requestPhotoPath(file.id)); } catch (_) {}
@@ -561,10 +707,12 @@ async function findRoute(req, res, pub, sub) {
     if (limited('hbp:' + pub + ':' + phashOf(phone), 3, 864e5)) {
       send(res, 429, { message: 'في طلبات كتير للرقم ده — تواصل مع المركز' }); return true;
     }
-    const rec = db.prepare('INSERT INTO case_booking (customer_id, name, phone, exam, day, slot, note, at) VALUES (?,?,?,?,?,?,?,?)')
-      .run(site.customer_id, name, phone, exam, day, slot, note, nowTs());
+    const notify=optInDevice(site.customer_id,b.notifyDevice)?b.notifyDevice:null;
+    const rec = db.prepare('INSERT INTO case_booking (customer_id, name, phone, exam, day, slot, note, at, notify_device) VALUES (?,?,?,?,?,?,?,?,?)')
+      .run(site.customer_id, name, phone, exam, day, slot, note, nowTs(),notify);
     const bookings = bookingsOf(site.customer_id);
     tell(site.customer_id, 'booking', { bookings, name, exam, day });
+    pushCenterAlert(site,'bookings','وصل طلب حجز أشعة جديد','booking-'+Number(rec.lastInsertRowid));
     send(res, 201, { ok: true, id: Number(rec.lastInsertRowid), status: 'pending' });
     return true;
   }
@@ -575,9 +723,11 @@ async function findRoute(req, res, pub, sub) {
     let b = {}; try { b = await readJson(req, 1500); } catch (e) { send(res, 400, { message: 'محصلش' }); return true; }
     const name = clean(b.name, 60) || 'مريض', phone = clean(b.phone, 20), ph = phashOf(phone); if (!ph) { send(res, 400, { message: 'اكتب رقم موبايلك صح' }); return true; }
     const dup = db.prepare('SELECT id FROM case_ask WHERE customer_id = ? AND phash = ? AND done = 0').get(site.customer_id, ph);
-    if (dup) db.prepare('UPDATE case_ask SET name = ?, note = ?, at = ? WHERE id = ?').run(name, clean(b.note, 120), nowTs(), dup.id);
-    else db.prepare('INSERT INTO case_ask (customer_id, name, phone, phash, note, at) VALUES (?,?,?,?,?,?)').run(site.customer_id, name, phone, ph, clean(b.note, 120), nowTs());
+    const notify=optInDevice(site.customer_id,b.notifyDevice)?b.notifyDevice:null;
+    if (dup) db.prepare('UPDATE case_ask SET name = ?, note = ?, at = ?, notify_device = COALESCE(?,notify_device) WHERE id = ?').run(name, clean(b.note, 120), nowTs(),notify,dup.id);
+    else db.prepare('INSERT INTO case_ask (customer_id, name, phone, phash, note, at, notify_device) VALUES (?,?,?,?,?,?,?)').run(site.customer_id, name, phone, ph, clean(b.note, 120), nowTs(),notify);
     tell(site.customer_id, 'ask', { asks: asksOf(site.customer_id), name, phone });
+    pushCenterAlert(site,'results','مريض طلب المساعدة في الحصول على نتيجة أشعة','ask-'+ph.slice(0,10));
     send(res, 200, { ok: true }); return true;
   }
   if (!find) {
@@ -585,7 +735,7 @@ async function findRoute(req, res, pub, sub) {
     if (!site) { if (limited('hx:' + ip, 30, 600e3)) { send(res, 429, { message: 'حاولت كتير' }); return true; } }
     if (site) qrOpen(req, site.customer_id, 'fixed');
     const CD = site ? { pub, center: site.center_name || '', logo: site.logo || '', theme: site.theme || 'a', on: !!site.fixed_on, wa: waFor(site.customer_id, site.wa) } : { missing: true };
-    html(res, site ? 200 : 404, page(site ? 'نتيجتك — ' + (site.center_name || '') : 'اللينك مش شغال', '<div id="app"></div>', 'v', '<script>window.CD=' + json(CD) + '</script><script src="/cases-kit.js?v=509"></script><script src="/cases-skin.js?v=509"></script><script src="/cases-find.js?v=509"></script>'));
+    html(res, site ? 200 : 404, page(site ? 'نتيجتك — ' + (site.center_name || '') : 'اللينك مش شغال', '<div id="app"></div>', 'v', '<script>window.CD=' + json(CD) + '</script><script src="/cases-kit.js?v=510"></script><script src="/cases-skin.js?v=510"></script><script src="/cases-find.js?v=510"></script><script src="/cases-push.js?v=510"></script>',site?'/h/'+pub+'/manifest':null));
     return true;
   }
   if (req.method !== 'POST') return false;
@@ -634,9 +784,9 @@ async function adminApi(req, res, pathname, me) {
     if (!cur) return send(res, 404, { message: 'مفيش لينك حالات للمركز ده' });
     if (pathname === '/api/portal/cases/theme') { db.prepare('UPDATE case_site SET theme = ? WHERE customer_id = ?').run(['a','b','c','d','e','f'].includes(b.theme) ? b.theme : 'a', cid); return send(res, 200, { ok: true }); }
     if (pathname === '/api/portal/cases/wa') { const w = waOf(b.wa); if (b.wa && !w) return send(res, 400, { message: 'رقم الواتساب مش مظبوط' }); if (!b.ifEmpty || !cur.wa) db.prepare('UPDATE case_site SET wa = ? WHERE customer_id = ?').run(w ? clean(b.wa, 20) : null, cid); return send(res, 200, { ok: true, site: siteOut(db.prepare('SELECT * FROM case_site WHERE customer_id = ?').get(cid)) }); }
-    if (pathname === '/api/portal/cases/pass') { const pass = newPass(); db.prepare('UPDATE case_site SET pass = ?, ver = ver + 1 WHERE customer_id = ?').run(hashPass(pass), cid); for (const r of (LIVE.get(cid) || [])) { try { r.end(); } catch (e) {} } return send(res, 200, { ok: true, pass }); }
-    if (pathname === '/api/portal/cases/stop') { db.prepare('UPDATE case_site SET active = ? WHERE customer_id = ?').run(b.on ? 1 : 0, cid); if (!b.on) for (const r of (LIVE.get(cid) || [])) { try { r.end(); } catch (e) {} } return send(res, 200, { ok: true, site: siteOut(db.prepare('SELECT * FROM case_site WHERE customer_id = ?').get(cid)) }); }
-    if (pathname === '/api/portal/cases/rotate') { let code; do { code = rnd(8, true); } while (db.prepare('SELECT 1 FROM case_site WHERE code = ?').get(code)); db.prepare('UPDATE case_site SET code = ?, ver = ver + 1 WHERE customer_id = ?').run(code, cid); for (const r of (LIVE.get(cid) || [])) { try { r.end(); } catch (e) {} } return send(res, 200, { ok: true, site: siteOut(db.prepare('SELECT * FROM case_site WHERE customer_id = ?').get(cid)) }); }
+    if (pathname === '/api/portal/cases/pass') { const pass = newPass(); db.prepare('UPDATE case_site SET pass = ?, ver = ver + 1 WHERE customer_id = ?').run(hashPass(pass), cid); db.prepare('DELETE FROM push_subs WHERE user_id = ?').run(pushCenterId(cid)); for (const r of (LIVE.get(cid) || [])) { try { r.end(); } catch (e) {} } return send(res, 200, { ok: true, pass }); }
+    if (pathname === '/api/portal/cases/stop') { db.prepare('UPDATE case_site SET active = ? WHERE customer_id = ?').run(b.on ? 1 : 0, cid); if (!b.on) db.prepare('DELETE FROM push_subs WHERE user_id = ?').run(pushCenterId(cid)); if (!b.on) for (const r of (LIVE.get(cid) || [])) { try { r.end(); } catch (e) {} } return send(res, 200, { ok: true, site: siteOut(db.prepare('SELECT * FROM case_site WHERE customer_id = ?').get(cid)) }); }
+    if (pathname === '/api/portal/cases/rotate') { let code; do { code = rnd(8, true); } while (db.prepare('SELECT 1 FROM case_site WHERE code = ?').get(code)); db.prepare('UPDATE case_site SET code = ?, ver = ver + 1 WHERE customer_id = ?').run(code, cid); db.prepare('DELETE FROM push_subs WHERE user_id = ?').run(pushCenterId(cid)); for (const r of (LIVE.get(cid) || [])) { try { r.end(); } catch (e) {} } return send(res, 200, { ok: true, site: siteOut(db.prepare('SELECT * FROM case_site WHERE customer_id = ?').get(cid)) }); }
   } catch (er) { return send(res, er.status || 400, { message: er.message || 'محصلش' }); }
   return send(res, 404, { error: 'not_found' });
 }

@@ -15,14 +15,14 @@
     '<header class="top pv2-top"><span class="tlg">' + (window.OZSkin ? OZSkin.logo('') : '') + '</span>' +
       '<div class="tn"><b>' + esc(C.center) + '</b><small>بوابة المرضى الإلكترونية</small></div>' +
       '<span class="pv2-online" title="الخدمات الإلكترونية"><i></i>أونلاين</span></header>' +
-    '<section class="pv2-hero" aria-label="مرحباً بك">' +
-      '<div class="pv2-hero-bg" aria-hidden="true"><i></i><i></i><i></i></div>' +
-      '<div class="pv2-hero-copy"><span class="pv2-eyebrow">✦ تجربة أسهل للاطمئنان عليك</span>' +
-      '<h1 class="ttl" id="patient-title">ألف سلامة عليك <span>♥</span></h1>' +
-      '<p>نتيجة الأشعة، حجز فحص، شكوى أو طلب تقرير — كل خدمات المركز من موبايلك.</p>' +
-      '<div class="pv2-hero-chip"><span class="pv2-chip-dot"></span> اختار الخدمة اللي محتاجها</div></div>' +
-      '<div class="pv2-hero-art" aria-hidden="true"><span class="pv2-art-ring r1"></span><span class="pv2-art-ring r2"></span><span class="pv2-art-core">✚</span>' +
-      '<svg class="pv2-art-ecg" viewBox="0 0 160 42" fill="none"><path d="M0 22h48l8-11 8 22 9-30 9 19h78" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>' +
+    '<section class="pv2-hero pv3-radiology-hero" aria-label="خدمات مركز الأشعة">' +
+      '<div class="pv3-radiology-photo" aria-hidden="true"><img src="/cases-hero-doctor.webp" alt="" decoding="async" fetchpriority="high"></div>' +
+      '<div class="pv3-radiology-overlay" aria-hidden="true"></div>' +
+      '<div class="pv3-radiology-copy"><span class="pv3-radiology-label">✦ مركز الأشعة</span>' +
+      '<h1 class="ttl" id="patient-title">تقارير دقيقة.. <span>وسرعة في الخدمة</span></h1>' +
+      '<p>فريق متخصص وأحدث أجهزة التصوير</p>' +
+      '<div class="pv3-hero-pulse" aria-hidden="true"><i></i><svg viewBox="0 0 180 32" fill="none"><path d="M1 17h53l11-11 9 22 10-24 10 13h85" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>' +
+      '<div class="pv3-hero-dots" aria-hidden="true"><i class="on"></i><i></i><i></i></div>' +
     '</section>' +
     '<div class="pv2-section-title"><div><span>الخدمات</span><h2>تحب تعمل إيه النهارده؟</h2></div><small>اختار واحدة للمتابعة</small></div>' +
     '<div class="patient-chooser" role="tablist" aria-label="خدمات المركز">' +
@@ -35,6 +35,11 @@
       '<button type="button" id="tab-report" class="pv2-service" role="tab" aria-selected="false" aria-controls="patient-report">' +
         '<span class="pv2-service-icon">📤</span><b>طلب تقرير أشعة</b><small>ارفع صورة واطلب تقريرك</small><span class="pv2-service-go" aria-hidden="true">←</span></button></div>' +
     '<p class="pv2-action-hint" id="patient-hint" aria-live="polite">اختار أي خدمة من الأربع خدمات للمتابعة</p>' +
+    '<section class="pv3-notification-bar" aria-label="إشعارات طلبات المرضى">' +
+      '<div class="pv3-notification-icon" aria-hidden="true">🔔</div>' +
+      '<div class="pv3-notification-copy"><b>خليك متابع طلبك أول بأول</b><small>فعّل الإشعارات على الآيفون بعد إضافة الصفحة للشاشة الرئيسية</small></div>' +
+      '<button class="pv3-notification-button" id="patientPushToggle" type="button">فعّل الإشعارات</button>' +
+    '</section>' +
     '<section id="patient-results" class="patient-panel" role="tabpanel" aria-labelledby="tab-results" hidden>' +
       '<div class="srch results-card" id="sr"><div class="booking-heading"><span>🩻</span><div><b>استعلام نتيجة الأشعة</b><small>نتيجتك في مكان واحد، بمجرد إدخال رقم الموبايل</small></div></div>' + (C.on ?
         '<label class="l" for="ph">رقم الموبايل المسجل في المركز</label><input class="fld n" id="ph" type="tel" inputmode="tel" autocomplete="tel" maxlength="20" placeholder="01xxxxxxxxx" style="text-align:right" dir="ltr">' +
@@ -87,6 +92,27 @@
     '<div class="pv2-trust"><div><i>🔒</i><span>خصوصية بياناتك</span></div><div><i>⚡</i><span>خطوات سريعة</span></div><div><i>📱</i><span>كل حاجة من موبايلك</span></div></div>' +
     '<p class="pv2-footer">نتمنالك دوام الصحة والعافية ♥</p><p class="pv2-analytics-note">يتم احتساب مرات فتح رابط الباركود فقط، بدون تحديد موقع المريض أو تسجيل مكانه.</p>' +
   '</div>';
+  /* Gentle, low-cost hero copy carousel; no resizing or transform on service icons. */
+  (function heroCarousel() {
+    var title=$('patient-title'),sub=document.querySelector('.pv3-radiology-copy>p');
+    var dots=[].slice.call(document.querySelectorAll('.pv3-hero-dots i'));
+    if(!title||!sub||!dots.length)return;
+    var slides=[
+      ['تقارير دقيقة.. <span>وسرعة في الخدمة</span>','فريق متخصص وأحدث أجهزة التصوير'],
+      ['رعايتك تبدأ <span>من أول زيارة</span>','احجز أشعتك واختار اليوم المناسب بسهولة'],
+      ['نتيجتك أقرب <span>وأسرع ليك</span>','تابع نتيجة الأشعة من أي مكان بأمان']
+    ];
+    var index=0;
+    if(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+    setInterval(function(){
+      if(document.visibilityState==='hidden')return;
+      index=(index+1)%slides.length;
+      title.classList.remove('pv3-slide-in');sub.classList.remove('pv3-slide-in');
+      title.innerHTML=slides[index][0];sub.textContent=slides[index][1];
+      void title.offsetWidth;title.classList.add('pv3-slide-in');sub.classList.add('pv3-slide-in');
+      dots.forEach(function(d,i){d.classList.toggle('on',i===index);});
+    },7000);
+  })();
   function chooseJourney(which) {
     var modes = {
       booking: ['patient-book','tab-booking','📅 اختار اليوم والفحص، وهنبعت طلبك للمركز','#book'],
@@ -126,6 +152,9 @@
   });
   var initial={ '#book':'booking','#results':'results','#complaint':'complaint','#report':'report' }[location.hash];
   if (initial) chooseJourney(initial);
+  function pushDeviceToken() {
+    try { return localStorage.getItem('qrd-push-device:' + C.pub) || ''; } catch(e) { return ''; }
+  }
   (function setupBooking() {
     var input = $('bd'), d = new Date(), loc = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
     input.min = loc.toISOString().slice(0, 10); loc.setUTCDate(loc.getUTCDate() + 90); input.max = loc.toISOString().slice(0, 10);
@@ -144,7 +173,7 @@
       btn.disabled = true; btn.textContent = 'بنبعت طلبك…'; msg.textContent = ''; msg.className = 'booking-msg';
       fetch(location.pathname.replace(/\/$/, '') + '/book', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: name, phone: phone, exam: exam, day: day, slot: slot, note: note })
+        body: JSON.stringify({ name: name, phone: phone, exam: exam, day: day, slot: slot, note: note, notifyDevice: pushDeviceToken() })
       }).then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) throw Error(j.message || 'محصلش — جرّب تاني'); return j; }); })
         .then(function (j) {
           $('booking-form').innerHTML = '<div class="booking-success" role="status"><span>✅</span><h2>طلب حجزك وصل للمركز</h2><p>رقم الطلب #' + esc(j.id) + '</p><p>المركز هيتواصل معاك على الموبايل علشان يأكد اليوم والوقت. <b>ده طلب حجز، مش موعد مؤكد لسه.</b></p><button type="button" class="btn g w" id="book-again">طلب حجز جديد</button></div>';
@@ -160,6 +189,7 @@
     return /^01[0125]\d{8}$/.test(digits)?digits:'';
   }
   function requestJson(url,body) {
+    body.notifyDevice = pushDeviceToken();
     return fetch(location.pathname.replace(/\/$/,'')+'/'+url,{
       method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)
     }).then(function (response) {
@@ -320,7 +350,7 @@
   }
   function askIn(ph, name, note, b) {
     var t0 = b ? b.innerHTML : ''; if (b) { b.disabled = true; b.innerHTML = '<span class="spin" style="width:18px;height:18px;border-width:3px;margin:0"></span> بنبعت…'; }
-    fetch(location.pathname.replace(/\/$/, '') + '/ask', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: String(name).trim(), phone: ph, note: String(note || '').trim() }) })
+    fetch(location.pathname.replace(/\/$/, '') + '/ask', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: String(name).trim(), phone: ph, note: String(note || '').trim(), notifyDevice: pushDeviceToken() }) })
       .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) throw new Error(j.message || 'محصلش — جرّب تاني'); }); })
       .then(function () {
         var mi = $('miss'); if (mi) mi.style.display = 'none';
