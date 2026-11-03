@@ -679,6 +679,44 @@
     });
   }
 
+  /* Complaint and report inboxes; uploaded photos are only served to an authenticated center. */
+  function serviceTickets() {
+    var rows=ui.tickets||[];
+    function paint(kind,target,title,emptyText,description) {
+      var el=$(target);if(!el)return;
+      var L=rows.filter(function(x){return x.kind===kind;});
+      updateNavCount(kind==='complaint'?'complaints':'reports',L.length);
+      el.innerHTML='<section class="asks qrd-service-tickets"><div class="ah"><span class="ping">'+
+        (kind==='complaint'?'📝':'📤')+'</span><div><b>'+title+'</b><small>'+description+
+        '</small></div><em>'+L.length+'</em></div>'+
+        (L.length?L.map(function(t){
+          var imgs=(t.files||[]).map(function(file){
+            var imgUrl=BASE+'/ticket-image/'+Number(t.id)+'?i='+Number(file.index);
+            return '<a class="qrd-ticket-photo" target="_blank" rel="noopener noreferrer" href="'+imgUrl+'">'+
+              '<img loading="lazy" src="'+imgUrl+'" alt="صورة أرفقها المريض" referrerpolicy="no-referrer">'+
+              '<span>📷 '+esc(file.name||'عرض الصورة')+'</span></a>';
+          }).join('');
+          return '<article class="qrd-ticket" data-ticket="'+Number(t.id)+'"><div class="qrd-ticket-top">'+
+            '<div><b>'+esc(t.name)+'</b><small>'+esc(t.subject||(kind==='complaint'?'شكوى مريض':'طلب تقرير أشعة'))+
+            ' · '+esc(when(t.at))+'</small></div><span class="qrd-ticket-status">جديد</span></div>'+
+            '<p class="qrd-ticket-body">'+esc(t.message)+'</p>'+
+            (imgs?'<div class="qrd-ticket-photos">'+imgs+'</div>':'')+
+            '<div class="qrd-ticket-actions"><a class="btn sm" href="tel:'+esc(t.phone)+'">📞 '+esc(t.phone)+'</a>'+
+            '<button type="button" class="btn sm g" data-ticket-done="'+Number(t.id)+'">✅ تم التواصل</button></div></article>';
+        }).join(''):'<p class="qrd-rail-empty">'+emptyText+'</p>')+'</section>';
+      [].forEach.call(el.querySelectorAll('[data-ticket-done]'),function(btn) {
+        btn.onclick=function() {
+          var id=Number(btn.dataset.ticketDone);btn.disabled=true;
+          api('POST','tickets/'+id+'/done').then(function(j) {
+            ui.tickets=j.tickets||[];serviceTickets();toast('✅ تم تسجيل التواصل مع المريض');
+          }).catch(function(err){btn.disabled=false;toast(err.message||'حصلت مشكلة');});
+        };
+      });
+    }
+    paint('complaint','complaints','📝 شكاوى المرضى','✅ مفيش شكاوى جديدة حاليًا','الشكاوى التي أرسلها المرضى من رابط المركز');
+    paint('report','reportRequests','📤 طلبات التقارير','✅ مفيش طلبات تقرير جديدة حاليًا','صور الطلبات والتقارير المطلوب تجهيزها');
+  }
+
   /* Radiology appointment requests: received instantly and confirmed offline by reception. */
   function bookings() {
     var el = $('bookings'); if (!el) return;
@@ -892,6 +930,11 @@
       var m = {}; try { m = JSON.parse(ev.data); } catch (e) { return; }
       ui.qr = m.qr || ui.qr; qrPanel();
     });
+    es.addEventListener('ticket', function (ev) {
+      var m={};try{m=JSON.parse(ev.data);}catch(e){return;}
+      ui.tickets=m.tickets||ui.tickets;serviceTickets();
+      beep();toast(m.kind==='complaint'?'📝 شكوى جديدة من مريض':'📤 طلب تقرير جديد');
+    });
     es.addEventListener('booking', function (ev) {
       var m = {}; try { m = JSON.parse(ev.data); } catch (e) { return; }
       ui.bookings = m.bookings || ui.bookings; bookings(); beep(); toast('📅 طلب حجز جديد: ' + (m.name || 'مريض'));
@@ -923,7 +966,7 @@
   }
   function boot() {
     shell();
-    Promise.all([api('GET', 'list'), localAll()]).then(function (a) { ui.list = a[0].list || []; ui.local = a[1] || {}; ui.asks = a[0].asks || []; ui.bookings = a[0].bookings || []; ui.qr = a[0].qr || ui.qr; ui.recent = a[0].recent || []; qrPanel(); bookings(); asks(); recent(); table(); stats(); disk(); backfill(); }).catch(function (e) { $('tbl').innerHTML = '<div class="emp"><i>⚠️</i>' + esc(e.message) + '</div>'; });
+    Promise.all([api('GET', 'list'), localAll()]).then(function (a) { ui.list = a[0].list || []; ui.local = a[1] || {}; ui.asks = a[0].asks || []; ui.bookings = a[0].bookings || []; ui.tickets = a[0].tickets || []; ui.qr = a[0].qr || ui.qr; ui.recent = a[0].recent || []; qrPanel(); bookings(); asks(); serviceTickets(); recent(); table(); stats(); disk(); backfill(); }).catch(function (e) { $('tbl').innerHTML = '<div class="emp"><i>⚠️</i>' + esc(e.message) + '</div>'; });
     connect(); bootWatch();
     document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible' && (!ui.es || ui.es.readyState === 2)) connect(); });
     window.addEventListener('beforeunload', function (e) { if (Object.keys(ui.local).length || ui.queue.some(function (q) { return q.st === 'ready' || q.st === 'saving'; })) { e.preventDefault(); e.returnValue = ''; } });
