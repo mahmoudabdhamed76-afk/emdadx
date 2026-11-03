@@ -141,7 +141,7 @@
       '<div class="qrd-nav-brand"><span class="qrd-nav-logo">▦</span><div><b>QR Patient</b><small>إدارة صور وملفات المرضى</small></div></div>' +
       '<nav class="qrd-nav-list" aria-label="أقسام الصفحة">' +
       items.map(function (x) {
-        return '<a href="#page-' + x[0] + '" data-page="' + x[0] + '"' +
+        return '<a href="' + (isIOSBrowser() ? pageUrl(x[0]) : '#page-' + x[0]) + '" data-page="' + x[0] + '"' +
           (x[0] === 'dashboard' ? ' class="on" aria-current="page"' : '') +
           '><span>' + x[1] + '</span><b>' + x[2] + '</b>' +
           (['bookings','results','complaints','reports'].indexOf(x[0]) >= 0 ? '<em class="qrd-nav-count" data-count="' + x[0] + '">0</em>' : '') + '</a>';
@@ -153,9 +153,26 @@
     var el = document.querySelector('[data-count="' + name + '"]');
     if (el) { el.textContent = n0(n); el.hidden = !n; }
   }
+  /* iOS Safari sometimes leaves hidden/composited panels blank after hash-only SPA navigation.
+     On Apple mobile devices open each section as an actual document navigation instead. */
+  var QRD_PAGES = /^(dashboard|bookings|results|complaints|reports|upload|cases|qr|design|activity|settings)$/;
+  function isIOSBrowser() {
+    var ua = String(navigator.userAgent || '');
+    return /iP(?:hone|ad|od)/i.test(ua) ||
+      (navigator.platform === 'MacIntel' && Number(navigator.maxTouchPoints) > 1);
+  }
   function pageFromHash() {
-    var match = /^#page-(dashboard|bookings|results|complaints|reports|upload|cases|qr|design|activity|settings)$/.exec(location.hash || '');
-    return match ? match[1] : 'dashboard';
+    var hash = /^#page-([a-z]+)$/.exec(location.hash || '');
+    if (hash && QRD_PAGES.test(hash[1])) return hash[1];
+    /* Search fallback makes direct bookmarks work even if Safari drops # on reload. */
+    var q = /(?:^|[?&])section=([a-z]+)(?:&|$)/.exec(location.search || '');
+    return q && QRD_PAGES.test(q[1]) ? q[1] : 'dashboard';
+  }
+  function pageUrl(section) {
+    var url = new URL(location.href);
+    url.searchParams.set('section', section);
+    url.hash = 'page-' + section;
+    return url.href;
   }
   function ensureDicom() {
     if (ui.dicomMounted || !window.OZDicom || !$('mwda')) return;
@@ -164,7 +181,19 @@
     catch (e) { ui.dicomMounted = false; toast('مش قادر أفتح أداة DICOM'); }
   }
   function navigatePage(page, push) {
-    var selected = /^(dashboard|bookings|results|complaints|reports|upload|cases|qr|design|activity|settings)$/.test(page) ? page : 'dashboard';
+    var selected = QRD_PAGES.test(page) ? page : 'dashboard';
+    if (push && selected === ui.page) return;
+    if (push && isIOSBrowser()) {
+      /* Real page transition avoids repeated blank white views on iPhone Safari/WebKit.
+         Don't interrupt an in-progress file upload or an unsaved queue item. */
+      if (ui.queue.some(function (item) { return item.st === 'ready' || item.st === 'saving' || item.st === 'reading'; })) {
+        toast('خلص حفظ أو رفع الملفات الأول قبل ما تفتح قسم تاني'); return;
+      }
+      try { history.scrollRestoration = 'manual'; window.scrollTo(0, 0); } catch (e) {}
+      ui.safeSectionNavigation = true;
+      window.location.assign(pageUrl(selected));
+      return;
+    }
     ui.page = selected;
     /* Explicit show/hide to prevent blank mobile Safari panels after tapping a section. */
     var panes = document.querySelectorAll('[data-qrd-page]'), visible = null;
@@ -201,6 +230,7 @@
     var wrap = document.querySelector('.wrap'), oldGrid = document.querySelector('.kgrid');
     if (!wrap || !oldGrid) return;
     var host = document.createElement('main'); host.id = 'qrdPages'; host.className = 'qrd-pages';
+    var initialPage = pageFromHash();
     var meta = [
       ['dashboard', 'لوحة التحكم', 'ملخص زيارات الباركود وآخر فتح للنتائج'],
       ['bookings', 'طلبات حجز الأشعة', 'طلبات الحجز الواردة فقط، مع إجراء الاتصال والتأكيد'],
@@ -217,7 +247,11 @@
     var bodies = {};
     meta.forEach(function (m) {
       var page = document.createElement('section');
-      page.className = 'qrd-page'; page.id = 'qrd-page-' + m[0]; page.dataset.qrdPage = m[0]; page.hidden = m[0] !== 'dashboard';
+      page.className = 'qrd-page'; page.id = 'qrd-page-' + m[0]; page.dataset.qrdPage = m[0];
+      /* Build the requested section visible from the start — never reveal a previously
+         hidden ancestor immediately after the initial iOS Safari paint. */
+      page.hidden = m[0] !== initialPage;
+      page.style.display = page.hidden ? 'none' : 'block';
       page.innerHTML = '<div class="qrd-page-title"><div><small>QR Patient / ' + m[1] + '</small><h1>' + m[1] +
         '</h1><p>' + m[2] + '</p></div></div><div class="qrd-page-body" id="qrd-body-' + m[0] + '"></div>';
       host.appendChild(page); bodies[m[0]] = page.querySelector('.qrd-page-body');
@@ -252,6 +286,13 @@
     });
     window.addEventListener('hashchange', function () { navigatePage(pageFromHash(), false); });
     window.addEventListener('popstate', function () { navigatePage(pageFromHash(), false); });
+    /* Restore the correct section when Safari returns from Back/Forward Cache. */
+    if (isIOSBrowser()) window.addEventListener('pageshow', function (event) {
+      /* Only BFCache restores need to reconcile state; initial paint was already built correctly. */
+      if (!event.persisted) return;
+      navigatePage(pageFromHash(), false);
+      try { window.scrollTo(0, 0); } catch (e) {}
+    });
     navigatePage(pageFromHash(), false);
   }
   function setDashboardLayout(mode) {
@@ -266,6 +307,10 @@
   }
   function setupDashboardDecor() {
     document.body.classList.add('qrd-center');
+    if (isIOSBrowser()) {
+      document.documentElement.classList.add('qrd-ios-browser');
+      try { history.scrollRestoration = 'manual'; } catch (e) {}
+    }
     document.body.insertAdjacentHTML('afterbegin', dashboardNav());
     var header = document.querySelector('.tbar .sp');
     if (header) header.insertAdjacentHTML('afterbegin',
@@ -330,7 +375,7 @@
           (dirOk ? '<div class="watch" id="wt"></div>' : '') + '</div>' +
         '<div class="queue" id="qu"></div>' +
         '<section class="card list"><div class="ch"><div class="h"><h2>الحالات</h2><small id="lc"></small></div><div class="srch">' + ic('search') + '<input class="fld q" id="q" placeholder="اسم المريض أو الموبايل أو الفحص"></div></div><div class="seg" id="fl"></div><div id="tbl"><div class="sk"></div><div class="sk" style="opacity:.7"></div><div class="sk" style="opacity:.45"></div></div></section>' +
-      '</div><aside class="kside"><div id="bookings"></div><div id="asks"></div><div id="complaints"></div><div id="reportRequests"></div><div class="opt fxc" id="fx"></div>' +
+      '</div><aside class="kside"><div id="bookings" class="qrd-data-pending">جار تحميل حجوزات الأشعة…</div><div id="asks" class="qrd-data-pending">جار تحميل طلبات النتائج…</div><div id="complaints" class="qrd-data-pending">جار تحميل شكاوى المرضى…</div><div id="reportRequests" class="qrd-data-pending">جار تحميل طلبات التقارير…</div><div class="opt fxc" id="fx"></div>' +
         '<div class="opt"><h3>' + ic('qr') + ' باركود لكل حالة <span class="tg ok">شغال دايماً</span></h3><div class="how"><div><span>1</span>اسحب PDF الحالة واكتب اسم المريض</div><div><span>2</span>اطبع الاستيكر أو ابعته واتساب</div><div><span>3</span>المريض يمسحه ويشوف أشعته على طول</div></div></div>' +
         '<div class="opt thm" id="thm"></div>' +
         '<div class="opt rec" id="recentViews"><h3>' + ic('eye') + ' آخر مرات الفتح</h3><div id="rec"></div></div>' +
@@ -753,7 +798,17 @@
     [].forEach.call(el.querySelectorAll('[data-k]'), function (b) {
       b.onclick = function () {
         var id = +b.closest('.ar').dataset.id, a = L.filter(function (x) { return x.id === id; })[0]; if (!a) return; var k = b.dataset.k;
-        if (k === 'up') { ui.prefill = { patient: a.name === 'مريض' ? '' : a.name, phone: a.phone }; clearTimeout(ui.pfT); ui.pfT = setTimeout(function () { ui.prefill = null; }, 120000); navigatePage('upload', true); $('fi').click(); }
+        if (k === 'up') {
+          ui.prefill = { patient: a.name === 'مريض' ? '' : a.name, phone: a.phone };
+          clearTimeout(ui.pfT);
+          ui.pfT = setTimeout(function () { ui.prefill = null; }, 120000);
+          if (isIOSBrowser()) {
+            try { sessionStorage.setItem('qrd-upload-prefill', JSON.stringify(ui.prefill)); } catch (e) {}
+            navigatePage('upload', true);
+          } else {
+            navigatePage('upload', true); $('fi').click();
+          }
+        }
         if (k === 'wa') { var ph = phoneWa(a.phone); if (ph) window.open('https://wa.me/' + ph + '?text=' + encodeURIComponent('أهلاً ' + a.name + ' 🌿\nطلبك وصل ' + C.center + '، وبنجهّز نتيجتك وهنبعتهالك حالاً 🙏'), '_blank'); }
         if (k === 'ok') api('POST', 'ask/' + id + '/done').then(function (x) { ui.asks = x.asks || []; asks(); }).catch(function (e) { toast(e.message); });
       };
@@ -965,11 +1020,30 @@
     });
   }
   function boot() {
+    if (isIOSBrowser()) try {
+      var savedPrefill = sessionStorage.getItem('qrd-upload-prefill');
+      if (savedPrefill) { ui.prefill = JSON.parse(savedPrefill); sessionStorage.removeItem('qrd-upload-prefill'); }
+    } catch (e) {}
     shell();
-    Promise.all([api('GET', 'list'), localAll()]).then(function (a) { ui.list = a[0].list || []; ui.local = a[1] || {}; ui.asks = a[0].asks || []; ui.bookings = a[0].bookings || []; ui.tickets = a[0].tickets || []; ui.qr = a[0].qr || ui.qr; ui.recent = a[0].recent || []; qrPanel(); bookings(); asks(); serviceTickets(); recent(); table(); stats(); disk(); backfill(); }).catch(function (e) { $('tbl').innerHTML = '<div class="emp"><i>⚠️</i>' + esc(e.message) + '</div>'; });
+    if (ui.prefill && ui.page === 'upload') {
+      toast('📂 جهزنا بيانات المريض — اختار ملف PDF من زر رفع الملفات');
+    }
+    Promise.all([api('GET', 'list'), localAll()]).then(function (a) { ui.list = a[0].list || []; ui.local = a[1] || {}; ui.asks = a[0].asks || []; ui.bookings = a[0].bookings || []; ui.tickets = a[0].tickets || []; ui.qr = a[0].qr || ui.qr; ui.recent = a[0].recent || []; qrPanel(); bookings(); asks(); serviceTickets(); recent(); table(); stats(); disk(); backfill(); }).catch(function (e) {
+      var message='تعذّر تحميل بيانات القسم. جرّب تحديث الصفحة أو اتأكد من اتصال الإنترنت.';
+      ['bookings','asks','complaints','reportRequests'].forEach(function (id) {
+        var box=$(id); if (box) box.innerHTML='<div class="qrd-data-error" role="alert">⚠️ '+message+'</div>';
+      });
+      var tbl=$('tbl'); if (tbl) tbl.innerHTML='<div class="emp"><i>⚠️</i>'+esc(e.message)+'</div>';
+      var qr=$('qrStats'); if (qr) qr.innerHTML='<div class="qrd-data-error" role="alert">⚠️ '+message+'</div>';
+    });
     connect(); bootWatch();
     document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible' && (!ui.es || ui.es.readyState === 2)) connect(); });
-    window.addEventListener('beforeunload', function (e) { if (Object.keys(ui.local).length || ui.queue.some(function (q) { return q.st === 'ready' || q.st === 'saving'; })) { e.preventDefault(); e.returnValue = ''; } });
+    window.addEventListener('beforeunload', function (e) {
+      var workInProgress = ui.queue.some(function (q) { return q.st === 'ready' || q.st === 'saving' || q.st === 'reading'; });
+      /* IndexedDB persists across a normal section reload; don't show a needless warning. */
+      if (ui.safeSectionNavigation && !workInProgress) return;
+      if (Object.keys(ui.local).length || workInProgress) { e.preventDefault(); e.returnValue = ''; }
+    });
   }
   if (C.auth) boot(); else login();
 })();
