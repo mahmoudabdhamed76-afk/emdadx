@@ -96,7 +96,7 @@
     setTimeout(function () {
       if (document.fullscreenElement || document.querySelector('.pz.max') || document.querySelector('.rp-pop')) return;
       OZK.ratePop({ url: location.pathname.replace(/\/$/, '') + '/rate', dry: staff, onDone: function (n) { if (staff) return; try { localStorage.setItem(K, JSON.stringify({ s: n, t: [], n: '' })); } catch (e) {} st = n; tags = []; paint(true); } });
-    }, 1000);
+    }, 2000);
   }
   /* 5.00 · a DICOM case → the mini PACS right here */
   function showDicom(buf) {
