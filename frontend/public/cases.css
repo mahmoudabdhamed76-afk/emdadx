@@ -437,7 +437,7 @@ html.tx body.v{-webkit-text-size-adjust:100%;touch-action:manipulation}
 .tx .v .tlg{width:52px;height:52px;border-radius:16px;background:#fff;padding:4px;box-shadow:var(--psh);flex:none;display:grid;place-items:center;overflow:hidden}
 .tx .v .tlg img{width:100%;height:100%;object-fit:contain}.tx .v .tlg .ini{font-size:22px;font-weight:800;color:var(--pp)}
 .tx .v .tn{min-width:0}.tx .v .tn b{display:block;font-size:17px;line-height:1.3}.tx .v .tn small{color:var(--pm);font-size:12.5px}
-.tx .v .on{margin-inline-start:auto;font-size:11.5px;font-weight:800;white-space:nowrap;border-radius:999px;padding:6px 10px;color:var(--pp);background:var(--pri)}
+.tx .v .top .on{margin-inline-start:auto;font-size:11.5px;font-weight:800;white-space:nowrap;border-radius:999px;padding:6px 10px;color:var(--pp);background:var(--pri)}
 .tx .v .bk{margin-inline-start:auto;font-size:12.5px;font-weight:800;color:var(--pi);text-decoration:none;border:1.5px solid var(--pl);border-radius:999px;padding:7px 12px;white-space:nowrap}
 .tx .v .ttl{font-size:28px;font-weight:800;line-height:1.3;margin-top:22px;animation:up .55s .08s var(--ease) both}.tx .v .ttl span{color:var(--pp)}
 html.tc .v .ttl{font-family:'Zain','IBM Plex Sans Arabic',sans-serif;font-size:44px;line-height:1.02}
@@ -1946,3 +1946,58 @@ html.qrd-dark body.k .toast{background:#E8ECF7!important;color:#0A0F1E}
 html.qrd-dark body.k .qrd-nav-count{box-shadow:none}
 html.qrd-dark body.k .qrdd-k1 :is(small,b,em){color:#fff}
 html.qrd-dark body.k .hero2 small{color:#A5B4FC}
+
+/* ════════════════ 5.14 · patient hero slider + bell popover + steady service tiles ════════════════ */
+.pvd .pvd-hd{padding-bottom:70px}
+.pvd .pvs{position:relative;z-index:1;margin-top:16px;border-radius:26px;overflow:hidden;height:184px;background:linear-gradient(145deg,color-mix(in srgb,var(--pp) 30%,#06161C),#061219 70%);box-shadow:0 18px 36px -22px rgba(0,0,0,.6),inset 0 0 0 1px rgba(255,255,255,.1);touch-action:pan-y}
+.pvd .pvs-tr{display:flex;height:100%;transition:transform .7s var(--ease);will-change:transform}
+.pvd .pvs-s{flex:0 0 100%;position:relative;height:100%;overflow:hidden}
+.pvd .pvs-art{position:absolute;inset:0 auto 0 0;width:62%;display:grid;place-items:center;padding:10px 0 22px 6px}
+.pvd .pvs-art svg{width:100%;height:100%;display:block}
+.pvd .pvs-s::after{content:'';position:absolute;inset:0;background:linear-gradient(to left,rgba(4,14,20,.94) 0%,rgba(4,14,20,.78) 38%,rgba(4,14,20,0) 70%);pointer-events:none}
+.pvd .pvs-tx{position:absolute;z-index:1;top:0;bottom:0;right:0;width:60%;padding:18px 18px 30px 6px;display:flex;flex-direction:column;justify-content:center;gap:6px;color:#fff}
+.pvd .pvs-k{align-self:flex-start;font-size:10.5px;font-weight:800;letter-spacing:.2px;padding:4px 10px;border-radius:999px;background:rgba(125,227,244,.16);color:#A5F0FB;border:1px solid rgba(125,227,244,.28)}
+.pvd .pvs-tx h1,.pvd .pvs-tx b{font-size:21px;font-weight:800;line-height:1.35;color:#fff;margin:0}
+.pvd .pvs-tx small{font-size:12.5px;line-height:1.6;color:rgba(255,255,255,.78)}
+.pvd .pvs-s.on .pvs-tx>*{animation:up .6s var(--ease) both}
+.pvd .pvs-s.on .pvs-tx>:nth-child(2){animation-delay:.08s}.pvd .pvs-s.on .pvs-tx>:nth-child(3){animation-delay:.16s}
+.pvd .pvs-s.on .pvs-art svg{animation:pvsKb 6s ease-out both}
+@keyframes pvsKb{from{transform:scale(1.1) translateX(8px)}to{transform:none}}
+.pvd .pvs-spin{transform-origin:118px 74px;animation:pvsSpin 3.2s linear infinite}
+@keyframes pvsSpin{to{transform:rotate(360deg)}}
+.pvd .pvs-s.on .pvs-slide-in{animation:pvsIn 1.6s .2s var(--ease) both}
+@keyframes pvsIn{from{transform:translateX(-26px)}to{transform:none}}
+.pvd .pvs-blink{animation:pvsBlink 1.4s ease-in-out infinite}
+@keyframes pvsBlink{50%{opacity:.2}}
+.pvd .pvs-scan{animation:pvsScan 2.6s ease-in-out infinite}
+@keyframes pvsScan{0%,100%{transform:translateY(0)}50%{transform:translateY(68px)}}
+.pvd .pvs-ring{transform-origin:134px 96px;animation:pvsRing 2s ease-out infinite}
+@keyframes pvsRing{0%{transform:scale(.6);opacity:1}100%{transform:scale(1.5);opacity:0}}
+.pvd .pvs-s.on .pvs-pop{transform-origin:150px 40px;animation:pvsPop .6s .5s cubic-bezier(.3,1.6,.5,1) both}
+.pvd .pvs-s.on .pvs-pop2{transform-origin:50px 107px;animation:pvsPop .6s .8s cubic-bezier(.3,1.6,.5,1) both}
+@keyframes pvsPop{from{transform:scale(0);opacity:0}to{transform:none;opacity:1}}
+.pvd .pvs-dots{position:absolute;z-index:2;bottom:11px;right:18px;display:flex;gap:6px;direction:rtl}
+.pvd .pvs-dots button{width:7px;height:7px;padding:0;border:0;border-radius:99px;background:rgba(255,255,255,.35);overflow:hidden;position:relative;transition:width .35s var(--ease)}
+.tx .v .pvd .pvs-dots button.on{width:24px;background:rgba(255,255,255,.3);margin:0;padding:0;font-size:0}
+.pvd .pvs-dots button.on i{position:absolute;inset:0;background:#fff;transform-origin:right;animation:pvsBar 5.2s linear both}
+@keyframes pvsBar{from{transform:scaleX(0)}to{transform:none}}
+@media (prefers-reduced-motion:reduce){.pvd .pvs-tr{transition:none}.pvd .pvs *{animation:none!important}.pvd .pvs-dots button.on i{transform:none}}
+@media (max-width:360px){.pvd .pvs{height:170px}.pvd .pvs-tx h1,.pvd .pvs-tx b{font-size:18px}.pvd .pvs-tx small{font-size:11.5px}}
+
+/* bell popover — the only place for notifications */
+.pvd{position:relative}
+.pvd .pvd-pop{position:absolute;z-index:40;top:calc(76px + env(safe-area-inset-top,0px));left:14px;width:min(300px,calc(100% - 28px));background:#fff;color:var(--pi);border-radius:20px;padding:14px;box-shadow:0 24px 50px -20px rgba(6,20,26,.55);border:1px solid var(--pl);animation:up .25s var(--ease) both}
+.pvd .pvd-pop[hidden]{display:none}
+.pvd .pvd-pop::before{content:'';position:absolute;top:-7px;left:22px;width:14px;height:14px;background:#fff;transform:rotate(45deg);border-left:1px solid var(--pl);border-top:1px solid var(--pl)}
+.pvd .pvd-pop b{display:block;font-size:14.5px;font-weight:800}
+.pvd .pvd-pop small{display:block;font-size:12px;line-height:1.7;color:var(--pm);margin:4px 0 10px}
+.pvd .pvd-pop-btn{width:100%;height:44px;border:0;border-radius:14px;background:var(--pbtn);color:#fff;font:inherit;font-size:14px;font-weight:800}
+.pvd .pvd-pop-btn[aria-pressed=true]{background:var(--pri);color:var(--pp)}
+.pvd .pvd-pop-btn:disabled{opacity:.6}
+.pvd .pvd-pop .pv3-push-feedback{color:var(--pm);font-size:11.5px;line-height:1.7;margin:8px 0 0}
+.pvd:has(#patientPushToggle[aria-pressed=true]) .pvd-bell::after{display:none}
+
+/* service tiles stay exactly the same size when tapped/selected */
+.pvd .patient-chooser{grid-auto-rows:1fr}
+.tx .v .pvd .patient-chooser button.pv2-service,.tx .v .pvd .patient-chooser button.pv2-service.on,.tx .v .pvd .patient-chooser button.pv2-service:active{margin:0!important;width:auto!important;transform:none!important;scale:none!important;font-size:inherit;white-space:normal;transition:border-color .2s,box-shadow .2s!important}
+.pvd .patient-chooser button.pv2-service:active .pv2-service-icon,.pvd .patient-chooser button.pv2-service.on .pv2-service-icon{transform:none!important}
