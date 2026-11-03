@@ -51,6 +51,16 @@ db.exec(`CREATE TABLE IF NOT EXISTS case_booking (
   note TEXT, at TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'new', updated_at TEXT
 );
 CREATE INDEX IF NOT EXISTS ix_case_booking ON case_booking (customer_id, status, id);`);
+/* Patient feedback and report requests, separate from medical studies and bookings. */
+db.exec(`CREATE TABLE IF NOT EXISTS case_service_request (
+ id INTEGER PRIMARY KEY AUTOINCREMENT,
+ customer_id TEXT NOT NULL, kind TEXT NOT NULL,
+ name TEXT NOT NULL, phone TEXT NOT NULL,
+ subject TEXT, message TEXT NOT NULL,
+ files_json TEXT NOT NULL DEFAULT '[]',
+ at TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'new', updated_at TEXT
+);
+CREATE INDEX IF NOT EXISTS ix_case_service_requests ON case_service_request(customer_id, kind, status, id);`);
 /* Anonymous QR landing analytics. No geolocation or IP is saved. */
 db.exec(`CREATE TABLE IF NOT EXISTS case_qr_stat (
  customer_id TEXT PRIMARY KEY, total INTEGER NOT NULL DEFAULT 0,
@@ -107,6 +117,49 @@ function setLookup(f) { LOOKUP = typeof f === 'function' ? f : null; }
 function waFor(cid, wa) { const w = waOf(wa); if (w) return w; try { return LOOKUP ? waOf(LOOKUP(cid)) : ''; } catch (e) { return ''; } }
 function asksOf(cid) { return db.prepare('SELECT id, name, phone, note, at FROM case_ask WHERE customer_id = ? AND done = 0 ORDER BY id DESC LIMIT 60').all(cid); }
 function bookingsOf(cid) { return db.prepare("SELECT id, name, phone, exam, day, slot, note, at FROM case_booking WHERE customer_id = ? AND status = 'new' ORDER BY id DESC LIMIT 100").all(cid); }
+function serviceRequestsOf(cid) {
+  return db.prepare("SELECT id,kind,name,phone,subject,message,at,files_json FROM case_service_request WHERE customer_id = ? AND status = 'new' ORDER BY id DESC LIMIT 100").all(cid)
+    .map(x => ({ id:x.id, kind:x.kind, name:x.name, phone:x.phone, subject:x.subject, message:x.message, at:x.at,
+      files: (() => { try { return JSON.parse(x.files_json || '[]').map((f,i) => ({ index:i, name:f.name, mime:f.mime })); } catch (_) { return []; } })() }));
+}
+/* Store private patient-uploaded photos encrypted at rest; access requires the center login. */
+const REQ_FILE_DIR = path.join(DATA_DIR, 'cases', 'request-photos');
+try { fs.mkdirSync(REQ_FILE_DIR, {recursive:true,mode:0o700}); } catch (e) { console.error('[cases request store]',e.message); }
+const REQUEST_FILE_KEY = crypto.createHash('sha256').update('case-request-photo:' + SECRET).digest();
+function requestPhotoPath(id) { return path.join(REQ_FILE_DIR, id + '.bin'); }
+function requestPhotoMime(buf) {
+  if (buf.length >= 3 && buf[0] === 0xFF && buf[1] === 0xD8 && buf[2] === 0xFF) return 'image/jpeg';
+  if (buf.length >= 8 && buf.subarray(0,8).equals(Buffer.from('89504E470D0A1A0A','hex'))) return 'image/png';
+  if (buf.length >= 12 && buf.toString('ascii',0,4) === 'RIFF' && buf.toString('ascii',8,12) === 'WEBP') return 'image/webp';
+  return '';
+}
+function storeRequestPhoto(buf) {
+  const id = rnd(16), iv = crypto.randomBytes(12), aes = crypto.createCipheriv('aes-256-gcm',REQUEST_FILE_KEY,iv);
+  const ciphertext = Buffer.concat([aes.update(buf),aes.final()]);
+  const blob = Buffer.concat([iv,aes.getAuthTag(),ciphertext]);
+  fs.writeFileSync(requestPhotoPath(id),blob,{flag:'wx',mode:0o600});
+  return id;
+}
+function getRequestPhoto(id) {
+  const blob = fs.readFileSync(requestPhotoPath(id));
+  if (blob.length < 29) throw Error('Invalid image');
+  const aes = crypto.createDecipheriv('aes-256-gcm',REQUEST_FILE_KEY,blob.subarray(0,12));
+  aes.setAuthTag(blob.subarray(12,28));
+  return Buffer.concat([aes.update(blob.subarray(28)),aes.final()]);
+}
+function sweepRequestPhotos() {
+  try {
+    const cutoff = new Date(Date.now()-30*864e5).toISOString().slice(0,10);
+    const rows = db.prepare("SELECT id, files_json FROM case_service_request WHERE at < ? AND files_json != '[]'").all(cutoff);
+    for (const row of rows) {
+      let files=[];try { files=JSON.parse(row.files_json||'[]'); }catch (_) {}
+      for (const f of files) if (/^[A-Za-z0-9]{16}$/.test(f.id||'')) try { fs.unlinkSync(requestPhotoPath(f.id)); } catch (_) {}
+      db.prepare("UPDATE case_service_request SET files_json = '[]' WHERE id = ?").run(row.id);
+    }
+  } catch (e) { console.warn('[case-photo-retention]',e.message); }
+}
+setTimeout(sweepRequestPhotos,60000).unref();
+setInterval(sweepRequestPhotos,864e5).unref();
 /* 'QR opens' means a browser opened the QR destination, not a verified camera scan. */
 function qrStatsOf(cid) {
   const row = db.prepare('SELECT total, count_fixed, count_report, day, today, last_at FROM case_qr_stat WHERE customer_id = ?').get(cid);
@@ -193,9 +246,9 @@ function html(res, code, s) { res.writeHead(code, { 'Content-Type': 'text/html; 
 
 /* ════════ public routes ════════ */
 async function handle(req, res, pathname) {
-  let m = /^\/k\/([A-Za-z0-9]{8})(\/(login|logout|list|qr|layout|live|case|relay|item|fixed|wa|ask|bookings|logo|views|theme)(\/[A-Za-z0-9]{1,20})?(\/(stop|start|delete|wrap|done))?)?\/?$/.exec(pathname);
+  let m = /^\/k\/([A-Za-z0-9]{8})(\/(login|logout|list|qr|layout|live|case|relay|item|fixed|wa|ask|bookings|tickets|ticket-image|logo|views|theme)(\/[A-Za-z0-9]{1,20})?(\/(stop|start|delete|wrap|done))?)?\/?$/.exec(pathname);
   if (m) return centerRoute(req, res, m);
-  m = /^\/h\/([A-Za-z0-9]{8})(\/(find|ask|book))?\/?$/.exec(pathname);
+  m = /^\/h\/([A-Za-z0-9]{8})(\/(find|ask|book|complaint|report-request))?\/?$/.exec(pathname);
   if (m) return findRoute(req, res, m[1], m[3] || '');
   m = /^\/v\/([A-Za-z0-9]{12})(\/(file|ask))?\/?$/.exec(pathname);
   if (m && m[3] === 'ask') return viewAsk(req, res, m[1]);
@@ -236,7 +289,7 @@ async function centerRoute(req, res, m) {
   if (sub === 'list' && req.method === 'GET') {
     const rows = db.prepare('SELECT * FROM case_item WHERE customer_id = ? ORDER BY id DESC LIMIT 500').all(cid).map(itemOut);
     const recent = db.prepare('SELECT v.token, v.at, v.dev, v.via, v.src, i.patient, i.exam FROM case_view v JOIN case_item i ON i.token = v.token WHERE v.customer_id = ? ORDER BY v.id DESC LIMIT 30').all(cid);
-    send(res, 200, { list: rows, online: (LIVE.get(cid) || new Set()).size, asks: asksOf(cid), bookings: bookingsOf(cid), qr: qrStatsOf(cid), recent }); return true;
+    send(res, 200, { list: rows, online: (LIVE.get(cid) || new Set()).size, asks: asksOf(cid), bookings: bookingsOf(cid), tickets: serviceRequestsOf(cid), qr: qrStatsOf(cid), recent }); return true;
   }
   if (sub === 'live' && req.method === 'GET') {
     res.writeHead(200, { 'Content-Type': 'text/event-stream; charset=utf-8', 'Cache-Control': 'no-store', Connection: 'keep-alive', 'X-Accel-Buffering': 'no' });
@@ -290,6 +343,31 @@ async function centerRoute(req, res, m) {
     if (arg && act === 'done') db.prepare('UPDATE case_ask SET done = 1 WHERE id = ? AND customer_id = ?').run(Number(arg), cid);
     else { let b = {}; try { b = await readJson(req, 500); } catch (e) {} const ph = phashOf(b.phone); if (ph) db.prepare('UPDATE case_ask SET done = 1 WHERE customer_id = ? AND phash = ? AND done = 0').run(cid, ph); }
     send(res, 200, { ok: true, asks: asksOf(cid) }); return true;
+  }
+  if (sub === 'ticket-image' && req.method === 'GET' && arg) {
+    const id = Number(arg), index = Number(new URL(req.url,'http://x').searchParams.get('i') || '0');
+    if (!Number.isSafeInteger(id) || id <= 0 || !Number.isInteger(index) || index < 0 || index > 2) { send(res,400,{message:'رابط الصورة غير صحيح'}); return true; }
+    const row = db.prepare('SELECT files_json FROM case_service_request WHERE id = ? AND customer_id = ?').get(id,cid);
+    if (!row) { send(res,404,{message:'الصورة غير موجودة'}); return true; }
+    let files=[]; try { files=JSON.parse(row.files_json || '[]'); } catch (_) {}
+    const file = files[index];
+    if (!file || !/^[A-Za-z0-9]{16}$/.test(file.id || '') || !['image/jpeg','image/png','image/webp'].includes(file.mime)) {
+      send(res,404,{message:'الصورة مش متاحة'}); return true;
+    }
+    try {
+      const buf = getRequestPhoto(file.id);
+      res.writeHead(200,{'Content-Type':file.mime,'Content-Length':String(buf.length),'Cache-Control':'no-store, private',
+        'X-Content-Type-Options':'nosniff','Content-Security-Policy':"default-src 'none'; sandbox"});
+      res.end(buf);
+    } catch (e) { send(res,404,{message:'الصورة مش متاحة'}); }
+    return true;
+  }
+  if (sub === 'tickets' && req.method === 'POST' && arg && act === 'done') {
+    const id = Number(arg);
+    if (!Number.isSafeInteger(id) || id <= 0) { send(res,400,{message:'الطلب غير صحيح'}); return true; }
+    const result = db.prepare("UPDATE case_service_request SET status = 'done', updated_at = ? WHERE id = ? AND customer_id = ? AND status = 'new'").run(nowTs(),id,cid);
+    if (!result.changes) { send(res,404,{message:'الطلب اتقفل أو مش موجود'}); return true; }
+    send(res,200,{ok:true,tickets:serviceRequestsOf(cid)}); return true;
   }
   if (sub === 'bookings' && req.method === 'POST' && arg && act === 'done') {
     const id = Number(arg);
@@ -415,6 +493,53 @@ async function findRoute(req, res, pub, sub) {
   const find = sub === 'find';
   const ip = ipOf(req);
   const site = db.prepare('SELECT * FROM case_site WHERE pub = ? AND active = 1').get(pub);
+  if (sub === 'complaint' || sub === 'report-request') {
+    if (req.method !== 'POST') return false;
+    if (!site) { send(res,404,{message:'المركز غير متاح'}); return true; }
+    if (limited('patient-service:'+pub+':'+ip,5,3600e3)) { send(res,429,{message:'في طلبات كتير، جرّب بعد شوية'}); return true; }
+    const kind = sub === 'complaint' ? 'complaint' : 'report';
+    let b={}; try { b=await readJson(req,kind==='report'?18000000:5000); } catch (e) {
+      send(res,e.status===413?413:400,{message:kind==='report'?'الصورة كبيرة أو البيانات غير صحيحة':'راجع بيانات الشكوى'}); return true;
+    }
+    const name=clean(b.name,60), phone=bookingPhone(b.phone),
+      subject=clean(b.subject,100), message=clean(b.message,1200);
+    if (name.length<3 || !phone || message.length<8 || (kind==='complaint' && subject.length<3)) {
+      send(res,400,{message:'اكمل الاسم ورقم الموبايل وعنوان الطلب والتفاصيل'}); return true;
+    }
+    if (limited('patient-service-phone:'+pub+':'+phashOf(phone),3,864e5)) {
+      send(res,429,{message:'وصلنا طلبات كتير من الرقم ده النهارده؛ تواصل مع المركز'}); return true;
+    }
+    const received=[];
+    if (kind==='report') {
+      if (!Array.isArray(b.files) || b.files.length<1 || b.files.length>3) {
+        send(res,400,{message:'ارفع من صورة إلى 3 صور للطلب'}); return true;
+      }
+      try {
+        for(const file of b.files) {
+          const raw=String((file && file.data)||''), match=/^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/]+={0,2})$/.exec(raw);
+          if (!match || raw.length>5700000) throw Error('file');
+          const buffer=Buffer.from(match[2],'base64');
+          const detected=requestPhotoMime(buffer);
+          if (!detected || detected!==match[1] || buffer.length===0 || buffer.length>4*1048576) throw Error('file');
+          received.push({id:storeRequestPhoto(buffer),mime:detected,name:clean(file.name,90)||('صورة '+(received.length+1))});
+        }
+      } catch (e) {
+        for(const file of received) try { fs.unlinkSync(requestPhotoPath(file.id)); } catch (_) {}
+        send(res,413,{message:'اختار صور JPG أو PNG أو WebP، كل صورة أقل من 4 ميجا'}); return true;
+      }
+    }
+    try {
+      const rec=db.prepare('INSERT INTO case_service_request(customer_id,kind,name,phone,subject,message,files_json,at) VALUES (?,?,?,?,?,?,?,?)')
+        .run(site.customer_id,kind,name,phone,subject,message,JSON.stringify(received),nowTs());
+      const id=Number(rec.lastInsertRowid);
+      tell(site.customer_id,'ticket',{tickets:serviceRequestsOf(site.customer_id),kind,name});
+      send(res,201,{ok:true,id,status:'new'});
+    } catch (e) {
+      for(const file of received) try { fs.unlinkSync(requestPhotoPath(file.id)); } catch (_) {}
+      send(res,500,{message:'تعذر حفظ الطلب، جرّب تاني'});
+    }
+    return true;
+  }
   if (sub === 'book') {
     if (req.method !== 'POST') return false;
     if (!site) { send(res, 404, { message: 'المركز غير متاح' }); return true; }
