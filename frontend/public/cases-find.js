@@ -131,6 +131,9 @@
   });
   var initial={ '#book':'booking','#results':'results','#complaint':'complaint','#report':'report' }[location.hash];
   if (initial) chooseJourney(initial);
+  function pushDeviceToken() {
+    try { return localStorage.getItem('qrd-push-device:' + C.pub) || ''; } catch(e) { return ''; }
+  }
   (function setupBooking() {
     var input = $('bd'), d = new Date(), loc = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
     input.min = loc.toISOString().slice(0, 10); loc.setUTCDate(loc.getUTCDate() + 90); input.max = loc.toISOString().slice(0, 10);
@@ -149,7 +152,7 @@
       btn.disabled = true; btn.textContent = 'بنبعت طلبك…'; msg.textContent = ''; msg.className = 'booking-msg';
       fetch(location.pathname.replace(/\/$/, '') + '/book', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: name, phone: phone, exam: exam, day: day, slot: slot, note: note })
+        body: JSON.stringify({ name: name, phone: phone, exam: exam, day: day, slot: slot, note: note, notifyDevice: pushDeviceToken() })
       }).then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) throw Error(j.message || 'محصلش — جرّب تاني'); return j; }); })
         .then(function (j) {
           $('booking-form').innerHTML = '<div class="booking-success" role="status"><span>✅</span><h2>طلب حجزك وصل للمركز</h2><p>رقم الطلب #' + esc(j.id) + '</p><p>المركز هيتواصل معاك على الموبايل علشان يأكد اليوم والوقت. <b>ده طلب حجز، مش موعد مؤكد لسه.</b></p><button type="button" class="btn g w" id="book-again">طلب حجز جديد</button></div>';
@@ -165,6 +168,7 @@
     return /^01[0125]\d{8}$/.test(digits)?digits:'';
   }
   function requestJson(url,body) {
+    body.notifyDevice = pushDeviceToken();
     return fetch(location.pathname.replace(/\/$/,'')+'/'+url,{
       method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)
     }).then(function (response) {
