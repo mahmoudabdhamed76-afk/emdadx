@@ -10,7 +10,7 @@
 (function () {
   'use strict';
   var C = window.CD || {}, BASE = '/k/' + C.code, $ = function (id) { return document.getElementById(id); }, K = window.OZK;
-  var ui = { logo: C.logo || '', logoImg: null, recent: [], vwOpen: '', asks: [], bookings: [], qr: null, wa: C.wa || '', prefill: null, list: [], local: {}, q: '', f: 'all', queue: [], live: false, es: null, fixed: !!C.fixedOn, dir: null, dirName: '', seen: {}, watchT: 0, pend: {}, auto: false, lastScan: 0 };
+  var ui = { logo: C.logo || '', logoImg: null, recent: [], vwOpen: '', asks: [], bookings: [], qr: null, layout: C.layout === 'violet' ? 'violet' : 'teal', wa: C.wa || '', prefill: null, list: [], local: {}, q: '', f: 'all', queue: [], live: false, es: null, fixed: !!C.fixedOn, dir: null, dirName: '', seen: {}, watchT: 0, pend: {}, auto: false, lastScan: 0 };
   var QID = 0;
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function toast(t) { var el = $('toast'); if (!el) return; el.textContent = t; el.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(function () { el.classList.remove('on'); }, 3000); }
@@ -121,6 +121,77 @@
     $('go').onclick = go; $('pw').onkeydown = function (e) { if (e.key === 'Enter') go(); };
   }
 
+
+  /* Dashboard V3: the two user-approved mockup layouts, shared data and controls. */
+  function dashboardNav() {
+    return '<aside class="qrd-nav" id="dashSidebar" aria-label="قائمة QR Patient">' +
+      '<div class="qrd-nav-brand"><span class="qrd-nav-logo">▦</span><div><b>QR Patient</b><small>إدارة صور وملفات المرضى</small></div></div>' +
+      '<nav class="qrd-nav-list" aria-label="أقسام الصفحة">' +
+      '<a href="#qrStats" class="on"><span>⌂</span> لوحة التحكم</a>' +
+      '<a href="#bookings"><span>▣</span> طلبات حجز الأشعة</a>' +
+      '<a href="#asks"><span>▤</span> طلبات النتائج</a>' +
+      '<a href="#drop"><span>⇧</span> رفع ملفات PDF / DICOM</a>' +
+      '<a href="#tbl"><span>▥</span> الحالات</a>' +
+      '<a href="#thm"><span>◉</span> شكل صفحة المريض</a>' +
+      '<a href="#rec"><span>◷</span> آخر مرات الفتح</a>' +
+      '</nav><div class="qrd-nav-end"><span class="qrd-nav-online">● متصل ببيانات المركز</span>' +
+      '<small>كل الملفات والطلبات في مكان واحد</small></div></aside>';
+  }
+  function setDashboardLayout(mode) {
+    ui.layout = mode === 'violet' ? 'violet' : 'teal';
+    document.body.classList.toggle('qrd-teal', ui.layout === 'teal');
+    document.body.classList.toggle('qrd-violet', ui.layout === 'violet');
+    [['dashTeal','teal'],['dashViolet','violet']].forEach(function (x) {
+      var b = $(x[0]); if (!b) return;
+      b.classList.toggle('on', ui.layout === x[1]);
+      b.setAttribute('aria-pressed', String(ui.layout === x[1]));
+    });
+  }
+  function setupDashboardDecor() {
+    document.body.classList.add('qrd-center');
+    document.body.insertAdjacentHTML('afterbegin', dashboardNav());
+    var header = document.querySelector('.tbar .sp');
+    if (header) header.insertAdjacentHTML('afterbegin',
+      '<div class="qrd-layout-switch" role="group" aria-label="شكل لوحة التحكم">' +
+      '<button type="button" id="dashTeal" aria-pressed="false" title="التصميم الطبي التركواز">🌿 تركواز</button>' +
+      '<button type="button" id="dashViolet" aria-pressed="false" title="التصميم البنفسجي العصري">💜 بنفسجي</button></div>');
+    setDashboardLayout(ui.layout);
+    [['dashTeal','teal'],['dashViolet','violet']].forEach(function (x) {
+      var b = $(x[0]); if (!b) return;
+      b.onclick = function () {
+        if (ui.layout === x[1]) return;
+        var prev = ui.layout;
+        setDashboardLayout(x[1]);
+        api('POST', 'layout', { layout: x[1] }).then(function () {
+          toast('🎨 اتحفظ تصميم لوحة التحكم للمركز');
+        }).catch(function (e) { setDashboardLayout(prev); toast(e.message || 'محصلش حفظ'); });
+      };
+    });
+    [].forEach.call(document.querySelectorAll('.qrd-nav-list a'), function (a) {
+      a.addEventListener('click', function () {
+        [].forEach.call(document.querySelectorAll('.qrd-nav-list a'), function (b) { b.classList.remove('on'); });
+        a.classList.add('on');
+      });
+    });
+    var upz = document.querySelector('.kmain .upz'), mwda = $('mwda');
+    if (upz) {
+      upz.insertAdjacentHTML('afterbegin',
+        '<div class="qrd-upload-head"><span class="qrd-upload-badge">⇧</span><div><h2>رفع ملفات الأشعة — PDF أو DICOM</h2>' +
+        '<p>حمّل التقرير أو صور الأشعة هنا، واحتفظ بنفس طريقة رفع الملفات والتشفير.</p></div></div>');
+      upz.insertAdjacentHTML('beforeend',
+        '<div class="qrd-upload-actions"><button type="button" id="uploadQuick" class="btn">⇧ اختيار ملفات PDF</button>' +
+        '<button type="button" id="uploadDicomQuick" class="btn g">🩻 اختيار DICOM</button></div>');
+      $('uploadQuick').onclick = function () { $('fi').click(); };
+      $('uploadDicomQuick').onclick = function () { dicomPick(); };
+    }
+    if (upz && mwda && mwda.parentNode) mwda.parentNode.insertBefore(upz, mwda);
+    var rail = document.querySelector('.kside'), theme = $('thm'), rec = $('rec') && $('rec').closest('.opt.rec'), fixed = $('fx');
+    if (rail && fixed) {
+      if (theme) rail.insertBefore(theme, fixed);
+      if (rec) rail.insertBefore(rec, fixed);
+    }
+  }
+
   /* ════ the page ════ */
   function shell() {
     var dirOk = 'showDirectoryPicker' in window;
@@ -144,8 +215,9 @@
       '</div><aside class="kside"><div id="bookings"></div><div id="asks"></div><div class="opt fxc" id="fx"></div>' +
         '<div class="opt"><h3>' + ic('qr') + ' باركود لكل حالة <span class="tg ok">شغال دايماً</span></h3><div class="how"><div><span>1</span>اسحب PDF الحالة واكتب اسم المريض</div><div><span>2</span>اطبع الاستيكر أو ابعته واتساب</div><div><span>3</span>المريض يمسحه ويشوف أشعته على طول</div></div></div>' +
         '<div class="opt thm" id="thm"></div>' +
-        '<div class="opt rec"><h3>' + ic('eye') + ' آخر مرات الفتح</h3><div id="rec"></div></div>' +
+        '<div class="opt rec" id="recentViews"><h3>' + ic('eye') + ' آخر مرات الفتح</h3><div id="rec"></div></div>' +
         '<div class="disk" id="disk"><div class="sk" style="height:40px;margin:0"></div></div></aside></div></div><div class="toast" id="toast"></div>';
+    setupDashboardDecor();
     $('lgo').onclick = pickLogo;
     $('out').onclick = function () { api('POST', 'logout').then(function () { location.reload(); }).catch(function () { location.reload(); }); };
     $('bk').onclick = backup; $('rs').onclick = function () { $('rsf').click(); }; $('rsf').onchange = function () { if (this.files[0]) restore(this.files[0]); this.value = ''; };
@@ -181,28 +253,26 @@
     [[$('s1'), a], [$('s2'), b], [$('s3'), v], [$('s4'), Object.keys(ui.local).length]].forEach(function (x) { if (x[0] && x[0].dataset.v !== String(x[1])) { x[0].dataset.v = x[1]; count(x[0], x[1]); } });
   }
 
-  /* Live QR analytics: direct openings of fixed /h and per-case /v links.
-     Does not expose patient name, raw IP address or precise position. */
+  /* QR analytics: counts, timestamps and kind ONLY. No location tracking. */
   function qrPanel() {
     var root = $('qrStats'), q = ui.qr;
     if (!root || !q) return;
     var L = q.recent || [];
-    var recent = L.length ? L.slice(0, 6).map(function (x, i) {
-      var location = [x.city, x.country].filter(Boolean).join('، ') || 'الموقع غير متاح';
-      return '<div class="qrc-visit" style="animation-delay:' + i * 45 + 'ms">' +
+    var recent = L.length ? L.slice(0, 5).map(function (x, i) {
+      return '<div class="qrc-visit" style="animation-delay:' + i * 40 + 'ms">' +
         '<span class="qrc-visit-icon">' + (x.kind === 'report' ? '🩻' : '▦') + '</span>' +
-        '<div><b>' + esc(location) + '</b><small>' + (x.kind === 'report' ? 'باركود نتيجة منفصلة' : 'الباركود الثابت') + '</small></div>' +
+        '<div><b>' + (x.kind === 'report' ? 'فتح باركود نتيجة أشعة' : 'فتح باركود المركز') + '</b><small>زيارة لرابط الباركود</small></div>' +
         '<time>' + esc(when(x.at)) + '</time></div>';
-    }).join('') : '<p class="qrc-empty">أول ما حد يفتح الباركود، هتشوف الزيارة هنا.</p>';
+    }).join('') : '<p class="qrc-empty">لسه مفيش زيارات جديدة. أول فتح للرابط هيظهر هنا.</p>';
     root.innerHTML =
-      '<div class="qrc-head"><div class="qrc-head-icon">▦</div><div class="qrc-head-copy"><small>QR ANALYTICS</small><h2>عداد فتح الباركود</h2><p>بيتحسب لما صفحة الباركود تتفتح، سواء بالمسح أو بفتح الرابط مباشرة.</p></div><span class="qrc-tag"><i></i> تحديث لحظي</span></div>' +
+      '<div class="qrc-head"><div class="qrc-head-icon">▦</div><div class="qrc-head-copy"><small>QR ANALYTICS</small><h2>عداد فتح الباركود</h2><p>متابعة فتح روابط الباركود للمركز والنتائج، بدون تسجيل أي موقع.</p></div><span class="qrc-tag"><i></i> تحديث لحظي</span></div>' +
       '<div class="qrc-metrics">' +
-        '<div class="qrc-stat"><span>📊 كل الفتحات</span><strong>' + n0(q.total) + '</strong><small>من يوم تفعيل العداد</small></div>' +
-        '<div class="qrc-stat"><span>📅 فتحات النهارده</span><strong>' + n0(q.today) + '</strong><small>بتتحدث مباشرة</small></div>' +
-        '<div class="qrc-stat"><span>📌 باركود المركز</span><strong>' + n0(q.fixed) + '</strong><small>الباركود الثابت على الورق</small></div>' +
-        '<div class="qrc-stat"><span>🩻 باركود النتائج</span><strong>' + n0(q.report) + '</strong><small>روابط النتائج المنفصلة</small></div>' +
-      '</div><div class="qrc-lower"><div class="qrc-latest"><h3>📍 آخر الأماكن التقريبية</h3>' + recent + '</div>' +
-        '<p class="qrc-disclosure">المكان بيظهر على مستوى المدينة أو الدولة لو شركة الاستضافة وفّرته، ومش GPS. من غير تخزين IP أو بيانات تعريف المريض. إعادة فتح الرابط ممكن تتحسب تاني.</p></div>';
+        '<div class="qrc-stat"><span>▦ إجمالي الفتحات</span><strong>' + n0(q.total) + '</strong><small>من بداية تشغيل العداد</small></div>' +
+        '<div class="qrc-stat"><span>▣ فتحات النهارده</span><strong>' + n0(q.today) + '</strong><small>زيارات اليوم</small></div>' +
+        '<div class="qrc-stat"><span>▦ باركود المركز</span><strong>' + n0(q.fixed) + '</strong><small>فتح الرابط الثابت</small></div>' +
+        '<div class="qrc-stat"><span>🩻 باركود النتائج</span><strong>' + n0(q.report) + '</strong><small>فتح روابط نتائج منفصلة</small></div>' +
+      '</div><div class="qrc-lower"><div class="qrc-latest"><h3>◷ آخر عمليات فتح الباركود</h3>' + recent + '</div>' +
+        '<p class="qrc-disclosure">🔒 بدون تحديد موقع — بنتابع فقط تاريخ فتح رابط الباركود ونوعه. العدّاد بيحسب فتح الرابط حتى لو من غير كاميرا.</p></div>';
   }
   /* ── option 2: the fixed barcode on every report ── */
   /* 5.01 · the look of the patient's pages (A «نَفَس» / C «دفا») — the patient can switch to night mode himself */
