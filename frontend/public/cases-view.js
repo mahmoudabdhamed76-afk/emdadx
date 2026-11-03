@@ -91,12 +91,12 @@
     paint(!!done);
     setTimeout(function () { host.classList.add('in'); }, 30);
     /* 5.22 · a few seconds after the result opens: a small stars-only pop-up in the middle of the screen — one tap and it's gone */
-    /* 5.24 · every visit: one second after the result opens, the stars pop-up */
-    var staff = false; try { staff = !!localStorage.getItem('qrd-staff'); } catch (e) {}
-    setTimeout(function () {
+    /* 5.25 · every visit, after the result opens: the stars pop-up (worded by the center) */
+    var staff = false, P = C.pop || {}; try { staff = !!localStorage.getItem('qrd-staff'); } catch (e) {}
+    if (P.onV !== false) setTimeout(function () {
       if (document.fullscreenElement || document.querySelector('.pz.max') || document.querySelector('.rp-pop')) return;
-      OZK.ratePop({ url: location.pathname.replace(/\/$/, '') + '/rate', dry: staff, onDone: function (n) { if (staff) return; try { localStorage.setItem(K, JSON.stringify({ s: n, t: [], n: '' })); } catch (e) {} st = n; tags = []; paint(true); } });
-    }, 2000);
+      OZK.ratePop(Object.assign(OZK.popOpts(P, C, 'v'), { url: location.pathname.replace(/\/$/, '') + '/rate', dry: staff, onDone: function (n) { if (staff) return; try { localStorage.setItem(K, JSON.stringify({ s: n, t: [], n: '' })); } catch (e) {} st = n; tags = []; paint(true); } }));
+    }, (P.delay || 2) * 1000);
   }
   /* 5.00 · a DICOM case → the mini PACS right here */
   function showDicom(buf) {

@@ -214,9 +214,9 @@
     }
     pvsWire();
   })();
-  /* 5.24 · every visit: two seconds after the welcome screen, a small stars pop-up for the center */
+  /* 5.25 · every visit, after the welcome screen: the stars pop-up, worded by the center (Ads → «نافذة التقييم») */
   (function centerRatePop() {
-    if (C.missing || !window.OZK || !OZK.ratePop) return;
+    var P = C.pop || {}; if (C.missing || P.onH === false || !window.OZK || !OZK.ratePop) return;
     var K = 'ozx_hrate:' + C.pub, staff = false; try { staff = !!localStorage.getItem('qrd-staff'); } catch (e) {}
     var tries = 0;
     /* the welcome screen mounts a moment after this runs — look only after it had the chance to appear, then wait until it's gone */
@@ -224,9 +224,8 @@
       if (document.querySelector('.splw') || document.visibilityState !== 'visible') { if (++tries < 80) return setTimeout(wait, 250); return; }
       setTimeout(function () {
         if (document.querySelector('.rp-pop')) return;
-        OZK.ratePop({ url: '/h/' + C.pub + '/rate', dry: staff, title: 'إيه رأيك في ' + esc(/^مركز/.test(String(C.center || '').trim()) ? C.center : 'مركز ' + (C.center || '')) + '؟', sub: 'قيّمنا بالنجوم — بتاخد ثانية', logo: C.logo ? '<img src="' + C.logo + '" alt="">' : '',
-          onDone: function (n) { try { localStorage.setItem(K, JSON.stringify({ s: n, t: Date.now() })); } catch (e) {} } });
-      }, 2000);
+        OZK.ratePop(Object.assign(OZK.popOpts(P, C, 'h'), { url: '/h/' + C.pub + '/rate', dry: staff, onDone: function (n) { try { localStorage.setItem(K, JSON.stringify({ s: n, t: Date.now() })); } catch (e) {} } }));
+      }, (P.delay || 2) * 1000);
     }, 500);
   })();
   var initial={ '#book':'booking','#results':'results','#complaint':'complaint','#report':'report' }[location.hash];
