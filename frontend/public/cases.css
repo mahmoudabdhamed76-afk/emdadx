@@ -1636,3 +1636,31 @@ html.patient-daylight body.v .pv2-page .patient-chooser button.pv2-service.on .p
     animation:none!important;filter:none!important;opacity:1!important;stroke-dashoffset:0;
   }
 }
+
+
+/* 5.10 · small transitions only; no hero/card layout shifts */
+.pv3-radiology-copy .pv3-slide-in{animation:pv3TextArrive .46s ease-out both}
+@keyframes pv3TextArrive{from{opacity:.55;filter:blur(2px)}to{opacity:1;filter:blur(0)}}
+.pv3-push-feedback{
+  color:#356D5E;font-size:11px;line-height:1.8;
+  flex-basis:100%;margin:3px 0 0;
+}
+.pv3-notification-bar:has(.pv3-push-feedback){flex-wrap:wrap}
+body.qrd-center .qrd-push-button{
+  white-space:nowrap;color:var(--qd-accent);background:var(--qd-tint);
+  border:1px solid #C5E5DF;border-radius:14px;font-weight:900;
+}
+body.qrd-center .qrd-push-button[aria-pressed="true"]{
+  background:#E5F9EE;color:#047C49;border-color:#B8E7D0;
+}
+body.qrd-center #casePushMsg{
+  display:block;max-width:280px;color:#2A6C5F;background:#EFFAF6;
+  padding:5px 9px;border-radius:10px;font-size:11px;line-height:1.5;
+  margin:3px 2px;
+}
+@media(max-width:680px){
+  body.qrd-center #casePushMsg{max-width:100%;width:100%;flex-basis:100%}
+}
+@media(prefers-reduced-motion:reduce){
+  .pv3-radiology-copy .pv3-slide-in{animation:none!important;filter:none!important}
+}
