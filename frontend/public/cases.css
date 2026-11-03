@@ -2322,3 +2322,47 @@ html.qrd-dark body.k .btn.g.red-t{color:#FF6B6B!important}html.qrd-dark body.k .
 .wf .lx-emp{padding:16px}
 html.qrd-dark .wf-n em{color:#FFBD5C}
 .wf-t .lx-pt b{unicode-bidi:plaintext;text-align:right}
+
+/* ════════════════ 5.18 · stock-style trend chart (chosen in Settings) + complaints tab on phones ════════════════ */
+.tc{--tc:#0D9488;--tc2:#5EEAD4;padding:6px 18px 14px}
+html.qrd-dark .tc{--tc:#FB923C;--tc2:#FDBA74}
+.tc-hd b{display:block;font-size:34px;font-weight:800;line-height:1.1;color:var(--ink);font-variant-numeric:tabular-nums;letter-spacing:-.5px}
+.tc-hd p{display:flex;align-items:center;gap:10px;margin-top:4px;font-size:12.5px;color:var(--mut)}
+.tc-hd em{font-style:normal;font-size:12px;font-weight:800;padding:3px 9px;border-radius:8px;direction:ltr}
+.tc-hd em.up{color:#059669;background:#ECFDF5}.tc-hd em.dn{color:#DC2626;background:#FEF2F2}
+html.qrd-dark .tc-hd em.up{color:#5CE89A;background:rgba(92,232,154,.1)}html.qrd-dark .tc-hd em.dn{color:#FF6B6B;background:rgba(255,107,107,.1)}
+.tc-plot{position:relative;height:190px;margin-top:10px;direction:ltr}
+.tc.sm .tc-plot{height:140px}.tc.sm .tc-hd b{font-size:28px}.tc.sm{padding:4px 0 0}
+.tc-plot svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.tc-l{stroke-dasharray:2400;stroke-dashoffset:2400;animation:tcDraw 1.4s cubic-bezier(.22,1,.36,1) forwards}
+.tc-a{opacity:0;animation:tcFade .9s .5s ease forwards}
+@keyframes tcDraw{to{stroke-dashoffset:0}}@keyframes tcFade{to{opacity:1}}
+.tc-dot{position:absolute;width:10px;height:10px;margin:-5px 0 0 -5px;border-radius:50%;background:#fff;box-shadow:0 0 0 3px color-mix(in srgb,var(--tc) 45%,transparent);animation:tcPing 2s ease-out infinite}
+@keyframes tcPing{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--tc) 60%,transparent)}100%{box-shadow:0 0 0 12px transparent}}
+.tc-hov{position:absolute;inset:0;display:flex}
+.tc-hov i{flex:1;position:relative}
+.tc-hov i:hover{background:linear-gradient(transparent,color-mix(in srgb,var(--tc) 10%,transparent))}
+.tc-hov i[data-tip]:hover::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 4px);left:50%;transform:translateX(-50%);white-space:nowrap;background:#111827;color:#fff;font-size:11.5px;font-weight:600;padding:5px 9px;border-radius:7px;z-index:5;direction:rtl;pointer-events:none}
+html.qrd-dark .tc-hov i[data-tip]:hover::after{background:#fff;color:#000}
+.tc-x{display:flex;justify-content:space-between;margin-top:8px;font-size:11.5px;color:var(--mut);direction:ltr}
+.lx-chart.is-line{background:var(--card)}
+html.qrd-dark .lx-chart.is-line,html.qrd-dark .qrdd-ch.is-line{background:linear-gradient(160deg,#1C1714,#121212 55%)!important;border-color:#2A2420!important}
+@media (prefers-reduced-motion:reduce){.tc-l,.tc-a,.tc-dot{animation:none;stroke-dashoffset:0;opacity:1}}
+/* phone chart card header + bars that stay visible at night */
+.qrdd-ch .qrdd-t{align-items:center;gap:8px;flex-wrap:wrap}
+.qrdd-ch .lx-seg button{padding:5px 9px;font-size:11.5px}
+.qrdd-ch .lx-ch-plot{margin:14px 0 0 34px;height:150px}.qrdd-ch .lx-gl span{left:-34px;width:28px}
+.qrdd-ch .lx-xl{margin:6px 0 0 34px}
+html.qrd-dark .lx-bars i.s0{background:#3EE0E8!important}html.qrd-dark .lx-bars i.s1{background:#B79BFF!important}
+html.qrd-dark .lx-col.now i.s0{background:#FFBD5C!important}
+/* settings: chart style */
+.ch-set{margin-bottom:16px}
+.ch-opts{display:grid;grid-template-columns:repeat(2,minmax(0,220px));gap:12px;padding:16px 18px 18px}
+.ch-opts button{border:1.5px solid var(--line);background:var(--card);border-radius:14px;padding:12px;display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--ink)}
+.ch-opts button.on{border-color:var(--qd-accent,#0D9488);box-shadow:0 0 0 3px color-mix(in srgb,var(--qd-accent,#0D9488) 16%,transparent)}
+.ch-opts svg{width:100%;height:64px;background:#141210;border-radius:10px;padding:6px}
+.ch-opts b{font-size:13.5px;font-weight:800;margin-top:4px}.ch-opts small{font-size:11.5px;color:var(--mut)}
+@media (max-width:900px){.ch-opts{grid-template-columns:1fr 1fr}}
+.tc-dot{border:2.5px solid var(--tc);box-sizing:border-box;width:12px;height:12px;margin:-6px 0 0 -6px}
+html.qrd-dark .tc-dot{border-color:#fff}
+@media (max-width:900px){html.qrd-dark .qrdd-tab button.on{color:#fff!important}html.qrd-dark .qrdd-tab button.on svg{background:#2A2A2A!important}}

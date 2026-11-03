@@ -305,7 +305,7 @@
     var adsBox = document.createElement('div'); adsBox.id = 'adsBox'; bodies.ads.appendChild(adsBox);
     var lx = document.createElement('div'); lx.id = 'qrdX'; lx.className = 'lx'; bodies.dashboard.insertBefore(lx, bodies.dashboard.firstChild);
     move('activity', '#recentViews');
-    move('settings', '#disk');
+    move('settings', '#disk'); setTimeout(chartSettings, 0);
     if (oldGrid.parentNode) oldGrid.parentNode.removeChild(oldGrid);
     host.addEventListener('click', function (e) {
       var b = e.target.closest && e.target.closest('[data-page-nav]');
@@ -334,6 +334,7 @@
   }
   /* ════ 5.03 · design D «تطبيق» on phones: KPI cards, today's scans by hour, quick actions, bottom tab bar ════ */
   var DSV={"home": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z\"/></svg>", "list": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01\"/></svg>", "cal": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"5\" width=\"18\" height=\"16\" rx=\"3\"/><path d=\"M3 10h18M8 3v4M16 3v4\"/></svg>", "up": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 19V7M6 12l6-6 6 6\"/><path d=\"M4 21h16\"/></svg>", "more": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"5\" cy=\"12\" r=\"1.6\"/><circle cx=\"12\" cy=\"12\" r=\"1.6\"/><circle cx=\"19\" cy=\"12\" r=\"1.6\"/></svg>", "eye": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z\"/><circle cx=\"12\" cy=\"12\" r=\"3\"/></svg>", "file": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z\"/><path d=\"M14 3v5h5M9 13h6M9 17h4\"/></svg>", "lung": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 4v8M12 12c-2 0-3 1-3 3v3c0 1.7-1.3 3-3 3s-3-1.3-3-3v-4c0-4 3-8 6-8M12 12c2 0 3 1 3 3v3c0 1.7 1.3 3 3 3s3-1.3 3-3v-4c0-4-3-8-6-8\"/></svg>", "qr": "<svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"3\" width=\"7\" height=\"7\" rx=\"1.5\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"7\" rx=\"1.5\"/><rect x=\"3\" y=\"14\" width=\"7\" height=\"7\" rx=\"1.5\"/><path d=\"M14 14h3v3h-3zM20 14v.01M14 20h.01M17 20h4v-3\"/></svg>"};
+  DSV.msg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/><path d="M8.5 12h.01M12 12h.01M15.5 12h.01"/></svg>';
   function dSvg(n) { return DSV[n] || ''; }
   function setupMobileD() {
     document.body.classList.add('qrd-d');
@@ -353,9 +354,9 @@
       });
     }
     if (!$('qrdTab')) {
-      var tabs = [['dashboard', 'home', 'الرئيسية'], ['cases', 'list', 'الحالات'], ['bookings', 'cal', 'الطلبات'], ['upload', 'up', 'رفع'], ['more', 'more', 'المزيد']];
+      var tabs = [['dashboard', 'home', 'الرئيسية'], ['cases', 'list', 'الحالات'], ['bookings', 'cal', 'الطلبات'], ['complaints', 'msg', 'الشكاوى'], ['more', 'more', 'المزيد']];
       document.body.insertAdjacentHTML('beforeend', '<nav class="qrdd-tab" id="qrdTab" aria-label="التنقل">' + tabs.map(function (t) {
-        return '<button type="button" data-dt="' + t[0] + '">' + dSvg(t[1]) + '<span>' + t[2] + '</span>' + (t[0] === 'bookings' ? '<em id="dTabN" hidden>0</em>' : '') + '</button>'; }).join('') + '</nav>' +
+        return '<button type="button" data-dt="' + t[0] + '">' + dSvg(t[1]) + '<span>' + t[2] + '</span>' + (t[0] === 'bookings' ? '<em id="dTabN" hidden>0</em>' : t[0] === 'complaints' ? '<em id="dTabC" hidden>0</em>' : '') + '</button>'; }).join('') + '</nav>' +
         '<div class="qrdd-sheet" id="qrdSheet" hidden><div class="qrdd-sh"><i></i><b>كل الأقسام</b><div class="qrdd-sl" id="qrdSheetL"></div></div></div>');
       var nav = document.querySelectorAll('.qrd-nav-list a[data-page]'), L = $('qrdSheetL');
       [].forEach.call(nav, function (a) { L.insertAdjacentHTML('beforeend', '<button type="button" data-sp="' + a.dataset.page + '">' + a.innerHTML + '</button>'); });
@@ -366,7 +367,7 @@
     markTab();
   }
   function markTab() {
-    var p = document.body.getAttribute('data-qrd-page') || ui.page || 'dashboard', main = ['dashboard', 'cases', 'bookings', 'upload'];
+    var p = document.body.getAttribute('data-qrd-page') || ui.page || 'dashboard', main = ['dashboard', 'cases', 'bookings', 'complaints'];
     [].forEach.call(document.querySelectorAll('#qrdTab [data-dt]'), function (b) { b.classList.toggle('on', b.dataset.dt === p || (b.dataset.dt === 'more' && main.indexOf(p) < 0)); });
   }
   function dHome() {
@@ -380,11 +381,21 @@
     set('dK1', today); set('dK2', views); set('dK3', reqs);
     var t = $('dK1t'); if (t) t.textContent = yc ? (today >= yc ? '▲ ' : '▼ ') + Math.abs(Math.round((today - yc) / yc * 100)) + '% عن امبارح' : (q.total ? 'الإجمالي ' + n0(q.total) + ' مرة' : 'لسه مفيش فتح');
     var mx = Math.max.apply(null, hrs.concat([1])), now = new Date().getHours();
-    $('dBars').innerHTML = hrs.map(function (n, h) { return '<i class="' + (h === now ? 'h' : '') + (n ? ' v' : '') + '" style="height:' + Math.max(6, Math.round(n / mx * 100)) + '%" title="' + h + ':00 — ' + n + '"></i>'; }).join('');
+    var chb = $('qrdD') && $('qrdD').querySelector('.qrdd-ch');
+    var mm = ui.mMode || 'today', sig = chb && D ? chartStyle() + mm + D.hours.join(',') + '|' + D.days.map(function (d) { return d.qr; }).join(',') + '|' + D.qr.today + '|' + D.qr.yday : '';
+    if (chb && D && chb.dataset.sig !== sig) {
+      chb.dataset.sig = sig;
+      chb.classList.toggle('is-line', chartStyle() === 'line');
+      if (chartStyle() === 'line') { chb.innerHTML = '<div class="qrdd-t"><b>فتح الباركود</b>' + modeSeg(mm, 'data-mm') + '</div>' + trendChart(D, mm, true); }
+      else { chb.innerHTML = '<div class="qrdd-t"><b>فتح الباركود</b>' + modeSeg(mm, 'data-mm') + '</div>' + lxChart(mm === 'today' ? D : D, mm); }
+      [].forEach.call(chb.querySelectorAll('[data-mm]'), function (b) { b.onclick = function () { ui.mMode = b.dataset.mm; dHome(); }; });
+    }
+    if ($('dBars')) $('dBars').innerHTML = hrs.map(function (n, h) { return '<i class="' + (h === now ? 'h' : '') + (n ? ' v' : '') + '" style="height:' + Math.max(6, Math.round(n / mx * 100)) + '%" title="' + h + ':00 — ' + n + '"></i>'; }).join('');
     var pts = [], acc = 0; hrs.forEach(function (n, h) { acc += n; pts.push([h / 23 * 200, 40 - (acc / Math.max(1, today || acc)) * 34]); });
     var dL = 'M' + pts.map(function (p) { return p[0].toFixed(1) + ' ' + p[1].toFixed(1); }).join(' L');
-    $('dSpL').setAttribute('d', dL); $('dSpA').setAttribute('d', dL + ' L200 44 L0 44Z');
-    var tn = $('dTabN'); if (tn) { tn.textContent = reqs; tn.hidden = !reqs; }
+    if ($('dSpL')) $('dSpL').setAttribute('d', dL); if ($('dSpA')) $('dSpA').setAttribute('d', dL + ' L200 44 L0 44Z');
+    var tn = $('dTabN'); if (tn) { var nb = D ? D.req.bookings + D.req.results + D.req.reports : reqs; tn.textContent = nb; tn.hidden = !nb; }
+    var tcn = $('dTabC'), nc = D ? D.req.complaints : (ui.tickets || []).filter(function (t) { return t.kind === 'complaint'; }).length; if (tcn) { tcn.textContent = nc; tcn.hidden = !nc; }
     [].forEach.call(document.querySelectorAll('#qrdSheetL [data-count]'), function (em) { var src = document.querySelector('.qrd-nav-list [data-count="' + em.dataset.count + '"]'); if (src) { em.textContent = src.textContent; em.hidden = src.hidden || src.textContent === '0'; } });
   }
   function setupDashboardDecor() {
@@ -983,13 +994,15 @@
     for (i = 13; i >= 0; i--) out.push(m[ymd(new Date(Date.now() - i * 864e5))] || 0); return out;
   }
   var DAYW = ['أحد', 'اتنين', 'تلات', 'أربع', 'خميس', 'جمعة', 'سبت'];
-  function lxChart(D) {
-    var mode = ui.lxMode || 'today', cols = [], xl = [], mx = 1, i;
+  function lxChart(D, forced) {
+    var mode = forced || ui.lxMode || 'today'; if (mode === 'days') mode = '30'; var cols = [], xl = [], mx = 1, i;
     if (mode === 'today') {
       for (i = 0; i < 24; i++) { cols.push([D.hours[i] || 0]); mx = Math.max(mx, D.hours[i] || 0); }
       xl = ['12ص', '3ص', '6ص', '9ص', '12م', '3م', '6م', '9م'];
     } else {
-      D.days.forEach(function (d) { cols.push([d.qr, d.views]); mx = Math.max(mx, d.qr, d.views); });
+      var DD = D.days.slice(mode === '7' ? -7 : -30);
+      DD.forEach(function (d) { cols.push([d.qr, d.views]); mx = Math.max(mx, d.qr, d.views); });
+      D = { days: DD, hours: D.hours };
     }
     var step = Math.max(1, Math.ceil(mx / 4)), top = step * 4, now = new Date().getHours();
     var grid = [4, 3, 2, 1, 0].map(function (k) { return '<div class="lx-gl" style="bottom:' + (k * 25) + '%"><span>' + n0(step * k) + '</span></div>'; }).join('');
@@ -997,9 +1010,53 @@
       var tip = mode === 'today' ? (((j % 12) || 12) + (j < 12 ? ' ص' : ' م') + ' — ' + c[0] + ' فتح') : (function () { var d = D.days[j], dt = new Date(d.day + 'T12:00:00'); return DAYW[dt.getDay()] + ' ' + (+d.day.slice(8)) + '/' + (+d.day.slice(5, 7)) + ' — باركود ' + d.qr + ' · نتائج ' + d.views; })();
       return '<div class="lx-col' + (mode === 'today' && j === now ? ' now' : '') + '" data-tip="' + esc(tip) + '">' + c.map(function (v, k) { return '<i class="s' + k + '" style="height:' + (v ? Math.max(3, v / top * 100) : 0) + '%"></i>'; }).join('') + '</div>';
     }).join('');
-    if (mode !== 'today') xl = D.days.map(function (d, j) { return j % 2 ? '' : (+d.day.slice(8)) + '/' + (+d.day.slice(5, 7)); });
+    if (mode !== 'today') xl = D.days.map(function (d, j) { return (D.days.length > 10 ? j % 3 : 0) ? '' : (+d.day.slice(8)) + '/' + (+d.day.slice(5, 7)); });
     return '<div class="lx-ch-plot"><div class="lx-grid">' + grid + '</div><div class="lx-bars m-' + mode + '">' + bars + '</div></div>' +
       '<div class="lx-xl m-' + mode + '">' + xl.map(function (t) { return '<span>' + t + '</span>'; }).join('') + '</div>';
+  }
+  /* 5.18 · chart style chosen in Settings: «خط» (stock-style trend) or «أعمدة» */
+  function chartStyle() { try { return localStorage.getItem('qrd-chart') === 'bars' ? 'bars' : 'line'; } catch (e) { return 'line'; } }
+  function modeSeg(mode, attr) { return '<div class="lx-seg" role="group">' + [['today', 'النهارده'], ['7', '7 أيام'], ['30', '30 يوم']].map(function (m) { return '<button type="button" ' + attr + '="' + m[0] + '" class="' + (mode === m[0] ? 'on' : '') + '">' + m[1] + '</button>'; }).join('') + '</div>'; }
+  function smooth(P) {
+    if (P.length < 2) return P.length ? 'M' + P[0][0] + ' ' + P[0][1] : '';
+    var d = 'M' + P[0][0].toFixed(1) + ' ' + P[0][1].toFixed(1);
+    for (var i = 0; i < P.length - 1; i++) {
+      var p0 = P[i - 1] || P[i], p1 = P[i], p2 = P[i + 1], p3 = P[i + 2] || p2, t = 0.18;
+      d += ' C' + (p1[0] + (p2[0] - p0[0]) * t).toFixed(1) + ' ' + (p1[1] + (p2[1] - p0[1]) * t).toFixed(1) + ' ' + (p2[0] - (p3[0] - p1[0]) * t).toFixed(1) + ' ' + (p2[1] - (p3[1] - p1[1]) * t).toFixed(1) + ' ' + p2[0].toFixed(1) + ' ' + p2[1].toFixed(1);
+    }
+    return d;
+  }
+  function trendChart(D, mode, small) {
+    var vals, labs, tips, now = new Date().getHours(), i;
+    if (mode === 'today') { vals = D.hours.slice(0, now + 1); labs = ['12ص', '', 'دلوقتي']; tips = vals.map(function (v, h) { return ((h % 12) || 12) + (h < 12 ? ' ص' : ' م') + ' — ' + v + ' فتح'; }); }
+    else { var DD = D.days.slice(mode === '7' ? -7 : -30); vals = DD.map(function (d) { return d.qr; }); var f = function (d) { return (+d.day.slice(8)) + '/' + (+d.day.slice(5, 7)); };
+      labs = [f(DD[0]), f(DD[Math.floor(DD.length / 2)]), 'النهارده']; tips = DD.map(function (d) { var dt = new Date(d.day + 'T12:00:00'); return DAYW[dt.getDay()] + ' ' + f(d) + ' — ' + d.qr + ' فتح'; }); }
+    var total = vals.reduce(function (a, b) { return a + b; }, 0), n = vals.length;
+    var half = Math.floor(n / 2), a = vals.slice(0, half).reduce(function (x, y) { return x + y; }, 0), b = vals.slice(n - half).reduce(function (x, y) { return x + y; }, 0);
+    var ch = mode === 'today' ? pct(D.qr.today, D.qr.yday) : pct(b, a), show = mode === 'today' ? !!D.qr.yday : !!a;
+    var W = 600, H = 170, top = 14, bot = 18, mx = Math.max.apply(null, vals.concat([1])) * 1.15;
+    var P = vals.map(function (v, k) { return [n > 1 ? k / (n - 1) * W : W / 2, top + (1 - v / mx) * (H - top - bot)]; });
+    var solidEnd = mode === 'today' ? P.length : Math.max(1, P.length - 1), S = P.slice(0, solidEnd), last = P[P.length - 1];
+    var lineD = smooth(S), area = lineD ? lineD + ' L' + S[S.length - 1][0].toFixed(1) + ' ' + H + ' L' + S[0][0].toFixed(1) + ' ' + H + 'Z' : '';
+    var dash = mode !== 'today' && P.length > 1 ? 'M' + S[S.length - 1][0].toFixed(1) + ' ' + S[S.length - 1][1].toFixed(1) + ' L' + last[0].toFixed(1) + ' ' + last[1].toFixed(1) : '';
+    var gid = 'tg' + (++trendChart.n || (trendChart.n = 1));
+    var hov = '<div class="tc-hov">' + vals.map(function (v, k) { return '<i data-tip="' + esc(tips[k]) + '"></i>'; }).join('') + '</div>';
+    return '<div class="tc' + (small ? ' sm' : '') + '"><div class="tc-hd"><b>' + n0(total) + '</b><p><span>' + (mode === 'today' ? 'فتحة النهارده' : n0(D.qr.today) + ' النهارده') + '</span>' +
+        (show ? '<em class="' + (ch >= 0 ? 'up' : 'dn') + '">' + (ch >= 0 ? '↗ ' : '↘ ') + Math.abs(ch) + '%</em>' : '') + '</p></div>' +
+      '<div class="tc-plot"><svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" aria-hidden="true"><defs><linearGradient id="' + gid + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--tc)" stop-opacity=".42"/><stop offset="1" stop-color="var(--tc)" stop-opacity="0"/></linearGradient></defs>' +
+        (area ? '<path class="tc-a" d="' + area + '" fill="url(#' + gid + ')"/>' : '') + (lineD ? '<path class="tc-l" d="' + lineD + '" fill="none" stroke="var(--tc)" stroke-width="2.6" vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round"/>' : '') +
+        (dash ? '<path d="' + dash + '" fill="none" stroke="var(--tc2)" stroke-width="2" stroke-dasharray="3 5" vector-effect="non-scaling-stroke" stroke-linecap="round"/>' : '') + '</svg>' +
+        (last ? '<span class="tc-dot" style="left:' + (last[0] / W * 100) + '%;top:' + (last[1] / H * 100) + '%"></span>' : '') + hov + '</div>' +
+      '<div class="tc-x"><span>' + labs[0] + '</span><span>' + labs[1] + '</span><span>' + labs[2] + '</span></div></div>';
+  }
+  function chartSettings() {
+    var host = $('qrd-body-settings'); if (!host) return; var el = $('chSet');
+    if (!el) { el = document.createElement('section'); el.id = 'chSet'; el.className = 'lx-card ch-set'; host.insertBefore(el, host.firstChild); }
+    var st = chartStyle();
+    el.innerHTML = '<div class="lx-ch"><div><h3>📈 شكل رسم فتح الباركود</h3><small>بيتطبّق على لوحة التحكم في الكمبيوتر والموبايل (على الجهاز ده)</small></div></div><div class="ch-opts">' +
+      '<button type="button" data-chs="line" class="' + (st === 'line' ? 'on' : '') + '"><svg viewBox="0 0 120 50"><defs><linearGradient id="chp1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FB923C" stop-opacity=".5"/><stop offset="1" stop-color="#FB923C" stop-opacity="0"/></linearGradient></defs><path d="M0 34 C12 30 16 38 26 28 S44 22 54 30 S74 16 84 22 S100 10 110 12 L110 50 L0 50Z" fill="url(#chp1)"/><path d="M0 34 C12 30 16 38 26 28 S44 22 54 30 S74 16 84 22 S100 10 110 12" fill="none" stroke="#FB923C" stroke-width="2.4"/><path d="M110 12 L118 30" stroke="#FDBA74" stroke-width="2" stroke-dasharray="2 3"/><circle cx="118" cy="30" r="2.6" fill="#fff"/></svg><b>خط — زي البورصة</b><small>اتجاه الفتح والنسبة</small></button>' +
+      '<button type="button" data-chs="bars" class="' + (st === 'bars' ? 'on' : '') + '"><svg viewBox="0 0 120 50">' + [10, 18, 14, 26, 22, 34, 30, 40].map(function (h, k) { return '<rect x="' + (4 + k * 14.5) + '" y="' + (48 - h) + '" width="9" height="' + h + '" rx="2" fill="' + (k === 7 ? '#F59E0B' : '#14B8A6') + '"/>'; }).join('') + '</svg><b>أعمدة</b><small>العدد في كل ساعة أو يوم</small></button></div>';
+    [].forEach.call(el.querySelectorAll('[data-chs]'), function (b) { b.onclick = function () { try { localStorage.setItem('qrd-chart', b.dataset.chs); } catch (e) {} chartSettings(); dashX(); dHome(); toast(b.dataset.chs === 'line' ? '📈 الرسم بقى خط زي البورصة' : '📊 الرسم بقى أعمدة'); }; });
   }
   function dashX() {
     var el = $('qrdX'), D = ui.dash; if (!el) return;
@@ -1011,7 +1068,7 @@
       lxStat({ l: 'مرات فتح النتائج النهارده', v: D.views.today, i: 'eye', c: '#6366F1', sp: D.days.map(function (d) { return d.views; }), d: 'الإجمالي ' + n0(D.views.total) + ' مرة · امبارح ' + n0(D.views.yday) }) +
       lxStat({ l: 'الحالات المرفوعة', v: D.cases.total, i: 'file', c: '#D97706', sp: casesPerDay(), d: 'النهارده ' + n0(D.cases.today) + ' · الشهر ده ' + n0(D.cases.month) + (D.cases.unseen ? ' · ' + n0(D.cases.unseen) + ' لسه متفتحتش' : '') }) +
       lxStat({ l: 'طلبات مستنية رد', v: R.total, i: 'inbox', c: '#E11D48', d: reqLine, tone: R.total ? 'warn' : 'up' });
-    var mode = ui.lxMode || 'today';
+    var mode = ui.lxMode || 'today'; if (mode === 'days') mode = ui.lxMode = '30';
     var follow = [['bookings', 'today', 'طلبات حجز الأشعة', R.bookings, '#4F46E5'], ['results', 'eye', 'طلبات النتائج', R.results, '#0D9488'], ['complaints', 'wa', 'الشكاوى', R.complaints, '#E11D48'], ['reports', 'file', 'طلبات التقارير', R.reports, '#D97706']];
     var recentRows = (ui.recent || []).slice(0, 8).map(function (e) {
       var v = VIA[e.via] || VIA.qr;
@@ -1019,9 +1076,8 @@
         '<td><span class="lx-via ' + (e.via === 'fixed' ? 'f' : 'q') + '">' + v[0] + ' ' + v[1] + '</span></td><td class="mut">' + esc(e.dev || '—') + '</td><td class="mut">' + when(e.at) + '</td></tr>';
     }).join('');
     el.innerHTML = '<div class="lx-stats">' + stats + '</div>' +
-      '<div class="lx-row"><section class="lx-card lx-chart"><div class="lx-ch"><div><h3>فتح الباركود</h3><small>' + (mode === 'today' ? 'النهارده بالساعة — الباركود الثابت' : 'آخر 14 يوم') + '</small></div>' +
-        '<div class="lx-seg" role="group"><button type="button" data-lxm="today" class="' + (mode === 'today' ? 'on' : '') + '">النهارده</button><button type="button" data-lxm="days" class="' + (mode === 'days' ? 'on' : '') + '">14 يوم</button></div></div>' +
-        (mode === 'days' ? '<div class="lx-lg"><span><i class="s0"></i>الباركود الثابت</span><span><i class="s1"></i>فتح النتائج</span></div>' : '') + lxChart(D) + '</section>' +
+      '<div class="lx-row"><section class="lx-card lx-chart' + (chartStyle() === 'line' ? ' is-line' : '') + '"><div class="lx-ch"><div><h3>فتح الباركود الثابت</h3><small>' + (mode === 'today' ? 'النهارده بالساعة' : 'آخر ' + mode + ' يوم') + '</small></div>' + modeSeg(mode, 'data-lxm') + '</div>' +
+        (chartStyle() === 'line' ? trendChart(D, mode) : (mode !== 'today' ? '<div class="lx-lg"><span><i class="s0"></i>الباركود الثابت</span><span><i class="s1"></i>فتح النتائج</span></div>' : '') + lxChart(D)) + '</section>' +
       '<section class="lx-card lx-follow"><div class="lx-ch"><div><h3>محتاج متابعة</h3><small>الطلبات اللي لسه مارديتش عليها</small></div></div><div class="lx-fl">' +
         follow.map(function (f) { return '<button type="button" data-page-nav="' + f[0] + '" style="--c:' + f[4] + '"><span class="lx-fi">' + ic(f[1]) + '</span><b>' + f[2] + '</b><em class="' + (f[3] ? 'on' : '') + '">' + n0(f[3]) + '</em></button>'; }).join('') +
         '</div><div class="lx-qa"><button type="button" class="btn" data-lxq="pdf">' + ic('file') + ' ارفع PDF</button><button type="button" class="btn g" data-lxq="dicom">🩻 DICOM</button><button type="button" class="btn g" data-page-nav="ads">' + ic('mega') + ' إعلان</button></div></section></div>' +
