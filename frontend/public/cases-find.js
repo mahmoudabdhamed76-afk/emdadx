@@ -13,7 +13,9 @@
   /* 5.01 · the look comes from cases-skin.js (A «نَفَس» / C «دفا» + night mode) */
   var TC = window.OZSkin && OZSkin.theme === 'c';
   document.body.innerHTML = '<div class="w"><div class="top"><span class="tlg">' + (window.OZSkin ? OZSkin.logo('') : '') + '</span><div class="tn"><b>' + esc(C.center) + '</b><small>نتيجة الأشعة على موبايلك</small></div></div>' +
-    '<h1 class="ttl">' + (TC ? 'نتيجتك<br><span>بموبايلك بس.</span>' : 'أهلاً بيك 🌿<br><span>نتيجتك</span> جاهزة في ثواني') + '</h1>' + (C.on ? '<span class="on2">● شغالين 24 ساعة</span>' : '') +
+    '<h1 class="ttl" id="patient-title">' + (TC ? 'نتيجتك<br><span>بموبايلك بس.</span>' : 'أهلاً بيك 🌿<br><span>نتيجتك</span> جاهزة في ثواني') + '</h1>' + (C.on ? '<span class="on2">● شغالين 24 ساعة</span>' : '') +
+    '<div class="patient-chooser" role="tablist" aria-label="خدمات المركز"><button type="button" id="tab-results" class="on" role="tab" aria-selected="true" aria-controls="patient-results"><span>🩻</span><b>نتيجة الأشعة</b><small>اعرض أو نزّل نتيجتك</small></button><button type="button" id="tab-booking" role="tab" aria-selected="false" aria-controls="patient-book"><span>📅</span><b>احجز أشعة</b><small>ابعت طلب موعد للمركز</small></button></div>' +
+    '<section id="patient-results" class="patient-panel" role="tabpanel" aria-labelledby="tab-results">' +
     '<div class="srch" id="sr">' + (C.on ?
       '<label class="l">رقم موبايلك اللي سجّلته في المركز</label><input class="fld n" id="ph" type="tel" inputmode="tel" autocomplete="tel" maxlength="20" placeholder="01xxxxxxxxx" style="text-align:right">' +
       '<p class="hint">نفس الرقم اللي اديته للمركز وانت بتعمل الأشعة.</p>' +
@@ -22,7 +24,58 @@
     '<div class="res" id="res"></div>' +
     (C.on ? '<div class="miss" id="miss"><b>مش لاقي نتيجتك؟</b><p>اكتب موبايلك فوق، ودوس هنا — طلبك بيوصل للمركز على طول وهم يرفعولك النتيجة.</p>' + '<div class="af"><label class="l">اسمك زي ما اتسجّل في المركز *</label><input class="fld" id="an0" maxlength="60" autocomplete="name" placeholder="الاسم بالكامل"><label class="l">تاريخ عمل الأشعة *</label><input class="fld" id="ad0" type="date"><label class="l">نوع الفحص (اختياري)</label><input class="fld" id="nt0" maxlength="60" placeholder="مثلاً: مقطعية على الصدر"><div class="aer" id="ae0"></div></div>' + '<button class="btn ask2 w" id="wa0">📨 اطلب نتيجتك من المركز</button></div>' : '') +
     '<div class="steps"><div><i>📷</i>مسحت الباركود</div><div><i>✍️</i>اكتب رقم موبايلك</div><div><i>🩻</i>افتح نتيجتك</div></div>' +
-    '<p class="foot">نتيجتك متشفّرة — بتتفتح برقم موبايلك اللي في المركز.</p></div>';
+    '<p class="foot">نتيجتك متشفّرة — بتتفتح برقم موبايلك اللي في المركز.</p></section>' +
+    '<section id="patient-book" class="patient-panel" role="tabpanel" aria-labelledby="tab-booking" hidden>' +
+      '<div class="booking-card"><div class="booking-heading"><span>📅</span><div><b>اطلب حجز أشعة</b><small>حدد الفحص والوقت المناسب، والمركز هيتواصل معاك للتأكيد</small></div></div>' +
+      '<form id="booking-form" novalidate><label class="l" for="bn">الاسم بالكامل *</label><input id="bn" class="fld" type="text" autocomplete="name" maxlength="60" placeholder="اسم المريض">' +
+      '<label class="l" for="bp">رقم الموبايل *</label><input id="bp" class="fld n" type="tel" inputmode="tel" autocomplete="tel" maxlength="20" placeholder="01xxxxxxxxx" dir="ltr">' +
+      '<label class="l" for="be">نوع الأشعة *</label><select class="fld" id="be"><option value="">اختار نوع الفحص</option><option>أشعة عادية</option><option>سونار</option><option>أشعة مقطعية</option><option>رنين مغناطيسي</option><option>دوبلر</option><option>ماموجرام</option><option>فحص آخر</option></select>' +
+      '<div class="booking-grid"><div><label class="l" for="bd">اليوم المناسب *</label><input id="bd" class="fld" type="date"></div><div><label class="l" for="bs">الوقت المفضل *</label><select class="fld" id="bs"><option>أي وقت</option><option>صباحًا</option><option>ظهرًا</option><option>مساءً</option></select></div></div>' +
+      '<label class="l" for="bnote">ملاحظات للحجز (اختياري)</label><textarea id="bnote" class="fld" rows="2" maxlength="180" placeholder="مثلاً: محتاج أعرف تعليمات التحضير"></textarea>' +
+      '<p class="booking-note">🔒 بيانات التواصل تُستخدم لمتابعة طلب الحجز. الموعد مش مؤكد غير لما موظف المركز يتواصل معاك.</p><div id="bmsg" class="booking-msg" role="status" aria-live="polite"></div>' +
+      '<button class="btn w" type="submit" id="bgo">إرسال طلب الحجز ←</button></form></div>' +
+    '</section></div>';
+  /* Two distinct patient journeys: results and a new appointment request. */
+  function chooseJourney(which) {
+    var booking = which === 'booking';
+    $('patient-results').hidden = booking;
+    $('patient-book').hidden = !booking;
+    [['tab-results', !booking], ['tab-booking', booking]].forEach(function (x) {
+      var b = $(x[0]); b.classList.toggle('on', x[1]); b.setAttribute('aria-selected', String(x[1]));
+    });
+    $('patient-title').innerHTML = booking ? 'احجز فحصك<br><span>في خطوات بسيطة</span>' :
+      (TC ? 'نتيجتك<br><span>بموبايلك بس.</span>' : 'أهلاً بيك 🌿<br><span>نتيجتك</span> جاهزة في ثواني');
+    try { history.replaceState(null, '', location.pathname + (booking ? '#book' : '#results')); } catch (e) {}
+  }
+  $('tab-results').onclick = function () { chooseJourney('results'); };
+  $('tab-booking').onclick = function () { chooseJourney('booking'); };
+  if (location.hash === '#book') chooseJourney('booking');
+  (function setupBooking() {
+    var input = $('bd'), d = new Date(), loc = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+    input.min = loc.toISOString().slice(0, 10); loc.setUTCDate(loc.getUTCDate() + 90); input.max = loc.toISOString().slice(0, 10);
+    $('booking-form').onsubmit = function (e) {
+      e.preventDefault();
+      var name = $('bn').value.trim(), phone = K.digits($('bp').value), exam = $('be').value, day = input.value,
+        slot = $('bs').value, note = $('bnote').value.trim(), msg = $('bmsg'), btn = $('bgo');
+      if (phone.length === 12 && phone.slice(0, 2) === '20') phone = phone.slice(2);
+      if (phone.length === 10 && phone.charAt(0) === '1') phone = '0' + phone;
+      if (name.length < 3 || !/^01[0125]\d{8}$/.test(phone) || !exam || !day || !slot) {
+        msg.textContent = 'كمّل الاسم ورقم موبايل مصري صحيح ونوع الأشعة واليوم المناسب.'; msg.className = 'booking-msg err'; return;
+      }
+      if (day < input.min || day > input.max) {
+        msg.textContent = 'اختار يوم من النهارده ولحد 90 يوم قدام.'; msg.className = 'booking-msg err'; return;
+      }
+      btn.disabled = true; btn.textContent = 'بنبعت طلبك…'; msg.textContent = ''; msg.className = 'booking-msg';
+      fetch(location.pathname.replace(/\/$/, '') + '/book', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: name, phone: phone, exam: exam, day: day, slot: slot, note: note })
+      }).then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) throw Error(j.message || 'محصلش — جرّب تاني'); return j; }); })
+        .then(function (j) {
+          $('booking-form').innerHTML = '<div class="booking-success" role="status"><span>✅</span><h2>طلب حجزك وصل للمركز</h2><p>رقم الطلب #' + esc(j.id) + '</p><p>المركز هيتواصل معاك على الموبايل علشان يأكد اليوم والوقت. <b>ده طلب حجز، مش موعد مؤكد لسه.</b></p><button type="button" class="btn g w" id="book-again">طلب حجز جديد</button></div>';
+          $('book-again').onclick = function () { location.reload(); };
+        }).catch(function (err) { msg.textContent = err.message; msg.className = 'booking-msg err'; btn.disabled = false; btn.textContent = 'إرسال طلب الحجز ←'; });
+    };
+  })();
   /* 4.95 · «اطلب نتيجتك» → a request inside the system (the center sees it live on its cases page) — no WhatsApp */
   var wa0 = $('wa0');
   if (wa0) wa0.onclick = function () {
@@ -100,5 +153,5 @@
     var b = $('wa'); if (!b) return;
     b.onclick = function () { var f = form(''); if (f) askIn(ph, f.name, f.note, b); };
   }
-  $('go').onclick = go; $('ph').onkeydown = function (e) { if (e.key === 'Enter') go(); };
+  if ($('go') && $('ph')) { $('go').onclick = go; $('ph').onkeydown = function (e) { if (e.key === 'Enter') go(); }; }
 })();

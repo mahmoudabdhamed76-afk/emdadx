@@ -6,10 +6,10 @@
 ════════════════════════════════════════════════════════════════════ */
 (function () {
   'use strict';
-  var C = window.CD || {}, H = document.documentElement, T = C.theme === 'c' ? 'c' : 'a';
+  var C = window.CD || {}, H = document.documentElement, T = ['a', 'b', 'c', 'd'].indexOf(C.theme) >= 0 ? C.theme : 'a';
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function getDark() { try { var v = localStorage.getItem('ozx_dark'); if (v === '1') return true; if (v === '0') return false; } catch (e) {} return !!(window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches); }
-  function setDark(on) { H.classList.toggle('dk', on); var m = document.querySelector('meta[name=theme-color]'); if (m) m.content = on ? (T === 'c' ? '#17110D' : '#061416') : (T === 'c' ? '#FBF6EF' : '#F2FBFA'); var b = document.getElementById('dkb'); if (b) b.innerHTML = on ? '☀️' : '🌙'; }
+  function setDark(on) { H.classList.toggle('dk', on); var m = document.querySelector('meta[name=theme-color]'); if (m) m.content = on ? ({ a: '#061416', b: '#091C32', c: '#17110D', d: '#090D20' }[T]) : ({ a: '#F2FBFA', b: '#EDF6FF', c: '#FBF6EF', d: '#11172D' }[T]); var b = document.getElementById('dkb'); if (b) b.innerHTML = on ? '☀️' : '🌙'; }
   H.classList.add('tx', 't' + T); setDark(getDark());
   function logo(cls) { return C.logo ? '<img class="' + (cls || '') + '" src="' + C.logo + '" alt="">' : '<b class="' + (cls || '') + ' ini">' + esc(String(C.center || 'م').trim().charAt(0)) + '</b>'; }
   var name = String(C.center || '').trim(), nm2 = /^مركز/.test(name) ? name : 'مركز ' + name;
@@ -17,11 +17,11 @@
   function splashHtml() {
     if (T === 'c') return '<div class="spl sc"><div class="sun"></div><div class="lg2">' + logo('') + '<div><b>' + esc(name) + '</b><small>نتيجة الأشعة على موبايلك</small></div></div>' +
       '<h1 class="big"><span>ألف</span><span class="o">سلامة</span><span>عليك</span></h1><p class="pp">' + esc(nm2) + ' بيرحّب بيكم على مدار اليوم — وإحنا معاك لحد ما تطمّن.</p>' +
-      '<div class="hc"><span class="ht">♥</span><svg viewBox="0 0 200 40"><path d="M0 22h60l8-14 10 28 10-34 8 20h104" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg><b>معاك 24 ساعة</b></div>' +
+      '<div class="hc"><span class="ht">♥</span><svg viewBox="0 0 200 40"><path d="M0 22h60l8-14 10 28 10-34 8 20h104" fill="none" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg><b>نتيجتك على موبايلك</b></div>' +
       '<div class="pills"><span>☀ الصبح</span><span>🌙 بالليل</span></div><button class="go" type="button">ادخل على نتيجتك <i>←</i></button></div>';
     return '<div class="spl sa"><i class="bl b1"></i><i class="bl b2"></i><div class="lgw"><span class="r r3"></span><span class="r r2"></span><span class="r"></span>' + logo('') + '</div>' +
       '<h1>ألف سلامة <i>♥</i></h1><h2>' + esc(nm2) + '</h2><p>بيرحّب بيكم على مدار اليوم<br>نتيجتك معاك على موبايلك في أي وقت</p>' + ECG +
-      '<div class="h24"><b></b>شغالين 24 ساعة</div><button class="go" type="button">شوف نتيجتك ←</button></div>';
+      '<div class="h24"><b></b>النتائج متاحة أونلاين</div><button class="go" type="button">شوف نتيجتك ←</button></div>';
   }
   function splash() {
     if (C.missing) return;

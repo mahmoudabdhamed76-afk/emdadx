@@ -43,6 +43,14 @@ try {
   db.exec('CREATE TABLE IF NOT EXISTS case_ask (id INTEGER PRIMARY KEY AUTOINCREMENT, customer_id TEXT NOT NULL, name TEXT, phone TEXT, phash TEXT, note TEXT, at TEXT, done INTEGER NOT NULL DEFAULT 0); CREATE INDEX IF NOT EXISTS ix_case_ask ON case_ask (customer_id, done, id)');
   db.exec('CREATE UNIQUE INDEX IF NOT EXISTS ux_case_pub ON case_site (pub); CREATE INDEX IF NOT EXISTS ix_case_phash ON case_item (customer_id, phash)');
 } catch (e) { console.error('[cases] migrate', e.message); }
+/* Appointment requests are kept separately from medical studies. A request is NOT a confirmed slot. */
+db.exec(`CREATE TABLE IF NOT EXISTS case_booking (
+  id INTEGER PRIMARY KEY AUTOINCREMENT, customer_id TEXT NOT NULL, name TEXT NOT NULL,
+  phone TEXT NOT NULL, exam TEXT NOT NULL, day TEXT NOT NULL, slot TEXT NOT NULL,
+  note TEXT, at TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'new', updated_at TEXT
+);
+CREATE INDEX IF NOT EXISTS ix_case_booking ON case_booking (customer_id, status, id);`);
+
 
 const DIR = path.join(DATA_DIR, 'cases');
 try { fs.mkdirSync(DIR, { recursive: true }); } catch (e) {}
@@ -74,6 +82,13 @@ let LOOKUP = null;   /* server.js: customer id → the center's phone in the ERP
 function setLookup(f) { LOOKUP = typeof f === 'function' ? f : null; }
 function waFor(cid, wa) { const w = waOf(wa); if (w) return w; try { return LOOKUP ? waOf(LOOKUP(cid)) : ''; } catch (e) { return ''; } }
 function asksOf(cid) { return db.prepare('SELECT id, name, phone, note, at FROM case_ask WHERE customer_id = ? AND done = 0 ORDER BY id DESC LIMIT 60').all(cid); }
+function bookingsOf(cid) { return db.prepare("SELECT id, name, phone, exam, day, slot, note, at FROM case_booking WHERE customer_id = ? AND status = 'new' ORDER BY id DESC LIMIT 100").all(cid); }
+function bookingPhone(p) {
+  let d = String(p || '').replace(/[٠-٩]/g, c => String(c.charCodeAt(0) - 0x660)).replace(/\D/g, '');
+  if (d.length === 12 && d.startsWith('20')) d = d.slice(2);
+  if (d.length === 10 && d.startsWith('1')) d = '0' + d;
+  return /^01[0125]\d{8}$/.test(d) ? d : '';
+}
 function maskName(n) { return String(n || '').trim().split(/\s+/).slice(0, 3).map(w => w.charAt(0) + '•••').join(' '); }
 
 /* ── center session cookie: code.exp.ver.sig (logs out everywhere when the password changes) ── */
@@ -123,9 +138,9 @@ function html(res, code, s) { res.writeHead(code, { 'Content-Type': 'text/html; 
 
 /* ════════ public routes ════════ */
 async function handle(req, res, pathname) {
-  let m = /^\/k\/([A-Za-z0-9]{8})(\/(login|logout|list|live|case|relay|item|fixed|wa|ask|logo|views|theme)(\/[A-Za-z0-9]{1,20})?(\/(stop|start|delete|wrap|done))?)?\/?$/.exec(pathname);
+  let m = /^\/k\/([A-Za-z0-9]{8})(\/(login|logout|list|live|case|relay|item|fixed|wa|ask|bookings|logo|views|theme)(\/[A-Za-z0-9]{1,20})?(\/(stop|start|delete|wrap|done))?)?\/?$/.exec(pathname);
   if (m) return centerRoute(req, res, m);
-  m = /^\/h\/([A-Za-z0-9]{8})(\/(find|ask))?\/?$/.exec(pathname);
+  m = /^\/h\/([A-Za-z0-9]{8})(\/(find|ask|book))?\/?$/.exec(pathname);
   if (m) return findRoute(req, res, m[1], m[3] || '');
   m = /^\/v\/([A-Za-z0-9]{12})(\/(file|ask))?\/?$/.exec(pathname);
   if (m && m[3] === 'ask') return viewAsk(req, res, m[1]);
@@ -159,7 +174,7 @@ async function centerRoute(req, res, m) {
   if (sub === 'list' && req.method === 'GET') {
     const rows = db.prepare('SELECT * FROM case_item WHERE customer_id = ? ORDER BY id DESC LIMIT 500').all(cid).map(itemOut);
     const recent = db.prepare('SELECT v.token, v.at, v.dev, v.via, v.src, i.patient, i.exam FROM case_view v JOIN case_item i ON i.token = v.token WHERE v.customer_id = ? ORDER BY v.id DESC LIMIT 30').all(cid);
-    send(res, 200, { list: rows, online: (LIVE.get(cid) || new Set()).size, asks: asksOf(cid), recent }); return true;
+    send(res, 200, { list: rows, online: (LIVE.get(cid) || new Set()).size, asks: asksOf(cid), bookings: bookingsOf(cid), recent }); return true;
   }
   if (sub === 'live' && req.method === 'GET') {
     res.writeHead(200, { 'Content-Type': 'text/event-stream; charset=utf-8', 'Cache-Control': 'no-store', Connection: 'keep-alive', 'X-Accel-Buffering': 'no' });
@@ -214,6 +229,13 @@ async function centerRoute(req, res, m) {
     else { let b = {}; try { b = await readJson(req, 500); } catch (e) {} const ph = phashOf(b.phone); if (ph) db.prepare('UPDATE case_ask SET done = 1 WHERE customer_id = ? AND phash = ? AND done = 0').run(cid, ph); }
     send(res, 200, { ok: true, asks: asksOf(cid) }); return true;
   }
+  if (sub === 'bookings' && req.method === 'POST' && arg && act === 'done') {
+    const id = Number(arg);
+    if (!Number.isSafeInteger(id) || id <= 0) { send(res, 400, { message: 'رقم الطلب غير صحيح' }); return true; }
+    const result = db.prepare("UPDATE case_booking SET status = 'contacted', updated_at = ? WHERE id = ? AND customer_id = ? AND status = 'new'").run(nowTs(), id, cid);
+    if (!result.changes) { send(res, 404, { message: 'الطلب مش موجود أو اتقفل قبل كده' }); return true; }
+    send(res, 200, { ok: true, bookings: bookingsOf(cid) }); return true;
+  }
   /* 4.98 · the center's logo: shown on its pages and in the middle of every QR */
   if (sub === 'logo' && req.method === 'POST') {
     let b = {}; try { b = await readJson(req, 400000); } catch (e) { send(res, 413, { message: 'الصورة كبيرة — اختار صورة أصغر' }); return true; }
@@ -224,7 +246,7 @@ async function centerRoute(req, res, m) {
   }
   if (sub === 'theme' && req.method === 'POST') {
     let b = {}; try { b = await readJson(req, 200); } catch (e) {}
-    const t = b.theme === 'c' ? 'c' : 'a'; db.prepare('UPDATE case_site SET theme = ? WHERE customer_id = ?').run(t, cid);
+    const t = ['a','b','c','d'].includes(b.theme) ? b.theme : 'a'; db.prepare('UPDATE case_site SET theme = ? WHERE customer_id = ?').run(t, cid);
     send(res, 200, { ok: true, theme: t }); return true;
   }
   /* 4.98 · who opened a case: when, which device, through which barcode */
@@ -330,6 +352,34 @@ async function findRoute(req, res, pub, sub) {
   const find = sub === 'find';
   const ip = ipOf(req);
   const site = db.prepare('SELECT * FROM case_site WHERE pub = ? AND active = 1').get(pub);
+  if (sub === 'book') {
+    if (req.method !== 'POST') return false;
+    if (!site) { send(res, 404, { message: 'المركز غير متاح' }); return true; }
+    if (limited('hb:' + pub + ':' + ip, 8, 3600e3)) { send(res, 429, { message: 'طلبات كتير — حاول بعد شوية' }); return true; }
+    let b = {}; try { b = await readJson(req, 2000); } catch (e) { send(res, 400, { message: 'الطلب غير صحيح' }); return true; }
+    const name = clean(b.name, 60), phone = bookingPhone(b.phone), exam = clean(b.exam, 50),
+      day = String(b.day || ''), slot = String(b.slot || ''), note = clean(b.note, 180);
+    const exams = ['أشعة عادية', 'سونار', 'أشعة مقطعية', 'رنين مغناطيسي', 'دوبلر', 'ماموجرام', 'فحص آخر'];
+    const slots = ['صباحًا', 'ظهرًا', 'مساءً', 'أي وقت'];
+    if (name.length < 3 || !phone || !exams.includes(exam) || !slots.includes(slot)) {
+      send(res, 400, { message: 'راجع الاسم والموبايل ونوع الفحص والوقت المفضل' }); return true;
+    }
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(day);
+    const stamp = match ? Date.UTC(+match[1], +match[2] - 1, +match[3]) : NaN;
+    const start = Date.parse(nowTs().slice(0, 10) + 'T00:00:00Z');
+    if (!Number.isFinite(stamp) || new Date(stamp).toISOString().slice(0, 10) !== day || stamp < start || stamp > start + 90 * 864e5) {
+      send(res, 400, { message: 'اختار يوم من النهارده ولحد 90 يوم قدام' }); return true;
+    }
+    if (limited('hbp:' + pub + ':' + phashOf(phone), 3, 864e5)) {
+      send(res, 429, { message: 'في طلبات كتير للرقم ده — تواصل مع المركز' }); return true;
+    }
+    const rec = db.prepare('INSERT INTO case_booking (customer_id, name, phone, exam, day, slot, note, at) VALUES (?,?,?,?,?,?,?,?)')
+      .run(site.customer_id, name, phone, exam, day, slot, note, nowTs());
+    const bookings = bookingsOf(site.customer_id);
+    tell(site.customer_id, 'booking', { bookings, name, exam, day });
+    send(res, 201, { ok: true, id: Number(rec.lastInsertRowid), status: 'pending' });
+    return true;
+  }
   if (sub === 'ask') {   /* 4.92 · «ملقتش نتيجتي» → the center sees it live in its cases page (and the patient's WhatsApp opens) */
     if (req.method !== 'POST') return false;
     if (!site) { send(res, 404, { message: 'مش موجود' }); return true; }
@@ -393,7 +443,7 @@ async function adminApi(req, res, pathname, me) {
       return send(res, 200, { ok: true, pass, site: siteOut(db.prepare('SELECT * FROM case_site WHERE customer_id = ?').get(cid)) });
     }
     if (!cur) return send(res, 404, { message: 'مفيش لينك حالات للمركز ده' });
-    if (pathname === '/api/portal/cases/theme') { db.prepare('UPDATE case_site SET theme = ? WHERE customer_id = ?').run(b.theme === 'c' ? 'c' : 'a', cid); return send(res, 200, { ok: true }); }
+    if (pathname === '/api/portal/cases/theme') { db.prepare('UPDATE case_site SET theme = ? WHERE customer_id = ?').run(['a','b','c','d'].includes(b.theme) ? b.theme : 'a', cid); return send(res, 200, { ok: true }); }
     if (pathname === '/api/portal/cases/wa') { const w = waOf(b.wa); if (b.wa && !w) return send(res, 400, { message: 'رقم الواتساب مش مظبوط' }); if (!b.ifEmpty || !cur.wa) db.prepare('UPDATE case_site SET wa = ? WHERE customer_id = ?').run(w ? clean(b.wa, 20) : null, cid); return send(res, 200, { ok: true, site: siteOut(db.prepare('SELECT * FROM case_site WHERE customer_id = ?').get(cid)) }); }
     if (pathname === '/api/portal/cases/pass') { const pass = newPass(); db.prepare('UPDATE case_site SET pass = ?, ver = ver + 1 WHERE customer_id = ?').run(hashPass(pass), cid); for (const r of (LIVE.get(cid) || [])) { try { r.end(); } catch (e) {} } return send(res, 200, { ok: true, pass }); }
     if (pathname === '/api/portal/cases/stop') { db.prepare('UPDATE case_site SET active = ? WHERE customer_id = ?').run(b.on ? 1 : 0, cid); if (!b.on) for (const r of (LIVE.get(cid) || [])) { try { r.end(); } catch (e) {} } return send(res, 200, { ok: true, site: siteOut(db.prepare('SELECT * FROM case_site WHERE customer_id = ?').get(cid)) }); }
