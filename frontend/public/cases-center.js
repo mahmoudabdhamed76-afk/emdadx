@@ -358,11 +358,18 @@
       previouslyOpen[d.dataset.qrKind] = d.open;
     });
     var rows = q.recent || [];
+    function visitTime(ts) {
+      var m = /(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2})/.exec(String(ts || ''));
+      if (!m) return String(ts || '—');
+      var h = Number(m[4]);
+      return (+m[3]) + '/' + (+m[2]) + '/' + m[1] + ' · ' +
+        ((h % 12) || 12) + ':' + m[5] + (h < 12 ? ' ص' : ' م');
+    }
     function group(kind, label, number, symbol) {
       var log = rows.filter(function (r) { return r.kind === kind; });
       var times = log.length ? log.map(function (r) {
         return '<li><span>◷ فتح الرابط</span><time datetime="' + esc(String(r.at || '').replace(' ', 'T')) +
-          '">' + esc(when(r.at) || r.at) + '</time></li>';
+          '">' + esc(visitTime(r.at)) + '</time></li>';
       }).join('') : '<li class="qrd-qr-empty">مفيش مواعيد فتح مسجلة حديثًا للقسم ده.</li>';
       var tail = number > log.length ? '<p class="qrd-qr-history-note">بنحتفظ بآخر ' + log.length +
         ' زيارة تفصيليًا هنا، والعدد الإجمالي محفوظ كامل.</p>' : '';
