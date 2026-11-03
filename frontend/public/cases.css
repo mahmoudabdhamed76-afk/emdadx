@@ -550,3 +550,69 @@ html.tc .v .pt h1{font-family:'Zain','IBM Plex Sans Arabic';font-size:34px}
 .tx .v .top .tn + #dkb.in{margin-inline-start:auto}
 .tx .v .btn.w{padding:10px 16px;max-width:none}
 .tx .v .pxt button.on{background:var(--pp);color:#fff}
+
+
+/* 5.02 · patient portal: two journeys + four center-selected looks */
+html.tb{--pb:#EDF6FF;--pb2:#FFFFFF;--pc:#FFFFFF;--pi:#102C4C;--pm:#58708A;--pp:#145FB4;--pp2:#2CA7EC;--pl:#D9EBFC;--pin:#F3F9FF;--pacc:#D94A72;--pbtn:linear-gradient(135deg,#1359AE,#2EA7E6);--pbc:#fff;--psh:0 22px 46px -28px rgba(15,79,149,.38);--pri:#DCEFFF;--pri2:#E1F5FE}
+html.tb.dk{--pb:#091C32;--pb2:#0E233D;--pc:#112A46;--pi:#EDF7FF;--pm:#A5BED5;--pp:#75BDFB;--pp2:#39A9F0;--pl:#254461;--pin:#0D2440;--pri:#183B60;--pri2:#153C58;--psh:0 22px 46px -28px #000}
+html.td{--pb:#11172D;--pb2:#1C1E3E;--pc:#202845;--pi:#F6F2FF;--pm:#C0BED6;--pp:#BFB0FF;--pp2:#9A81F1;--pl:#343B60;--pin:#171F39;--pacc:#F8A4CD;--pbtn:linear-gradient(135deg,#725CE0,#9C82F1);--pbc:#fff;--psh:0 24px 52px -24px rgba(5,9,30,.72);--pri:#3D3565;--pri2:#263960}
+html.td.dk{--pb:#090D20;--pb2:#11172D;--pc:#171E36;--pi:#F6F2FF;--pm:#ACAFC7;--pp:#CEBEFF;--pp2:#A791FF;--pl:#2E3557;--pin:#10172C;--pri:#302A59;--pri2:#203451;--psh:0 24px 52px -24px #000}
+html.tb body.v{background:linear-gradient(175deg,var(--pb),var(--pb2) 66%) fixed}
+html.td body.v{background:radial-gradient(circle at 0% 0%,#30355B 0%,var(--pb) 48%,var(--pb2) 110%) fixed}
+html.td .v .ttl{font-family:'Zain','IBM Plex Sans Arabic',sans-serif;font-size:39px;letter-spacing:-.4px}
+html.tb .v .ttl{font-size:31px}
+html.td .v .top .tlg{background:#fff}
+html.tb .v .srch,html.td .v .srch{backdrop-filter:blur(16px)}
+html.td .v input,html.td .v select,html.td .v textarea{color-scheme:dark}
+html.td .v .btn.g{color:var(--pi)}
+html.tb .v .btn:focus-visible,html.td .v .btn:focus-visible{outline:3px solid var(--pp2);outline-offset:3px}
+.sw2.b i:nth-child(1){background:#EDF6FF;border:1px solid #D9EBFC}.sw2.b i:nth-child(2){background:#2CA7EC}.sw2.b i:nth-child(3){background:#145FB4}
+.sw2.d i:nth-child(1){background:#11172D}.sw2.d i:nth-child(2){background:#725CE0}.sw2.d i:nth-child(3){background:#BFB0FF}
+.thm .thg button:focus-visible{outline:3px solid #818CF8;outline-offset:2px}
+
+/* First screen: explicit choices for radiology result vs appointment. */
+.patient-chooser{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:20px;animation:up .55s .12s both}
+.patient-chooser button{appearance:none;-webkit-appearance:none;border:1.5px solid var(--pl);color:var(--pi);background:var(--pc);border-radius:22px;padding:15px 10px;min-width:0;min-height:124px;box-shadow:var(--psh);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer;text-align:center;transition:transform .2s,border-color .2s,background .2s}
+.patient-chooser button span{font-size:27px;line-height:1.2}
+.patient-chooser button b{font-size:17px;line-height:1.35;white-space:nowrap}
+.patient-chooser button small{font-size:11px;color:var(--pm);line-height:1.5}
+.patient-chooser button.on{border-color:var(--pp2);background:var(--pri)}
+.patient-chooser button.on b{color:var(--pp)}
+.patient-chooser button:active{transform:scale(.96)}
+.patient-chooser button:focus-visible{outline:3px solid var(--pp2);outline-offset:3px}
+.patient-panel[hidden]{display:none!important}
+.patient-panel .srch{margin-top:14px}
+.patient-panel{animation:up .35s both}
+.booking-card{margin-top:14px;background:var(--pc);border:1px solid var(--pl);border-radius:26px;padding:20px;box-shadow:var(--psh)}
+.booking-heading{display:flex;align-items:center;gap:12px;margin-bottom:18px}
+.booking-heading>span{width:52px;height:52px;border-radius:18px;background:var(--pri);display:grid;place-items:center;font-size:26px;flex:none}
+.booking-heading b{display:block;font-size:19px;color:var(--pi);font-weight:800}
+.booking-heading small{display:block;font-size:12.5px;color:var(--pm);margin-top:3px;line-height:1.5}
+.booking-card form{display:flex;flex-direction:column;gap:4px}
+.booking-card .l{display:block;margin:11px 1px 5px!important;font-size:12.5px;color:var(--pm)}
+.booking-card .fld{display:block;width:100%;font-family:inherit;font-size:15px!important;min-height:52px}
+.booking-card textarea.fld{min-height:86px;resize:vertical}
+.booking-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.booking-grid>div{min-width:0}
+.booking-card #bd{min-width:0;padding-inline:9px;font-size:13px!important}
+.booking-card #bs{padding-inline:7px;font-size:13px!important}
+.booking-card #bp{font-size:20px!important;letter-spacing:.7px}
+.booking-note{font-size:12px;line-height:1.8;color:var(--pm);margin:11px 0 3px}
+.booking-msg{font-weight:700;font-size:12.5px;min-height:15px;text-align:center;color:var(--pp)}
+.booking-msg.err{color:var(--pacc)}
+.booking-success{text-align:center;padding:20px 4px}
+.booking-success>span{font-size:48px;display:block;animation:pop .5s both}
+.booking-success h2{font-size:22px;margin:10px 0;color:var(--pp)}
+.booking-success p{font-size:13px;line-height:1.8;color:var(--pm)}
+.bookings .ah{background:linear-gradient(125deg,#EFF6FF,#fff);border-bottom-color:#DBEAFE}
+.bookings .ah .ping{background:linear-gradient(135deg,#2563EB,#06B6D4)}
+.bookings .ar .ai{background:#EFF6FF}
+.bookings .ar small{display:block;overflow-wrap:anywhere}
+.bookings .ar .acts{justify-content:stretch}
+.bookings .ar .acts>*{flex:1;text-align:center;display:inline-flex;justify-content:center;align-items:center;text-decoration:none}
+@media(max-width:375px){
+  .patient-chooser button{padding:12px 6px;min-height:112px}
+  .patient-chooser button b{font-size:14.5px}.patient-chooser button small{font-size:10px}
+  .booking-grid{gap:7px}.booking-card{padding:14px}
+}
+@media(prefers-reduced-motion:reduce){.patient-panel,.patient-chooser{animation:none}}
