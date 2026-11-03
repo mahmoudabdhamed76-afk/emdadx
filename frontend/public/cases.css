@@ -1263,3 +1263,106 @@ body.qrd-violet .qrd-qr-accordion[open]{border-color:#C9BFFF}
   body.qrd-center .qrd-qr-accordion summary{gap:6px;padding:9px}
   body.qrd-center .qrd-qr-label>b{font-size:12px}
 }
+
+
+/* V5.08 patient home: four compact service tiles (2x2 even on phones) */
+html.patient-daylight body.v .pv2-page .patient-chooser{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:11px;margin:0;align-items:stretch;
+}
+html.patient-daylight body.v .pv2-page .patient-chooser button.pv2-service{
+  min-height:154px;max-width:none;min-width:0;padding:15px 14px 38px;
+  display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-start;gap:5px;
+  border-radius:23px;box-shadow:0 13px 28px -24px rgba(47,36,30,.3);
+}
+html.patient-daylight body.v .pv2-page .pv2-service-icon{
+  width:43px;height:43px;font-size:23px;border-radius:15px;margin-bottom:7px;
+  flex:none;display:grid;place-items:center;
+}
+html.patient-daylight body.v .pv2-page .pv2-service b{
+  font-size:clamp(15px,3.6vw,18px);line-height:1.35;
+  overflow-wrap:anywhere;
+}
+html.patient-daylight body.v .pv2-page .pv2-service small{
+  font-size:11.5px;line-height:1.5;display:block;
+}
+html.patient-daylight body.v .pv2-page .pv2-service-go{
+  width:28px;height:28px;border-radius:10px;bottom:10px;left:11px;
+}
+html.patient-daylight body.v .pv2-page #tab-complaint .pv2-service-icon{
+  background:#FFF0E8;
+}
+html.patient-daylight body.v .pv2-page #tab-report .pv2-service-icon{
+  background:#E7F3FF;
+}
+html.patient-daylight body.v .pv2-extra-panel .booking-card{
+  background:var(--pc);border-radius:24px;border:1px solid var(--pl);
+}
+html.patient-daylight body.v .pv2-request-card .fld{
+  font-size:16px!important;line-height:1.5;
+}
+html.patient-daylight body.v .pv2-request-card textarea.fld{
+  display:block;min-height:112px;resize:vertical;padding:13px 15px;
+}
+.pv2-complaint-intro{
+  display:flex;align-items:center;gap:12px;overflow:hidden;
+  background:var(--pri);border:1px solid var(--pl);border-radius:19px;
+  padding:16px;margin-bottom:20px;
+}
+.pv2-complaint-intro>span{
+  display:grid;place-items:center;width:44px;height:44px;border-radius:14px;background:#fff;
+  font-size:24px;flex:none;
+}
+.pv2-complaint-intro>p{
+  color:var(--pi);font-size:clamp(15px,3.4vw,18px);font-weight:800;
+  line-height:1.8;margin:0;overflow-wrap:break-word;max-width:100%;
+}
+.pv2-complaint-intro.pv2-play>p{
+  animation:pv2ComplaintReveal 1.3s cubic-bezier(.23,.74,.24,1) both;
+}
+.pv2-complaint-intro.pv2-play>span{
+  animation:pv2IntroPop .6s cubic-bezier(.22,1.25,.4,1) both;
+}
+@keyframes pv2ComplaintReveal{
+  0%{clip-path:inset(0 0 0 100%);opacity:0;transform:translateX(12px)}
+  100%{clip-path:inset(0 0 0 0);opacity:1;transform:none}
+}
+@keyframes pv2IntroPop{
+  from{transform:scale(.55) rotate(-12deg);opacity:0}
+  to{transform:scale(1);opacity:1}
+}
+html.patient-daylight body.v .pv2-upload-images{
+  border:1.5px dashed var(--pp2);border-radius:17px;padding:13px;
+  background:var(--pin);margin-bottom:13px;
+}
+html.patient-daylight body.v .pv2-upload-images input[type=file]{
+  font-size:13px!important;line-height:1.7;padding:10px;
+  background:#fff;border-radius:12px;max-width:100%;
+}
+.pv2-upload-images p{font-size:11px;color:var(--pm);margin:7px 3px 2px}
+.pv2-image-preview{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:8px}
+.pv2-image-preview img{
+  width:100%;height:90px;object-fit:contain;border:1px solid var(--pl);
+  border-radius:12px;background:white;
+}
+@media(max-width:420px){
+  html.patient-daylight body.v .pv2-page .patient-chooser{gap:9px}
+  html.patient-daylight body.v .pv2-page .patient-chooser button.pv2-service{
+    min-height:153px;padding:12px 10px 38px;border-radius:20px;
+  }
+  html.patient-daylight body.v .pv2-page .pv2-service-icon{
+    width:40px;height:40px;font-size:21px;margin-bottom:5px;
+  }
+  html.patient-daylight body.v .pv2-page .pv2-service b{font-size:15px}
+  html.patient-daylight body.v .pv2-page .pv2-service small{font-size:10.5px}
+  .pv2-complaint-intro{padding:12px;gap:8px}
+  .pv2-complaint-intro>span{width:35px;height:35px;font-size:21px}
+}
+@media(max-width:340px){
+  html.patient-daylight body.v .pv2-page .patient-chooser button.pv2-service{min-height:165px;padding:10px 8px 37px}
+  html.patient-daylight body.v .pv2-page .pv2-service b{font-size:14px}
+  html.patient-daylight body.v .pv2-page .pv2-service small{font-size:10px}
+}
+@media(prefers-reduced-motion:reduce){
+  .pv2-complaint-intro.pv2-play>p,.pv2-complaint-intro.pv2-play>span{animation:none!important;clip-path:none!important;opacity:1!important}
+}
