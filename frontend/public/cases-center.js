@@ -545,7 +545,10 @@
   function bookings() {
     var el = $('bookings'); if (!el) return;
     var L = ui.bookings || [];
-    if (!L.length) { el.innerHTML = ''; return; }
+    if (!L.length) {
+      el.innerHTML = '<div class="asks bookings"><div class="ah"><span class="ping">📅</span><div><b>طلبات حجز أشعة</b><small>طلبات المواعيد الواردة من المرضى</small></div><em>0</em></div>' +
+        '<p class="qrd-rail-empty">✅ مفيش طلبات حجز جديدة حاليًا</p></div>'; return;
+    }
     el.innerHTML = '<div class="asks bookings"><div class="ah"><span class="ping">📅</span><div><b>طلبات حجز أشعة</b><small>في انتظار اتصال المركز بالمريض</small></div><em>' + L.length + '</em></div>' +
       L.map(function (r, i) {
         return '<div class="ar" style="animation-delay:' + i * 45 + 'ms" data-book="' + r.id + '"><span class="ai">📅</span><div><b>' + esc(r.name) + '</b><small class="n">' + esc(r.phone) + '</small><small>' + esc(r.exam) + ' · ' + esc(r.day) + ' · ' + esc(r.slot) + '</small>' +
@@ -562,7 +565,10 @@
   /* ── 4.92 · patients who didn't find their result and asked on WhatsApp ── */
   function asks() {
     var el = $('asks'); if (!el) return; var L = ui.asks || [];
-    if (!L.length) { el.innerHTML = ''; return; }
+    if (!L.length) {
+      el.innerHTML = '<div class="asks"><div class="ah"><span class="ping">📨</span><div><b>طلبات نتيجة الأشعة</b><small>طلبات المساعدة في العثور على النتائج</small></div><em>0</em></div>' +
+        '<p class="qrd-rail-empty">✅ مفيش طلبات نتيجة معلّقة</p></div>'; return;
+    }
     el.innerHTML = '<div class="asks"><div class="ah"><span class="ping">📨</span><div><b>مرضى بيطلبوا نتايجهم</b><small>دوّروا بالباركود الثابت ومالقوش نتيجتهم</small></div><em>' + L.length + '</em></div>' +
       L.map(function (a, i) { return '<div style="animation-delay:' + (i * 60) + 'ms" class="ar' + (ui.newAsk && K.last10(a.phone) === ui.newAsk ? ' new' : '') + '" data-id="' + a.id + '"><span class="ai">🙋</span><div><b>' + esc(a.name) + ' <span class="n" style="font-weight:600;color:var(--mut)">' + esc(a.phone) + '</span></b><small>' + when(a.at) + (a.note ? ' · ' + esc(a.note) : '') + '</small></div><div class="acts"><button class="btn sm" data-k="up">📂 ارفع حالته</button><button class="ic2 wa" data-k="wa" data-tip="واتساب">' + ic('wa') + '</button><button class="ic2" data-k="ok" data-tip="خلصت">' + ic('check') + '</button></div></div>'; }).join('') + '</div>';
     ui.newAsk = null;
