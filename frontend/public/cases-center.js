@@ -184,11 +184,13 @@
   /* 5.01 · the look of the patient's pages (A «نَفَس» / C «دفا») — the patient can switch to night mode himself */
   function themeCard() {
     var el = $('thm'); if (!el) return; var t = ui.theme || C.theme || 'a';
-    el.innerHTML = '<h3>🎨 شكل صفحة المريض</h3><p>بيظهر للمريض لما يمسح الباركود — بشاشة ترحيب «ألف سلامة» باسم المركز، وفيه وضع ليلي.</p>' +
+    el.innerHTML = '<h3>🎨 شكل صفحة المريض</h3><p>٦ تصميمات نهارية — كل تصميم فيه شاشة ترحيب متحركة وكارت لحجز الأشعة وكارت لعرض النتائج.</p>' +
       '<div class="thg"><button data-th="a" class="' + (t === 'a' ? 'on' : '') + '"><span class="sw2 a"><i></i><i></i><i></i></span><b>«نَفَس»</b><small>أبيض وتركواز</small></button>' +
       '<button data-th="c" class="' + (t === 'c' ? 'on' : '') + '"><span class="sw2 c"><i></i><i></i><i></i></span><b>«دفا»</b><small>كريمي وبرتقالي</small></button>' +
       '<button data-th="b" class="' + (t === 'b' ? 'on' : '') + '"><span class="sw2 b"><i></i><i></i><i></i></span><b>«نبض»</b><small>أزرق طبي</small></button>' +
-      '<button data-th="d" class="' + (t === 'd' ? 'on' : '') + '"><span class="sw2 d"><i></i><i></i><i></i></span><b>«هدوء»</b><small>بنفسجي هادي</small></button></div>' +
+      '<button data-th="d" class="' + (t === 'd' ? 'on' : '') + '"><span class="sw2 d"><i></i><i></i><i></i></span><b>«هدوء»</b><small>لافندر نهاري</small></button>' +
+      '<button data-th="e" class="' + (t === 'e' ? 'on' : '') + '"><span class="sw2 e"><i></i><i></i><i></i></span><b>«صفا»</b><small>أزرق ثلجي</small></button>' +
+      '<button data-th="f" class="' + (t === 'f' ? 'on' : '') + '"><span class="sw2 f"><i></i><i></i><i></i></span><b>«رؤية»</b><small>أخضر طبي</small></button></div>' +
       '<a class="btn g sm w" href="' + fixedUrl() + '" target="_blank" rel="noopener" style="margin-top:10px">👁 شوف صفحة المريض</a>';
     [].forEach.call(el.querySelectorAll('[data-th]'), function (b) { b.onclick = function () { var v = b.dataset.th; api('POST', 'theme', { theme: v }).then(function () { ui.theme = v; themeCard(); toast('🎨 اتغير شكل صفحة المريض ✓'); }).catch(function (e) { toast(e.message); }); }; });
   }
