@@ -1491,3 +1491,148 @@ body.qrd-center .qrd-data-pending,body.qrd-center .qrd-data-error{
   font-size:13px;font-weight:800;color:#63738F;
 }
 body.qrd-center .qrd-data-error{color:#A63152;background:#FFF6F8;border-color:#F8DCE6}
+
+
+/* 5.10 · medical photo hero, steady service icons and subtle micro-motion */
+html.patient-daylight body.v .pv2-page .pv3-radiology-hero{
+  direction:ltr;display:flex;align-items:center;justify-content:flex-end;
+  background:linear-gradient(115deg,#075C64,#087980);
+  min-height:262px;isolation:isolate;overflow:hidden;position:relative;
+  padding:22px 24px;border-radius:28px;
+}
+.pv3-radiology-photo{
+  position:absolute;inset:0 auto 0 0;width:61%;
+  z-index:-2;overflow:hidden;pointer-events:none;
+}
+.pv3-radiology-photo img{
+  width:100%;height:100%;display:block;object-fit:cover;object-position:47% center;
+  transform:scale(1.02);
+  filter:saturate(1.12) contrast(1.03);
+}
+.pv3-radiology-overlay{
+  position:absolute;inset:0;z-index:-1;pointer-events:none;
+  background:linear-gradient(270deg,rgba(3,74,80,.99) 0%,rgba(4,93,99,.97) 35%,rgba(2,86,103,.63) 58%,rgba(3,77,107,.05) 94%);
+}
+.pv3-radiology-copy{
+  direction:rtl;text-align:right;position:relative;width:67%;max-width:430px;z-index:1;
+}
+.pv3-radiology-label{
+  display:inline-flex;align-items:center;padding:5px 10px;border-radius:999px;
+  border:1px solid rgba(255,255,255,.26);background:rgba(255,255,255,.10);
+  color:#E0FFFA;font-size:11px;font-weight:700;
+}
+html.patient-daylight body.v .pv2-page .pv3-radiology-hero .ttl{
+  color:#fff!important;font-size:clamp(27px,5.9vw,38px)!important;
+  letter-spacing:-.5px;line-height:1.31;margin:12px 0 9px;
+  text-shadow:0 3px 15px rgba(0,32,52,.3);
+}
+html.patient-daylight body.v .pv2-page .pv3-radiology-hero .ttl span{
+  display:block;color:#D8FFF0!important;animation:none;transform:none;
+}
+.pv3-radiology-copy>p{
+  color:#EFFCFF;font-size:clamp(11.5px,3vw,14px);font-weight:750;
+  line-height:1.75;margin:0;text-shadow:0 2px 8px rgba(0,0,0,.2);
+}
+.pv3-hero-pulse{
+  display:flex;align-items:center;justify-content:flex-start;gap:8px;
+  margin-top:18px;color:#4DFFD1;opacity:.92;
+}
+.pv3-hero-pulse>i{width:8px;height:8px;border-radius:50%;flex:none;background:#4EFFCA;box-shadow:0 0 0 5px rgba(55,255,191,.15);animation:pv3Pulse 3.7s ease-in-out infinite}
+.pv3-hero-pulse svg{width:116px;height:25px;overflow:visible}
+.pv3-hero-pulse path{stroke-dasharray:260;stroke-dashoffset:260;animation:pv2Draw 2.6s .25s ease-out forwards}
+.pv3-hero-dots{
+  position:absolute;z-index:2;left:0;bottom:12px;right:0;
+  display:flex;gap:6px;justify-content:center;pointer-events:none;
+}
+.pv3-hero-dots i{width:6px;height:6px;background:rgba(255,255,255,.45);border-radius:10px;transition:width .3s}
+.pv3-hero-dots i.on{width:19px;background:#60FFE0}
+@keyframes pv3Pulse{
+  0%,100%{box-shadow:0 0 0 3px rgba(55,255,191,.10);opacity:.85}
+  50%{box-shadow:0 0 0 8px rgba(55,255,191,.08);opacity:1}
+}
+/* The 4 cards never shrink their icon or the whole card on tap.
+   Only the arrow and border respond; maintains consistent target sizes on iOS. */
+html.patient-daylight body.v .pv2-page .patient-chooser button.pv2-service{
+  flex-shrink:0;transition:border-color .25s,box-shadow .25s,background-color .25s,filter .25s;
+  transform:none!important;will-change:auto;
+  animation:pv3CardIn .48s ease-out both;
+}
+html.patient-daylight body.v .pv2-page .patient-chooser button.pv2-service:nth-child(2){animation-delay:.06s}
+html.patient-daylight body.v .pv2-page .patient-chooser button.pv2-service:nth-child(3){animation-delay:.12s}
+html.patient-daylight body.v .pv2-page .patient-chooser button.pv2-service:nth-child(4){animation-delay:.18s}
+html.patient-daylight body.v .pv2-page .patient-chooser button.pv2-service:hover,
+html.patient-daylight body.v .pv2-page .patient-chooser button.pv2-service:active{
+  transform:none!important;filter:none;
+}
+html.patient-daylight body.v .pv2-page .patient-chooser button.pv2-service:active{
+  background:var(--pin);border-color:var(--pp);
+}
+html.patient-daylight body.v .pv2-page .patient-chooser .pv2-service-icon{
+  display:grid;place-items:center;flex:0 0 43px!important;
+  width:43px!important;height:43px!important;min-width:43px!important;
+  min-height:43px!important;max-width:43px!important;max-height:43px!important;
+  font-size:23px!important;line-height:1;transform:none!important;
+  animation:none!important;transition:background-color .25s!important;
+}
+html.patient-daylight body.v .pv2-page .patient-chooser button.pv2-service:hover .pv2-service-icon,
+html.patient-daylight body.v .pv2-page .patient-chooser button.pv2-service:focus .pv2-service-icon,
+html.patient-daylight body.v .pv2-page .patient-chooser button.pv2-service:active .pv2-service-icon{
+  transform:none!important;flex-basis:43px!important;
+}
+html.patient-daylight body.v .pv2-page .patient-chooser .pv2-service-go{
+  transform:none;transition:color .2s,background-color .2s,translate .2s;
+}
+html.patient-daylight body.v .pv2-page .patient-chooser button.pv2-service:hover .pv2-service-go,
+html.patient-daylight body.v .pv2-page .patient-chooser button.pv2-service.on .pv2-service-go{
+  transform:none!important;translate:-3px 0;
+}
+@keyframes pv3CardIn{from{opacity:0;filter:blur(2px)}to{opacity:1;filter:none}}
+.pv3-notification-bar{
+  display:flex;align-items:center;gap:10px;margin:16px 0 5px;padding:14px 12px;
+  border-radius:21px;border:1px solid #CFEDE4;
+  background:linear-gradient(120deg,#EAFAF4,#F7FEFA);
+  color:#174D41;box-shadow:0 12px 26px -25px rgba(16,91,70,.5);
+}
+.pv3-notification-icon{
+  width:43px;height:43px;display:grid;place-items:center;
+  flex:none;font-size:24px;border-radius:14px;background:#D7F5E9;
+  animation:pv3Bell 5.5s ease-in-out infinite;
+}
+.pv3-notification-copy{flex:1;min-width:0}
+.pv3-notification-copy b{display:block;font-size:12px;font-weight:900;color:#184D41;line-height:1.45}
+.pv3-notification-copy small{display:block;margin-top:3px;font-size:10px;color:#517A6C;line-height:1.6}
+.pv3-notification-button{
+  font-family:inherit;flex:none;border:0;border-radius:13px;
+  background:linear-gradient(130deg,#087D63,#00A477);color:#fff;
+  font-size:11.5px;font-weight:850;padding:12px 10px;cursor:pointer;
+  min-height:42px;transition:background-color .2s,box-shadow .2s;
+}
+.pv3-notification-button[disabled]{opacity:.6;cursor:wait}
+.pv3-notification-button:focus-visible{outline:3px solid #7FFFD2;outline-offset:3px}
+@keyframes pv3Bell{0%,94%,100%{rotate:0deg}96%{rotate:8deg}98%{rotate:-5deg}}
+@media(max-width:480px){
+  html.patient-daylight body.v .pv2-page .pv3-radiology-hero{
+    min-height:232px;padding:17px 16px;border-radius:25px;
+  }
+  .pv3-radiology-copy{width:70%}
+  html.patient-daylight body.v .pv2-page .pv3-radiology-hero .ttl{
+    font-size:clamp(22px,6.4vw,31px)!important;
+  }
+  .pv3-radiology-photo{width:62%}
+  .pv3-radiology-overlay{background:linear-gradient(270deg,rgba(2,73,80,.99) 0%,rgba(3,80,86,.97) 38%,rgba(2,77,96,.53) 72%,rgba(3,70,104,.05) 100%)}
+  .pv3-notification-bar{gap:8px;padding:11px 9px}
+  .pv3-notification-icon{width:37px;height:37px;font-size:22px}
+  .pv3-notification-button{font-size:10.5px;padding:9px 9px;min-height:39px}
+  .pv3-notification-copy b{font-size:11px}
+  .pv3-notification-copy small{font-size:9.3px}
+}
+@media(max-width:365px){
+  .pv3-notification-bar{flex-wrap:wrap}
+  .pv3-notification-button{flex-basis:100%}
+}
+@media(prefers-reduced-motion:reduce){
+  .pv3-notification-icon,.pv3-hero-pulse>i,.pv3-hero-pulse path,
+  html.patient-daylight body.v .pv2-page .patient-chooser button.pv2-service{
+    animation:none!important;filter:none!important;opacity:1!important;stroke-dashoffset:0;
+  }
+}
