@@ -49,7 +49,18 @@
     return kek2(phone, unb64u(w.s)).then(function (k) { return crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64u(w.i) }, k, unb64u(w.k)); })
       .then(function (raw) { return b64u(raw); }, function () { return null; });
   }
-  window.OZK = { b64u: b64u, unb64u: unb64u, last10: last10, digits: digits, normName: normName, wrap: wrap, unwrap: unwrap, wrap2: wrap2, unwrap2: unwrap2 };
+  /* 5.28 · a case key wrapped by a random key that travels only in a link's #hash (doctor shares, referring doctors) */
+  function newKey() { var b = new Uint8Array(16); crypto.getRandomValues(b); return b64u(b); }
+  function wrapRaw(rawKey, k2) {
+    var iv = new Uint8Array(12); crypto.getRandomValues(iv);
+    return crypto.subtle.importKey('raw', unb64u(k2), { name: 'AES-GCM' }, false, ['encrypt']).then(function (k) { return crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, k, unb64u(rawKey)); })
+      .then(function (ct) { return { i: b64u(iv), k: b64u(ct) }; });
+  }
+  function unwrapRaw(w, k2) {
+    return crypto.subtle.importKey('raw', unb64u(k2), { name: 'AES-GCM' }, false, ['decrypt']).then(function (k) { return crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64u(w.i) }, k, unb64u(w.k)); })
+      .then(function (raw) { return b64u(raw); }, function () { return null; });
+  }
+  window.OZK = { b64u: b64u, unb64u: unb64u, last10: last10, digits: digits, normName: normName, wrap: wrap, unwrap: unwrap, wrap2: wrap2, unwrap2: unwrap2, newKey: newKey, wrapRaw: wrapRaw, unwrapRaw: unwrapRaw };
 })();
 /* 5.17 · honest barcode counts: a page open counts only when a real person sees it —
    the page has to run in a visible tab for 1.5 s (link previews, bots and prefetch never do),

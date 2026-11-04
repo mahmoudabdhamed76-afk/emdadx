@@ -2,16 +2,16 @@
 (function () {
   'use strict';
   var C = window.CD || {}, H = document.documentElement;
-  var T = ['a','b','c','d','e','f'].indexOf(C.theme) >= 0 ? C.theme : 'a';
+  var T = ['a','b','c','d','e','f','g','h','i'].indexOf(C.theme) >= 0 ? C.theme : 'a';
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
       return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c];
     });
   }
   H.classList.remove('dk');
-  H.classList.add('tx', 't' + T, 'patient-daylight');
-  H.style.colorScheme = 'light';
-  var colors = { a:'#F2FBFA', b:'#EDF6FF', c:'#FBF6EF', d:'#F6F3FF', e:'#F2F8FF', f:'#F3FAF5' };
+  H.classList.add('tx', 't' + T); if (T !== 'i') H.classList.add('patient-daylight');
+  H.style.colorScheme = T === 'i' ? 'dark' : 'light';
+  var colors = { a:'#F2FBFA', b:'#EDF6FF', c:'#FBF6EF', d:'#F6F3FF', e:'#F2F8FF', f:'#F3FAF5', g:'#F7F4EC', h:'#FFF4F6', i:'#0E1420' };
   var meta = document.querySelector('meta[name="theme-color"]');
   if (meta) meta.setAttribute('content', colors[T]);
   function logo(cls) {

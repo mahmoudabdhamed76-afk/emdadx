@@ -152,6 +152,8 @@
       ['complaints', '📝', 'الشكاوى'],
       ['reports', '📤', 'طلبات التقارير'],
       ['ratings', '⭐', 'تقييمات المرضى'],
+      ['follow', '🔁', 'المتابعات'],
+      ['doctors', '👨‍⚕️', 'الدكاترة المحوّلين'],
       ['upload', '⇧', 'رفع ملفات PDF / DICOM'],
       ['cases', '▥', 'الحالات'],
       ['activity', '◷', 'آخر مرات الفتح'],
@@ -180,7 +182,7 @@
   }
   /* iOS Safari sometimes leaves hidden/composited panels blank after hash-only SPA navigation.
      On Apple mobile devices open each section as an actual document navigation instead. */
-  var QRD_PAGES = /^(dashboard|bookings|results|complaints|reports|upload|cases|qr|design|ads|ratings|activity|settings)$/;
+  var QRD_PAGES = /^(dashboard|bookings|results|complaints|reports|upload|cases|qr|design|ads|ratings|follow|doctors|activity|settings)$/;
   function isIOSBrowser() {
     var ua = String(navigator.userAgent || '');
     return /iP(?:hone|ad|od)/i.test(ua) ||
@@ -219,7 +221,7 @@
       window.location.assign(pageUrl(selected));
       return;
     }
-    ui.page = selected; if (selected === 'ratings') { ratingsUI(); ratingsLoad(); }
+    ui.page = selected; if (selected === 'ratings') { ratingsUI(); ratingsLoad(); } if (selected === 'follow') followLoad(); if (selected === 'doctors') docsLoad(); if (selected === 'settings') digestUI();
     /* Explicit show/hide to prevent blank mobile Safari panels after tapping a section. */
     var panes = document.querySelectorAll('section.qrd-page[data-qrd-page]'), visible = null;
     [].forEach.call(panes, function (node) {
@@ -268,6 +270,8 @@
       ['design', 'شكل صفحة المريض', 'اختيار التصميم اللي يظهر للمرضى على موبايلهم'],
       ['ads', 'الإعلانات', 'اكتب إعلان أو عرض يظهر للمرضى في السلايدر اللي فوق صفحتهم'],
       ['ratings', 'تقييمات المرضى', 'رأي المرضى بعد ما بيفتحوا نتيجتهم — النجوم والأسباب والملاحظات ونسبة الرضا كل شهر'],
+      ['follow', 'مواعيد المتابعة', 'حدّد بعد قد إيه كل فحص محتاج متابعة، وكلّم المرضى اللي ميعادهم قرّب'],
+      ['doctors', 'الدكاترة المحوّلين', 'لينك خاص لكل دكتور يشوف منه نتايج مرضاه، وعدد الحالات اللي جاتلك من كل واحد'],
       ['activity', 'آخر مرات الفتح', 'سجل فتح نتائج الأشعة وروابط الحالات'],
       ['settings', 'إعدادات وتخزين الجهاز', 'حالة مساحة التخزين ونسخة الملفات المحلية']
     ];
@@ -306,6 +310,9 @@
     move('qr', '#qrStats');
     var adsBox = document.createElement('div'); adsBox.id = 'adsBox'; bodies.ads.appendChild(adsBox);
     var rtBox = document.createElement('div'); rtBox.id = 'ratingsBox'; bodies.ratings.appendChild(rtBox);
+    var fBox = document.createElement('div'); fBox.id = 'folBox'; bodies.follow.appendChild(fBox);
+    var dBox = document.createElement('div'); dBox.id = 'docsBox'; bodies.doctors.appendChild(dBox);
+    var gBox = document.createElement('div'); gBox.id = 'dgBox'; bodies.settings.appendChild(gBox);
     var lx = document.createElement('div'); lx.id = 'qrdX'; lx.className = 'lx'; bodies.dashboard.insertBefore(lx, bodies.dashboard.firstChild);
     move('activity', '#recentViews');
     move('settings', '#disk'); setTimeout(chartSettings, 0);
@@ -374,7 +381,7 @@
     [].forEach.call(document.querySelectorAll('#qrdTab [data-dt]'), function (b) { b.classList.toggle('on', b.dataset.dt === p || (b.dataset.dt === 'more' && main.indexOf(p) < 0)); });
   }
   function dHome() {
-    if (!$('qrdD')) return;
+    if (!$('qrdD')) return; wSetup(); wPaint();
     var q = ui.qr || {}, rec = q.recent || [], td = ymd(), y = ymd(new Date(Date.now() - 864e5)), hrs = new Array(24).fill(0), yc = 0;
     rec.forEach(function (r) { var at = String(r.at || ''); if (r.kind !== 'fixed') return; if (at.slice(0, 10) === td) hrs[+at.slice(11, 13) || 0]++; else if (at.slice(0, 10) === y) yc++; });
     var today = q.today || 0, views = 0; ui.list.forEach(function (r) { views += r.views || 0; });
@@ -566,7 +573,10 @@
       '<button data-th="b" class="' + (t === 'b' ? 'on' : '') + '"><span class="sw2 b"><i></i><i></i><i></i></span><b>«نبض»</b><small>أزرق طبي</small></button>' +
       '<button data-th="d" class="' + (t === 'd' ? 'on' : '') + '"><span class="sw2 d"><i></i><i></i><i></i></span><b>«هدوء»</b><small>لافندر نهاري</small></button>' +
       '<button data-th="e" class="' + (t === 'e' ? 'on' : '') + '"><span class="sw2 e"><i></i><i></i><i></i></span><b>«صفا»</b><small>أزرق ثلجي</small></button>' +
-      '<button data-th="f" class="' + (t === 'f' ? 'on' : '') + '"><span class="sw2 f"><i></i><i></i><i></i></span><b>«رؤية»</b><small>أخضر طبي</small></button></div>' +
+      '<button data-th="f" class="' + (t === 'f' ? 'on' : '') + '"><span class="sw2 f"><i></i><i></i><i></i></span><b>«رؤية»</b><small>أخضر طبي</small></button>' +
+      '<button data-th="g" class="' + (t === 'g' ? 'on' : '') + '"><span class="sw2 g"><i></i><i></i><i></i></span><b>«فخامة»</b><small>كحلي ودهبي</small><em class="th-new">جديد</em></button>' +
+      '<button data-th="h" class="' + (t === 'h' ? 'on' : '') + '"><span class="sw2 h"><i></i><i></i><i></i></span><b>«ورد»</b><small>وردي هادي</small><em class="th-new">جديد</em></button>' +
+      '<button data-th="i" class="' + (t === 'i' ? 'on' : '') + '"><span class="sw2 i"><i></i><i></i><i></i></span><b>«ليل»</b><small>غامق عصري</small><em class="th-new">جديد</em></button></div>' +
       '<a class="btn g sm w" href="' + fixedUrl() + '" target="_blank" rel="noopener" style="margin-top:10px">👁 شوف صفحة المريض</a>';
     [].forEach.call(el.querySelectorAll('[data-th]'), function (b) { b.onclick = function () { var v = b.dataset.th; api('POST', 'theme', { theme: v }).then(function () { ui.theme = v; themeCard(); toast('🎨 اتغير شكل صفحة المريض ✓'); }).catch(function (e) { toast(e.message); }); }; });
   }
@@ -733,6 +743,7 @@
       el.innerHTML = (q.thumb ? '<img class="th" src="' + q.thumb + '" alt="">' : '<span class="th">📄</span>') +
         '<div class="nm"><b>' + esc(q.name) + '</b><small>' + mb(q.size) + (q.pages ? ' · ' + q.pages + (q.kind === 'dicom' ? ' صورة' : ' صفحة') : '') + '</small>' + (q.af ? '<small class="af">' + esc(q.af) + '</small>' : '') + (q.msg ? '<small style="color:#DC2626;font-weight:700">' + esc(q.msg) + '</small>' : '') + (busy ? '<div class="pb"><i id="pb' + q.id + '"></i></div>' : '') + '</div>' +
         '<div class="qf"><input class="fld" data-k="patient" maxlength="80" placeholder="اسم المريض *" value="' + esc(q.patient) + '"' + (busy ? ' disabled' : '') + '><input class="fld n" data-k="phone" maxlength="20" inputmode="tel" placeholder="موبايل المريض' + (ui.fixed ? ' *' : '') + '" style="text-align:right" value="' + esc(q.phone) + '"' + (busy ? ' disabled' : '') + '><input class="fld" data-k="exam" maxlength="80" list="exl" placeholder="نوع الفحص" value="' + esc(q.exam) + '"' + (busy ? ' disabled' : '') + '></div>' +
+        '<div class="qf qf2"><select class="fld" data-k="doctor"' + (busy ? ' disabled' : '') + '>' + docOpts(q.doctor) + '</select><select class="fld" data-k="follow"' + (busy ? ' disabled' : '') + '>' + [['', 'المتابعة: حسب نوع الفحص'], ['0', 'من غير متابعة'], ['30', 'متابعة بعد شهر'], ['90', 'بعد 3 شهور'], ['180', 'بعد 6 شهور'], ['365', 'بعد سنة']].map(function (o) { return '<option value="' + o[0] + '"' + (String(q.follow == null ? '' : q.follow) === o[0] ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select></div>' +
         '<div class="qa"><button class="btn sm" data-x="sv"' + (busy ? ' disabled' : '') + '>' + (busy ? '⏳' : '▦ احفظ') + '</button><button class="btn g sm" data-x="rm"' + (busy ? ' disabled' : '') + ' title="شيل">×</button></div>';
       [].forEach.call(el.querySelectorAll('[data-k]'), function (i) { i.oninput = function () { q[i.dataset.k] = i.value; }; i.onkeydown = function (e) { if (e.key === 'Enter') saveOne(q).catch(function () {}); }; });
     }
@@ -752,10 +763,11 @@
     return crypto.subtle.generateKey({ name: 'AES-GCM', length: 128 }, true, ['encrypt'])   /* 128-bit: a shorter link → a lighter barcode */
       .then(function (k) { key = k; return crypto.subtle.exportKey('raw', k); }).then(function (r) { rawKey = K.b64u(r); return K.wrap(rawKey, q.patient, q.phone); })
       .then(function (w) { wrapped = w; return K.wrap2(rawKey, q.phone); })
-      .then(function (w2) { wrapped2 = w2; return q.file.arrayBuffer(); })
+      .then(function (w2) { wrapped2 = w2; var dk = q.doctor ? dkAll()[q.doctor] : null; return dk ? K.wrapRaw(rawKey, dk) : null; })
+      .then(function (dw) { q.dwrap = dw; return q.file.arrayBuffer(); })
       .then(function (buf) { return crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, key, buf); })
       .then(function (ct) {
-        var blob = new Blob([iv, ct], { type: 'application/octet-stream' }), meta = { patient: q.patient, phone: q.phone, exam: String(q.exam || '').trim(), name: q.name, pages: q.pages, kind: q.kind === 'dicom' ? 'dicom' : 'pdf', wrap: wrapped, wrap2: wrapped2 };
+        var blob = new Blob([iv, ct], { type: 'application/octet-stream' }), meta = { patient: q.patient, phone: q.phone, exam: String(q.exam || '').trim(), name: q.name, pages: q.pages, kind: q.kind === 'dicom' ? 'dicom' : 'pdf', wrap: wrapped, wrap2: wrapped2, doctor: +q.doctor || 0, dwrap: q.dwrap || null, follow: q.follow === '' || q.follow == null ? undefined : +q.follow };
         /* 5.20 · DICOM (PACS) cases never go to the server: only their details do; the images stay on this computer and reach the patient live */
         var local = meta.kind === 'dicom'; if (local) { meta.local = true; meta.size = blob.size; }
         return new Promise(function (ok, no) {
@@ -1173,6 +1185,7 @@
       '<section class="lx-card lx-follow"><div class="lx-ch"><div><h3>محتاج متابعة</h3><small>الطلبات اللي لسه مارديتش عليها</small></div></div><div class="lx-fl">' +
         follow.map(function (f) { return '<button type="button" data-page-nav="' + f[0] + '" style="--c:' + f[4] + '"><span class="lx-fi">' + ic(f[1]) + '</span><b>' + f[2] + '</b><em class="' + (f[3] ? 'on' : '') + '">' + n0(f[3]) + '</em></button>'; }).join('') +
         '</div><button type="button" class="lx-sat" data-page-nav="ratings"><span class="lx-fi" style="--c:#F59E0B">★</span><b>رضا المرضى <small>آخر 30 يوم</small></b>' + (D.rate && D.rate.n ? '<em class="on" style="--c:#F59E0B">' + D.rate.avg.toFixed(1) + ' ★ · ' + Math.round(D.rate.happy / D.rate.n * 100) + '%</em>' : '<em>لسه</em>') + '</button>' +
+        '<button type="button" class="lx-sat" data-page-nav="follow"><span class="lx-fi" style="--c:#F59E0B">🔁</span><b>متابعات مستحقة <small>المرضى اللي ميعاد متابعتهم جه</small></b><em' + (D.follow ? ' class="on" style="--c:#F59E0B"' : '') + '>' + n0(D.follow || 0) + '</em></button>' + waitBox(D.wait) +
         '<div class="lx-qa"><button type="button" class="btn" data-lxq="pdf">' + ic('file') + ' ارفع PDF</button><button type="button" class="btn g" data-lxq="dicom">🩻 DICOM</button><button type="button" class="btn g" data-lxq="month">' + ic('down') + ' التقرير الشهري</button></div></section></div>' +
       '<section class="lx-card lx-recent"><div class="lx-ch"><div><h3>آخر مرات فتح النتائج</h3><small>مين فتح نتيجته وإمتى ومن أنهي باركود</small></div><button type="button" class="btn g sm" data-page-nav="activity">السجل كله ←</button></div>' +
         (recentRows ? '<div class="lx-tw"><table class="lx-t"><thead><tr><th>المريض</th><th>الفحص</th><th>فتحها من</th><th>الجهاز</th><th>الوقت</th></tr></thead><tbody>' + recentRows + '</tbody></table></div>' : '<p class="lx-emp">لسه مفيش فتح لنتائج الأشعة — هتظهر هنا لحظيًا.</p>') + '</section>';
@@ -1308,6 +1321,162 @@
       var b = this; b.disabled = true; p.promos = p.promos.map(function (x) { return String(x || '').trim(); }).filter(Boolean);
       api('POST', 'pop-cfg', p).then(function (x) { ui.pop = x.pop; ui.popEd = null; popUI(); toast('⭐ نافذة التقييم اتحفظت — هتظهر كده للمرضى'); }).catch(function (e) { b.disabled = false; toast(e.message); });
     };
+  }
+  /* ═══════════ 5.28 · follow-ups · referring doctors · live wait · daily summary · phone widgets ═══════════ */
+  function dkAll() { try { return JSON.parse(localStorage.getItem('qrd-dk:' + C.code) || '{}') || {}; } catch (e) { return {}; } }
+  function dkSet(id, k) { var m = dkAll(); m[id] = k; try { localStorage.setItem('qrd-dk:' + C.code, JSON.stringify(m)); } catch (e) {} hSet('dk:' + C.code, m); }
+  hGet('dk:' + C.code).then(function (m) { if (!m) return; var a = dkAll(), ch = false; Object.keys(m).forEach(function (k) { if (!a[k]) { a[k] = m[k]; ch = true; } }); if (ch) try { localStorage.setItem('qrd-dk:' + C.code, JSON.stringify(a)); } catch (e) {} }).catch(function () {});
+  function docLink(d) { var k = dkAll()[d.id]; return k ? location.origin + '/r/' + d.slug + '#' + k : ''; }
+  function docsLoad(paint) { return api('GET', 'doctors').then(function (x) { ui.docs = x.doctors || []; if (paint !== false) doctorsUI(); return ui.docs; }).catch(function (e) { toast(e.message); }); }
+  function docOpts(sel) { return '<option value="">بدون دكتور محوّل</option>' + (ui.docs || []).filter(function (d) { return d.active; }).map(function (d) { return '<option value="' + d.id + '"' + (String(sel) === String(d.id) ? ' selected' : '') + '>د. ' + esc(d.name) + (d.spec ? ' · ' + esc(d.spec) : '') + '</option>'; }).join(''); }
+  /* attach a case to a doctor: its key goes wrapped by that doctor's key (only this computer has both) */
+  function setCaseDoctor(tok, did) {
+    var loc = ui.local[tok], k = did ? dkAll()[did] : null;
+    var go = function (w) { return api('POST', 'item/' + tok + '/doctor', { doctor_id: did || null, w: w || null }).then(function () { var r = itemOf(tok); if (r) r.doctor_id = did || null; }); };
+    if (did && loc && k) return K.wrapRaw(loc.key, k).then(go);
+    return go(null);
+  }
+  function doctorsUI() {
+    var el = $('docsBox'); if (!el) return;
+    var L = ui.docs || [], max = Math.max(1, Math.max.apply(null, L.map(function (d) { return d.cases; }).concat([0])));
+    var top = L.filter(function (d) { return d.cases; }).slice(0, 8);
+    el.innerHTML = '<div class="lx-ads">' +
+      '<section class="lx-card"><div class="lx-ch"><div><h3>👨‍⚕️ ضيف دكتور بيحوّل مرضى</h3><small>كل دكتور بياخد لينك خاص يشوف منه نتايج مرضاه اللي حوّلهم، وإنت تعرف كام حالة جاتلك منه</small></div></div>' +
+        '<div class="dc-f"><input class="fld" id="dcN" maxlength="80" placeholder="اسم الدكتور *"><input class="fld" id="dcS" maxlength="60" placeholder="التخصص (اختياري)"><input class="fld" id="dcP" maxlength="20" inputmode="tel" placeholder="موبايله (لإرسال اللينك)"><button type="button" class="btn" id="dcA">+ ضيف</button></div></section>' +
+      (top.length ? '<section class="lx-card"><div class="lx-ch"><div><h3>📊 الحالات من كل دكتور</h3><small>إجمالي الحالات المرتبطة بكل دكتور</small></div></div><div class="dc-bars">' + top.map(function (d, i) { return '<div class="dc-b" style="--w:' + Math.round(d.cases / max * 100) + '%;--i:' + i + '"><span>د. ' + esc(d.name) + '</span><i></i><b>' + n0(d.cases) + '</b></div>'; }).join('') + '</div></section>' : '') +
+      '<section class="lx-card"><div class="lx-ch"><div><h3>الدكاترة (' + L.length + ')</h3><small>اختار الدكتور من فورم رفع الحالة، أو من قايمة «المزيد» جنب أي حالة</small></div></div>' +
+      (L.length ? '<div class="dc-l">' + L.map(function (d, i) {
+        var link = docLink(d);
+        return '<div class="dc-c' + (d.active ? '' : ' off') + '" style="--i:' + i + '"><span class="dc-av">' + esc(String(d.name).trim().charAt(0)) + '</span><div class="dc-tx"><b>د. ' + esc(d.name) + '</b><small>' + esc(d.spec || 'دكتور محوّل') + (d.phone ? ' · ' + esc(d.phone) : '') + '</small>' +
+          '<div class="dc-k"><span><b>' + n0(d.cases) + '</b> حالة</span><span><b>' + n0(d.month) + '</b> الشهر ده</span><span><b>' + n0(d.opened) + '</b> اتفتحت</span></div>' +
+          (link ? '' : '<small class="dc-w">🔑 لينك الدكتور ده اتعمل من جهاز تاني — اعمل لينك جديد من هنا عشان الحالات اللي هترفعها من الجهاز ده توصله</small>') + '</div>' +
+          '<div class="dc-a">' + (link ? '<button type="button" class="btn sm" data-dc="cp" data-id="' + d.id + '">نسخ اللينك</button>' + (d.phone ? '<button type="button" class="btn sm wa" data-dc="wa" data-id="' + d.id + '">واتساب</button>' : '') : '<button type="button" class="btn sm" data-dc="new" data-id="' + d.id + '">🔑 لينك جديد</button>') +
+          '<button type="button" class="lx-ib" data-dc="tg" data-id="' + d.id + '" data-tip="' + (d.active ? 'وقّف' : 'شغّل') + '">' + ic(d.active ? 'pause' : 'play') + '</button><button type="button" class="lx-ib dl" data-dc="del" data-id="' + d.id + '" data-tip="امسح">' + ic('trash') + '</button></div></div>';
+      }).join('') + '</div>' : '<div class="lx-emp">لسه مفيش دكاترة — ضيف أول دكتور من فوق</div>') + '</section></div>';
+    $('dcA').onclick = function () {
+      var b = this, name = $('dcN').value.trim(); if (!name) { $('dcN').focus(); return toast('اكتب اسم الدكتور'); }
+      b.disabled = true; var before = (ui.docs || []).map(function (d) { return d.id; });
+      api('POST', 'doctors', { name: name, spec: $('dcS').value, phone: $('dcP').value }).then(function (x) {
+        ui.docs = x.doctors || []; var nw = ui.docs.filter(function (d) { return before.indexOf(d.id) < 0; })[0]; if (nw) dkSet(nw.id, K.newKey());
+        doctorsUI(); toast('👨‍⚕️ الدكتور اتضاف — ابعتله اللينك بتاعه');
+      }).catch(function (e) { b.disabled = false; toast(e.message); });
+    };
+    [].forEach.call(el.querySelectorAll('[data-dc]'), function (b) { b.onclick = function () {
+      var id = +b.dataset.id, d = L.filter(function (x) { return x.id === id; })[0], k = b.dataset.dc; if (!d) return;
+      if (k === 'cp') { var u = docLink(d); (navigator.clipboard ? navigator.clipboard.writeText(u) : Promise.reject()).then(function () { toast('اتنسخ ✓'); }).catch(function () { prompt('انسخ اللينك', u); }); return; }
+      if (k === 'wa') { var msg = 'أهلاً د. ' + d.name + '، ده لينك نتايج مرضاك المحوّلين لـ ' + (C.center || 'المركز') + ' — كل نتيجة بتتضاف هنا أول ما تجهز:\n' + docLink(d); window.open('https://wa.me/' + waNum(d.phone) + '?text=' + encodeURIComponent(msg), '_blank', 'noopener'); return; }
+      if (k === 'new') {
+        if (!confirm('هنعمل لينك جديد للدكتور ده. اللينك القديم مش هيفتح الحالات اللي هتترفع بعد كده. نكمّل؟')) return;
+        var nk = K.newKey(); dkSet(id, nk); var mine = (ui.list || []).filter(function (r) { return r.doctor_id === id && ui.local[r.token]; }), i = 0;
+        (function nx() { if (i >= mine.length) { toast('🔑 اللينك الجديد جاهز' + (mine.length ? ' · ' + mine.length + ' حالة اتربطت' : '')); return doctorsUI(); } setCaseDoctor(mine[i++].token, id).then(nx, nx); })();
+        return;
+      }
+      if (k === 'del' && !confirm('تمسح د. ' + d.name + '؟ الحالات هتفضل، بس هتتفصل عنه ولينكه هيقف.')) return;
+      api('POST', 'doctors/' + id + '/' + (k === 'tg' ? 'toggle' : 'delete')).then(function (x) { ui.docs = x.doctors || []; doctorsUI(); }).catch(function (e) { toast(e.message); });
+    }; });
+  }
+  function waNum(p) { var d = K.digits(p || '').replace(/^0/, ''); return d ? (d.length <= 10 ? '20' + d : d) : ''; }
+  function caseDoctorAsk(tok) {
+    var r = itemOf(tok); if (!r) return;
+    var go = function () {
+      var o = modal('<h3>👨‍⚕️ الدكتور المحوّل</h3><p>' + esc(r.patient) + (r.exam ? ' · ' + esc(r.exam) : '') + '</p><select class="fld" id="cdS">' + docOpts(r.doctor_id) + '</select>' + (ui.local[tok] ? '' : '<p style="font-size:12.5px;color:#B45309">الحالة دي اترفعت من جهاز تاني — هتتسجّل باسم الدكتور، بس عشان تفتح عنده اربطها من الجهاز اللي عليه الحالة.</p>') + '<div class="bt"><button class="btn" data-x="ok">احفظ</button><button class="btn g" data-x="cl">إلغاء</button></div>',
+        function (k, close) { if (k !== 'ok') return; var v = +o.querySelector('#cdS').value || 0; setCaseDoctor(tok, v).then(function () { close(); toast(v ? '👨‍⚕️ الحالة اتربطت بالدكتور' : 'الحالة اتفصلت عن الدكتور'); }).catch(function (e) { toast(e.message); }); });
+    };
+    if (ui.docs) go(); else docsLoad(false).then(go);
+  }
+  /* ── follow-ups ── */
+  function followLoad() { api('GET', 'follow').then(function (x) { ui.fol = x; followUI(); }).catch(function (e) { toast(e.message); }); }
+  function followUI() {
+    var el = $('folBox'); if (!el) return; var F = ui.fol || { rules: {}, list: [] }, R = ui.folEd || (ui.folEd = Object.keys(F.rules).map(function (k) { return [k, F.rules[k]]; }));
+    var DD = [[14, 'أسبوعين'], [30, 'شهر'], [60, 'شهرين'], [90, '3 شهور'], [180, '6 شهور'], [365, 'سنة']];
+    var late = F.list.filter(function (x) { return x.late; }).length, today = F.list.filter(function (x) { return x.today; }).length;
+    el.innerHTML = '<div class="lx-ads">' +
+      '<section class="lx-card"><div class="lx-ch"><div><h3>🔁 مواعيد المتابعة حسب نوع الفحص</h3><small>أي حالة بالنوع ده هياخد معاد متابعة لوحده، والمريض هيشوفه في صفحة نتيجته ويقدر يضيفه للتقويم أو يحجز</small></div><div class="st-top"><button type="button" class="btn" id="frS">💾 احفظ</button></div></div>' +
+        '<div class="fr-l">' + R.map(function (r, i) { return '<div class="fr-r"><input class="fld" data-fe="' + i + '" list="exl" maxlength="60" placeholder="نوع الفحص — مثلاً: سونار حمل" value="' + esc(r[0]) + '"><select class="fld" data-fd="' + i + '">' + DD.map(function (d) { return '<option value="' + d[0] + '"' + (+r[1] === d[0] ? ' selected' : '') + '>بعد ' + d[1] + '</option>'; }).join('') + '</select><button type="button" class="lx-ib dl" data-fx="' + i + '" aria-label="امسح">' + ic('trash') + '</button></div>'; }).join('') + '</div>' +
+        '<button type="button" class="btn g" id="frA">+ نوع فحص</button>' + (R.length ? '' : '<div class="pp-ex">' + [['ماموجرام', 365], ['قياس كثافة العظام', 365], ['سونار حمل', 30], ['دوبلر', 180]].map(function (x) { return '<button type="button" data-fp="' + esc(x[0]) + '|' + x[1] + '">' + esc(x[0]) + ' · ' + (DD.filter(function (d) { return d[0] === x[1]; })[0] || [0, ''])[1] + '</button>'; }).join('') + '</div>') + '</section>' +
+      '<section class="lx-card"><div class="lx-ch"><div><h3>📋 متابعات جاية ومستحقة</h3><small>' + (F.list.length ? (late ? late + ' متأخرة · ' : '') + (today ? today + ' النهارده · ' : '') + F.list.length + ' خلال أسبوعين' : 'مفيش متابعات خلال الأسبوعين الجايين') + '</small></div></div>' +
+        (F.list.length ? '<div class="lx-tw"><table class="lx-t"><thead><tr><th>المريض</th><th>الفحص</th><th>الميعاد</th><th></th></tr></thead><tbody>' + F.list.map(function (x) {
+          return '<tr data-ft="' + x.token + '"><td><div class="lx-pt">' + qxAv(x.patient) + '<div><b>' + esc(x.patient) + '</b><span class="n">' + esc(x.phone || '—') + '</span></div></div></td><td><span class="lx-b" style="--x:' + exColor(x.exam) + '">' + esc(x.exam || 'فحص') + '</span></td>' +
+            '<td><span class="fr-due ' + (x.late ? 'l' : x.today ? 't' : '') + '">' + (x.late ? 'متأخرة · ' : x.today ? 'النهارده · ' : '') + esc(dmyOf(x.due)) + '</span></td><td class="lx-acts">' +
+            (x.phone ? '<button class="lx-ib wa" data-fa="wa" data-tip="فكّره على واتساب">' + ic('wa') + '</button>' : '') + '<button class="lx-ib" data-fa="pp" data-tip="أجّل شهر">⏭</button><button class="lx-ib" data-fa="ok" data-tip="خلصت">' + ic('check') + '</button></td></tr>';
+        }).join('') + '</tbody></table></div>' : '<div class="lx-emp">✨ مفيش حد عليه متابعة دلوقتي</div>') + '</section></div>';
+    var sync = function () { [].forEach.call(el.querySelectorAll('[data-fe]'), function (i) { R[+i.dataset.fe][0] = i.value; }); [].forEach.call(el.querySelectorAll('[data-fd]'), function (i) { R[+i.dataset.fd][1] = +i.value; }); };
+    $('frA').onclick = function () { sync(); R.push(['', 90]); followUI(); var L = el.querySelectorAll('[data-fe]'); if (L.length) L[L.length - 1].focus(); };
+    [].forEach.call(el.querySelectorAll('[data-fx]'), function (b) { b.onclick = function () { sync(); R.splice(+b.dataset.fx, 1); followUI(); }; });
+    [].forEach.call(el.querySelectorAll('[data-fp]'), function (b) { b.onclick = function () { var p = b.dataset.fp.split('|'); R.push([p[0], +p[1]]); followUI(); }; });
+    $('frS').onclick = function () { sync(); var o = {}; R.forEach(function (r) { if (String(r[0]).trim()) o[String(r[0]).trim()] = +r[1]; }); api('POST', 'follow', { rules: o }).then(function (x) { ui.fol = x; ui.folEd = null; followUI(); toast('🔁 مواعيد المتابعة اتحفظت — هتتطبق على الحالات الجاية'); }).catch(function (e) { toast(e.message); }); };
+    [].forEach.call(el.querySelectorAll('[data-fa]'), function (b) { b.onclick = function () {
+      var tok = b.closest('[data-ft]').dataset.ft, x = F.list.filter(function (y) { return y.token === tok; })[0], k = b.dataset.fa; if (!x) return;
+      if (k === 'wa') { var msg = 'أهلاً يا ' + String(x.patient).split(' ')[0] + ' 👋\nميعاد متابعة ' + (x.exam || 'الفحص') + ' في ' + (C.center || 'المركز') + ' يوم ' + dmyOf(x.due) + '.\nاحجز ميعادك من هنا: ' + fixedUrl() + '#book'; window.open('https://wa.me/' + waNum(x.phone) + '?text=' + encodeURIComponent(msg), '_blank', 'noopener'); return; }
+      var d = new Date(x.due + 'T12:00:00Z'); d.setUTCDate(d.getUTCDate() + 30);
+      api('POST', 'follow/' + tok + (k === 'ok' ? '/done' : ''), k === 'pp' ? { date: d.toISOString().slice(0, 10) } : {}).then(function (y) { F.list = y.list || []; followUI(); dashSoon(); }).catch(function (e) { toast(e.message); });
+    }; });
+  }
+  function caseFollowAsk(tok) {
+    var r = itemOf(tok); if (!r) return;
+    var o = modal('<h3>🔁 ميعاد المتابعة</h3><p>' + esc(r.patient) + (r.exam ? ' · ' + esc(r.exam) : '') + '</p><div class="sh2-ch">' + [[30, 'شهر'], [90, '3 شهور'], [180, '6 شهور'], [365, 'سنة']].map(function (x) { return '<button type="button" data-x="d' + x[0] + '">' + x[1] + '</button>'; }).join('') + '</div><label class="l" style="margin-top:10px">أو اختار يوم</label><input class="fld" type="date" id="cfD" value="' + esc(r.follow_at || '') + '">' +
+      '<div class="bt"><button class="btn" data-x="ok">احفظ</button>' + (r.follow_at ? '<button class="btn g" data-x="no">شيل المتابعة</button>' : '') + '<button class="btn g" data-x="cl">إلغاء</button></div>',
+      function (k, close) {
+        var body = k === 'ok' ? { date: o.querySelector('#cfD').value } : k === 'no' ? {} : /^d\d+$/.test(k) ? { days: +k.slice(1) } : null; if (!body) return;
+        api('POST', 'follow/' + tok, body).then(function () { return api('GET', 'list'); }).then(function (x) { if (x && x.list) { ui.list = x.list; table(); } close(); toast('🔁 ميعاد المتابعة اتحفظ'); }).catch(function (e) { toast(e.message); });
+      });
+  }
+  function dmyOf(s) { var m = /(\d{4})-(\d{2})-(\d{2})/.exec(String(s || '')); return m ? (+m[3]) + '/' + (+m[2]) + '/' + m[1] : ''; }
+  /* ── live wait time (reception taps one button) ── */
+  function waitBox(W) {
+    var on = W && W.min != null, ago = on ? Math.round((Date.now() - W.at) / 60000) : 0;
+    return '<div class="wt"><div class="wt-h"><span class="lx-fi" style="--c:#0EA5E9">⏱</span><b>الانتظار دلوقتي <small>' + (on ? 'بيظهر للمرضى · اتحدّث من ' + (ago < 1 ? 'لحظة' : ago + ' دقيقة') : 'مش ظاهر للمرضى') + '</small></b>' + (on ? '<em class="on" style="--c:#0EA5E9">' + (W.min ? '~' + W.min + ' دقيقة' : 'مفيش انتظار') + '</em>' : '') + '</div>' +
+      '<div class="wt-b">' + [0, 10, 20, 30, 45, 60].map(function (m) { return '<button type="button" data-wt="' + m + '" class="' + (on && W.min === m ? 'on' : '') + '">' + (m ? m + 'د' : 'مفيش') + '</button>'; }).join('') + '<button type="button" data-wt="off" class="x">إخفاء</button></div></div>';
+  }
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-wt]'); if (!b) return;
+    var v = b.dataset.wt === 'off' ? null : +b.dataset.wt;
+    api('POST', 'wait', { min: v }).then(function (x) { if (ui.dash) ui.dash.wait = x.wait; [].forEach.call(document.querySelectorAll('.wt'), function (w) { w.outerHTML = waitBox(x.wait); }); toast(v == null ? 'وقت الانتظار اتخفى من صفحة المرضى' : '⏱ المرضى شايفين: ' + (v ? '~' + v + ' دقيقة انتظار' : 'مفيش انتظار')); }).catch(function (er) { toast(er.message); });
+  });
+  /* ── daily summary ── */
+  function digestUI() {
+    var el = $('dgBox'); if (!el) return;
+    api('GET', 'digest').then(function (g) {
+      el.innerHTML = '<section class="lx-card"><div class="lx-ch"><div><h3>📊 ملخص يومي لصاحب المركز</h3><small>كل يوم في الساعة اللي تختارها بيوصل إشعار على الأجهزة اللي شغّلت الإشعارات (' + g.devices + ' جهاز) — والملخص جاهز تبعته واتساب</small></div></div>' +
+        '<div class="dg-r"><label class="ad-sw"><input type="checkbox" id="dgOn"' + (g.on ? ' checked' : '') + '><i></i><span>ابعت الملخص كل يوم</span></label><select class="fld" id="dgH">' + [18, 19, 20, 21, 22, 23].map(function (h) { return '<option value="' + h + '"' + (g.hour === h ? ' selected' : '') + '>الساعة ' + (h - 12) + ' بالليل</option>'; }).join('') + '</select></div>' +
+        '<pre class="dg-p">' + esc(g.text) + '</pre><div class="bt" style="justify-content:flex-start"><button type="button" class="btn" id="dgW" style="background:#16A34A">ابعته على واتساب</button><button type="button" class="btn g" id="dgC">انسخ</button></div>' +
+        (g.devices ? '' : '<p style="font-size:12.5px;color:#B45309;margin-top:8px">🔔 شغّل الإشعارات من الجرس اللي فوق عشان الملخص يوصلك لوحده.</p>') + '</section>';
+      var save = function () { api('POST', 'digest', { on: $('dgOn').checked, hour: +$('dgH').value }).then(function () { toast('📊 الملخص اليومي اتظبط'); }).catch(function (e) { toast(e.message); }); };
+      $('dgOn').onchange = save; $('dgH').onchange = save;
+      $('dgW').onclick = function () { window.open('https://wa.me/?text=' + encodeURIComponent(g.text), '_blank', 'noopener'); };
+      $('dgC').onclick = function () { (navigator.clipboard ? navigator.clipboard.writeText(g.text) : Promise.reject()).then(function () { toast('اتنسخ ✓'); }).catch(function () {}); };
+    }).catch(function () {});
+  }
+  /* ── phone dashboard as widgets: reorder / hide, remembered on this phone ── */
+  var WKEY = 'qrd-w:' + C.code, WNAMES = { kp: 'الأرقام', wt: 'وقت الانتظار', fo: 'المتابعات', ch: 'مسح اليوم', qa: 'اختصارات' };
+  function wPrefs() { try { return JSON.parse(localStorage.getItem(WKEY) || 'null') || { order: ['kp', 'wt', 'fo', 'ch', 'qa'], hide: [] }; } catch (e) { return { order: ['kp', 'wt', 'fo', 'ch', 'qa'], hide: [] }; } }
+  function wApply() {
+    var d = $('qrdD'); if (!d) return; var P = wPrefs(), ed = d.classList.contains('wed');
+    Object.keys(WNAMES).forEach(function (k) { if (P.order.indexOf(k) < 0) P.order.push(k); });
+    P.order.forEach(function (k, i) { var w = d.querySelector('[data-w="' + k + '"]'); if (!w) return; w.style.order = i + 1; w.classList.toggle('w-off', P.hide.indexOf(k) > -1); w.hidden = !ed && P.hide.indexOf(k) > -1; });
+  }
+  function wSetup() {
+    var d = $('qrdD'); if (!d || d.dataset.w) return; d.dataset.w = '1';
+    var map = { kp: '.qrdd-kp', ch: '.qrdd-ch', qa: '.qrdd-qa' };
+    Object.keys(map).forEach(function (k) { var n = d.querySelector(map[k]); if (n) n.dataset.w = k; });
+    d.insertAdjacentHTML('afterbegin', '<div class="w-top"><b>النهارده</b><button type="button" class="w-ed" id="wEd">✎ رتّب</button></div>');
+    var wt = document.createElement('div'); wt.dataset.w = 'wt'; wt.className = 'qrdd-w'; d.appendChild(wt);
+    var fo = document.createElement('button'); fo.type = 'button'; fo.dataset.w = 'fo'; fo.className = 'qrdd-w qrdd-fo'; fo.setAttribute('data-page-nav', 'follow'); d.appendChild(fo);
+    [].forEach.call(d.querySelectorAll('[data-w]'), function (w) { w.insertAdjacentHTML('afterbegin', '<div class="w-ctl"><span>' + WNAMES[w.dataset.w] + '</span><button type="button" data-wm="-1">▲</button><button type="button" data-wm="1">▼</button><button type="button" data-wm="h">👁</button></div>'); });
+    d.addEventListener('click', function (e) {
+      var m = e.target.closest('[data-wm]'); if (m) { e.preventDefault(); e.stopPropagation(); var k = m.closest('[data-w]').dataset.w, P = wPrefs(), i = P.order.indexOf(k);
+        if (m.dataset.wm === 'h') { var j = P.hide.indexOf(k); if (j > -1) P.hide.splice(j, 1); else P.hide.push(k); }
+        else { var to = i + (+m.dataset.wm); if (to >= 0 && to < P.order.length) P.order.splice(to, 0, P.order.splice(i, 1)[0]); }
+        try { localStorage.setItem(WKEY, JSON.stringify(P)); } catch (er) {} wApply(); return; }
+      if (e.target.closest('#wEd')) { d.classList.toggle('wed'); $('wEd').textContent = d.classList.contains('wed') ? '✓ تمام' : '✎ رتّب'; wApply(); }
+    }, true);
+    wApply(); wPaint();
+  }
+  function wPaint() {
+    var d = $('qrdD'), D = ui.dash; if (!d || !D) return;
+    var wt = d.querySelector('[data-w="wt"]'); if (wt) { var c = wt.querySelector('.w-ctl'); wt.innerHTML = waitBox(D.wait); if (c) wt.insertBefore(c, wt.firstChild); }
+    var fo = d.querySelector('[data-w="fo"]'); if (fo) { var c2 = fo.querySelector('.w-ctl'); fo.innerHTML = '<span class="lx-fi" style="--c:#F59E0B">🔁</span><b>متابعات مستحقة<small>' + (D.follow ? 'كلّمهم يحجزوا' : 'مفيش حد النهارده') + '</small></b><em>' + n0(D.follow || 0) + '</em>'; if (c2) fo.insertBefore(c2, fo.firstChild); }
+    wApply();
   }
   function adsSave(x) { ui.ads = x.ads || ui.ads; adsUI(); dashSoon(); }
   function studioWire(el) {
@@ -1586,7 +1755,7 @@
       var acts = (loc && r.active ? '<button class="lx-ib" data-a="qr" data-tip="الباركود">' + ic('qr') + '</button><button class="lx-ib" data-a="print" data-tip="اطبع استيكر">' + ic('print') + '</button>' + (r.phone ? '<button class="lx-ib wa" data-a="wa" data-tip="واتساب للمريض">' + ic('wa') + '</button>' : '') : '') +
         '<div class="lx-mn"><button type="button" class="lx-ib" data-menu data-tip="المزيد">' + ic('dots') + '</button><div class="lx-dd" hidden>' +
         (r.active ? '<button data-a="stop">' + ic('pause') + ' وقّف الحالة</button>' : '<button data-a="start">' + ic('play') + ' شغّل الحالة</button>') +
-        (r.kind === 'dicom' && loc ? '<button data-a="pacs">🩻 افتح في الـ PACS</button>' : '') + '<button data-a="views">' + ic('eye') + ' مين فتحها</button><button data-a="del" class="dl">' + ic('trash') + ' امسح الحالة</button></div></div>';
+        (r.kind === 'dicom' && loc ? '<button data-a="pacs">🩻 افتح في الـ PACS</button>' : '') + '<button data-a="views">' + ic('eye') + ' مين فتحها</button><button data-a="doc">👨‍⚕️ الدكتور المحوّل</button><button data-a="fol">🔁 ميعاد المتابعة' + (r.follow_at && !r.follow_done ? ' · ' + dmyOf(r.follow_at) : '') + '</button><button data-a="del" class="dl">' + ic('trash') + ' امسح الحالة</button></div></div>';
       body += '<tr class="lx-cr' + (r.active ? '' : ' off') + '" data-t="' + r.token + '" style="--x:' + exColor(r.exam) + '">' +
         '<td><div class="lx-pt">' + qr + '<div><b title="' + esc(r.patient) + '">' + esc(r.patient) + '</b><span class="n">' + esc(r.phone || '—') + '</span></div></div></td>' +
         '<td><span class="lx-b" style="--x:' + exColor(r.exam) + '">' + esc(r.exam || 'فحص') + '</span></td>' +
@@ -1600,10 +1769,10 @@
     [].forEach.call($('tbl').querySelectorAll('[data-qr]'), function (x) { x.onclick = function () { showQr(x.dataset.qr); }; });
     [].forEach.call($('tbl').querySelectorAll('[data-vw]'), function (x) { x.onclick = function () { viewsModal(x.dataset.vw); }; });
     [].forEach.call($('tbl').querySelectorAll('[data-pg]'), function (x) { x.onclick = function () { ui.cp += +x.dataset.pg; table(); var t = $('tbl'); if (t) t.scrollIntoView({ block: 'start', behavior: 'smooth' }); }; });
-    [].forEach.call($('tbl').querySelectorAll('[data-a]'), function (b) { b.onclick = function () { var dd = b.closest('.lx-dd'); if (dd) dd.hidden = true; if (b.dataset.a === 'views') return viewsModal(b.closest('[data-t]').dataset.t); if (b.dataset.a === 'pacs') return openPacs(b.closest('[data-t]').dataset.t); act(b.closest('[data-t]').dataset.t, b.dataset.a, b); }; });
+    [].forEach.call($('tbl').querySelectorAll('[data-a]'), function (b) { b.onclick = function () { var dd = b.closest('.lx-dd'); if (dd) dd.hidden = true; if (b.dataset.a === 'views') return viewsModal(b.closest('[data-t]').dataset.t); if (b.dataset.a === 'pacs') return openPacs(b.closest('[data-t]').dataset.t); if (b.dataset.a === 'doc') return caseDoctorAsk(b.closest('[data-t]').dataset.t); if (b.dataset.a === 'fol') return caseFollowAsk(b.closest('[data-t]').dataset.t); act(b.closest('[data-t]').dataset.t, b.dataset.a, b); }; });
   }
   /* ── 4.98 · access log: every time a patient opens his case ── */
-  var VIA = { qr: ['▦', 'باركود الحالة'], fixed: ['📌', 'الباركود الثابت'] }, SRC = { cache: '☁ من السيرفر', center: '💻 من جهاز المركز' };
+  var VIA = { qr: ['▦', 'باركود الحالة'], fixed: ['📌', 'الباركود الثابت'], doctor: ['👨‍⚕️', 'لينك الدكتور'] }, SRC = { cache: '☁ من السيرفر', center: '💻 من جهاز المركز' };
   function entryRow(e, withName) {
     var v = VIA[e.via] || VIA.qr;
     return '<div class="ve"><span class="vi">' + v[0] + '</span><div><b>' + (withName ? esc(e.patient || '') + (e.exam ? ' <small>· ' + esc(e.exam) + '</small>' : '') : esc(e.dev || 'جهاز')) + '</b><small>' + when(e.at) + ' · ' + v[1] + (withName ? (e.dev ? ' · ' + esc(e.dev) : '') : (SRC[e.src] ? ' · ' + SRC[e.src] : '')) + '</small></div></div>';
@@ -1773,7 +1942,7 @@
     if (ui.prefill && ui.page === 'upload') {
       toast('📂 جهزنا بيانات المريض — اختار ملف PDF من زر رفع الملفات');
     }
-    Promise.all([api('GET', 'list'), localAll()]).then(function (a) { ui.list = a[0].list || []; ui.local = a[1] || {}; ui.asks = a[0].asks || []; ui.bookings = a[0].bookings || []; ui.tickets = a[0].tickets || []; ui.qr = a[0].qr || ui.qr; ui.recent = a[0].recent || []; ui.dash = a[0].dash || null; dashX(); adsLoad(); setTimeout(dicomOffServer, 1500); qrPanel(); bookings(); asks(); serviceTickets(); recent(); table(); stats(); disk(); backfill(); dHome(); }).catch(function (e) {
+    docsLoad(false); Promise.all([api('GET', 'list'), localAll()]).then(function (a) { ui.list = a[0].list || []; ui.local = a[1] || {}; ui.asks = a[0].asks || []; ui.bookings = a[0].bookings || []; ui.tickets = a[0].tickets || []; ui.qr = a[0].qr || ui.qr; ui.recent = a[0].recent || []; ui.dash = a[0].dash || null; dashX(); adsLoad(); setTimeout(dicomOffServer, 1500); qrPanel(); bookings(); asks(); serviceTickets(); recent(); table(); stats(); disk(); backfill(); dHome(); }).catch(function (e) {
       var message='تعذّر تحميل بيانات القسم. جرّب تحديث الصفحة أو اتأكد من اتصال الإنترنت.';
       ['bookings','asks','complaints','reportRequests'].forEach(function (id) {
         var box=$(id); if (box) box.innerHTML='<div class="qrd-data-error" role="alert">⚠️ '+message+'</div>';

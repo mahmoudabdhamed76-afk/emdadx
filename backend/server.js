@@ -301,7 +301,7 @@ const server = http.createServer(async (req, res) => {
     }
     if (pathname === '/api/version' && req.method === 'GET') return sendJSON(res, 200, { version: _dataVersion });
     if (pathname.startsWith('/tiles/') && tiles.handle(req, res, pathname)) return;   // the map's tiles through our server
-    if ((pathname.startsWith('/k/') || pathname.startsWith('/v/') || pathname.startsWith('/h/')) && await cases.handle(req, res, pathname)) return;   // حالات المرضى
+    if ((pathname.startsWith('/k/') || pathname.startsWith('/v/') || pathname.startsWith('/h/') || pathname.startsWith('/s/') || pathname.startsWith('/r/')) && await cases.handle(req, res, pathname)) return;   // حالات المرضى
     /* a center's own page (token link: /p/<long>, /c/<8>, or the shortest /<6 letters with a digit>) */
     if ((pathname.startsWith('/p/') || pathname.startsWith('/c/') || /^\/[A-Za-z0-9]{6}(\/[a-z.]+(\/[A-Za-z0-9_-]+)?)?\/?$/.test(pathname)) && portal.handle(req, res, pathname, () => store.data())) return;
 

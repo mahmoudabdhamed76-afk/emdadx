@@ -10,15 +10,98 @@
   function mb(n) { return n >= 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB'; }
   function dmy(ts) { var m = /(\d{4})-(\d{2})-(\d{2})/.exec(String(ts || '')); return m ? (+m[3]) + '/' + (+m[2]) + '/' + m[1] : ''; }
   function unb64u(s) { s = s.replace(/-/g, '+').replace(/_/g, '/'); while (s.length % 4) s += '='; var b = atob(s), o = new Uint8Array(b.length); for (var i = 0; i < b.length; i++) o[i] = b.charCodeAt(i); return o; }
+  /* 5.28 · opened from a referring doctor's page → doctor mode (no rating, counted as «دكتور») */
+  try { if (C.token && sessionStorage.getItem('ozx_drv') === C.token) C.doctor = true; } catch (e) {}
   try { if (window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc = '/vendor/pdfjs/pdf.worker.min.js'; } catch (e) {}
 
   function shell() {
     var head = '<div class="top"><span class="tlg">' + (window.OZSkin ? OZSkin.logo('') : '') + '</span><div class="tn"><b>' + esc(C.center || '') + '</b><small>نتيجة الفحص</small></div></div>';
-    if (C.missing) { document.body.innerHTML = '<div class="w"><div class="ld" style="margin-top:30vh"><i>🔍</i><b>الحالة دي مش موجودة</b><p>اتأكد من الباركود، أو كلّم المركز.</p></div></div>'; return; }
+    if (C.missing) { document.body.innerHTML = '<div class="w"><div class="ld" style="margin-top:30vh"><i>' + (C.expired ? '⌛' : '🔍') + '</i><b>' + (C.expired ? 'اللينك ده انتهى' : 'الحالة دي مش موجودة') + '</b><p>' + (C.expired ? 'مدة اللينك خلصت أو صاحبه وقّفه — اطلب لينك جديد من المريض.' : 'اتأكد من الباركود، أو كلّم المركز.') + '</p></div></div>'; return; }
+    if (C.doctor) head = head.replace('<small>نتيجة الفحص</small>', '<small>👨‍⚕️ ' + (C.share ? 'لينك للدكتور · صالح لحد ' + dmy(new Date(C.share.expires).toISOString()) : 'نتيجة مريض محوّل منك') + '</small>');
     var back = null; try { back = /^\/h\/[A-Za-z0-9]{8}$/.exec(sessionStorage.getItem('ozx_back') || ''); } catch (e) {}
     if (back) head = head.replace(/<\/div><\/div>$/, '</div><a class="bk" href="' + back[0] + '">↩ نتايج تانية</a></div>');
     document.body.innerHTML = '<div class="w">' + head + '<div class="pt"><small>المريض</small><h1>' + esc(C.patient) + '</h1><div class="m">' + (C.exam ? '<span>🩻 ' + esc(C.exam) + '</span>' : '') + '<span>📅 ' + dmy(C.at) + '</span>' + (C.pages ? '<span>' + (C.kind === 'dicom' ? '🩻 ' + C.pages + ' صورة' : '📄 ' + C.pages + ' صفحة') + '</span>' : '') + '</div></div>' +
-      '<div id="body"></div><p class="foot">الملف متشفّر — بيتفتح بس بالباركود ده. · ' + esc(C.center || '') + '</p></div>';
+      '<div id="deck"></div><div id="body"></div><p class="foot">الملف متشفّر — بيتفتح بس بالباركود ده. · ' + esc(C.center || '') + '</p></div>';
+  }
+  /* 5.28 · «أهلاً يا أحمد 👋 نتيجتك جاهزة» — a moment before the result */
+  function hello() {
+    if (C.missing || (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) return;
+    var first = String(C.patient || '').trim().split(/\s+/)[0] || '';
+    var o = document.createElement('div'); o.className = 'vh2';
+    o.innerHTML = '<div class="vh2-c"><span class="vh2-lg">' + (window.OZSkin ? OZSkin.logo('') : '') + '</span><b>' + (C.doctor ? 'نتيجة المريض' : 'أهلاً يا ' + esc(first) + ' 👋') + '</b><small>' + (C.doctor ? esc(C.patient || '') : 'نتيجتك جاهزة') + '</small><i class="vh2-bar"></i></div>';
+    document.body.appendChild(o); requestAnimationFrame(function () { o.classList.add('in'); });
+    setTimeout(function () { o.classList.add('out'); setTimeout(function () { o.remove(); }, 500); }, 1700);
+    o.onclick = function () { o.classList.add('out'); setTimeout(function () { o.remove(); }, 400); };
+  }
+  /* 5.28 · app-style cards under the patient's name — swipe sideways like stories */
+  function deck() {
+    var el = $('deck'); if (!el || el.dataset.on) return; el.dataset.on = '1';
+    var cards = [];
+    cards.push(['res', C.kind === 'dicom' ? '🩻' : '📄', C.kind === 'dicom' ? 'الصور' : 'التقرير', C.kind === 'dicom' ? 'عارض كامل · تكبير وقياس' : (C.pages ? C.pages + ' صفحة · نزّلها PDF' : 'افتحها ونزّلها'), 'c1']);
+    if (!C.doctor) cards.push(['doc', '👨‍⚕️', 'ابعتها لدكتورك', 'لينك آمن بمدة إنت بتحددها', 'c2']);
+    if (!C.doctor && C.follow) cards.push(['fol', '🔁', 'ميعاد المتابعة', 'يوم ' + dmy(C.follow) + ' · احجز أو فكّرني', 'c3']);
+    if (!C.doctor && C.pub) cards.push(['all', '📂', 'كل فحوصاتك', 'ملفك كامل في المركز', 'c4']);
+    if (!C.doctor) cards.push(['rate', '⭐', 'قيّم زيارتك', 'رأيك بيفرق معانا', 'c5']);
+    el.className = 'dk2';
+    el.innerHTML = '<div class="dk2-tr" id="dkTr">' + cards.map(function (c, i) { return '<button type="button" class="dk2-c ' + c[4] + '" data-dk="' + c[0] + '" style="--i:' + i + '"><i>' + c[1] + '</i><b>' + c[2] + '</b><small>' + c[3] + '</small><em>←</em></button>'; }).join('') + '</div>' +
+      '<div class="dk2-dots">' + cards.map(function (c, i) { return '<i class="' + (i ? '' : 'on') + '"></i>'; }).join('') + '</div>';
+    var tr = $('dkTr'), dots = el.querySelectorAll('.dk2-dots i');
+    tr.addEventListener('scroll', function () { var w = tr.firstChild.offsetWidth + 12, k = Math.round(Math.abs(tr.scrollLeft) / w); [].forEach.call(dots, function (d, i) { d.classList.toggle('on', i === k); }); }, { passive: true });
+    [].forEach.call(el.querySelectorAll('[data-dk]'), function (b) { b.onclick = function () {
+      var k = b.dataset.dk;
+      if (k === 'res') return $('body').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      if (k === 'doc') return shareSheet();
+      if (k === 'fol') return followSheet();
+      if (k === 'all') { try { sessionStorage.setItem('ozx_back', '/h/' + C.pub); } catch (e) {} location.href = '/h/' + C.pub + '#find'; return; }
+      if (k === 'rate') { var r = $('rate'); if (r) r.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+    }; });
+  }
+  function sheet(html) {
+    var o = document.createElement('div'); o.className = 'sh2'; o.innerHTML = '<div class="sh2-c" role="dialog" aria-modal="true"><i class="sh2-h"></i>' + html + '</div>';
+    document.body.appendChild(o); requestAnimationFrame(function () { o.classList.add('in'); });
+    var close = function () { o.classList.remove('in'); setTimeout(function () { o.remove(); }, 320); };
+    o.addEventListener('click', function (e) { if (e.target === o || e.target.closest('[data-x]')) close(); });
+    return { el: o, close: close };
+  }
+  /* 5.28 · «ابعتها لدكتورك»: a separate key wraps this case's key — the doctor's link works only for the days chosen, and can be stopped */
+  function shareSheet() {
+    var mine = []; try { mine = JSON.parse(localStorage.getItem('ozx_sh:' + C.token) || '[]'); } catch (e) {}
+    mine = mine.filter(function (x) { return x.exp > Date.now(); });
+    var S = sheet('<b class="sh2-t">👨‍⚕️ ابعت النتيجة لدكتورك</b><p class="sh2-p">هنعمل لينك خاص للدكتور يفتح بيه التقرير والصور، ويقف لوحده بعد المدة اللي تختارها.</p>' +
+      '<label class="sh2-l">اسم الدكتور (اختياري)</label><input class="fld" id="shN" maxlength="60" placeholder="مثلاً: د. محمد">' +
+      '<label class="sh2-l">اللينك يفضل شغال</label><div class="sh2-ch" id="shD">' + [[1, 'يوم'], [3, '3 أيام'], [7, 'أسبوع'], [30, 'شهر']].map(function (x) { return '<button type="button" data-d="' + x[0] + '" class="' + (x[0] === 7 ? 'on' : '') + '">' + x[1] + '</button>'; }).join('') + '</div>' +
+      '<button type="button" class="btn w" id="shGo">اعمل اللينك</button><div id="shOut"></div>' +
+      (mine.length ? '<div class="sh2-ls"><small>لينكات عملتها قبل كده</small>' + mine.map(function (x) { return '<div class="sh2-li"><span>' + esc(x.label || 'دكتور') + ' · لحد ' + dmy(new Date(x.exp).toISOString()) + '</span><button type="button" data-rv="' + x.sid + '">وقّفه</button></div>'; }).join('') + '</div>' : '') +
+      '<button type="button" class="btn g w" data-x>قفل</button>');
+    var days = 7, el = S.el;
+    [].forEach.call(el.querySelectorAll('[data-d]'), function (b) { b.onclick = function () { days = +b.dataset.d; [].forEach.call(el.querySelectorAll('[data-d]'), function (x) { x.classList.toggle('on', x === b); }); }; });
+    [].forEach.call(el.querySelectorAll('[data-rv]'), function (b) { b.onclick = function () {
+      b.disabled = true; fetch(location.pathname.replace(/\/$/, '') + '/share/' + b.dataset.rv + '/revoke', { method: 'POST' }).then(function () { b.parentNode.innerHTML = '<span>⛔ اللينك اتوقف</span>'; mine = mine.filter(function (x) { return x.sid !== b.dataset.rv; }); try { localStorage.setItem('ozx_sh:' + C.token, JSON.stringify(mine)); } catch (e) {} });
+    }; });
+    $('shGo').onclick = function () {
+      var b = this, label = $('shN').value.trim(), k2 = OZK.newKey(); b.disabled = true; b.textContent = 'بنجهّز اللينك…';
+      OZK.wrapRaw(KEY, k2).then(function (w) { return fetch(location.pathname.replace(/\/$/, '') + '/share', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ w: w, days: days, label: label }) }); })
+        .then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.message || 'محصلش'); return j; }); })
+        .then(function (j) {
+          var url = location.origin + '/s/' + j.sid + '#' + k2, msg = 'نتيجة ' + (C.exam || 'الأشعة') + ' — ' + (C.patient || '') + ' من ' + (C.center || 'المركز') + ':\n' + url;
+          mine.push({ sid: j.sid, exp: j.expires, label: label }); try { localStorage.setItem('ozx_sh:' + C.token, JSON.stringify(mine)); } catch (e) {}
+          b.remove();
+          $('shOut').innerHTML = '<div class="sh2-ok">✅ اللينك جاهز — صالح لحد ' + dmy(new Date(j.expires).toISOString()) + '</div><div class="sh2-row"><a class="btn" target="_blank" rel="noopener" href="https://wa.me/?text=' + encodeURIComponent(msg) + '">واتساب</a><button type="button" class="btn g" id="shC">انسخ اللينك</button>' + (navigator.share ? '<button type="button" class="btn g" id="shS">مشاركة</button>' : '') + '</div>';
+          $('shC').onclick = function () { var t = this; (navigator.clipboard ? navigator.clipboard.writeText(url) : Promise.reject()).then(function () { t.textContent = '✓ اتنسخ'; }).catch(function () { prompt('انسخ اللينك', url); }); };
+          if ($('shS')) $('shS').onclick = function () { navigator.share({ title: 'نتيجة أشعة', text: msg.split('\n')[0], url: url }).catch(function () {}); };
+        }).catch(function (e) { b.disabled = false; b.textContent = 'اعمل اللينك'; $('shOut').innerHTML = '<p class="rt-er">' + esc(e.message) + '</p>'; });
+    };
+  }
+  /* 5.28 · the follow-up the center set for this exam: add it to the phone's calendar, or book now */
+  function followSheet() {
+    var d = String(C.follow || '').replace(/-/g, ''), S = sheet('<b class="sh2-t">🔁 ميعاد المتابعة</b><p class="sh2-p">المركز بينصح بمتابعة <b>' + esc(C.exam || 'الفحص') + '</b> يوم <b>' + dmy(C.follow) + '</b>.</p>' +
+      '<div class="sh2-row"><button type="button" class="btn" id="fCal">📅 فكّرني (ضيفه للتقويم)</button>' + (C.pub ? '<a class="btn g" href="/h/' + esc(C.pub) + '#book">احجز ميعاد</a>' : '') + '</div><button type="button" class="btn g w" data-x>قفل</button>');
+    $('fCal').onclick = function () {
+      var nx = new Date(C.follow + 'T12:00:00Z'); nx.setUTCDate(nx.getUTCDate() + 1); var d2 = nx.toISOString().slice(0, 10).replace(/-/g, '');
+      var ics = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//QR Patient//AR', 'BEGIN:VEVENT', 'UID:' + C.token + '-follow@qr', 'DTSTAMP:' + new Date().toISOString().replace(/[-:]/g, '').slice(0, 15) + 'Z', 'DTSTART;VALUE=DATE:' + d, 'DTEND;VALUE=DATE:' + d2,
+        'SUMMARY:متابعة ' + (C.exam || 'الأشعة') + ' — ' + (C.center || ''), 'DESCRIPTION:احجز من بوابة المركز: ' + location.origin + '/h/' + (C.pub || ''), 'BEGIN:VALARM', 'TRIGGER:-P1D', 'ACTION:DISPLAY', 'DESCRIPTION:ميعاد المتابعة بكرة', 'END:VALARM', 'END:VEVENT', 'END:VCALENDAR'].join('\r\n');
+      var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([ics], { type: 'text/calendar' })); a.download = 'متابعة.ics'; document.body.appendChild(a); a.click(); a.remove(); this.textContent = '✓ اتضاف';
+    };
   }
   /* 4.92 · stuck (center offline / file missing / stopped) → ask the center on WhatsApp */
   function waBtn() { return '<button class="btn ask2" id="askc" style="margin-top:10px;display:flex;width:100%">📨 اطلبها من المركز</button>'; }
@@ -40,7 +123,7 @@
     if (!(window.crypto && crypto.subtle)) return box('⚠️', 'المتصفح ده قديم', 'افتح اللينك من Chrome أو Safari.');
     box('spin', 'بنجيب الحالة…', '', '<div class="bar"><i id="pr" style="width:4%"></i></div><p id="prt" style="margin-top:6px"></p>');
     var viaH = false; try { viaH = /^\/h\//.test(sessionStorage.getItem('ozx_back') || ''); } catch (e) {}
-    fetch(location.pathname.replace(/\/$/, '') + '/file' + (viaH ? '?h=1' : '') + (function () { try { return localStorage.getItem('qrd-staff') ? (viaH ? '&' : '?') + 's=1' : ''; } catch (e) { return ''; } })(), { cache: 'no-store' }).then(function (r) {
+    fetch((C.doctor ? '/v/' + C.token : location.pathname.replace(/\/$/, '')) + '/file' + (C.doctor ? '?d=1' : viaH ? '?h=1' : '') + (function () { try { return localStorage.getItem('qrd-staff') ? (viaH ? '&' : '?') + 's=1' : ''; } catch (e) { return ''; } })(), { cache: 'no-store' }).then(function (r) {
       if (!r.ok) return r.json().catch(function () { return {}; }).then(function (j) { var e = new Error(j.message || 'محصلش'); e.j = j; e.status = r.status; throw e; });
       var total = Number(r.headers.get('Content-Length')) || C.size || 0, src = r.headers.get('X-Source');
       if (!r.body || !r.body.getReader) return r.arrayBuffer().then(function (b) { return { buf: b, src: src }; });
@@ -55,7 +138,7 @@
       var all = new Uint8Array(x.buf), iv = all.slice(0, 12), ct = all.slice(12);
       return crypto.subtle.importKey('raw', unb64u(KEY), { name: 'AES-GCM' }, false, ['decrypt']).then(function (k) { return crypto.subtle.decrypt({ name: 'AES-GCM', iv: iv }, k, ct); })
         .catch(function () { var e = new Error('bad'); e.bad = true; throw e; });
-    }).then(function (plain) { if (C.kind === 'dicom') showDicom(plain); else { PDF = new Uint8Array(plain); show(); } rateCard(); })
+    }).then(function (plain) { if (C.kind === 'dicom') showDicom(plain); else { PDF = new Uint8Array(plain); show(); } deck(); if (!C.doctor) rateCard(); })
       .catch(function (e) {
         if (e.bad) return box('🔑', 'مش قادر أفتح الملف', 'الباركود ده مش بتاع الحالة دي أو ناقص — امسحه تاني.');
         if (e.j && e.j.stopped) return box('⏸', 'الحالة دي اتوقفت', 'كلّم المركز لو محتاجها.');
@@ -127,5 +210,9 @@
       }
     }).catch(function () { $('pages').innerHTML = '<div class="ld"><i>📄</i><b>الحالة جاهزة</b><p>مش قادر أعرضها هنا — دوس «نزّل PDF» وافتحها.</p></div>'; });
   }
-  shell(); if (!C.missing) load();
+  shell(); hello();
+  if (!C.missing) {
+    if (C.share) OZK.unwrapRaw(C.share, KEY).then(function (k) { if (!k) return box('🔑', 'اللينك ناقص', 'افتح اللينك كامل زي ما اتبعتلك.'); KEY = k; load(); }).catch(function () { box('🔑', 'اللينك ناقص', 'افتح اللينك كامل زي ما اتبعتلك.'); });
+    else load();
+  }
 })();

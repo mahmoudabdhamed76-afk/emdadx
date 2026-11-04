@@ -64,6 +64,10 @@
     '<div class="pvd-pop" id="pvdPop" hidden><div id="caseNotify"><b>🔔 إشعارات طلبك</b><small>هيوصلك تنبيه على موبايلك أول ما المركز يرد على طلبك أو نتيجتك تجهز.</small>' +
       '<button class="pvd-pop-btn" id="patientPushToggle" type="button">فعّل الإشعارات</button></div></div>' +
     (C.on ? '<form class="pvd-sr" id="pvdSearch" novalidate><label class="pvd-in" for="pvdPh"><span class="pvd-ic"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"6\" y=\"2\" width=\"12\" height=\"20\" rx=\"3\"/><path d=\"M11 18h2\"/></svg></span><input id="pvdPh" type="tel" inputmode="tel" autocomplete="tel" maxlength="20" dir="ltr" placeholder="اكتب رقم موبايلك لنتيجتك"></label><button class="pvd-go" type="submit" aria-label="اعرض نتيجتي"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M15 6l-6 6 6 6\"/></svg></button></form>' : '') +
+    (function () { var w = C.wait, me = ''; try { me = localStorage.getItem('ozx_me:' + C.pub) || ''; } catch (e) {}
+      var h = (w ? '<div class="pvd-wait" role="status"><i></i><b>' + (w.min ? 'الانتظار دلوقتي حوالي ' + w.min + ' دقيقة' : 'مفيش انتظار دلوقتي — اتفضّل') + '</b><small>اتحدّث من ' + Math.max(1, Math.round((Date.now() - w.at) / 60000)) + ' د</small></div>' : '') +
+        (me && C.on ? '<button type="button" class="pvd-me" id="pvdMe">📂 ملفي في المركز <small>كل فحوصاتك في مكان واحد</small><em>←</em></button>' : '');
+      return h ? '<div class="pvd-chips">' + h + '</div>' : ''; })() +
     '<div class="pv2-section-title pvd-sec"><div><h2>الخدمات</h2></div><small>كلها من موبايلك</small></div>' +
     '<div class="patient-chooser" role="tablist" aria-label="خدمات المركز">' +
       '<button type="button" id="tab-booking" class="pv2-service" role="tab" aria-selected="false" aria-controls="patient-book">' +
@@ -180,6 +184,9 @@
       }
       panel.scrollIntoView({behavior:window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'nearest'});
     },90);
+    /* 5.28 · the chosen card slides in (the inner card, never the panel — keeps Safari from blanking) */
+    var card = panel && panel.firstElementChild;
+    if (card && !(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches)) { card.classList.remove('pv-in'); void card.offsetWidth; card.classList.add('pv-in'); }
     if (which==='complaint') {
       var intro=document.querySelector('.pv2-complaint-intro');
       if (intro) { intro.classList.remove('pv2-play'); void intro.offsetWidth; intro.classList.add('pv2-play'); }
@@ -228,7 +235,25 @@
       }, (P.delay || 2) * 1000);
     }, 500);
   })();
-  var initial={ '#book':'booking','#results':'results','#complaint':'complaint','#report':'report' }[location.hash];
+  /* 5.28 · motion: tiles cascade in, a ripple where the finger lands, the header tightens on scroll, the tab bar bubble follows */
+  (function motion() {
+    var RM = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches; if (RM) return;
+    document.body.classList.add('pvm');
+    [].forEach.call(document.querySelectorAll('.pv2-service, .pv2-trust > div, .pvd-chips > *'), function (el, i) { el.style.setProperty('--mi', i); });
+    document.addEventListener('pointerdown', function (e) {
+      var t = e.target.closest && e.target.closest('.pv2-service, .btn, .pvd-tab button, .rc, .dk2-c, .pvd-me'); if (!t) return;
+      var r = t.getBoundingClientRect(), d = Math.max(r.width, r.height) * 1.2, sp = document.createElement('span'); sp.className = 'pvm-rp';
+      sp.style.cssText = 'width:' + d + 'px;height:' + d + 'px;left:' + (e.clientX - r.left - d / 2) + 'px;top:' + (e.clientY - r.top - d / 2) + 'px';
+      if (getComputedStyle(t).position === 'static') t.style.position = 'relative'; t.style.overflow = 'hidden'; t.appendChild(sp); setTimeout(function () { sp.remove(); }, 650);
+    }, { passive: true });
+    var hd = document.querySelector('.pvd-hd'), tick = false;
+    window.addEventListener('scroll', function () { if (tick) return; tick = true; requestAnimationFrame(function () { tick = false; if (hd) hd.classList.toggle('pvm-sc', window.scrollY > 30); }); }, { passive: true });
+    var bar = document.querySelector('.pvd-tab');
+    if (bar) { var blob = document.createElement('i'); blob.className = 'pvm-blob'; bar.appendChild(blob);
+      var place = function () { var on = bar.querySelector('button.on'); if (!on) return; var a = bar.getBoundingClientRect(), b = on.getBoundingClientRect(); blob.style.width = b.width + 'px'; blob.style.transform = 'translateX(' + (b.left - a.left) + 'px)'; };
+      new MutationObserver(place).observe(bar, { attributes: true, subtree: true, attributeFilter: ['class'] }); window.addEventListener('resize', place); setTimeout(place, 60); }
+  })();
+  var initial={ '#book':'booking','#results':'results','#find':'results','#complaint':'complaint','#report':'report' }[location.hash];
   if (initial) chooseJourney(initial);
   function pushDeviceToken() {
     try { return localStorage.getItem('qrd-push-device:' + C.pub) || ''; } catch(e) { return ''; }
@@ -392,7 +417,14 @@
   };
   if (!C.on) return;
   try { var last = JSON.parse(sessionStorage.getItem('ozx_find') || 'null'); if (last) { $('ph').value = last.p || ''; } } catch (e) {}
+  var ME = ''; try { ME = localStorage.getItem('ozx_me:' + C.pub) || ''; } catch (e) {}
+  if (ME && !$('ph').value) $('ph').value = ME;
+  setTimeout(function () {
+    var mbtn = $('pvdMe'); if (mbtn) mbtn.onclick = function () { FILE = true; chooseJourney('results'); $('ph').value = ME; $('go').click(); };
+    if (FILE && $('ph').value) $('go').click();
+  }, 0);
   /* 4.99 · the mobile alone opens the key (w2); the old (name + mobile) key stays for cases the center hasn't re-keyed yet */
+  var FILE = location.hash === '#find';
   function open1(x, ph) { return x.w2 ? K.unwrap2(x.w2, ph) : Promise.resolve(null); }
   var go = function () {
     var ph = $('ph').value, b = $('go'), er = $('er'); er.textContent = '';
@@ -407,11 +439,21 @@
         if (!M.length) { er.textContent = ''; notFound(ph); return; }
         try { sessionStorage.setItem('ozx_find', JSON.stringify({ p: ph })); sessionStorage.setItem('ozx_back', location.pathname.replace(/\/$/, '')); } catch (e) {}
         var href = function (m) { return '/v/' + m.x.token + '?h=1#' + m.k; };
-        if (M.length === 1) { $('res').innerHTML = '<div class="ld"><i>✅</i><b>لقينا نتيجتك</b><p>بنفتحها…</p></div>'; setTimeout(function () { location.href = href(M[0]); }, 450); return; }
-        $('res').innerHTML = '<p style="color:var(--mut);font-weight:700;margin:4px 4px 0">لقينا ' + M.length + ' نتايج — اختار:</p>' + M.map(function (m, i) {
+        if (M.length === 1 && !FILE) { $('res').innerHTML = '<div class="ld"><i>✅</i><b>لقينا نتيجتك</b><p>بنفتحها…</p></div>'; setTimeout(function () { location.href = href(M[0]); }, 450); return; }
+        /* 5.28 · «ملفي»: every exam of this mobile at the center, as a timeline by year, filterable by exam type */
+        var me = ''; try { me = localStorage.getItem('ozx_me:' + C.pub) || ''; } catch (e) {}
+        var ex = []; M.forEach(function (m) { var e = m.x.exam || 'فحص'; if (ex.indexOf(e) < 0) ex.push(e); });
+        var years = {}; M.forEach(function (m) { var y = String(m.x.at || '').slice(0, 4); (years[y] = years[y] || []).push(m); });
+        var first = String(M[M.length - 1].x.at || '').slice(0, 4);
+        $('res').innerHTML = '<div class="mf-h"><span>📂</span><div><b>ملفك في ' + esc(C.center || 'المركز') + '</b><small>' + M.length + ' فحص' + (first ? ' · من ' + first : '') + '</small></div></div>' +
+          '<label class="mf-me"><input type="checkbox" id="mfMe"' + (me ? ' checked' : '') + '><span>افتكر رقمي على الموبايل ده عشان أفتح ملفي على طول</span></label>' +
+          (ex.length > 1 ? '<div class="mf-f" id="mfF"><button type="button" class="on" data-mf="">الكل</button>' + ex.map(function (e) { return '<button type="button" data-mf="' + esc(e) + '">' + esc(e) + '</button>'; }).join('') + '</div>' : '') +
+          '<div class="mf-tl">' + Object.keys(years).sort().reverse().map(function (y) { return '<div class="mf-y"><b>' + y + '</b></div>' + years[y].map(function (m, i) {
           var dm = /(\d{4})-(\d{2})-(\d{2})/.exec(String(m.x.at || '')), MO = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
-          return '<a class="rc" href="' + href(m) + '" style="animation-delay:' + (i * 60) + 'ms"><span class="ri ' + (m.x.kind === 'dicom' ? 'd' : '') + '">' + (m.x.kind === 'dicom' ? '🩻' : '📄') + '</span>' + (dm ? '<span class="dn">' + dm[3] + '<small>' + MO[+dm[2] - 1] + '</small></span>' : '') + '<div><b>' + esc(m.x.exam || 'نتيجة فحص') + '</b><small>📅 ' + dmy(m.x.at) + (m.x.pages ? ' · ' + m.x.pages + (m.x.kind === 'dicom' ? ' صورة DICOM' : ' صفحة') : '') + ' · ' + esc(m.x.hint) + '</small></div><span class="go">←</span></a>';
-        }).join('');
+          return '<a class="rc mf-i" data-ex="' + esc(m.x.exam || 'فحص') + '" href="' + href(m) + '" style="animation-delay:' + (i * 60) + 'ms"><span class="ri ' + (m.x.kind === 'dicom' ? 'd' : '') + '">' + (m.x.kind === 'dicom' ? '🩻' : '📄') + '</span>' + (dm ? '<span class="dn">' + dm[3] + '<small>' + MO[+dm[2] - 1] + '</small></span>' : '') + '<div><b>' + esc(m.x.exam || 'نتيجة فحص') + '</b><small>📅 ' + dmy(m.x.at) + (m.x.pages ? ' · ' + m.x.pages + (m.x.kind === 'dicom' ? ' صورة DICOM' : ' صفحة') : '') + ' · ' + esc(m.x.hint) + '</small></div><span class="go">←</span></a>';
+        }).join(''); }).join('') + '</div>';
+        var mb = $('mfMe'); if (mb) mb.onchange = function () { try { if (mb.checked) localStorage.setItem('ozx_me:' + C.pub, ph); else localStorage.removeItem('ozx_me:' + C.pub); } catch (e) {} };
+        [].forEach.call(document.querySelectorAll('[data-mf]'), function (b) { b.onclick = function () { var v = b.dataset.mf; [].forEach.call(document.querySelectorAll('[data-mf]'), function (x) { x.classList.toggle('on', x === b); }); [].forEach.call(document.querySelectorAll('.mf-i'), function (a) { a.hidden = !!v && a.dataset.ex !== v; }); [].forEach.call(document.querySelectorAll('.mf-y'), function (yy) { var n = yy.nextElementSibling, any = false; while (n && !n.classList.contains('mf-y')) { if (!n.hidden) any = true; n = n.nextElementSibling; } yy.hidden = !any; }); }; });
       })
       .catch(function (e) { b.disabled = false; b.innerHTML = '🔍 دوّر على نتيجتي'; er.textContent = e.message; });
   };
