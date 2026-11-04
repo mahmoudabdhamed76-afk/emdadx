@@ -246,6 +246,8 @@
     }
     if (selected === 'upload') setTimeout(ensureDicom, 90);
     try { if (typeof window.scrollTo === 'function') window.scrollTo(0,0); }catch(e){}
+    /* 5.29 · GX Motion (GSAP): the section's cards come in one after another */
+    try { document.dispatchEvent(new CustomEvent('qrd:page', { detail: { page: selected, node: visible.querySelector('.qrd-page-body') || visible } })); } catch (e) {}
     if (visible && window.innerWidth <= 900) {
       visible.style.animation='none';
       if (window.requestAnimationFrame) window.requestAnimationFrame(function(){
