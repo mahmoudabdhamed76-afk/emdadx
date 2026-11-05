@@ -1,12 +1,12 @@
 /* ════════════════════════════════════════════════════════════════════
    EMDADX · «صفحة الدعاية» (4.77) — the public promo page (/promo)
-   Four designs (t1 … t4) over one content model set in the ERP.
+   Six designs (t1 … t6) over one editable content model set in the ERP.
    Motion: one calm slide-up cascade on open (like the patient page),
    an auto hero slider with swipe, count-up numbers, bottom sheets.
 ════════════════════════════════════════════════════════════════════ */
 (function () {
   'use strict';
-  var D = window.PM || {}, C = D.c || {}, T = String(C.theme || '1');
+  var D = window.PM || {}, C = D.c || {}, T = String(C.theme || '1'), MODERN = T === '5' || T === '6';
   var RM = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function $(id) { return document.getElementById(id); }
@@ -127,7 +127,12 @@
         '<path d="M84 162h22l5 18H79z" fill="#B7C6DA"/><rect x="62" y="178" width="66" height="6" rx="3" fill="#A5B6CD"/>' + '</svg>';
     }
   };
-  function artOf(s) { return s.img ? '<img class="pm-art pm-photo" src="/promo/img/' + esc(s.img) + '" alt="">' : (ART[s.art] || ART.monitor)(); }
+  function studioSrc(art) { return '/promo-assets/studio-' + (art === 'studio-dark' || art === 'studio' && T === '6' ? 'dark' : 'light') + '.jpg'; }
+  function photoSrc(s) { return s.img ? '/promo/img/' + s.img : /^studio(?:-light|-dark)?$/.test(s.art || '') ? studioSrc(s.art) : MODERN && s.art === 'monitor' ? studioSrc('studio') : ''; }
+  function artOf(s) {
+    var src = photoSrc(s);
+    return src ? '<img class="pm-art pm-photo" src="' + esc(src) + '" alt="' + esc(s.alt || s.title || 'طباعة الأشعة') + '" decoding="async">' : (ART[s.art] || ART.monitor)();
+  }
 
   /* ── building blocks ── */
   var SL = C.slider || {}, SEC = Math.max(3, Math.min(12, +SL.sec || 4.5)), FX = SL.fx || 'fade';
@@ -140,7 +145,7 @@
     if (k > 0) slides = slides.slice(k).concat(slides.slice(0, k)); })();
   function header() {
     return '<header class="pm-hd m"><div class="pm-br"><img src="/icons/logo-square.png" alt=""><div><b>' + esc(C.brand || 'Emdadx') + '</b><small>' + esc(C.tagline || '') + '</small></div></div>' +
-      '<nav class="pm-tnav" aria-label="القائمة"><button type="button" data-go="top">الرئيسية</button><button type="button" data-go="svc">الخدمات</button><button type="button" data-go="track">تابع طلبك</button><button type="button" data-go="support">الدعم</button><button type="button" class="pm-tcta" data-go="order">' + ic('send') + esc(C.cta || 'اطلب الخدمة') + '</button></nav>' +
+      '<nav class="pm-tnav" aria-label="القائمة"><button type="button" data-go="top">الرئيسية</button><button type="button" data-go="svc">الخدمات</button><button type="button" data-go="track">تابع طلبك</button><button type="button" data-go="support">الدعم</button><button type="button" class="pm-tcta" data-go="' + (MODERN ? 'quote' : 'order') + '">' + ic('send') + esc(MODERN && (C.modern || {}).quoteButton || C.cta || 'اطلب الخدمة') + '</button></nav>' +
       '<button type="button" class="pm-bell" data-go="support" aria-label="تواصل معنا">' + ic('bell') + '</button></header>';
   }
   function slideHTML(s, i) {
@@ -157,7 +162,7 @@
       else if (a === 'url' && s.url) btn = '<a class="pm-hbtn" href="' + esc(s.url) + '" target="_blank" rel="noopener">' + lab + '</a>';
       else btn = '<button type="button" class="pm-hbtn" data-go="' + (a === 'quote' || a === 'track' ? a : 'order') + '">' + lab + '</button>';
     }
-    return '<div class="pm-slide' + (i === 0 ? ' on' : '') + (s.img ? ' ph' + (s.shade !== false ? ' shade' : '') + (s.fit === 'contain' ? ' fit' : '') : '') + '" data-i="' + i + '"><div class="pm-artw">' + artOf(s) + '</div><div class="pm-htx">' + t + btn + '</div></div>';
+    return '<div class="pm-slide' + (i === 0 ? ' on' : '') + (photoSrc(s) ? ' ph' + (s.shade !== false ? ' shade' : '') + (s.fit === 'contain' ? ' fit' : '') : '') + '" data-i="' + i + '" style="--photo-x:' + (s.posX == null ? 50 : s.posX) + '%;--photo-y:' + (s.posY == null ? 50 : s.posY) + '%"><div class="pm-artw">' + artOf(s) + '</div><div class="pm-htx">' + t + '<div class="pm-hero-actions">' + btn + (MODERN && (C.modern || {}).secondary ? '<button type="button" class="pm-secondary" data-go="svc">' + esc(C.modern.secondary) + '</button>' : '') + '</div></div></div>';
   }
   function hero() {
     var dots = slides.length > 1 && SL.dots !== false ? '<div class="pm-dots">' + slides.map(function (_, i) { return '<i' + (i === 0 ? ' class="on"' : '') + '></i>'; }).join('') + '</div>' : '';
@@ -169,11 +174,21 @@
   }
   function svcCards(list, cls) {
     return '<div class="' + cls + '">' + list.map(function (s, i) {
-      return '<button type="button" class="pm-svc m" data-go="order" data-svc="' + esc(s.t) + '"><span class="pm-sic c' + (i % 6) + '">' + ic(s.ic) + '</span><b>' + esc(s.t) + '</b>' + (s.s ? '<small>' + esc(s.s) + '</small>' : '') + '<i class="pm-go">' + ic('arrow') + '</i></button>';
+      return '<button type="button" class="pm-svc m" data-go="order" data-svc="' + esc(s.t) + '">' + (s.img ? '<img class="pm-service-photo" src="/promo/img/' + esc(s.img) + '" alt="' + esc(s.alt || s.t) + '" loading="lazy">' : '<span class="pm-sic c' + (i % 6) + '">' + ic(s.ic) + '</span>') + '<b>' + esc(s.t) + '</b>' + (s.s ? '<small>' + esc(s.s) + '</small>' : '') + '<i class="pm-go">' + ic('arrow') + '</i></button>';
     }).join('') + '</div>';
   }
   function head(t, sub, link) { return '<div class="pm-sh m"><h3>' + esc(t) + '</h3>' + (link ? '<span>' + esc(link) + '</span>' : '') + '</div>' + (sub ? '<p class="pm-shs m">' + esc(sub) + '</p>' : ''); }
+  function modernBody() {
+    var m = C.modern || {}, steps = m.steps || [], opts = (C.services || []).map(function (x) { return '<option>' + esc(x.t) + '</option>'; }).join('');
+    return '<section class="pm-modern-services" aria-label="خدماتنا">' + svcCards(C.services || [], 'pm-g2') + '</section>' +
+      (steps.length ? '<section class="pm-process m">' + (m.stepsTitle ? '<h3>' + esc(m.stepsTitle) + '</h3>' : '') + '<ol>' + steps.map(function (x, i) { return '<li><span class="pm-step-icon">' + ic(x.ic) + '<em>' + (i + 1) + '</em></span><div><b>' + esc(x.t) + '</b><small>' + esc(x.s) + '</small></div></li>'; }).join('') + '</ol></section>' : '') +
+      '<section class="pm-convert' + (m.workOn ? ' with-work' : '') + '">' +
+      (m.workOn ? '<figure class="pm-work m"><img src="' + esc(m.workImg ? '/promo/img/' + m.workImg : studioSrc('studio')) + '" alt="' + esc(m.workAlt || '') + '" loading="lazy">' + (m.workTitle ? '<figcaption>' + esc(m.workTitle) + '</figcaption>' : '') + '</figure>' : '') +
+      '<div class="pm-quote m" id="pmQuoteBody"><h3>' + esc(m.quoteTitle || '') + '</h3><p>' + esc(m.quoteText || '') + '</p>' +
+      '<form class="pm-form pm-inline-form" id="pmInline" novalidate><label>اسمك<input name="name" required maxlength="80" autocomplete="name" placeholder="الاسم"></label><label>اسم المركز<input name="center" maxlength="120" autocomplete="organization" placeholder="اسم المركز أو المستشفى"></label><label>الموبايل<input name="phone" required maxlength="16" inputmode="tel" autocomplete="tel" dir="ltr" placeholder="01xxxxxxxxx"></label><label>الخدمة<select name="service">' + opts + '<option>عرض سعر</option></select></label><input name="hp" class="pm-hp" tabindex="-1" autocomplete="off" aria-hidden="true"><p class="pm-err" role="alert"></p><button type="submit" class="pm-sub">' + esc(m.quoteButton || 'اطلب عرض سعر') + '</button></form></div></section>';
+  }
   function themeBody() {
+    if (MODERN) return modernBody();
     var S = C.services || [], o = '';
     if (T === '1') {
       o += '<button type="button" class="pm-ctabar m" data-go="order"><span>' + esc(C.cta) + '</span><i>' + ic('printer') + '</i></button>';
@@ -201,6 +216,7 @@
       '<footer class="pm-ft">© ' + new Date().getFullYear() + ' ' + esc(C.brand || 'Emdadx') + ' · ' + esc(C.tagline || '') + '</footer>';
   }
   function nav() {
+    if (MODERN) return '<nav class="pm-nav pm-modern-nav" aria-label="التواصل ومتابعة الطلب"><button type="button" data-go="quote">' + ic('send') + '<span>' + esc((C.modern || {}).quoteButton || 'اطلب عرض سعر') + '</span></button><button type="button" data-go="track">' + ic('list') + '<span>تابع طلبك</span></button></nav>';
     var L = [['home', 'الرئيسية', 'top'], ['grid', 'الخدمات', 'svc'], ['send', 'اطلب', 'order'], ['list', 'طلباتي', 'track'], ['support', 'الدعم', 'support']];
     return '<nav class="pm-nav">' + L.map(function (x, i) { return '<button type="button" data-go="' + x[2] + '"' + (i === 0 ? ' class="on"' : '') + '>' + ic(x[0]) + '<span>' + x[1] + '</span></button>'; }).join('') + '</nav>';
   }
@@ -217,6 +233,24 @@
     if (onOpen) onOpen(w, close);
     return close;
   }
+  function wireLeadForm(f, host) {
+    if (!f || !host) return;
+    f.onsubmit = function (e) {
+      e.preventDefault(); var b = {}; [].forEach.call(f.elements, function (x) { if (x.name) b[x.name] = x.value.trim(); });
+      var er = f.querySelector('.pm-err'); er.textContent = '';
+      if (D.preview) { er.textContent = 'معاينة فقط — الطلب مش هيتبعت'; return; }
+      if (!b.name || b.name.length < 2) { er.textContent = 'اكتب اسمك'; f.elements.namedItem('name').focus(); return; }
+      if (!b.phone || b.phone.replace(/\D/g, '').length < 8) { er.textContent = 'اكتب رقم موبايل صحيح'; f.elements.namedItem('phone').focus(); return; }
+      var bt = f.querySelector('.pm-sub'), label = bt.textContent; bt.disabled = true; bt.textContent = 'بيتبعت…';
+      fetch('/promo/lead', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(b) }).then(function (r) { return r.json().then(function (j) { if (!r.ok || !j.ok || !j.code) throw new Error(j.message || 'محصلش — جرّب تاني'); return j; }); })
+        .then(function (j) {
+          try { var L = JSON.parse(localStorage.getItem('pm-codes') || '[]'); L.unshift(j.code); localStorage.setItem('pm-codes', JSON.stringify(L.slice(0, 10))); } catch (x) {}
+          var wa = waHref('السلام عليكم، بعت طلب من صفحة ' + (C.brand || 'Emdadx') + ' — رقم الطلب ' + j.code);
+          host.innerHTML = '<div class="pm-ok-w"><span class="pm-ok">' + ic('check') + '</span><b>طلبك وصل 🎉</b><p>هنكلمك في أقرب وقت. احتفظ برقم الطلب عشان تتابعه:</p><div class="pm-code" dir="ltr">' + esc(j.code) + '</div>' +
+            (wa ? '<a class="pm-wa" href="' + esc(wa) + '" target="_blank" rel="noopener">' + ic('wa') + 'كمّل معانا على واتساب</a>' : '') + '</div>';
+        }).catch(function (x) { er.textContent = x.message || 'محصلش — جرّب تاني'; bt.disabled = false; bt.textContent = label; });
+    };
+  }
   function orderSheet(svc, quote) {
     var opts = (C.services || []).map(function (s) { return '<option' + (s.t === svc ? ' selected' : '') + '>' + esc(s.t) + '</option>'; }).join('');
     sheet(quote ? 'اطلب عرض سعر' : 'اطلب خدمة الطباعة',
@@ -229,20 +263,7 @@
       '<p class="pm-err" id="pmE" role="alert"></p><button type="submit" class="pm-sub">' + ic('send') + 'ابعت الطلب</button></form>',
       function (w) {
         var f = w.querySelector('#pmF');
-        f.onsubmit = function (e) {
-          e.preventDefault(); var b = {}; [].forEach.call(f.elements, function (x) { if (x.name) b[x.name] = x.value.trim(); });
-          var er = w.querySelector('#pmE'); er.textContent = '';
-          if (b.name.length < 2) { er.textContent = 'اكتب اسمك'; f.name.focus(); return; }
-          if (b.phone.replace(/\D/g, '').length < 8) { er.textContent = 'اكتب رقم موبايل صحيح'; f.phone.focus(); return; }
-          var bt = f.querySelector('.pm-sub'); bt.disabled = true; bt.lastChild.textContent = 'بيتبعت…';
-          fetch('/promo/lead', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(b) }).then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.message || 'محصلش — جرّب تاني'); return j; }); })
-            .then(function (j) {
-              try { var L = JSON.parse(localStorage.getItem('pm-codes') || '[]'); L.unshift(j.code); localStorage.setItem('pm-codes', JSON.stringify(L.slice(0, 10))); } catch (x) {}
-              var wa = waHref('السلام عليكم، بعت طلب من صفحة ' + (C.brand || 'Emdadx') + ' — رقم الطلب ' + j.code);
-              w.querySelector('.pm-sbody').innerHTML = '<div class="pm-ok-w"><span class="pm-ok">' + ic('check') + '</span><b>طلبك وصل 🎉</b><p>هنكلمك في أقرب وقت. احتفظ برقم الطلب عشان تتابعه:</p><div class="pm-code" dir="ltr">' + esc(j.code) + '</div>' +
-                (wa ? '<a class="pm-wa" href="' + esc(wa) + '" target="_blank" rel="noopener">' + ic('wa') + 'كمّل معانا على واتساب</a>' : '') + '</div>';
-            }).catch(function (x) { er.textContent = x.message; bt.disabled = false; bt.lastChild.textContent = 'ابعت الطلب'; });
-        };
+        wireLeadForm(f, w.querySelector('.pm-sbody'));
       });
   }
   var ST = { new: ['⏳', 'وصلنا طلبك وهنكلمك قريب'], contacted: ['📞', 'تواصلنا معاك وشغالين على طلبك'], done: ['✅', 'طلبك اتنفّذ'] };
@@ -274,6 +295,7 @@
   /* ── render ── */
   var app = $('app');
   app.innerHTML = '<div class="pm-bgfx" aria-hidden="true"></div><main class="pm-w">' + header() + hero() + '<div id="pmSvc"></div>' + themeBody() + common() + '</main>' + nav();
+  if (MODERN) wireLeadForm($('pmInline'), $('pmQuoteBody'));
   /* move the services anchor to the services heading */
   var firstSvc = app.querySelector('.pm-g2, .pm-g3'); if (firstSvc) { var a = $('pmSvc'); var h = firstSvc.previousElementSibling; (h && h.classList.contains('pm-shs') ? h.previousElementSibling : h || firstSvc).before(a); }
 
@@ -302,7 +324,7 @@
 
   /* one visit → the control page's numbers (not from the admin's own preview) */
   (function () {
-    var q = new URLSearchParams(location.search); if (q.has('pv')) return;
+    var q = new URLSearchParams(location.search); if (D.preview || q.has('pv')) return;
     var vid = ''; try { vid = localStorage.getItem('pm-vid') || ''; if (!vid) { vid = Math.random().toString(36).slice(2) + Date.now().toString(36); localStorage.setItem('pm-vid', vid); } } catch (e) {}
     var tz = ''; try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch (e) {}
     var b = JSON.stringify({ vid: vid, ref: document.referrer || '', src: q.get('src') || q.get('utm_source') || '', tz: tz, lang: navigator.language || '', w: innerWidth });

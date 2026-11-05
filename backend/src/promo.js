@@ -13,9 +13,9 @@
 ════════════════════════════════════════════════════════════════════ */
 const crypto = require('node:crypto');
 
-const THEMES = ['1', '2', '3', '4'];
+const THEMES = ['1', '2', '3', '4', '5', '6'];
 const ICONS = ['printer', 'film', 'paper', 'tools', 'support', 'bolt', 'shield', 'clock', 'layers', 'hand', 'image', 'hospital', 'scan', 'clinic', 'tag', 'doc', 'wa', 'star', 'truck', 'check'];
-const ARTS = ['monitor', 'film', 'ring', 'clinic'];
+const ARTS = ['monitor', 'film', 'ring', 'clinic', 'studio', 'studio-light', 'studio-dark'];
 const ACTS = ['order', 'quote', 'wa', 'call', 'url', 'track', 'none'];
 
 const DEF = {
@@ -47,8 +47,12 @@ function clean(s, n) { return String(s == null ? '' : s).replace(/[\u0000-\u0008
 function digits(s) { return String(s || '').replace(/[^\d+]/g, '').slice(0, 16); }
 function pick(v, list, d) { return list.includes(String(v)) ? String(v) : d; }
 
+const photoId = s => /^[a-f0-9]{24}$/.test(String(s || '')) ? String(s) : '';
+const focal = v => Number.isFinite(Number(v)) && v != null && v !== '' ? Math.max(0, Math.min(100, Number(v))) : 50;
+
 function norm(raw) {
   const c = raw && typeof raw === 'object' ? raw : {};
+  const m = c.modern && typeof c.modern === 'object' ? c.modern : {};
   const arr = (a, d, max, f) => (Array.isArray(a) ? a : d).slice(0, max).map(f).filter(Boolean);
   return {
     on: c.on !== false, theme: pick(c.theme, THEMES, DEF.theme),
@@ -56,13 +60,22 @@ function norm(raw) {
     wa: digits(c.wa), phone: digits(c.phone),
     cta: clean(c.cta || DEF.cta, 60), offer: clean(c.offer || DEF.offer, 60),
     about: clean(c.about != null ? c.about : DEF.about, 500),
-    slides: arr(c.slides, DEF.slides, 10, x => x && (x.title || x.img || x.sub) ? { on: x.on !== false, title: clean(x.title, 60), hi: clean(x.hi, 60), sub: clean(x.sub, 160), art: pick(x.art, ARTS, 'monitor'), img: /^[a-f0-9]{24}$/.test(String(x.img || '')) ? String(x.img) : '', btn: clean(x.btn, 30),
+    slides: arr(c.slides, DEF.slides, 10, x => x && (x.title || x.img || x.sub) ? { on: x.on !== false, title: clean(x.title, 60), hi: clean(x.hi, 60), sub: clean(x.sub, 160), art: pick(x.art, ARTS, 'monitor'), img: photoId(x.img), alt: clean(x.alt, 120), posX: focal(x.posX), posY: focal(x.posY), btn: clean(x.btn, 30),
       act: pick(x.act, ACTS, 'order'), url: /^https:\/\/[^\s<>"']{3,300}$/.test(String(x.url || '').trim()) ? String(x.url).trim() : '', shade: x.shade !== false, fit: x.fit === 'contain' ? 'contain' : 'cover' } : null),
     slider: { sec: Math.min(12, Math.max(3, Number((c.slider || {}).sec) || 4.5)), fx: pick((c.slider || {}).fx, ['fade', 'slide', 'zoom'], 'fade'), auto: (c.slider || {}).auto !== false, dots: (c.slider || {}).dots !== false },
     chips: arr(c.chips, DEF.chips, 4, x => x && x.t ? { t: clean(x.t, 30), ic: pick(x.ic, ICONS, 'star') } : null),
-    services: arr(c.services, DEF.services, 8, x => x && x.t ? { t: clean(x.t, 40), s: clean(x.s, 60), ic: pick(x.ic, ICONS, 'printer') } : null),
+    services: arr(c.services, DEF.services, 8, x => x && x.t ? { t: clean(x.t, 40), s: clean(x.s, 60), ic: pick(x.ic, ICONS, 'printer'), img: photoId(x.img), alt: clean(x.alt, 120) } : null),
     stats: arr(c.stats, DEF.stats, 3, x => x && (x.n || x.l) ? { n: clean(x.n, 10), l: clean(x.l, 30) } : null),
-    targets: arr(c.targets, DEF.targets, 3, x => x && x.t ? { t: clean(x.t, 30), ic: pick(x.ic, ICONS, 'hospital') } : null)
+    targets: arr(c.targets, DEF.targets, 3, x => x && x.t ? { t: clean(x.t, 30), ic: pick(x.ic, ICONS, 'hospital') } : null),
+    modern: {
+      secondary: clean(m.secondary != null ? m.secondary : 'شاهد الخدمة', 40),
+      stepsTitle: clean(m.stepsTitle != null ? m.stepsTitle : 'من الطلب إلى التشغيل', 80),
+      steps: arr(m.steps, [{ t: 'تحديد احتياج المركز', s: 'نختار معاك الخدمة المناسبة', ic: 'support' }, { t: 'تجهيز الحل المناسب', s: 'عرض واضح حسب احتياجاتك', ic: 'tools' }, { t: 'التوريد والتشغيل', s: 'متابعة من البداية للدعم', ic: 'printer' }], 6, x => x && x.t ? { t: clean(x.t, 60), s: clean(x.s, 100), ic: pick(x.ic, ICONS, 'check') } : null),
+      quoteTitle: clean(m.quoteTitle != null ? m.quoteTitle : 'اطلب عرض سعر', 80),
+      quoteText: clean(m.quoteText != null ? m.quoteText : 'قولنا احتياج مركزك وهنجهز لك العرض المناسب', 180),
+      quoteButton: clean(m.quoteButton || 'اطلب عرض سعر', 40),
+      workOn: m.workOn !== false, workTitle: clean(m.workTitle != null ? m.workTitle : 'حلول طباعة الأشعة لمركزك', 80), workImg: photoId(m.workImg), workAlt: clean(m.workAlt || 'حلول طباعة الأشعة', 120)
+    }
   };
 }
 
@@ -186,26 +199,27 @@ function create({ db, readBody, sendJSON, broadcast, push, admins, publicDir, fs
     return { days, views, uniq, pviews, today: tv, todayU: tu, leads, pleads, live, conv: uniq ? Math.round(leads / uniq * 1000) / 10 : 0, series, sources: top('src'), devices: top('dev', 5), os: top('os', 6), countries: top('country', 8), cities, hours, recent };
   }
 
-  function page(c) {
+  function page(c, preview) {
     const v = ver();
-    const CD = { c, v };
+    const CD = { c, v, preview: !!preview };
     return '<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8">' +
       '<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1,user-scalable=no">' +
-      '<meta name="theme-color" content="' + ({ '1': '#0B3D91', '2': '#5B1240', '3': '#0A2A5E', '4': '#1E5BB8' }[c.theme]) + '">' +
+      '<meta name="theme-color" content="' + ({ '1': '#0B3D91', '2': '#5B1240', '3': '#0A2A5E', '4': '#1E5BB8', '5': '#087F7C', '6': '#06182B' }[c.theme]) + '">' +
       '<title>' + (c.brand || 'Emdadx').replace(/[<>&"]/g, '') + ' — ' + (c.tagline || '').replace(/[<>&"]/g, '') + '</title>' +
       '<meta name="description" content="' + (c.about || '').replace(/[<>&"]/g, '').slice(0, 160) + '">' +
       '<link rel="icon" href="/icons/favicon-32.png"><link rel="apple-touch-icon" href="/icons/icon-180.png">' +
       '<link rel="stylesheet" href="/fonts/fonts.css"><link rel="stylesheet" href="/promo.css?v=' + v + '">' +
       '<script>document.addEventListener("gesturestart",function(e){e.preventDefault();},{passive:false});</script>' +
-      '</head><body class="pm t' + c.theme + '"><div id="app"></div><script>window.PM=' + json(CD) + '</script><script src="/promo.js?v=' + v + '"></script></body></html>';
+      '</head><body class="pm t' + c.theme + (['5', '6'].includes(c.theme) ? ' pm-modern' : '') + '"><div id="app"></div><script>window.PM=' + json(CD) + '</script><script src="/promo.js?v=' + v + '"></script></body></html>';
   }
 
   async function handlePublic(req, res, pathname) {
     if (pathname === '/promo' || pathname === '/promo/') {
-      const c = cfg();
+      const c = cfg(), q = new URL(req.url, 'http://x').searchParams, preview = q.has('pv');
+      if (preview && THEMES.includes(q.get('theme'))) c.theme = q.get('theme');
       if (!c.on) { res.writeHead(404, { 'Content-Type': 'text/html; charset=utf-8' }); res.end('<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width"><body style="font-family:sans-serif;text-align:center;padding:60px 20px;color:#334">الصفحة دي مش متاحة دلوقتي'); return true; }
-      try { const d = new Date().toISOString().slice(0, 10); db.prepare('INSERT INTO promo_view (day, n) VALUES (?, 1) ON CONFLICT(day) DO UPDATE SET n = n + 1').run(d); } catch (e) {}
-      const body = Buffer.from(page(c), 'utf8');
+      if (!preview) try { const d = new Date().toISOString().slice(0, 10); db.prepare('INSERT INTO promo_view (day, n) VALUES (?, 1) ON CONFLICT(day) DO UPDATE SET n = n + 1').run(d); } catch (e) {}
+      const body = Buffer.from(page(c, preview), 'utf8');
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-cache', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'same-origin' });
       res.end(body); return true;
     }
@@ -284,6 +298,10 @@ function create({ db, readBody, sendJSON, broadcast, push, admins, publicDir, fs
       const today = (db.prepare('SELECT n FROM promo_view WHERE day = ?').get(new Date().toISOString().slice(0, 10)) || { n: 0 }).n;
       const leads = db.prepare('SELECT * FROM promo_lead ORDER BY at DESC LIMIT 500').all().map(leadOut);
       const c = ctl(); sendJSON(res, 200, { cfg: cfg(), views, today, leads, icons: ICONS, arts: ARTS, erp: !!erp, ctl: erp && c ? { token: c.token } : null }); return true;
+    }
+    if (sub === 'preview' && req.method === 'POST') {
+      let b; try { b = (await readBody(req, 0.2)) || {}; } catch (e) { sendJSON(res, 400, { message: 'المعاينة غير صالحة' }); return true; }
+      sendJSON(res, 200, { html: page(norm(b.cfg || {}), true) }); return true;
     }
     if (sub === 'cfg' && req.method === 'POST') {
       let b = {}; try { b = (await readBody(req, 0.2)) || {}; } catch (e) {}
