@@ -2760,3 +2760,24 @@ html.ti .tx .v .btn.g,html.ti .v .btn.g{background:var(--pin)!important;color:va
 html.ti .pv2-footer,html.ti .pv2-analytics-note,html.ti .foot{color:var(--pm)!important}
 html.ti.tx body,html.ti body.v{background:var(--pb)!important;color:var(--pi)}
 html.ti .pvd-hd{background:linear-gradient(160deg,#0F3B45,#0E1420)!important}
+
+/* Per-section unread notifications, distinct from pending request totals. */
+body.k .qrd-unread{display:inline-flex;align-items:center;justify-content:center;flex:none;min-width:20px;height:20px;padding:0 5px;margin-inline-start:6px;border-radius:999px;background:#E11D48;color:#fff;font-family:inherit;font-size:11px;font-weight:800;line-height:1;font-style:normal;box-shadow:0 0 0 2px var(--card,#fff)}
+body.k .qrd-unread[hidden]{display:none!important}
+body.k .qrd-nav-count{background:#EDF0F5;color:#64748B;box-shadow:none}
+body.k .has-notice{box-shadow:inset 0 0 0 1px rgba(225,29,72,.24)}
+.qrd-notice-panel{background:var(--card,#fff);border:1px solid var(--line,#E3EAF4);border-radius:18px;padding:14px;margin-bottom:16px;color:var(--ink,#18324A)}
+.qrd-notice-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
+.qrd-notice-head b{font-size:14px}.qrd-notice-head small{font-size:11px;color:var(--muted,#64748B)}
+.qrd-notice-links{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.qrd-notice-links button{display:flex;align-items:center;gap:8px;min-width:0;min-height:44px;padding:9px 10px;border:1px solid var(--line,#E3EAF4);border-radius:12px;background:var(--card,#fff);color:inherit;cursor:pointer;text-align:right;font:inherit}
+.qrd-notice-links button>b{flex:1;font-size:12px;line-height:1.4}.qrd-notice-links button>span{font-size:17px}
+.qrd-notice-links button:focus-visible{outline:3px solid #E11D48;outline-offset:2px}
+body.k .qrd-notice-pop{animation:qrdNoticePop .7s ease-out}
+@keyframes qrdNoticePop{0%,100%{transform:translateY(0);outline:0 solid transparent}35%{transform:translateY(-3px);outline:4px solid rgba(225,29,72,.18)}65%{transform:translateY(1px);outline:2px solid rgba(225,29,72,.08)}}
+@media(max-width:900px){
+  .qrd-notice-links{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .qrd-notice-head{align-items:flex-start}.qrd-notice-head small{max-width:45%;text-align:left}
+  body.k .qrdd-tab em.qrd-unread{left:auto;right:calc(50% - 27px);top:0;min-width:18px;height:18px;margin:0}
+}
+@media(prefers-reduced-motion:reduce){body.k .qrd-notice-pop{animation:none!important}}

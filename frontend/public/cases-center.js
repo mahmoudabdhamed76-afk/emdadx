@@ -39,6 +39,70 @@
   function phoneWa(p) { var d = K.digits(p); if (!d) return ''; if (d.indexOf('00') === 0) d = d.slice(2); else if (d.indexOf('0') === 0) d = '2' + d; else if (d.length === 10 && d.charAt(0) === '1') d = '20' + d; return d; }
   function beep() { try { var Ac = window.AudioContext || window.webkitAudioContext; if (!Ac) return; var a = beep.a = beep.a || new Ac(), t = a.currentTime; [[880, 0], [1320, .12]].forEach(function (n) { var o = a.createOscillator(), g = a.createGain(); o.connect(g); g.connect(a.destination); o.frequency.value = n[0]; g.gain.setValueAtTime(.0001, t + n[1]); g.gain.exponentialRampToValueAtTime(.15, t + n[1] + .02); g.gain.exponentialRampToValueAtTime(.0001, t + n[1] + .25); o.start(t + n[1]); o.stop(t + n[1] + .26); }); } catch (e) {} }
 
+
+  /* Unread patient activity: independent of the pending-request workload counts. */
+  var NOTICE_LABELS = { ratings: ['⭐', 'التقييمات'], bookings: ['📅', 'الحجوزات'], results: ['📨', 'طلبات النتائج'], complaints: ['📝', 'الشكاوى'], reports: ['📤', 'طلبات التقارير'], activity: ['👁', 'فتح النتائج'], qr: ['▦', 'مسح الباركود'] };
+  function noticeNumber(section) {
+    if (!ui.notices) return 0;
+    if (section !== 'more') return ui.notices.unread(section);
+    return Object.keys(NOTICE_LABELS).reduce(function (n, key) { return n + (key === 'bookings' || key === 'complaints' ? 0 : ui.notices.unread(key)); }, 0);
+  }
+  function paintNotices() {
+    if (!ui.notices) return;
+    [].forEach.call(document.querySelectorAll('[data-unread]'), function (el) {
+      var n = noticeNumber(el.dataset.unread); el.hidden = !n;
+      el.textContent = n > 99 ? '99+' : n0(n);
+      el.setAttribute('aria-label', 'إشعارات جديدة: ' + n0(n)); el.title = 'إشعارات جديدة: ' + n0(n);
+    });
+    [].forEach.call(document.querySelectorAll('[data-page], [data-sp], [data-page-nav], #qrdTab [data-dt]'), function (el) {
+      var section = el.dataset.page || el.dataset.sp || el.dataset.pageNav || el.dataset.dt;
+      el.classList.toggle('has-notice', noticeNumber(section) > 0);
+      var pulse = section === 'more' ? Object.keys(NOTICE_LABELS).some(function (k) { return k !== 'bookings' && k !== 'complaints' && (ui.noticePulse[k] || 0) > Date.now(); }) : (ui.noticePulse[section] || 0) > Date.now();
+      el.classList.toggle('qrd-notice-pop', pulse);
+    });
+    var status = $('qrdNoticeStatus'), total = Object.keys(NOTICE_LABELS).reduce(function (n, key) { return n + noticeNumber(key); }, 0);
+    if (status) status.textContent = total ? 'إشعارات جديدة: ' + n0(total) : 'مفيش إشعارات جديدة';
+  }
+  function readNoticePage() {
+    if (ui.notices && document.visibilityState === 'visible') ui.notices.markRead(ui.page);
+    paintNotices();
+  }
+  function syncNotices(counts) {
+    if (!ui.notices) return;
+    ui.notices.update(counts); readNoticePage();
+  }
+  function noticeEvent(ev) {
+    if (!ui.notices) return;
+    var m; try { m = JSON.parse(ev.data); } catch (e) { return; }
+    var n = m && m.notice; if (!n || !NOTICE_LABELS[n.section]) return;
+    var counts = {}; counts[n.section] = n.total;
+    var changed = ui.notices.update(counts); if (!changed.length) return;
+    ui.noticePulse[n.section] = Date.now() + 1200;
+    /* Restart the brief animation for a second event in the same section. */
+    [].forEach.call(document.querySelectorAll('.qrd-notice-pop'), function (el) { el.classList.remove('qrd-notice-pop'); });
+    void document.body.offsetWidth;
+    readNoticePage(); clearTimeout(ui.noticeT); ui.noticeT = setTimeout(paintNotices, 1250);
+  }
+  function setupNotices() {
+    if (!window.OZNotices) return;
+    ui.noticePulse = {};
+    ui.notices = OZNotices.create({ code: C.code, storage: {
+      getItem: function (key) { return localStorage.getItem(key); },
+      setItem: function (key, value) { localStorage.setItem(key, value); }
+    } });
+    var home = $('qrd-body-dashboard');
+    if (home) {
+      var panel = document.createElement('section'); panel.className = 'qrd-notice-panel';
+      panel.innerHTML = '<div class="qrd-notice-head"><b>🔔 تنبيهات الأقسام</b><small id="qrdNoticeStatus" role="status" aria-live="polite"></small></div><div class="qrd-notice-links">' + Object.keys(NOTICE_LABELS).map(function (section) {
+        var label = NOTICE_LABELS[section];
+        return '<button type="button" data-page-nav="' + section + '"><span aria-hidden="true">' + label[0] + '</span><b>' + label[1] + '</b><em class="qrd-unread" data-unread="' + section + '" hidden></em></button>';
+      }).join('') + '</div>';
+      home.insertBefore(panel, home.firstChild);
+    }
+    window.addEventListener('storage', function (ev) { if (ev.key && ev.key.indexOf(ui.notices.prefix) === 0) paintNotices(); });
+    paintNotices();
+  }
+
   /* 4.97 · line icons + a colour per exam type */
   var ICO = {
     today: '<rect x="3" y="4.5" width="18" height="16" rx="3"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/><circle cx="12" cy="15" r="1.6"/>',
@@ -170,7 +234,8 @@
         return (grp ? '<p class="qrd-nav-grp">' + grp + '</p>' : '') + '<a href="' + (isIOSBrowser() ? pageUrl(x[0]) : '#page-' + x[0]) + '" data-page="' + x[0] + '"' +
           (x[0] === 'dashboard' ? ' class="on" aria-current="page"' : '') +
           '><span>' + x[1] + '</span><b>' + x[2] + '</b>' +
-          (['bookings','results','complaints','reports'].indexOf(x[0]) >= 0 ? '<em class="qrd-nav-count" data-count="' + x[0] + '">0</em>' : '') + '</a>';
+          (['bookings','results','complaints','reports'].indexOf(x[0]) >= 0 ? '<em class="qrd-nav-count" title="طلبات مستنية الرد" data-count="' + x[0] + '">0</em>' : '') +
+          (NOTICE_LABELS[x[0]] ? '<em class="qrd-unread" data-unread="' + x[0] + '" hidden></em>' : '') + '</a>';
       }).join('') +
       '</nav><div class="qrd-nav-end"><span class="qrd-nav-online">● متصل ببيانات المركز</span>' +
       '<small>كل الملفات والطلبات في مكان واحد</small></div></aside>';
@@ -240,7 +305,7 @@
       a.classList.toggle('on', active);
       if (active) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
     });
-    document.body.setAttribute('data-qrd-page', selected); if (typeof markTab === 'function') markTab();
+    document.body.setAttribute('data-qrd-page', selected); readNoticePage(); if (typeof markTab === 'function') markTab();
     if (push && location.hash !== '#page-' + selected) {
       try { history.pushState({ qrdPage: selected }, '', '#page-' + selected); } catch (e) {}
     }
@@ -368,7 +433,7 @@
     if (!$('qrdTab')) {
       var tabs = [['dashboard', 'home', 'الرئيسية'], ['cases', 'list', 'الحالات'], ['bookings', 'cal', 'الطلبات'], ['complaints', 'msg', 'الشكاوى'], ['more', 'more', 'المزيد']];
       document.body.insertAdjacentHTML('beforeend', '<nav class="qrdd-tab" id="qrdTab" aria-label="التنقل">' + tabs.map(function (t) {
-        return '<button type="button" data-dt="' + t[0] + '">' + dSvg(t[1]) + '<span>' + t[2] + '</span>' + (t[0] === 'bookings' ? '<em id="dTabN" hidden>0</em>' : t[0] === 'complaints' ? '<em id="dTabC" hidden>0</em>' : '') + '</button>'; }).join('') + '</nav>' +
+        return '<button type="button" data-dt="' + t[0] + '">' + dSvg(t[1]) + '<span>' + t[2] + '</span>' + (['bookings','complaints','more'].indexOf(t[0]) >= 0 ? '<em class="qrd-unread" data-unread="' + t[0] + '" hidden></em>' : '') + '</button>'; }).join('') + '</nav>' +
         '<div class="qrdd-sheet" id="qrdSheet" hidden><div class="qrdd-sh"><i></i><b>كل الأقسام</b><div class="qrdd-sl" id="qrdSheetL"></div></div></div>');
       var nav = document.querySelectorAll('.qrd-nav-list a[data-page]'), L = $('qrdSheetL');
       [].forEach.call(nav, function (a) { L.insertAdjacentHTML('beforeend', '<button type="button" data-sp="' + a.dataset.page + '">' + a.innerHTML + '</button>'); });
@@ -406,9 +471,8 @@
     var pts = [], acc = 0; hrs.forEach(function (n, h) { acc += n; pts.push([h / 23 * 200, 40 - (acc / Math.max(1, today || acc)) * 34]); });
     var dL = 'M' + pts.map(function (p) { return p[0].toFixed(1) + ' ' + p[1].toFixed(1); }).join(' L');
     if ($('dSpL')) $('dSpL').setAttribute('d', dL); if ($('dSpA')) $('dSpA').setAttribute('d', dL + ' L200 44 L0 44Z');
-    var tn = $('dTabN'); if (tn) { var nb = D ? D.req.bookings + D.req.results + D.req.reports : reqs; tn.textContent = nb; tn.hidden = !nb; }
-    var tcn = $('dTabC'), nc = D ? D.req.complaints : (ui.tickets || []).filter(function (t) { return t.kind === 'complaint'; }).length; if (tcn) { tcn.textContent = nc; tcn.hidden = !nc; }
     [].forEach.call(document.querySelectorAll('#qrdSheetL [data-count]'), function (em) { var src = document.querySelector('.qrd-nav-list [data-count="' + em.dataset.count + '"]'); if (src) { em.textContent = src.textContent; em.hidden = src.hidden || src.textContent === '0'; } });
+    paintNotices();
   }
   function setupDashboardDecor() {
     document.body.classList.add('qrd-center');
@@ -1191,6 +1255,8 @@
         '<div class="lx-qa"><button type="button" class="btn" data-lxq="pdf">' + ic('file') + ' ارفع PDF</button><button type="button" class="btn g" data-lxq="dicom">🩻 DICOM</button><button type="button" class="btn g" data-lxq="month">' + ic('down') + ' التقرير الشهري</button></div></section></div>' +
       '<section class="lx-card lx-recent"><div class="lx-ch"><div><h3>آخر مرات فتح النتائج</h3><small>مين فتح نتيجته وإمتى ومن أنهي باركود</small></div><button type="button" class="btn g sm" data-page-nav="activity">السجل كله ←</button></div>' +
         (recentRows ? '<div class="lx-tw"><table class="lx-t"><thead><tr><th>المريض</th><th>الفحص</th><th>فتحها من</th><th>الجهاز</th><th>الوقت</th></tr></thead><tbody>' + recentRows + '</tbody></table></div>' : '<p class="lx-emp">لسه مفيش فتح لنتائج الأشعة — هتظهر هنا لحظيًا.</p>') + '</section>';
+    [].forEach.call(el.querySelectorAll('[data-page-nav]'), function (b) { if (NOTICE_LABELS[b.dataset.pageNav]) b.insertAdjacentHTML('beforeend', '<em class="qrd-unread" data-unread="' + b.dataset.pageNav + '" hidden></em>'); });
+    paintNotices();
     [].forEach.call(el.querySelectorAll('[data-lxm]'), function (b) { b.onclick = function () { ui.lxMode = b.dataset.lxm; dashX(); }; });
     [].forEach.call(el.querySelectorAll('[data-vt]'), function (r) { r.onclick = function () { viewsModal(r.dataset.vt); }; });
     [].forEach.call(el.querySelectorAll('[data-lxq]'), function (b) { b.onclick = function () { var k = b.dataset.lxq; if (k === 'month') return monthReportAsk(); navigatePage('upload', true); setTimeout(function () { if (k === 'pdf') { var f = $('fi'); if (f) f.click(); } else dicomPick(); }, 200); }; });
@@ -1883,8 +1949,9 @@
   function connect() {
     try { if (ui.es) ui.es.close(); } catch (e) {}
     var es = new EventSource(BASE + '/live'); ui.es = es;
-    es.addEventListener('hello', function () {
+    es.addEventListener('hello', function (ev) {
       setLive(true);
+      try { syncNotices(JSON.parse(ev.data).notices); } catch (e) {}
       api('GET', 'qr').then(function (x) { ui.qr = x.qr || ui.qr; qrPanel(); dHome(); }).catch(function () {});
     });
     es.onerror = function () { setLive(false); };
@@ -1895,7 +1962,7 @@
         return fetch(BASE + '/relay/' + m.ticket, { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/octet-stream' }, body: rec.blob });
       }).catch(function () {});
     });
-    ['qr-open', 'view', 'ticket', 'booking', 'ask', 'rating'].forEach(function (k) { es.addEventListener(k, dashSoon); });
+    ['qr-open', 'view', 'ticket', 'booking', 'ask', 'rating'].forEach(function (k) { es.addEventListener(k, dashSoon); es.addEventListener(k, noticeEvent); });
     es.addEventListener('rating', function (ev) { var m = {}; try { m = JSON.parse(ev.data); } catch (e) {} toast('⭐ مريض قيّم زيارته: ' + starsTxt(m.stars || 0)); if (ui.page === 'ratings') ratingsLoad(); });
     es.addEventListener('qr-open', function (ev) {
       var m = {}; try { m = JSON.parse(ev.data); } catch (e) { return; }
@@ -1940,7 +2007,7 @@
       var savedPrefill = sessionStorage.getItem('qrd-upload-prefill');
       if (savedPrefill) { ui.prefill = JSON.parse(savedPrefill); sessionStorage.removeItem('qrd-upload-prefill'); }
     } catch (e) {}
-    shell();
+    shell(); setupNotices();
     if (ui.prefill && ui.page === 'upload') {
       toast('📂 جهزنا بيانات المريض — اختار ملف PDF من زر رفع الملفات');
     }
@@ -1953,7 +2020,7 @@
       var qr=$('qrStats'); if (qr) qr.innerHTML='<div class="qrd-data-error" role="alert">⚠️ '+message+'</div>';
     });
     connect(); bootWatch();
-    document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible' && (!ui.es || ui.es.readyState === 2)) connect(); });
+    document.addEventListener('visibilitychange', function () { if (document.visibilityState !== 'visible') return; readNoticePage(); if (!ui.es || ui.es.readyState === 2) connect(); else api('GET', 'notifications').then(function (x) { syncNotices(x.notices); }).catch(function () {}); });
     window.addEventListener('beforeunload', function (e) {
       var workInProgress = ui.queue.some(function (q) { return q.st === 'ready' || q.st === 'saving' || q.st === 'reading'; });
       /* IndexedDB persists across a normal section reload; don't show a needless warning. */

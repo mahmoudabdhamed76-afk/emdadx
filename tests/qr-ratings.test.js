@@ -85,10 +85,15 @@ test('public fixed QR rating persists, updates, and appears only in its authenti
   assert.equal(list.status, 200); assert.equal(list.json.list[0].stars, 2);
   assert.equal(list.json.list[0].token, 'h:' + a.pub);
   assert.equal(list.json.months[0].n, 1);
+  const notices = '/k/' + a.code + '/notifications';
+  assert.equal((await request(notices)).status, 401);
+  assert.equal((await request(notices, { cookie })).json.notices.ratings, 2);
   const otherLogin = await post('/k/' + b.code + '/login', { pass: password });
   const otherCookie = otherLogin.headers.get('set-cookie').split(';')[0];
   assert.equal((await request(ratings, { cookie: otherCookie })).status, 401);
   assert.deepEqual((await request('/k/' + b.code + '/ratings', { cookie: otherCookie })).json.list, []);
+  assert.equal((await request(notices, { cookie: otherCookie })).status, 401);
+  assert.deepEqual((await request('/k/' + b.code + '/notifications', { cookie: otherCookie })).json.notices, {});
 });
 
 test('case QR rating keeps notes/tags, updates once, and reaches dashboard and monthly report', async () => {
@@ -115,7 +120,8 @@ test('rating event reaches the live center after the database write', async () =
   const reader = response.body.getReader();
   const timeout = setTimeout(() => controller.abort(), 5000);
   try {
-    await reader.read(); // hello; subscription is now registered
+    const hello = Buffer.from((await reader.read()).value).toString();
+    assert.match(hello, /"notices":\{"ratings":4\}/); // includes events saved while disconnected
     assert.equal((await post('/h/' + a.pub + '/rate', { stars: 3, vid: 'live-visitor' })).status, 200);
     let events = '';
     while (!events.includes('event: rating')) {
@@ -123,6 +129,7 @@ test('rating event reaches the live center after the database write', async () =
       events += Buffer.from(next.value).toString();
     }
     assert.match(events, /"stars":3/);
+    assert.match(events, /"notice":\{"section":"ratings","total":5\}/);
     assert.equal(db.prepare('SELECT COUNT(*) n FROM case_rating WHERE stars = 3').get().n, 1);
   } finally { clearTimeout(timeout); controller.abort(); }
 });
@@ -155,4 +162,33 @@ test('rate limiting returns 429 without saving excess ratings', async () => {
   }
   const r = await post('/h/' + a.pub + '/rate', { stars: 5, vid: 'limit' }, undefined, headers);
   assert.equal(r.status, 429); assert.notEqual(r.json.ok, true);
+});
+
+test('all seven sections accumulate activity while disconnected; rejected requests add nothing', async () => {
+  const login = await post('/k/' + b.code + '/login', { pass: password });
+  const session = login.headers.get('set-cookie').split(';')[0];
+  const center = '/k/' + b.code, patient = '/h/' + b.pub;
+  const tomorrow = new Date(Date.now() + 864e5).toISOString().slice(0, 10);
+  const headers = { 'X-Forwarded-For': 'notifications-test' };
+  const details = { name: 'Test Patient', phone: '01000000001', subject: 'Test request', message: 'Test request details' };
+  assert.equal((await post(patient + '/rate', { stars: 4 }, undefined, headers)).status, 200);
+  assert.equal((await post(patient + '/book', { ...details, exam: 'سونار', day: tomorrow, slot: 'أي وقت' }, undefined, headers)).status, 201);
+  assert.equal((await post(patient + '/ask', details, undefined, headers)).status, 200);
+  assert.equal((await post(patient + '/complaint', details, undefined, headers)).status, 201);
+  const files = [{ name: 'test.png', data: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+j6qkAAAAASUVORK5CYII=' }];
+  assert.equal((await post(patient + '/report-request', { ...details, files }, undefined, headers)).status, 201);
+  assert.equal((await post(patient + '/seen', { vid: 'new-visitor' }, undefined, headers)).status, 200);
+  // The existing analytics dedupe should also prevent duplicate QR notifications.
+  await post(patient + '/seen', { vid: 'new-visitor' }, undefined, headers);
+  const upload = await post(center + '/case', Buffer.alloc(40), session, {
+    'Content-Type': 'application/octet-stream',
+    'X-Meta': Buffer.from(JSON.stringify({ patient: 'Test Patient', name: 'test.pdf' })).toString('base64url')
+  });
+  assert.equal(upload.status, 200);
+  assert.equal((await request('/v/' + upload.json.item.token + '/file', { headers })).status, 200);
+  const expected = { ratings: 1, bookings: 1, results: 1, complaints: 1, reports: 1, activity: 1, qr: 1 };
+  assert.deepEqual((await request(center + '/notifications', { cookie: session })).json.notices, expected);
+  assert.equal((await post(patient + '/book', {}, undefined, headers)).status, 400);
+  assert.deepEqual((await request(center + '/notifications', { cookie: session })).json.notices, expected);
+  assert.equal(db.prepare('SELECT COUNT(*) n FROM case_notice_count WHERE customer_id = ?').get('ratings-b').n, 7);
 });
