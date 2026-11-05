@@ -3,14 +3,14 @@
    · الطلبات: who asked for the printing service from the page, call /
      WhatsApp, mark contacted / done (+ a note the center sees when it
      follows its code), delete
-   · التصميم والمحتوى: the 4 designs, texts, slides (drawn picture or an
+   · التصميم والمحتوى: the 6 designs, texts, slides (drawn picture or an
      uploaded photo), features, services, numbers, with a live phone preview
    All data goes through /api/promo (admin only on the server too).
 ════════════════════════════════════════════════════════════════════ */
 (function () {
   'use strict';
   var API = (typeof API_BASE !== 'undefined' ? API_BASE : '');
-  var S = { tab: 'stats', d: null, c: null, f: 'all', dirty: false, days: 30, st: null };
+  var S = { tab: 'stats', d: null, c: null, f: 'all', dirty: false, days: 30, st: null, pvMode: 'phone', pvSeq: 0, uploads: 0 };
   var ALONE = !!window.PMX_STANDALONE;
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function T(m, t) { if (typeof toast === 'function') toast(m, t || 'success'); }
@@ -23,8 +23,8 @@
   function waNum(n) { return String(n || '').replace(/[^\d]/g, '').replace(/^00/, '').replace(/^0(?=1\d{9}$)/, '20'); }
   function when(t) { if (!t) return ''; var d = new Date(t), s = (Date.now() - t) / 1000; if (s < 3600) return 'من ' + Math.max(1, Math.round(s / 60)) + ' دقيقة'; if (s < 86400) return 'من ' + Math.round(s / 3600) + ' ساعة'; return d.toLocaleDateString('ar-EG', { day: 'numeric', month: 'short' }) + ' ' + d.toLocaleTimeString('ar-EG', { hour: 'numeric', minute: '2-digit' }); }
 
-  var THEMES = [['1', 'الأزرق الكلاسيك', '#0B3D91', '#1D5FD6'], ['2', 'الوردي الفاخر', '#5B1240', '#C42F72'], ['3', 'الكحلي بالأرقام', '#061A3F', '#1E63D6'], ['4', 'الفاتح الطبي', '#A9C6EA', '#1E5BB8']];
-  var ARTN = { monitor: 'شاشة + طابعة', film: 'فيلم في الإيد', ring: 'طابعة بحلقة نور', clinic: 'غرفة أشعة' };
+  var THEMES = [['1', 'الأزرق الكلاسيك', '#0B3D91', '#1D5FD6'], ['2', 'الوردي الفاخر', '#5B1240', '#C42F72'], ['3', 'الكحلي بالأرقام', '#061A3F', '#1E63D6'], ['4', 'الفاتح الطبي', '#A9C6EA', '#1E5BB8'], ['5', 'الطبي الهادئ — اتجاه ١', '#FFFFFF', '#087F7C'], ['6', 'التقني الفاخر — اتجاه ٢', '#041322', '#00C6EF']];
+  var ARTN = { monitor: 'شاشة + طابعة', film: 'فيلم في الإيد', ring: 'طابعة بحلقة نور', clinic: 'غرفة أشعة', studio: 'صورة الطابعة حسب التصميم', 'studio-light': 'صورة الطابعة الفاتحة', 'studio-dark': 'صورة الطابعة الكحلية' };
   var ICN = { printer: 'طابعة', film: 'فيلم', paper: 'ورق/خامات', tools: 'صيانة', support: 'دعم فني', bolt: 'سرعة', shield: 'جودة', clock: 'وقت', layers: 'مقاسات', hand: 'شراكة', image: 'صورة', hospital: 'مستشفى', scan: 'مركز أشعة', clinic: 'عيادة', tag: 'سعر', doc: 'ملف', wa: 'واتساب', star: 'نجمة', truck: 'توصيل', check: 'صح' };
   var STN = { new: ['جديد', '#F59E0B'], contacted: ['اتواصلنا', '#2563EB'], done: ['اتنفّذ', '#16A34A'] };
 
@@ -50,6 +50,7 @@
       '.pmx-row .hd button{border:0;background:var(--surface,#fff);border-radius:8px;width:28px;height:28px;cursor:pointer;color:inherit}.pmx-mini{display:grid;grid-template-columns:1fr 1fr 130px;gap:8px}.pmx-mini3{display:grid;grid-template-columns:1fr 1fr;gap:8px}' +
       '.pmx-img{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.pmx-img img{width:96px;height:56px;object-fit:cover;border-radius:8px;border:1px solid var(--border,#e5e7eb)}' +
       '.pmx-pv{position:sticky;top:76px}.pmx-ph{width:414px;height:800px;border-radius:44px;padding:12px;background:#0F172A;box-shadow:0 30px 60px -30px rgba(2,6,23,.6)}.pmx-ph iframe{width:100%;height:100%;border:0;border-radius:34px;background:#fff}' +
+      '.pmx-pv{min-width:0}.pmx-ph{max-width:100%;margin:auto}.pmx-preview-tools{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}.pmx-ed.pmx-wide{grid-template-columns:minmax(0,1fr)}.pmx-wide .pmx-pv{display:block!important;position:relative;top:auto;grid-row:1}.pmx-wide .pmx-ph{width:100%;max-width:none;border-radius:16px;height:780px}.pmx-wide .pmx-ph iframe{border-radius:8px}.pmx-range{display:grid;grid-template-columns:1fr 1fr;gap:12px}.pmx-range input{width:100%;accent-color:#087F7C}.pmx-preview-status{font-size:12px;color:var(--text-muted,#64748b);margin:8px 0}.pmx-th button[data-th="5"] i{background-image:url(/promo-assets/studio-light.jpg)!important;background-size:cover;background-position:center}.pmx-th button[data-th="6"] i{background-image:url(/promo-assets/studio-dark.jpg)!important;background-size:cover;background-position:center}@media(max-width:1100px){.pmx-ed .pmx-pv{display:block;position:relative;top:auto;grid-row:1}.pmx-ph{height:680px;width:min(414px,100%)}}' +
       '.pmx-save{position:sticky;bottom:12px;z-index:5;display:flex;gap:8px;justify-content:flex-start;padding:10px;border-radius:14px;background:var(--surface,#fff);border:1px solid var(--border,#e5e7eb);box-shadow:0 12px 30px -18px rgba(2,6,23,.45)}' +
       '.pmx-sw{display:inline-flex;align-items:center;gap:8px;cursor:pointer;font-weight:700;font-size:13px}.pmx-sw input{width:40px;height:22px;accent-color:#16A34A}' +
       '.pmx-kpi6{grid-template-columns:repeat(6,minmax(0,1fr))}.pmx-kpi em{font-style:normal;font-size:11px;font-weight:800;margin-inline-start:4px}.pmx-kpi em.up{color:#16A34A}.pmx-kpi em.dn{color:#DC2626}' +
@@ -172,20 +173,48 @@
   function inp(path, val, ph, max, extra) { return '<input class="form-control" data-k="' + path + '" value="' + esc(val || '') + '" placeholder="' + esc(ph || '') + '" maxlength="' + (max || 80) + '"' + (extra || '') + '>'; }
   function sel(path, val, map) { return '<select class="form-control" data-k="' + path + '">' + Object.keys(map).map(function (k) { return '<option value="' + k + '"' + (k === val ? ' selected' : '') + '>' + esc(map[k]) + '</option>'; }).join('') + '</select>'; }
   function list(key, title, hint, max, rowFn, blank) {
-    var A = S.c[key] || [];
+    var A = getK(key) || [];
     return '<section class="pmx-sec"><h3>' + title + '<small>' + hint + '</small></h3>' + A.map(function (x, i) {
       return '<div class="pmx-row"><div class="hd">#' + (i + 1) + '<span class="sp"><button type="button" data-mv="' + key + ':' + i + ':-1" title="فوق">↑</button><button type="button" data-mv="' + key + ':' + i + ':1" title="تحت">↓</button><button type="button" data-rm="' + key + ':' + i + '" title="شيل">✕</button></span></div>' + rowFn(x, i) + '</div>';
     }).join('') + (A.length < max ? '<button type="button" class="btn btn-secondary btn-sm" data-add="' + key + '" data-blank=\'' + esc(JSON.stringify(blank)) + '\'>+ زوّد</button>' : '') + '</section>';
   }
+  function getK(path) { return path.split('.').reduce(function (value, key) { return value && value[key]; }, S.c); }
+  function imageEditor(key, id, fallback) {
+    return '<div class="pmx-img">' + (id || fallback ? '<img src="' + esc(id ? '/promo/img/' + id : fallback) + '" alt="معاينة الصورة">' : '') +
+      (id ? '<button type="button" class="btn btn-ghost btn-sm" data-noimg="' + key + '">شيل الصورة المرفوعة</button>' : '') +
+      '<label class="btn btn-secondary btn-sm" style="cursor:pointer">📷 ' + (id ? 'غيّر الصورة' : 'ارفع صورة') + '<input type="file" accept="image/png,image/jpeg,image/webp" data-up="' + key + '" hidden></label><small>PNG / JPG / WebP — الصور المرفوعة تتبدل بحرية، والحفظ ينشر التعديل</small></div>';
+  }
+  function fitPreview() {
+    var frame = g('pmxIf'); if (!frame) return;
+    var shell = frame.parentNode;
+    if (S.pvMode !== 'wide') { frame.style.cssText = ''; shell.style.height = ''; return; }
+    var scale = Math.min(1, Math.max(0.15, (shell.clientWidth - 24) / 1200));
+    shell.style.position = 'relative'; shell.style.overflow = 'hidden'; shell.style.height = Math.ceil(900 * scale + 24) + 'px';
+    frame.style.cssText = 'position:absolute;right:12px;top:12px;width:1200px;height:900px;max-width:none;transform-origin:top right;transform:scale(' + scale + ')';
+  }
+  function preview() {
+    clearTimeout(S.pvT);
+    S.pvT = setTimeout(function () {
+      var frame = g('pmxIf'); if (!frame || !S.c) return;
+      var serial = ++S.pvSeq;
+      api('POST', '/preview', { cfg: S.c }).then(function (j) {
+        if (serial !== S.pvSeq || frame !== g('pmxIf')) return;
+        frame.onload = fitPreview; frame.srcdoc = j.html; fitPreview();
+        var status = g('pmxPreviewStatus'); if (status) status.textContent = 'معاينة التعديلات الحالية — الصفحة المنشورة مش هتتغير قبل الحفظ';
+      }).catch(function (e) { var status = g('pmxPreviewStatus'); if (status && frame === g('pmxIf')) status.textContent = e.message || 'تعذّر تحديث المعاينة'; });
+    }, 300);
+  }
   function design() {
     var c = S.c, el = g('pmxBody');
-    el.innerHTML = '<div class="pmx-ed"><div style="display:grid;gap:14px">' +
-      '<section class="pmx-sec"><h3>شكل الصفحة<small>اختار تصميم من الأربعة</small></h3><div class="pmx-th">' + THEMES.map(function (t) { return '<button type="button" data-th="' + t[0] + '" class="' + (c.theme === t[0] ? 'on' : '') + '"><i style="background:linear-gradient(140deg,' + t[3] + ',' + t[2] + ')"></i>' + t[1] + '</button>'; }).join('') + '</div></section>' +
+    el.innerHTML = '<div class="pmx-ed' + (S.pvMode === 'wide' ? ' pmx-wide' : '') + '"><div style="display:grid;gap:14px">' +
+      '<section class="pmx-sec"><h3>شكل الصفحة<small>٦ تصميمات — الاتجاهان الجديدان قابلان للتعديل بالكامل</small></h3><div class="pmx-th">' + THEMES.map(function (t) { return '<button type="button" data-th="' + t[0] + '" class="' + (c.theme === t[0] ? 'on' : '') + '"><i style="background:linear-gradient(140deg,' + t[3] + ',' + t[2] + ')"></i>' + t[1] + '</button>'; }).join('') + '</div></section>' +
       '<section class="pmx-sec"><h3>البيانات الأساسية</h3><div class="pmx-g">' +
         '<label>اسم الشركة' + inp('brand', c.brand, 'Emdadx', 40) + '</label><label>الجملة اللي تحت الاسم' + inp('tagline', c.tagline, 'للتوريدات و حلول طباعة الأشعة', 80) + '</label>' +
         '<label>رقم الواتساب' + inp('wa', c.wa, '01xxxxxxxxx', 16, ' dir="ltr" inputmode="tel"') + '</label><label>رقم الاتصال' + inp('phone', c.phone, '01xxxxxxxxx', 16, ' dir="ltr" inputmode="tel"') + '</label>' +
-        '<label>زرار الطلب (التصميم 1)' + inp('cta', c.cta, 'اطلب خدمة الطباعة الآن', 60) + '</label><label>زرار العرض (التصميم 4)' + inp('offer', c.offer, 'احصل على عرض مخصص لمركزك', 60) + '</label>' +
+        '<label>زرار الطلب الرئيسي' + inp('cta', c.cta, 'اطلب خدمة الطباعة الآن', 60) + '</label><label>زرار العرض' + inp('offer', c.offer, 'احصل على عرض مخصص لمركزك', 60) + '</label>' +
         '<label class="full">نبذة عن الشركة<textarea class="form-control" data-k="about" rows="3" maxlength="500">' + esc(c.about || '') + '</textarea></label></div></section>' +
+      ((c.theme === '5' || c.theme === '6') ? '<section class="pmx-sec"><h3>محتوى التصميم الجديد</h3><div class="pmx-g"><label>الزرار الثاني في السلايد' + inp('modern.secondary', (c.modern || {}).secondary, 'شاهد الخدمة', 40) + '</label><label>عنوان خطوات الخدمة' + inp('modern.stepsTitle', (c.modern || {}).stepsTitle, 'من الطلب إلى التشغيل', 80) + '</label><label>عنوان طلب عرض السعر' + inp('modern.quoteTitle', (c.modern || {}).quoteTitle, 'اطلب عرض سعر', 80) + '</label><label>كلام زرار عرض السعر' + inp('modern.quoteButton', (c.modern || {}).quoteButton, 'اطلب عرض سعر', 40) + '</label><label class="full">وصف عرض السعر' + inp('modern.quoteText', (c.modern || {}).quoteText, '', 180) + '</label><label class="pmx-sw"><input type="checkbox" data-b="modern.workOn"' + ((c.modern || {}).workOn !== false ? ' checked' : '') + '>إظهار الصورة الإضافية بجانب طلب العرض</label><label>عنوان الصورة الإضافية' + inp('modern.workTitle', (c.modern || {}).workTitle, '', 80) + '</label><label>وصف الصورة' + inp('modern.workAlt', (c.modern || {}).workAlt, '', 120) + '</label></div>' + imageEditor('modern.workImg', (c.modern || {}).workImg, '/promo-assets/studio-' + (c.theme === '6' ? 'dark' : 'light') + '.jpg') + '</section>' +
+        list('modern.steps', 'خطوات الخدمة', 'تقدر تغيّر الكلام والأيقونة والترتيب أو تمسح الخطوات', 6, function (x, i) { return '<div class="pmx-mini3"><label>العنوان' + inp('modern.steps.' + i + '.t', x.t, '', 60) + '</label><label>الوصف' + inp('modern.steps.' + i + '.s', x.s, '', 100) + '</label><label>الأيقونة' + sel('modern.steps.' + i + '.ic', x.ic, ICN) + '</label></div>'; }, { t: 'خطوة جديدة', s: '', ic: 'check' }) : '') +
       '<section class="pmx-sec"><h3>حركة السلايدر</h3><div class="pmx-g">' +
         '<label>يقلب كل كام ثانية<input class="form-control" type="number" min="3" max="12" step="0.5" data-k="slider.sec" value="' + esc((c.slider || {}).sec || 4.5) + '"></label>' +
         '<label>نوع الحركة' + sel('slider.fx', (c.slider || {}).fx || 'fade', { fade: 'ظهور تدريجي', slide: 'انزلاق', zoom: 'زووم هادي' }) + '</label>' +
@@ -197,36 +226,49 @@
           '<label>الوصف<small style="font-weight:500;color:var(--text-muted,#64748b)"> — في التصميم 3 افصل النقط بـ · عشان تظهر ✓</small>' + inp('slides.' + i + '.sub', x.sub, 'جودة عالية ودقة تفاصيل', 160) + '</label>' +
           '<div class="pmx-mini3"><label>كلام الزرار (فاضي = من غير زرار)' + inp('slides.' + i + '.btn', x.btn, 'اطلب الخدمة', 30) + '</label><label>الزرار يودّي على' + sel('slides.' + i + '.act', x.act || 'order', { order: 'فورم طلب الخدمة', quote: 'طلب عرض سعر', wa: 'واتساب', call: 'اتصال', track: 'متابعة طلب', url: 'لينك خارجي', none: 'من غير زرار' }) + '</label></div>' +
           ((x.act === 'url') ? '<label>اللينك (يبدأ بـ https://)' + inp('slides.' + i + '.url', x.url, 'https://', 300, ' dir="ltr"') + '</label>' : '') +
-          '<div class="pmx-mini3"><label>الصورة المرسومة' + sel('slides.' + i + '.art', x.art, ARTN) + '</label>' + (x.img ? '<label>شكل الصورة' + sel('slides.' + i + '.fit', x.fit || 'cover', { cover: 'تملى السلايد', contain: 'تظهر كاملة' }) + '</label>' : '<span></span>') + '</div>' +
-          '<div class="pmx-img">' + (x.img ? '<img src="/promo/img/' + esc(x.img) + '" alt=""><label class="pmx-sw"><input type="checkbox" data-b="slides.' + i + '.shade"' + (x.shade !== false ? ' checked' : '') + '>تغميق ورا الكلام</label><button type="button" class="btn btn-ghost btn-sm" data-noimg="' + i + '">شيل الصورة</button>' : '') + '<label class="btn btn-secondary btn-sm" style="cursor:pointer">📷 ' + (x.img ? 'غيّر الصورة' : 'ارفع صورة بدل المرسومة') + '<input type="file" accept="image/png,image/jpeg,image/webp" data-up="' + i + '" hidden></label><small style="color:var(--text-muted,#64748b)">أحسن مقاس 1600 × 900</small></div>' +
+          '<div class="pmx-mini3"><label>الصورة الافتراضية' + sel('slides.' + i + '.art', x.art, ARTN) + '</label><label>شكل الصورة' + sel('slides.' + i + '.fit', x.fit || 'cover', { cover: 'تملى مساحة الصورة', contain: 'تظهر كاملة' }) + '</label><label>وصف الصورة' + inp('slides.' + i + '.alt', x.alt, '', 120) + '</label><label class="pmx-sw"><input type="checkbox" data-b="slides.' + i + '.shade"' + (x.shade !== false ? ' checked' : '') + '>تغميق خفيف للصورة</label></div>' +
+          '<div class="pmx-range"><label>موضع الصورة أفقيًا<input type="range" min="0" max="100" step="1" data-k="slides.' + i + '.posX" value="' + (x.posX == null ? 50 : x.posX) + '"></label><label>موضع الصورة رأسيًا<input type="range" min="0" max="100" step="1" data-k="slides.' + i + '.posY" value="' + (x.posY == null ? 50 : x.posY) + '"></label></div>' +
+          imageEditor('slides.' + i + '.img', x.img, /^(studio|monitor)/.test(x.art || '') && (c.theme === '5' || c.theme === '6' || /^studio/.test(x.art || '')) ? '/promo-assets/studio-' + (x.art === 'studio-dark' || x.art !== 'studio-light' && c.theme === '6' ? 'dark' : 'light') + '.jpg' : '') +
           '<div><button type="button" class="btn btn-ghost btn-sm" data-dup="' + i + '">⧉ نسخة من السلايد ده</button></div>';
-      }, { on: true, title: 'سلايد جديد', hi: '', sub: '', btn: 'اطلب الخدمة', act: 'order', url: '', art: 'monitor', img: '', shade: true, fit: 'cover' }) +
+      }, { on: true, title: 'سلايد جديد', hi: '', sub: '', btn: 'اطلب الخدمة', act: 'order', url: '', art: 'studio', img: '', alt: '', posX: 50, posY: 50, shade: true, fit: 'cover' }) +
       list('chips', 'المميزات', 'لحد 4 (تحت السلايد أو «لماذا نحن»)', 4, function (x, i) { return '<div class="pmx-mini3"><label>الميزة' + inp('chips.' + i + '.t', x.t, 'جودة عالية', 30) + '</label><label>الأيقونة' + sel('chips.' + i + '.ic', x.ic, ICN) + '</label></div>'; }, { t: '', ic: 'star' }) +
-      list('services', 'الخدمات', 'لحد 8 — الضغط على أي خدمة بيفتح فورم الطلب عليها', 8, function (x, i) { return '<div class="pmx-mini"><label>الخدمة' + inp('services.' + i + '.t', x.t, 'طباعة أفلام الأشعة', 40) + '</label><label>تفصيلة صغيرة' + inp('services.' + i + '.s', x.s, 'A3 - A4 - B4', 60) + '</label><label>الأيقونة' + sel('services.' + i + '.ic', x.ic, ICN) + '</label></div>'; }, { t: '', s: '', ic: 'printer' }) +
+      list('services', 'الخدمات', 'لحد 8 — الضغط على أي خدمة بيفتح فورم الطلب عليها', 8, function (x, i) { return '<div class="pmx-mini"><label>الخدمة' + inp('services.' + i + '.t', x.t, 'طباعة أفلام الأشعة', 40) + '</label><label>تفصيلة صغيرة' + inp('services.' + i + '.s', x.s, 'A3 - A4 - B4', 60) + '</label><label>الأيقونة' + sel('services.' + i + '.ic', x.ic, ICN) + '</label><label>وصف صورة الخدمة' + inp('services.' + i + '.alt', x.alt, '', 120) + '</label></div>' + imageEditor('services.' + i + '.img', x.img); }, { t: '', s: '', ic: 'printer', img: '', alt: '' }) +
       list('stats', 'الأرقام', 'لحد 3 — بتتعد لما تظهر', 3, function (x, i) { return '<div class="pmx-mini3"><label>الرقم' + inp('stats.' + i + '.n', x.n, '+150', 10) + '</label><label>معناه' + inp('stats.' + i + '.l', x.l, 'مركز أشعة تثق بنا', 30) + '</label></div>'; }, { n: '', l: '' }) +
       list('targets', 'بنخدم مين', 'لحد 3 (التصميم 4)', 3, function (x, i) { return '<div class="pmx-mini3"><label>الاسم' + inp('targets.' + i + '.t', x.t, 'مستشفيات', 30) + '</label><label>الأيقونة' + sel('targets.' + i + '.ic', x.ic, ICN) + '</label></div>'; }, { t: '', ic: 'hospital' }) +
       '<div class="pmx-save"><button class="btn btn-primary" id="pmxSave">💾 حفظ ونشر</button><button class="btn btn-ghost" id="pmxUndo">تراجع عن التعديلات</button><span id="pmxDirty" style="align-self:center;font-size:12.5px;color:#d97706">' + (S.dirty ? '● فيه تعديلات مش محفوظة' : '') + '</span></div>' +
-      '</div><aside class="pmx-pv"><div class="pmx-ph"><iframe id="pmxIf" src="' + esc(link()) + '?pv=' + Date.now() + '" title="معاينة"></iframe></div><p style="text-align:center;font-size:12px;color:var(--text-muted,#64748b);margin:8px 0 0">المعاينة بتتحدث بعد الحفظ · <a href="' + esc(link()) + '?pv=1" target="_blank" rel="noopener">🖥️ شوفها بشكل الكمبيوتر</a></p></aside></div>';
-    wire(el);
+       '</div><aside class="pmx-pv"><div class="pmx-preview-tools"><button type="button" class="btn btn-secondary btn-sm" data-pv="phone">📱 معاينة الموبايل</button><button type="button" class="btn btn-secondary btn-sm" data-pv="wide">🖥️ معاينة الكمبيوتر</button></div><div class="pmx-ph"><iframe id="pmxIf" src="about:blank" title="معاينة التعديلات" sandbox="allow-scripts allow-same-origin allow-forms"></iframe></div><p class="pmx-preview-status" id="pmxPreviewStatus">جاري تحديث المعاينة…</p></aside></div>' ;
+    wire(el); fitPreview();
+    if (S.pvObserver) S.pvObserver.disconnect();
+    if (window.ResizeObserver) { S.pvObserver = new ResizeObserver(fitPreview); S.pvObserver.observe(g('pmxIf').parentNode); }
+    preview();
   }
   function setK(path, v) { var p = path.split('.'), o = S.c; for (var i = 0; i < p.length - 1; i++) { if (o[p[i]] == null) o[p[i]] = {}; o = o[p[i]]; } o[p[p.length - 1]] = v; dirty(); }
-  function dirty() { S.dirty = true; var d = g('pmxDirty'); if (d) d.textContent = '● فيه تعديلات مش محفوظة'; }
+  function dirty() { S.dirty = true; preview(); var d = g('pmxDirty'); if (d) d.textContent = '● فيه تعديلات مش محفوظة'; }
   function wire(el) {
     [].forEach.call(el.querySelectorAll('[data-k]'), function (x) { x.addEventListener(x.tagName === 'SELECT' ? 'change' : 'input', function () { setK(x.dataset.k, x.value); }); });
     [].forEach.call(el.querySelectorAll('[data-b]'), function (x) { x.onchange = function () { setK(x.dataset.b, x.checked); if (/^slides\.\d+\.on$/.test(x.dataset.b)) design(); }; });
     [].forEach.call(el.querySelectorAll('[data-k$=".act"]'), function (x) { x.addEventListener('change', function () { design(); }); });
     [].forEach.call(el.querySelectorAll('[data-dup]'), function (b) { b.onclick = function () { if (S.c.slides.length >= 10) return T('أقصى حاجة 10 سلايدات', 'error'); var i = +b.dataset.dup; S.c.slides.splice(i + 1, 0, JSON.parse(JSON.stringify(S.c.slides[i]))); dirty(); design(); }; });
     [].forEach.call(el.querySelectorAll('[data-th]'), function (b) { b.onclick = function () { S.c.theme = b.dataset.th; dirty(); design(); }; });
-    [].forEach.call(el.querySelectorAll('[data-add]'), function (b) { b.onclick = function () { S.c[b.dataset.add].push(JSON.parse(b.dataset.blank)); dirty(); design(); }; });
-    [].forEach.call(el.querySelectorAll('[data-rm]'), function (b) { b.onclick = function () { var p = b.dataset.rm.split(':'); S.c[p[0]].splice(+p[1], 1); dirty(); design(); }; });
-    [].forEach.call(el.querySelectorAll('[data-mv]'), function (b) { b.onclick = function () { var p = b.dataset.mv.split(':'), A = S.c[p[0]], i = +p[1], j = i + (+p[2]); if (j < 0 || j >= A.length) return; var t = A[i]; A[i] = A[j]; A[j] = t; dirty(); design(); }; });
-    [].forEach.call(el.querySelectorAll('[data-noimg]'), function (b) { b.onclick = function () { S.c.slides[+b.dataset.noimg].img = ''; dirty(); design(); }; });
+    [].forEach.call(el.querySelectorAll('[data-add]'), function (b) { b.onclick = function () { getK(b.dataset.add).push(JSON.parse(b.dataset.blank)); dirty(); design(); }; });
+    [].forEach.call(el.querySelectorAll('[data-rm]'), function (b) { b.onclick = function () { var p = b.dataset.rm.split(':'); getK(p[0]).splice(+p[1], 1); dirty(); design(); }; });
+    [].forEach.call(el.querySelectorAll('[data-mv]'), function (b) { b.onclick = function () { var p = b.dataset.mv.split(':'), A = getK(p[0]), i = +p[1], j = i + (+p[2]); if (j < 0 || j >= A.length) return; var t = A[i]; A[i] = A[j]; A[j] = t; dirty(); design(); }; });
+    [].forEach.call(el.querySelectorAll('[data-noimg]'), function (b) { b.onclick = function () { setK(b.dataset.noimg, ''); design(); }; });
     [].forEach.call(el.querySelectorAll('[data-up]'), function (x) { x.onchange = function () {
-      var f = x.files && x.files[0]; if (!f) return; var i = +x.dataset.up;
-      shrink(f).then(function (data) { return api('POST', '/img', { data: data }); }).then(function (j) { S.c.slides[i].img = j.id; dirty(); design(); T('📷 الصورة اترفعت — اضغط حفظ'); }).catch(function (e) { T(e.message || 'مش قادر أرفع الصورة', 'error'); });
+      var f = x.files && x.files[0]; if (!f) return; var key = x.dataset.up, parts = key.split('.'), property = parts.pop(), target = getK(parts.join('.'));
+      S.uploads++; if (g('pmxSave')) g('pmxSave').disabled = true; T('📷 جاري رفع الصورة…');
+      shrink(f).then(function (data) { return api('POST', '/img', { data: data }); }).then(function (j) {
+        /* Keep the image attached to its slide even if the slide moves during upload. */
+        var attached = parts[0] === 'slides' || parts[0] === 'services' ? (S.c[parts[0]] || []).indexOf(target) >= 0 : S.c.modern === target;
+        if (!attached) return;
+        target[property] = j.id; dirty(); design(); T('📷 الصورة اترفعت — اضغط حفظ');
+      }).catch(function (e) { T(e.message || 'مش قادر أرفع الصورة', 'error'); }).finally(function () { S.uploads--; if (g('pmxSave')) g('pmxSave').disabled = S.uploads > 0; });
     }; });
+    [].forEach.call(el.querySelectorAll('[data-pv]'), function (b) { b.onclick = function () { S.pvMode = b.dataset.pv; design(); }; });
     g('pmxUndo').onclick = function () { S.c = JSON.parse(JSON.stringify(S.d.cfg)); S.dirty = false; design(); };
+    g('pmxSave').disabled = S.uploads > 0;
     g('pmxSave').onclick = function () {
+      if (S.uploads) return T('استنى رفع الصور يخلص الأول');
       var b = this; b.disabled = true;
       api('POST', '/cfg', { cfg: S.c }).then(function (j) { S.d.cfg = j.cfg; S.c = JSON.parse(JSON.stringify(j.cfg)); S.dirty = false; T('✓ اتحفظ واتنشر'); design(); }).catch(function (e) { b.disabled = false; T(e.message, 'error'); });
     };
