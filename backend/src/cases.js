@@ -27,7 +27,8 @@ CREATE TABLE IF NOT EXISTS case_item (
   active INTEGER NOT NULL DEFAULT 1, cache_until INTEGER, cached INTEGER NOT NULL DEFAULT 0
 );
 CREATE INDEX IF NOT EXISTS ix_case_item ON case_item (customer_id, id);
-CREATE TABLE IF NOT EXISTS case_kv (k TEXT PRIMARY KEY, v TEXT)`);
+CREATE TABLE IF NOT EXISTS case_kv (k TEXT PRIMARY KEY, v TEXT);
+CREATE TABLE IF NOT EXISTS case_notice_count (customer_id TEXT NOT NULL, section TEXT NOT NULL, total INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (customer_id, section))`);
 /* 4.91 · الباركود الثابت للورق: كود عام للمركز (/h/<pub>) + مفتاح كل حالة متغلّف بموبايل المريض وأول اسمه */
 try {
   const sc = db.prepare('PRAGMA table_info(case_site)').all().map(c => c.name);
@@ -442,7 +443,17 @@ function setCookie(req, site, on) {
 const LIVE = new Map();      // customer_id → Set<res>
 const TICKETS = new Map();   // ticket → { res, cid, token, left, timer }
 function online(cid) { const s = LIVE.get(cid); return !!(s && s.size); }
-function tell(cid, ev, o) { const s = LIVE.get(cid); if (!s) return 0; let n = 0; for (const r of s) { try { r.write('event: ' + ev + '\ndata: ' + JSON.stringify(o) + '\n\n'); n++; } catch (e) {} } return n; }
+function noticeCounts(cid) { return Object.fromEntries(db.prepare('SELECT section, total FROM case_notice_count WHERE customer_id = ?').all(cid).map(r => [r.section, r.total])); }
+function tell(cid, ev, o) {
+  const section = { rating: 'ratings', booking: 'bookings', ask: 'results', view: 'activity', 'qr-open': 'qr' }[ev] || (ev === 'ticket' ? (o.kind === 'complaint' ? 'complaints' : 'reports') : '');
+  if (section) {
+    /* Count once per saved event, including while no dashboard is connected. */
+    try {
+      const r = db.prepare('INSERT INTO case_notice_count (customer_id, section, total) VALUES (?, ?, 1) ON CONFLICT(customer_id, section) DO UPDATE SET total = total + 1 RETURNING total').get(cid, section);
+      o = Object.assign({}, o, { notice: { section, total: r.total } });
+    } catch (e) { console.error('[cases] notification count', e.message); }
+  }
+  const s = LIVE.get(cid); if (!s) return 0; let n = 0; for (const r of s) { try { r.write('event: ' + ev + '\ndata: ' + JSON.stringify(o) + '\n\n'); n++; } catch (e) {} } return n; }
 setInterval(() => { for (const [, s] of LIVE) for (const r of s) { try { r.write(': ping\n\n'); } catch (e) {} } }, 25000).unref();
 
 /* ── temporary copies: cleanup + cap ── */
@@ -479,14 +490,14 @@ function page(title, body, css, js, manifestUrl) {
   return '<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover' + (css === 'v' ? ',maximum-scale=1,user-scalable=no' : '') + '"><meta name="robots" content="noindex,nofollow"><meta name="referrer" content="no-referrer"><meta name="theme-color" content="#0E9F9A">' +
     '<title>' + esc(title) + '</title><link rel="icon" href="/icons/favicon-32.png">' +
     (manifestUrl ? '<link rel="manifest" href="'+esc(manifestUrl)+'"><link rel="apple-touch-icon" href="'+esc(manifestUrl.replace('/manifest','/icon'))+'"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default">' : '') +
-    '<link rel="stylesheet" href="/fonts/fonts.css"><link rel="stylesheet" href="/cases.css?v=534"></head><body class="' + css + '">' + body + js + '</body></html>';
+    '<link rel="stylesheet" href="/fonts/fonts.css"><link rel="stylesheet" href="/cases.css?v=537"></head><body class="' + css + '">' + body + js + '</body></html>';
 }
 function html(res, code, s) { zout(res, code, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store', 'X-Frame-Options': 'DENY', 'Referrer-Policy': 'no-referrer' }, s); }
 
 /* ════════ public routes ════════ */
 async function handle(req, res, pathname) {
   if (/^\/(s|r)\/|^\/v\/[A-Za-z0-9]{12}\/share/.test(pathname)) return plusPublic(req, res, pathname);
-  let m = /^\/k\/([A-Za-z0-9]{8})(\/(login|logout|list|qr|layout|live|case|relay|item|fixed|wa|ask|bookings|tickets|ticket-image|logo|views|theme|manifest|icon|push-key|push-subscribe|push-disable|push-test|dash|ads|slides-base|tickets-all|tickets-reset|ads-order|slides-reset|slide-ms|ratings|report|pop-cfg|follow|wait|doctors|digest)(\/[A-Za-z0-9]{1,20})?(\/(stop|start|delete|wrap|done|toggle|up|down|uncache|doctor))?)?\/?$/.exec(pathname);
+  let m = /^\/k\/([A-Za-z0-9]{8})(\/(login|logout|list|qr|layout|live|case|relay|item|fixed|wa|ask|bookings|tickets|ticket-image|logo|views|theme|manifest|icon|push-key|push-subscribe|push-disable|push-test|dash|ads|slides-base|tickets-all|tickets-reset|ads-order|slides-reset|slide-ms|ratings|notifications|report|pop-cfg|follow|wait|doctors|digest)(\/[A-Za-z0-9]{1,20})?(\/(stop|start|delete|wrap|done|toggle|up|down|uncache|doctor))?)?\/?$/.exec(pathname);
   if (m) return centerRoute(req, res, m);
   m = /^\/h\/([A-Za-z0-9]{8})(\/(seen|rate|find|ask|book|complaint|report-request|manifest|icon|push-key|push-subscribe|push-disable|push-test))?\/?$/.exec(pathname);
   if (m) return findRoute(req, res, m[1], m[3] || '');
@@ -527,7 +538,7 @@ async function centerRoute(req, res, m) {
     if (req.method !== 'GET') return false;
     const CD = { code, center: site.center_name || '', logo: site.logo || '', theme: site.theme || 'a', layout: site.dashboard_layout === 'violet' ? 'violet' : 'teal', auth: me, cacheDays: CACHE_DAYS, maxMb: MAX_MB, pub: me ? pubOf(site) : '', fixedOn: !!site.fixed_on, wa: me ? (site.wa || '') : '', waDefault: me && !site.wa ? waFor(cid0(site), '') : '' };
     if (me) db.prepare('UPDATE case_site SET last_seen = ? WHERE customer_id = ?').run(nowTs(), site.customer_id);
-    html(res, 200, page('QR Patient — ' + (site.center_name || ''), '<div id="app"></div>', 'k', '<script>window.CD=' + json(CD) + '</script><script src="/vendor/qrcode.js"></script><script src="/cases-kit.js?v=535"></script><script src="/cases-dicom.js?v=534"></script><script src="/cases-pacs.js?v=534"></script><script src="/cases-ads.js?v=534"></script><script src="/vendor/gsap.min.js"></script><script src="/js/gxmotion.js?v=534"></script><script src="/cases-center.js?v=534"></script><script src="/cases-push.js?v=534"></script>', '/k/'+code+'/manifest'));
+    html(res, 200, page('QR Patient — ' + (site.center_name || ''), '<div id="app"></div>', 'k', '<script>window.CD=' + json(CD) + '</script><script src="/vendor/qrcode.js"></script><script src="/cases-kit.js?v=535"></script><script src="/cases-dicom.js?v=534"></script><script src="/cases-pacs.js?v=534"></script><script src="/cases-ads.js?v=534"></script><script src="/vendor/gsap.min.js"></script><script src="/js/gxmotion.js?v=534"></script><script src="/cases-notices.js?v=537"></script><script src="/cases-center.js?v=537"></script><script src="/cases-push.js?v=534"></script>', '/k/'+code+'/manifest'));
     return true;
   }
   if (sub === 'manifest' && req.method === 'GET') { respondManifest(res,site,'k');return true; }
@@ -563,6 +574,7 @@ async function centerRoute(req, res, m) {
     send(res,200,{ok:result.ok>0,sent:result.ok,devices:result.devices});return true;
   }
 
+  if (sub === 'notifications' && req.method === 'GET') { send(res, 200, { notices: noticeCounts(cid) }); return true; }
   if (sub === 'qr' && req.method === 'GET') { send(res, 200, { qr: qrStatsOf(cid) }); return true; }
   if (sub === 'dash' && req.method === 'GET') { send(res, 200, { dash: dashOf(cid) }); return true; }
   /* 5.15 · ads shown in the patient page's slider */
@@ -659,7 +671,7 @@ async function centerRoute(req, res, m) {
   }
   if (sub === 'live' && req.method === 'GET') {
     res.writeHead(200, { 'Content-Type': 'text/event-stream; charset=utf-8', 'Cache-Control': 'no-store', Connection: 'keep-alive', 'X-Accel-Buffering': 'no' });
-    res.write('retry: 4000\nevent: hello\ndata: {}\n\n');
+    res.write('retry: 4000\nevent: hello\ndata: ' + JSON.stringify({ notices: noticeCounts(cid) }) + '\n\n');
     if (!LIVE.has(cid)) LIVE.set(cid, new Set()); LIVE.get(cid).add(res);
     db.prepare('UPDATE case_site SET last_seen = ? WHERE customer_id = ?').run(nowTs(), cid);
     req.on('close', () => { const s = LIVE.get(cid); if (s) { s.delete(res); if (!s.size) LIVE.delete(cid); } });
