@@ -2905,3 +2905,5 @@ html.tx.patient-daylight body.v .pvd.pv2-page .patient-chooser .pv2-service-go{w
 .wa-fab svg{width:30px!important;height:30px!important;filter:drop-shadow(0 2px 4px rgba(37,211,102,.35))}
 .wa-fab b{display:none}
 html.ti .wa-fab{background:rgba(20,26,40,.35)!important;border-color:rgba(255,255,255,.18)}
+/* 4.76 · the entrance plays once per page open */
+body.pvm-done .pv2-service,body.pvm-done .pv2-trust>div,body.pvm-done .pvd-chips>*,html.patient-daylight body.v.pvm.pvm-done .pv2-page .patient-chooser button.pv2-service{animation:none!important}

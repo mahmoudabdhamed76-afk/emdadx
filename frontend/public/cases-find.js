@@ -272,6 +272,8 @@
     /* 4.73 · the tiles slide up once, with the page itself */
     [].forEach.call(document.querySelectorAll('.pv2-service, .pv2-trust > div, .pvd-chips > *'), function (el, i) { el.style.setProperty('--mi', i); });
     document.body.classList.add('pvm');
+    /* 4.76 · play once — after the cascade, the tiles never animate again (no replay on touch / hover) */
+    setTimeout(function () { document.body.classList.add('pvm-done'); }, 150 + document.querySelectorAll('.pv2-service, .pv2-trust > div, .pvd-chips > *').length * 70 + 700);
     document.addEventListener('pointerdown', function (e) {
       var t = e.target.closest && e.target.closest('.pv2-service, .btn, .pvd-tab button, .rc, .dk2-c, .pvd-me'); if (!t) return;
       var r = t.getBoundingClientRect(), d = Math.max(r.width, r.height) * 1.2, sp = document.createElement('span'); sp.className = 'pvm-rp';
