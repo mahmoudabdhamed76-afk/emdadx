@@ -10,12 +10,13 @@
 (function () {
   'use strict';
   var API = (typeof API_BASE !== 'undefined' ? API_BASE : '');
-  var S = { tab: 'leads', d: null, c: null, f: 'all', dirty: false };
+  var S = { tab: 'stats', d: null, c: null, f: 'all', dirty: false, days: 30, st: null };
+  var ALONE = !!window.PMX_STANDALONE;
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function T(m, t) { if (typeof toast === 'function') toast(m, t || 'success'); }
   function g(id) { return document.getElementById(id); }
   function api(method, path, body) {
-    return fetch(API + '/api/promo' + (path || ''), { method: method, credentials: 'same-origin', cache: 'no-store', headers: body ? { 'Content-Type': 'application/json' } : {}, body: body ? JSON.stringify(body) : undefined })
+    return fetch((window.PMX_BASE || (API + '/api/promo')) + (path || ''), { method: method, credentials: 'same-origin', cache: 'no-store', headers: body ? { 'Content-Type': 'application/json' } : {}, body: body ? JSON.stringify(body) : undefined })
       .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) throw new Error((j && j.message) || 'محصلش — جرّب تاني'); return j; }); });
   }
   function link() { return location.origin + (typeof APP_PATH !== 'undefined' && APP_PATH ? APP_PATH : '') + '/promo'; }
@@ -51,6 +52,14 @@
       '.pmx-pv{position:sticky;top:76px}.pmx-ph{width:414px;height:800px;border-radius:44px;padding:12px;background:#0F172A;box-shadow:0 30px 60px -30px rgba(2,6,23,.6)}.pmx-ph iframe{width:100%;height:100%;border:0;border-radius:34px;background:#fff}' +
       '.pmx-save{position:sticky;bottom:12px;z-index:5;display:flex;gap:8px;justify-content:flex-start;padding:10px;border-radius:14px;background:var(--surface,#fff);border:1px solid var(--border,#e5e7eb);box-shadow:0 12px 30px -18px rgba(2,6,23,.45)}' +
       '.pmx-sw{display:inline-flex;align-items:center;gap:8px;cursor:pointer;font-weight:700;font-size:13px}.pmx-sw input{width:40px;height:22px;accent-color:#16A34A}' +
+      '.pmx-kpi6{grid-template-columns:repeat(6,minmax(0,1fr))}.pmx-kpi em{font-style:normal;font-size:11px;font-weight:800;margin-inline-start:4px}.pmx-kpi em.up{color:#16A34A}.pmx-kpi em.dn{color:#DC2626}' +
+      '.pmx-live{display:inline-block;width:8px;height:8px;border-radius:50%;background:#22C55E;margin-inline-end:5px;box-shadow:0 0 0 0 rgba(34,197,94,.6);animation:pmxP 1.6s infinite}@keyframes pmxP{70%{box-shadow:0 0 0 8px rgba(34,197,94,0)}100%{box-shadow:0 0 0 0 rgba(34,197,94,0)}}' +
+      '.pmx-ch{width:100%;height:auto;display:block}.pmx-ch .gl{stroke:var(--border,#e5e7eb);stroke-width:1}.pmx-ch .tk{font-size:11px;fill:var(--text-muted,#64748b)}.pmx-ch .v{fill:#93B4F5}.pmx-ch .u{fill:#1D5FD6}.pmx-ch .l{fill:#F59E0B;stroke:var(--surface,#fff);stroke-width:2}.pmx-ch .b:hover .v{fill:#7AA2F2}' +
+      '.pmx-lg{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--text-muted,#64748b)}.pmx-lg i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-inline-end:5px;vertical-align:-1px}.pmx-lg i.v{background:#93B4F5}.pmx-lg i.u{background:#1D5FD6}.pmx-lg i.l{background:#F59E0B;border-radius:50%}' +
+      '.pmx-2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}@media(max-width:900px){.pmx-2{grid-template-columns:1fr}.pmx-kpi6{grid-template-columns:repeat(2,1fr)}}' +
+      '.pmx-bars{display:grid;gap:7px}.pmx-bar{display:grid;grid-template-columns:minmax(90px,38%) 1fr 44px;align-items:center;gap:8px;font-size:13px}.pmx-bar span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.pmx-bar i{display:block;height:10px;border-radius:6px;background:var(--tint-sky,#e7f1fd);position:relative;overflow:hidden}.pmx-bar i::after{content:"";position:absolute;inset:0 auto 0 0;width:var(--w);background:#1D5FD6;border-radius:6px}.pmx-bar b{text-align:left;font-variant-numeric:tabular-nums}' +
+      '.pmx-hr{display:grid;grid-template-columns:repeat(24,1fr);gap:3px}.pmx-hr i{height:38px;border-radius:6px;background:rgba(29,95,214,calc(.08 + var(--a) * .92));position:relative}.pmx-hr span{position:absolute;bottom:-18px;left:0;right:0;text-align:center;font-size:10px;color:var(--text-muted,#64748b);font-style:normal}.pmx-hr{margin-bottom:18px}' +
+      '.pmx-rc{display:grid;gap:4px}.pmx-rc div{display:grid;grid-template-columns:110px 1.4fr 1fr 1fr;gap:8px;font-size:12.5px;padding:7px 4px;border-bottom:1px solid var(--border,#e5e7eb)}.pmx-rc time{color:var(--text-muted,#64748b)}@media(max-width:700px){.pmx-rc div{grid-template-columns:1fr 1fr}}' +
       '@media(max-width:700px){.pmx-kpi{grid-template-columns:repeat(2,1fr)}.pmx-th{grid-template-columns:repeat(2,1fr)}.pmx-g{grid-template-columns:1fr}.pmx-mini{grid-template-columns:1fr}}';
     document.head.appendChild(st);
   }
@@ -64,14 +73,14 @@
     root.innerHTML = '<div class="pmx">' +
       '<div class="card pmx-top"><div><h2>📣 صفحة الدعاية <label class="pmx-sw"><input type="checkbox" id="pmxOn"' + (S.d.cfg.on ? ' checked' : '') + '>' + (S.d.cfg.on ? 'شغّالة' : 'مقفولة') + '</label></h2><small>صفحة للموبايل تعرض فيها خدمة طباعة الأشعة — تبعتها للمراكز أو تحطها في إعلان، واللي يطلب الخدمة يوصلك هنا</small></div>' +
       '<div class="pmx-link"><span class="pmx-url">' + esc(link()) + '</span><button class="btn btn-secondary btn-sm" id="pmxCp">نسخ اللينك</button><a class="btn btn-secondary btn-sm" href="' + esc(link()) + '" target="_blank" rel="noopener">فتح الصفحة</a><button class="btn btn-success btn-sm" id="pmxWa">ابعتها واتساب</button></div></div>' +
-      '<div class="pmx-kpi"><div><b>' + (S.d.today || 0) + '</b><span>زيارة النهارده</span></div><div><b>' + (S.d.views || 0) + '</b><span>زيارة آخر 30 يوم</span></div><div><b>' + nw + '</b><span>طلب جديد</span></div><div><b>' + L.length + '</b><span>كل الطلبات</span></div></div>' +
-      '<div class="pmx-tabs"><button data-t="leads" class="' + (S.tab === 'leads' ? 'on' : '') + '">🖨️ الطلبات' + (nw ? ' (' + nw + ')' : '') + '</button><button data-t="design" class="' + (S.tab === 'design' ? 'on' : '') + '">🎨 التصميم والمحتوى</button></div>' +
+      '<div class="pmx-tabs"><button data-t="stats" class="' + (S.tab === 'stats' ? 'on' : '') + '">📊 الإحصائيات</button><button data-t="leads" class="' + (S.tab === 'leads' ? 'on' : '') + '">🖨️ الطلبات' + (nw ? ' (' + nw + ')' : '') + '</button><button data-t="design" class="' + (S.tab === 'design' ? 'on' : '') + '">🎨 التصميم والمحتوى</button>' + (S.d.erp ? '<button data-t="ctl" class="' + (S.tab === 'ctl' ? 'on' : '') + '">🔐 صفحة التحكم</button>' : '') + (ALONE ? '<button id="pmxOut" style="margin-inline-start:auto">↩ خروج</button>' : '') + '</div>' +
       '<div id="pmxBody"></div></div>';
     [].forEach.call(root.querySelectorAll('[data-t]'), function (b) { b.onclick = function () { if (S.tab === 'design' && S.dirty && !confirm('فيه تعديلات مش محفوظة — تسيبها؟')) return; if (S.tab === 'design' && S.dirty) { S.c = JSON.parse(JSON.stringify(S.d.cfg)); S.dirty = false; } S.tab = b.dataset.t; render(); }; });
     g('pmxCp').onclick = function () { (navigator.clipboard ? navigator.clipboard.writeText(link()) : Promise.reject()).then(function () { T('✓ اتنسخ'); }).catch(function () { prompt('انسخ اللينك', link()); }); };
     g('pmxWa').onclick = function () { window.open('https://wa.me/?text=' + encodeURIComponent('🖨️ خدمة طباعة أفلام الأشعة من ' + (S.d.cfg.brand || 'Emdadx') + '\nاعرف التفاصيل واطلب من هنا:\n' + link()), '_blank'); };
     g('pmxOn').onchange = function () { var on = this.checked, c = JSON.parse(JSON.stringify(S.d.cfg)); c.on = on; api('POST', '/cfg', { cfg: c }).then(function (j) { S.d.cfg = j.cfg; if (!S.dirty) S.c = JSON.parse(JSON.stringify(j.cfg)); else S.c.on = on; T(on ? 'الصفحة شغّالة ✓' : 'الصفحة اتقفلت'); render(); }).catch(function (e) { T(e.message, 'error'); }); };
-    if (S.tab === 'leads') leads(); else design();
+    if (g('pmxOut')) g('pmxOut').onclick = function () { fetch(location.pathname.replace(/\/$/, '') + '/logout', { method: 'POST' }).then(function () { location.reload(); }); };
+    if (S.tab === 'leads') leads(); else if (S.tab === 'stats') statsView(); else if (S.tab === 'ctl') ctlView(); else design();
   }
 
   function leads() {
@@ -95,6 +104,70 @@
     [].forEach.call(el.querySelectorAll('[data-del]'), function (b) { b.onclick = function () { if (!confirm('تمسح الطلب ده نهائي؟')) return; api('POST', '/leads/' + b.dataset.del + '/delete').then(function (j) { S.d.leads = j.leads; T('اتمسح'); render(); }).catch(function (e) { T(e.message, 'error'); }); }; });
   }
 
+  /* ── 📊 the numbers ── */
+  var SRCN = { direct: 'دخول مباشر', whatsapp: 'واتساب', facebook: 'فيسبوك', instagram: 'إنستجرام', google: 'جوجل', telegram: 'تيليجرام', tiktok: 'تيك توك', x: 'إكس', qr: 'باركود QR' };
+  var DEVN = { mobile: '📱 موبايل', desktop: '🖥️ كمبيوتر', tablet: '📟 تابلت' };
+  function bars(rows, label, max) {
+    if (!rows.length) return '<p class="pmx-e" style="padding:12px">لسه مفيش بيانات</p>';
+    var m = max || Math.max.apply(null, rows.map(function (r) { return r.n; })) || 1;
+    return '<div class="pmx-bars">' + rows.map(function (r) { return '<div class="pmx-bar"><span>' + label(r) + '</span><i style="--w:' + Math.max(2, Math.round(r.n / m * 100)) + '%"></i><b>' + r.n + '</b></div>'; }).join('') + '</div>';
+  }
+  function chart(series, width) {
+    var W = Math.max(520, Math.round(width || 720)), H = 200, pad = 26, n = series.length, mx = Math.max(1, Math.max.apply(null, series.map(function (x) { return x.v; }))), bw = (W - pad * 2) / n;
+    var ticks = [0, Math.round(mx / 2), mx];
+    var o = '<svg class="pmx-ch" viewBox="0 0 ' + W + ' ' + (H + 26) + '" role="img" aria-label="الزيارات في اليوم">';
+    ticks.forEach(function (t) { var y = H - (t / mx) * (H - 20); o += '<line x1="' + pad + '" x2="' + (W - 4) + '" y1="' + y + '" y2="' + y + '" class="gl"/><text x="' + (pad - 6) + '" y="' + (y + 4) + '" class="tk" text-anchor="end">' + t + '</text>'; });
+    series.forEach(function (d, i) {
+      var h = (d.v / mx) * (H - 20), x = pad + i * bw + bw * .15, w = Math.max(2, bw * .7), hu = (d.u / mx) * (H - 20);
+      o += '<g class="b"><rect x="' + (pad + i * bw) + '" y="0" width="' + bw + '" height="' + H + '" fill="transparent"/><rect x="' + x + '" y="' + (H - h) + '" width="' + w + '" height="' + h + '" rx="3" class="v"/><rect x="' + x + '" y="' + (H - hu) + '" width="' + w + '" height="' + hu + '" rx="3" class="u"/>' +
+        (d.l ? '<circle cx="' + (x + w / 2) + '" cy="' + (H - h - 9) + '" r="4.5" class="l"/>' : '') +
+        '<title>' + d.day + ' — ' + d.v + ' زيارة · ' + d.u + ' زائر' + (d.l ? ' · ' + d.l + ' طلب' : '') + '</title></g>';
+      var stp = Math.max(1, Math.ceil(n / 8)); if (i === n - 1 || (i % stp === 0 && n - 1 - i >= stp * .6)) o += '<text x="' + (x + w / 2) + '" y="' + (H + 18) + '" class="tk" text-anchor="middle">' + d.day.slice(5).replace('-', '/') + '</text>';
+    });
+    return o + '</svg><div class="pmx-lg"><span><i class="v"></i>زيارات</span><span><i class="u"></i>زوّار مختلفين</span><span><i class="l"></i>يوم فيه طلب</span></div>';
+  }
+  function pct(a, b) { if (!b) return a ? '<em class="up">جديد</em>' : ''; var d = Math.round((a - b) / b * 100); return '<em class="' + (d >= 0 ? 'up' : 'dn') + '">' + (d >= 0 ? '▲ ' : '▼ ') + Math.abs(d) + '%</em>'; }
+  function statsView() {
+    var el = g('pmxBody');
+    el.innerHTML = '<div class="pmx-f">' + [[1, 'النهارده'], [7, '7 أيام'], [30, '30 يوم'], [90, '3 شهور'], [365, 'سنة']].map(function (d) { return '<button data-d="' + d[0] + '" class="' + (S.days === d[0] ? 'on' : '') + '">' + d[1] + '</button>'; }).join('') + '<button id="pmxRf">↻ تحديث</button></div><div id="pmxSt" style="margin-top:12px"><div class="pmx-e">جاري التحميل…</div></div>';
+    [].forEach.call(el.querySelectorAll('[data-d]'), function (b) { b.onclick = function () { S.days = +b.dataset.d; statsView(); }; });
+    g('pmxRf').onclick = statsView;
+    api('GET', '/stats?days=' + S.days).then(function (x) {
+      S.st = x; var box = g('pmxSt'); if (!box) return;
+      box.innerHTML = '<div class="pmx-kpi pmx-kpi6">' +
+        '<div><b>' + x.views + '</b><span>زيارة ' + pct(x.views, x.pviews) + '</span></div><div><b>' + x.uniq + '</b><span>زائر مختلف</span></div>' +
+        '<div><b>' + x.today + '</b><span>زيارة النهارده · ' + x.todayU + ' زائر</span></div><div><b>' + x.live + '</b><span>' + (x.live ? '<i class="pmx-live"></i>' : '') + 'موجود دلوقتي</span></div>' +
+        '<div><b>' + x.leads + '</b><span>طلب ' + pct(x.leads, x.pleads) + '</span></div><div><b>' + x.conv + '%</b><span>نسبة اللي طلبوا من الزوار</span></div></div>' +
+        '<section class="pmx-sec"><h3>الزيارات يوم بيوم<small>' + (x.days === 1 ? 'النهارده' : 'آخر ' + x.days + ' يوم') + '</small></h3>' + chart(x.series, box.clientWidth - 34) + '</section>' +
+        '<div class="pmx-2">' +
+          '<section class="pmx-sec"><h3>📍 الزوار منين<small>المدينة حسب الإنترنت</small></h3>' + bars(x.cities.map(function (r) { return { n: r.n, t: r.city + (r.region && r.region !== r.city ? '، ' + r.region : '') + (r.country ? ' — ' + r.country : '') }; }), function (r) { return esc(r.t); }) + '</section>' +
+          '<section class="pmx-sec"><h3>🔗 جايين منين<small>اللينك اللي دخلوا منه</small></h3>' + bars(x.sources.map(function (r) { return { n: r.n, t: SRCN[r.k] || r.k }; }), function (r) { return esc(r.t); }) + '<small style="color:var(--text-muted,#64748b)">💡 حط <b dir="ltr">?src=qr</b> أو <b dir="ltr">?src=facebook</b> في آخر اللينك وانت بتنشره، عشان تعرف كل إعلان جاب كام زائر</small></section>' +
+          '<section class="pmx-sec"><h3>📱 بيفتحوا من إيه</h3>' + bars(x.devices.map(function (r) { return { n: r.n, t: DEVN[r.k] || r.k }; }), function (r) { return esc(r.t); }) + bars(x.os.map(function (r) { return { n: r.n, t: r.k }; }), function (r) { return esc(r.t); }) + '</section>' +
+          '<section class="pmx-sec"><h3>🌍 الدول</h3>' + bars(x.countries.map(function (r) { return { n: r.n, t: r.k || 'غير معروف' }; }), function (r) { return esc(r.t); }) + '</section>' +
+        '</div>' +
+        '<section class="pmx-sec"><h3>🕐 أكتر ساعات الزيارة<small>بتوقيت مصر</small></h3><div class="pmx-hr">' + x.hours.map(function (n, h) { var m = Math.max.apply(null, x.hours) || 1; return '<i style="--a:' + (n / m).toFixed(2) + '" title="الساعة ' + h + ' — ' + n + ' زيارة"><span>' + (h % 3 === 0 ? h : '') + '</span></i>'; }).join('') + '</div></section>' +
+        '<section class="pmx-sec"><h3>👀 آخر الزيارات</h3><div class="pmx-rc">' + (x.recent.length ? x.recent.map(function (r) { return '<div><time>' + esc(when(r.at)) + '</time><span>' + esc(r.city || 'غير معروف') + (r.country ? ' — ' + esc(r.country) : '') + '</span><span>' + esc(DEVN[r.dev] || r.dev) + ' · ' + esc(r.os) + '</span><span>' + esc(SRCN[r.src] || r.src) + '</span></div>'; }).join('') : '<p class="pmx-e">لسه مفيش زيارات</p>') + '</div></section>';
+    }).catch(function (e) { var box = g('pmxSt'); if (box) box.innerHTML = '<div class="pmx-e">' + esc(e.message) + '</div>'; });
+  }
+
+  /* ── 🔐 the control page (ERP only) ── */
+  function ctlView() {
+    var el = g('pmxBody'), t = S.d.ctl && S.d.ctl.token, url = t ? location.origin + '/promo/c/' + t : '';
+    el.innerHTML = '<section class="pmx-sec"><h3>🔐 صفحة التحكم<small>لينك لوحده بباسوورد — فيه الإحصائيات والطلبات والتصميم، من غير ما تدخل البرنامج</small></h3>' +
+      (t ? '<div class="pmx-link"><span class="pmx-url">' + esc(url) + '</span><button class="btn btn-secondary btn-sm" id="pcCp">نسخ</button><a class="btn btn-secondary btn-sm" href="' + esc(url) + '" target="_blank" rel="noopener">فتح</a><button class="btn btn-success btn-sm" id="pcWa">ابعته واتساب</button></div>' +
+        '<div class="pmx-link"><b>الباسوورد:</b><span class="pmx-url" id="pcPv" style="letter-spacing:2px">••••••</span><button class="btn btn-secondary btn-sm" id="pcShow">👁 اعرض</button></div>'
+        : '<p style="margin:0">لسه مفيش صفحة تحكم — اعملها دلوقتي.</p>') +
+      '<div class="pmx-link"><input class="form-control" id="pcNp" maxlength="40" dir="ltr" placeholder="' + (t ? 'باسوورد جديد (4 على الأقل)' : 'باسوورد (فاضي = عشوائي)') + '" style="max-width:260px"><button class="btn btn-primary btn-sm" id="pcSet">' + (t ? 'غيّر الباسوورد' : 'اعمل صفحة التحكم') + '</button>' +
+      (t ? '<button class="btn btn-ghost btn-sm" id="pcRot" style="color:#dc2626">🔄 لينك جديد (القديم يقف)</button>' : '') + '</div>' +
+      '<small style="color:var(--text-muted,#64748b)">تغيير الباسوورد أو اللينك بيخرّج أي حد فاتح الصفحة.</small></section>';
+    var after = function (x) { S.d.ctl = { token: x.token }; ctlView(); if (g('pcPv') && x.pass) { g('pcPv').textContent = x.pass; var sb = g('pcShow'); if (sb) sb.remove(); } };
+    if (g('pcCp')) g('pcCp').onclick = function () { (navigator.clipboard ? navigator.clipboard.writeText(url) : Promise.reject()).then(function () { T('✓ اتنسخ'); }).catch(function () { prompt('انسخ اللينك', url); }); };
+    if (g('pcWa')) g('pcWa').onclick = function () { api('POST', '/ctl/show').then(function (x) { window.open('https://wa.me/?text=' + encodeURIComponent('🔐 لوحة تحكم صفحة الدعاية\n' + url + (x.pass ? '\nالباسوورد: ' + x.pass : '')), '_blank'); }); };
+    if (g('pcShow')) g('pcShow').onclick = function () { api('POST', '/ctl/show').then(function (x) { g('pcPv').textContent = x.pass || '—'; g('pcShow').remove(); }).catch(function (e) { T(e.message, 'error'); }); };
+    g('pcSet').onclick = function () { var p = g('pcNp').value.trim(); if (t && p.length < 4) { T('اكتب باسوورد 4 حروف على الأقل', 'error'); return; } api('POST', '/ctl', { pass: p }).then(function (x) { T(t ? '🔑 الباسوورد اتغيّر' : '✓ صفحة التحكم جاهزة'); after(x); }).catch(function (e) { T(e.message, 'error'); }); };
+    if (g('pcRot')) g('pcRot').onclick = function () { if (!confirm('تعمل لينك جديد؟ اللينك القديم هيقف خالص.')) return; api('POST', '/ctl', { rotate: true }).then(function (x) { T('🔄 اللينك اتغيّر'); after(x); }).catch(function (e) { T(e.message, 'error'); }); };
+  }
+
   /* ── the editor ── */
   function inp(path, val, ph, max, extra) { return '<input class="form-control" data-k="' + path + '" value="' + esc(val || '') + '" placeholder="' + esc(ph || '') + '" maxlength="' + (max || 80) + '"' + (extra || '') + '>'; }
   function sel(path, val, map) { return '<select class="form-control" data-k="' + path + '">' + Object.keys(map).map(function (k) { return '<option value="' + k + '"' + (k === val ? ' selected' : '') + '>' + esc(map[k]) + '</option>'; }).join('') + '</select>'; }
@@ -113,24 +186,36 @@
         '<label>رقم الواتساب' + inp('wa', c.wa, '01xxxxxxxxx', 16, ' dir="ltr" inputmode="tel"') + '</label><label>رقم الاتصال' + inp('phone', c.phone, '01xxxxxxxxx', 16, ' dir="ltr" inputmode="tel"') + '</label>' +
         '<label>زرار الطلب (التصميم 1)' + inp('cta', c.cta, 'اطلب خدمة الطباعة الآن', 60) + '</label><label>زرار العرض (التصميم 4)' + inp('offer', c.offer, 'احصل على عرض مخصص لمركزك', 60) + '</label>' +
         '<label class="full">نبذة عن الشركة<textarea class="form-control" data-k="about" rows="3" maxlength="500">' + esc(c.about || '') + '</textarea></label></div></section>' +
-      list('slides', 'سلايدات الواجهة', 'لحد 6 — كل سلايد صورة مرسومة أو صورة ترفعها', 6, function (x, i) {
-        return '<div class="pmx-mini3"><label>العنوان' + inp('slides.' + i + '.title', x.title, 'خدمة طباعة', 60) + '</label><label>الكلمة الملوّنة (اختياري)' + inp('slides.' + i + '.hi', x.hi, 'أفلام الأشعة', 60) + '</label></div>' +
-          '<label>الوصف' + inp('slides.' + i + '.sub', x.sub, 'جودة عالية ودقة تفاصيل', 140) + '</label>' +
-          '<div class="pmx-mini3"><label>كلام الزرار (التصميم 2 و 3)' + inp('slides.' + i + '.btn', x.btn, 'اطلب الخدمة', 30) + '</label><label>الصورة المرسومة' + sel('slides.' + i + '.art', x.art, ARTN) + '</label></div>' +
-          '<div class="pmx-img">' + (x.img ? '<img src="/promo/img/' + esc(x.img) + '" alt=""><button type="button" class="btn btn-ghost btn-sm" data-noimg="' + i + '">شيل الصورة (ارجع للمرسومة)</button>' : '') + '<label class="btn btn-secondary btn-sm" style="cursor:pointer">📷 ' + (x.img ? 'غيّر الصورة' : 'ارفع صورة بدل المرسومة') + '<input type="file" accept="image/png,image/jpeg,image/webp" data-up="' + i + '" hidden></label><small style="color:var(--text-muted,#64748b)">أحسن مقاس: عرض 1200 × ارتفاع 800</small></div>';
-      }, { title: '', hi: '', sub: '', btn: '', art: 'monitor', img: '' }) +
+      '<section class="pmx-sec"><h3>حركة السلايدر</h3><div class="pmx-g">' +
+        '<label>يقلب كل كام ثانية<input class="form-control" type="number" min="3" max="12" step="0.5" data-k="slider.sec" value="' + esc((c.slider || {}).sec || 4.5) + '"></label>' +
+        '<label>نوع الحركة' + sel('slider.fx', (c.slider || {}).fx || 'fade', { fade: 'ظهور تدريجي', slide: 'انزلاق', zoom: 'زووم هادي' }) + '</label>' +
+        '<label class="pmx-sw"><input type="checkbox" data-b="slider.auto"' + ((c.slider || {}).auto !== false ? ' checked' : '') + '>يقلب لوحده</label>' +
+        '<label class="pmx-sw"><input type="checkbox" data-b="slider.dots"' + ((c.slider || {}).dots !== false ? ' checked' : '') + '>يظهر النقط</label></div></section>' +
+      list('slides', 'سلايدات الواجهة', 'لحد 10 — اقفل أي سلايد من غير ما تمسحه، ورتّبهم بالأسهم', 10, function (x, i) {
+        return '<label class="pmx-sw"><input type="checkbox" data-b="slides.' + i + '.on"' + (x.on !== false ? ' checked' : '') + '>' + (x.on !== false ? 'ظاهر' : 'مقفول') + '</label>' +
+          '<div class="pmx-mini3"><label>العنوان' + inp('slides.' + i + '.title', x.title, 'خدمة طباعة', 60) + '</label><label>الكلمة الملوّنة (اختياري)' + inp('slides.' + i + '.hi', x.hi, 'أفلام الأشعة', 60) + '</label></div>' +
+          '<label>الوصف<small style="font-weight:500;color:var(--text-muted,#64748b)"> — في التصميم 3 افصل النقط بـ · عشان تظهر ✓</small>' + inp('slides.' + i + '.sub', x.sub, 'جودة عالية ودقة تفاصيل', 160) + '</label>' +
+          '<div class="pmx-mini3"><label>كلام الزرار (فاضي = من غير زرار)' + inp('slides.' + i + '.btn', x.btn, 'اطلب الخدمة', 30) + '</label><label>الزرار يودّي على' + sel('slides.' + i + '.act', x.act || 'order', { order: 'فورم طلب الخدمة', quote: 'طلب عرض سعر', wa: 'واتساب', call: 'اتصال', track: 'متابعة طلب', url: 'لينك خارجي', none: 'من غير زرار' }) + '</label></div>' +
+          ((x.act === 'url') ? '<label>اللينك (يبدأ بـ https://)' + inp('slides.' + i + '.url', x.url, 'https://', 300, ' dir="ltr"') + '</label>' : '') +
+          '<div class="pmx-mini3"><label>الصورة المرسومة' + sel('slides.' + i + '.art', x.art, ARTN) + '</label>' + (x.img ? '<label>شكل الصورة' + sel('slides.' + i + '.fit', x.fit || 'cover', { cover: 'تملى السلايد', contain: 'تظهر كاملة' }) + '</label>' : '<span></span>') + '</div>' +
+          '<div class="pmx-img">' + (x.img ? '<img src="/promo/img/' + esc(x.img) + '" alt=""><label class="pmx-sw"><input type="checkbox" data-b="slides.' + i + '.shade"' + (x.shade !== false ? ' checked' : '') + '>تغميق ورا الكلام</label><button type="button" class="btn btn-ghost btn-sm" data-noimg="' + i + '">شيل الصورة</button>' : '') + '<label class="btn btn-secondary btn-sm" style="cursor:pointer">📷 ' + (x.img ? 'غيّر الصورة' : 'ارفع صورة بدل المرسومة') + '<input type="file" accept="image/png,image/jpeg,image/webp" data-up="' + i + '" hidden></label><small style="color:var(--text-muted,#64748b)">أحسن مقاس 1600 × 900</small></div>' +
+          '<div><button type="button" class="btn btn-ghost btn-sm" data-dup="' + i + '">⧉ نسخة من السلايد ده</button></div>';
+      }, { on: true, title: 'سلايد جديد', hi: '', sub: '', btn: 'اطلب الخدمة', act: 'order', url: '', art: 'monitor', img: '', shade: true, fit: 'cover' }) +
       list('chips', 'المميزات', 'لحد 4 (تحت السلايد أو «لماذا نحن»)', 4, function (x, i) { return '<div class="pmx-mini3"><label>الميزة' + inp('chips.' + i + '.t', x.t, 'جودة عالية', 30) + '</label><label>الأيقونة' + sel('chips.' + i + '.ic', x.ic, ICN) + '</label></div>'; }, { t: '', ic: 'star' }) +
       list('services', 'الخدمات', 'لحد 8 — الضغط على أي خدمة بيفتح فورم الطلب عليها', 8, function (x, i) { return '<div class="pmx-mini"><label>الخدمة' + inp('services.' + i + '.t', x.t, 'طباعة أفلام الأشعة', 40) + '</label><label>تفصيلة صغيرة' + inp('services.' + i + '.s', x.s, 'A3 - A4 - B4', 60) + '</label><label>الأيقونة' + sel('services.' + i + '.ic', x.ic, ICN) + '</label></div>'; }, { t: '', s: '', ic: 'printer' }) +
       list('stats', 'الأرقام', 'لحد 3 — بتتعد لما تظهر', 3, function (x, i) { return '<div class="pmx-mini3"><label>الرقم' + inp('stats.' + i + '.n', x.n, '+150', 10) + '</label><label>معناه' + inp('stats.' + i + '.l', x.l, 'مركز أشعة تثق بنا', 30) + '</label></div>'; }, { n: '', l: '' }) +
       list('targets', 'بنخدم مين', 'لحد 3 (التصميم 4)', 3, function (x, i) { return '<div class="pmx-mini3"><label>الاسم' + inp('targets.' + i + '.t', x.t, 'مستشفيات', 30) + '</label><label>الأيقونة' + sel('targets.' + i + '.ic', x.ic, ICN) + '</label></div>'; }, { t: '', ic: 'hospital' }) +
       '<div class="pmx-save"><button class="btn btn-primary" id="pmxSave">💾 حفظ ونشر</button><button class="btn btn-ghost" id="pmxUndo">تراجع عن التعديلات</button><span id="pmxDirty" style="align-self:center;font-size:12.5px;color:#d97706">' + (S.dirty ? '● فيه تعديلات مش محفوظة' : '') + '</span></div>' +
-      '</div><aside class="pmx-pv"><div class="pmx-ph"><iframe id="pmxIf" src="' + esc(link()) + '?pv=' + Date.now() + '" title="معاينة"></iframe></div><p style="text-align:center;font-size:12px;color:var(--text-muted,#64748b);margin:8px 0 0">المعاينة بتتحدث بعد الحفظ</p></aside></div>';
+      '</div><aside class="pmx-pv"><div class="pmx-ph"><iframe id="pmxIf" src="' + esc(link()) + '?pv=' + Date.now() + '" title="معاينة"></iframe></div><p style="text-align:center;font-size:12px;color:var(--text-muted,#64748b);margin:8px 0 0">المعاينة بتتحدث بعد الحفظ · <a href="' + esc(link()) + '?pv=1" target="_blank" rel="noopener">🖥️ شوفها بشكل الكمبيوتر</a></p></aside></div>';
     wire(el);
   }
-  function setK(path, v) { var p = path.split('.'), o = S.c; for (var i = 0; i < p.length - 1; i++) o = o[p[i]]; o[p[p.length - 1]] = v; dirty(); }
+  function setK(path, v) { var p = path.split('.'), o = S.c; for (var i = 0; i < p.length - 1; i++) { if (o[p[i]] == null) o[p[i]] = {}; o = o[p[i]]; } o[p[p.length - 1]] = v; dirty(); }
   function dirty() { S.dirty = true; var d = g('pmxDirty'); if (d) d.textContent = '● فيه تعديلات مش محفوظة'; }
   function wire(el) {
     [].forEach.call(el.querySelectorAll('[data-k]'), function (x) { x.addEventListener(x.tagName === 'SELECT' ? 'change' : 'input', function () { setK(x.dataset.k, x.value); }); });
+    [].forEach.call(el.querySelectorAll('[data-b]'), function (x) { x.onchange = function () { setK(x.dataset.b, x.checked); if (/^slides\.\d+\.on$/.test(x.dataset.b)) design(); }; });
+    [].forEach.call(el.querySelectorAll('[data-k$=".act"]'), function (x) { x.addEventListener('change', function () { design(); }); });
+    [].forEach.call(el.querySelectorAll('[data-dup]'), function (b) { b.onclick = function () { if (S.c.slides.length >= 10) return T('أقصى حاجة 10 سلايدات', 'error'); var i = +b.dataset.dup; S.c.slides.splice(i + 1, 0, JSON.parse(JSON.stringify(S.c.slides[i]))); dirty(); design(); }; });
     [].forEach.call(el.querySelectorAll('[data-th]'), function (b) { b.onclick = function () { S.c.theme = b.dataset.th; dirty(); design(); }; });
     [].forEach.call(el.querySelectorAll('[data-add]'), function (b) { b.onclick = function () { S.c[b.dataset.add].push(JSON.parse(b.dataset.blank)); dirty(); design(); }; });
     [].forEach.call(el.querySelectorAll('[data-rm]'), function (b) { b.onclick = function () { var p = b.dataset.rm.split(':'); S.c[p[0]].splice(+p[1], 1); dirty(); design(); }; });

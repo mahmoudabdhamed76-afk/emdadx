@@ -1,0 +1,34 @@
+/* EMDADX · صفحة الدعاية — the standalone control page */
+:root{--surface:#fff;--border:#E3E8F1;--text-muted:#64748B;--tint-sky:#EEF3FC;--tint-emerald:#E6F7F0;--tint-amber:#FEF6E7;--bg:#F3F6FB;--ink:#0F1B33}
+@media (prefers-color-scheme:dark){:root{--surface:#121A2C;--border:#24304A;--text-muted:#94A3B8;--tint-sky:#18233A;--tint-emerald:#10291F;--tint-amber:#2A2112;--bg:#0B1220;--ink:#E6ECF7}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%;touch-action:manipulation}
+body.pmc{margin:0;min-height:100vh;background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans Arabic','Cairo',system-ui,sans-serif;font-size:14px}
+a{color:inherit}
+#page-content{max-width:1280px;margin:0 auto;padding:16px 18px 60px}
+.pmc-hd{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:12px;padding:12px 18px;background:color-mix(in srgb,var(--surface) 88%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--border)}
+.pmc-hd img{width:40px;height:40px;border-radius:12px;object-fit:cover}
+.pmc-hd b{display:block;font-size:16px}.pmc-hd small{color:var(--text-muted);font-size:12px}
+.pmc-hd a{margin-inline-start:auto;text-decoration:none;font-weight:700;font-size:13px;padding:8px 14px;border-radius:10px;background:var(--tint-sky);color:#1D5FD6}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:18px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid transparent;border-radius:11px;padding:10px 16px;font:inherit;font-weight:700;font-size:14px;cursor:pointer;text-decoration:none;color:inherit;background:var(--tint-sky);transition:filter .2s}
+.btn:hover{filter:brightness(.97)}.btn:disabled{opacity:.6;cursor:default}
+.btn-sm{padding:7px 12px;font-size:12.5px;border-radius:10px}
+.btn-primary{background:linear-gradient(150deg,#2F6FE4,#1A4FB8);color:#fff}
+.btn-secondary{background:var(--surface);border-color:var(--border)}
+.btn-success{background:#16A34A;color:#fff}
+.btn-ghost{background:transparent}
+.form-control{width:100%;font:inherit;font-size:16px;padding:10px 12px;border-radius:11px;border:1.5px solid var(--border);background:var(--surface);color:var(--ink);outline:none}
+.form-control:focus{border-color:#2F6FE4}
+textarea.form-control{resize:vertical}
+#pmc-toasts{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:999;display:grid;gap:8px}
+.pmc-toast{padding:11px 18px;border-radius:12px;background:#0F172A;color:#fff;font-weight:700;box-shadow:0 14px 30px -14px rgba(0,0,0,.5);animation:pmcIn .35s ease-out both}
+.pmc-toast.error{background:#B91C1C}.pmc-toast.info{background:#1D4ED8}.pmc-toast.out{opacity:0;transform:translateY(10px);transition:.35s}
+@keyframes pmcIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.pmc-login{min-height:100vh;display:grid;place-items:center;padding:20px;background:radial-gradient(80% 60% at 80% 0%,rgba(47,111,228,.18),transparent 60%),var(--bg)}
+.pmc-login form{width:min(380px,100%);display:grid;gap:10px;text-align:center;padding:30px 26px;border-radius:24px;background:var(--surface);border:1px solid var(--border);box-shadow:0 30px 60px -30px rgba(15,27,51,.45);animation:pmcIn .5s ease-out both}
+.pmc-login img{width:64px;height:64px;border-radius:18px;margin:0 auto 4px}
+.pmc-login h1{margin:0;font-size:19px}.pmc-login p{margin:0;color:var(--text-muted);font-size:13.5px}
+.pmc-login input{font:inherit;font-size:17px;padding:13px;border-radius:14px;border:1.5px solid var(--border);background:var(--bg);color:var(--ink);text-align:center;letter-spacing:2px}
+.pmc-login button{font:inherit;font-weight:800;font-size:16px;padding:13px;border:0;border-radius:14px;background:linear-gradient(150deg,#2F6FE4,#1A4FB8);color:#fff;cursor:pointer}
+.pmc-login .er{color:#DC2626;font-weight:700;min-height:18px}

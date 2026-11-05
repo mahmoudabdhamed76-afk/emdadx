@@ -130,13 +130,17 @@
   function artOf(s) { return s.img ? '<img class="pm-art pm-photo" src="/promo/img/' + esc(s.img) + '" alt="">' : (ART[s.art] || ART.monitor)(); }
 
   /* ── building blocks ── */
-  var slides = (C.slides || []).length ? C.slides : [{ title: C.brand || 'Emdadx', sub: C.tagline || '', art: 'monitor' }];
-  /* each design opens on its own picture (the order the admin set is kept, just rotated) */
-  (function () { var want = { '1': 'monitor', '2': 'film', '3': 'ring', '4': 'clinic' }[T], k = -1;
+  var SL = C.slider || {}, SEC = Math.max(3, Math.min(12, +SL.sec || 4.5)), FX = SL.fx || 'fade';
+  var slides = (C.slides || []).filter(function (x) { return x.on !== false; });
+  if (!slides.length) slides = [{ title: C.brand || 'Emdadx', sub: C.tagline || '', art: 'monitor' }];
+  /* untouched default slides: each design opens on its own picture; once the admin edits them, his order is kept */
+  var DEFT = ['خدمة طباعة الأشعة', 'خدمة طباعة', 'شريكك الموثوق', 'حلول متكاملة'];
+  if (slides.length === 4 && slides.every(function (x, i) { return x.title === DEFT[i] && !x.img; })) (function () { var want = { '1': 'monitor', '2': 'film', '3': 'ring', '4': 'clinic' }[T], k = -1;
     slides.forEach(function (x, i) { if (k < 0 && !x.img && x.art === want) k = i; });
     if (k > 0) slides = slides.slice(k).concat(slides.slice(0, k)); })();
   function header() {
     return '<header class="pm-hd m"><div class="pm-br"><img src="/icons/logo-square.png" alt=""><div><b>' + esc(C.brand || 'Emdadx') + '</b><small>' + esc(C.tagline || '') + '</small></div></div>' +
+      '<nav class="pm-tnav" aria-label="القائمة"><button type="button" data-go="top">الرئيسية</button><button type="button" data-go="svc">الخدمات</button><button type="button" data-go="track">تابع طلبك</button><button type="button" data-go="support">الدعم</button><button type="button" class="pm-tcta" data-go="order">' + ic('send') + esc(C.cta || 'اطلب الخدمة') + '</button></nav>' +
       '<button type="button" class="pm-bell" data-go="support" aria-label="تواصل معنا">' + ic('bell') + '</button></header>';
   }
   function slideHTML(s, i) {
@@ -145,15 +149,23 @@
       var parts = String(s.sub || '').split(/\s*[·•،,]\s*/).filter(Boolean);
       if (parts.length > 1) t = '<h2>' + esc(s.title) + (s.hi ? '<em>' + esc(s.hi) + '</em>' : '') + '</h2><ul>' + parts.map(function (p) { return '<li>' + ic('check') + esc(p) + '</li>'; }).join('') + '</ul>';
     }
-    var btn = (T === '2' || T === '3') && s.btn ? '<button type="button" class="pm-hbtn" data-go="order">' + esc(s.btn) + ic('arrow') + '</button>' : '';
-    return '<div class="pm-slide' + (i === 0 ? ' on' : '') + '" data-i="' + i + '"><div class="pm-artw">' + artOf(s) + '</div><div class="pm-htx">' + t + btn + '</div></div>';
+    var btn = '', a = s.act || 'order';
+    if (s.btn && a !== 'none') {
+      var lab = esc(s.btn) + ic('arrow');
+      if (a === 'wa' && waHref()) btn = '<a class="pm-hbtn" href="' + esc(waHref('السلام عليكم، عايز أعرف تفاصيل: ' + (s.title || '') + ' ' + (s.hi || ''))) + '" target="_blank" rel="noopener">' + lab + '</a>';
+      else if (a === 'call' && C.phone) btn = '<a class="pm-hbtn" href="tel:' + esc(C.phone) + '">' + lab + '</a>';
+      else if (a === 'url' && s.url) btn = '<a class="pm-hbtn" href="' + esc(s.url) + '" target="_blank" rel="noopener">' + lab + '</a>';
+      else btn = '<button type="button" class="pm-hbtn" data-go="' + (a === 'quote' || a === 'track' ? a : 'order') + '">' + lab + '</button>';
+    }
+    return '<div class="pm-slide' + (i === 0 ? ' on' : '') + (s.img ? ' ph' + (s.shade !== false ? ' shade' : '') + (s.fit === 'contain' ? ' fit' : '') : '') + '" data-i="' + i + '"><div class="pm-artw">' + artOf(s) + '</div><div class="pm-htx">' + t + btn + '</div></div>';
   }
   function hero() {
-    var dots = slides.length > 1 ? '<div class="pm-dots">' + slides.map(function (_, i) { return '<i' + (i === 0 ? ' class="on"' : '') + '></i>'; }).join('') + '</div>' : '';
+    var dots = slides.length > 1 && SL.dots !== false ? '<div class="pm-dots">' + slides.map(function (_, i) { return '<i' + (i === 0 ? ' class="on"' : '') + '></i>'; }).join('') + '</div>' : '';
     var extra = '';
     if (T === '1') extra = '<div class="pm-hchips">' + (C.chips || []).slice(0, 3).map(function (c) { return '<span>' + ic(c.ic) + esc(c.t) + '</span>'; }).join('') + '</div>';
     if (T === '4') extra = '<div class="pm-tgt">' + (C.targets || []).map(function (c) { return '<span>' + ic(c.ic) + esc(c.t) + '</span>'; }).join('') + '</div>';
-    return '<section class="pm-hero m" id="pmHero"><div class="pm-track">' + slides.map(slideHTML).join('') + '</div>' + extra + dots + '</section>';
+    var arr = slides.length > 1 ? '<button type="button" class="pm-ar pm-arp" aria-label="السابق">' + ic('arrow') + '</button><button type="button" class="pm-ar pm-arn" aria-label="التالي">' + ic('arrow') + '</button>' : '';
+    return '<section class="pm-hero m fx-' + esc(FX) + '" id="pmHero"><div class="pm-track">' + slides.map(slideHTML).join('') + '</div>' + extra + dots + arr + '</section>';
   }
   function svcCards(list, cls) {
     return '<div class="' + cls + '">' + list.map(function (s, i) {
@@ -275,13 +287,26 @@
     var hero = $('pmHero'); if (!hero) return;
     var S = hero.querySelectorAll('.pm-slide'), dots = hero.querySelectorAll('.pm-dots i'), i = 0, tm = 0, x0 = null;
     if (S.length < 2) return;
-    function go(n) { S[i].classList.remove('on'); if (dots[i]) dots[i].classList.remove('on'); i = (n + S.length) % S.length; S[i].classList.add('on'); if (dots[i]) dots[i].classList.add('on'); }
-    function auto() { clearInterval(tm); if (!RM) tm = setInterval(function () { go(i + 1); }, 4500); }
+    function go(n) { var d = n > i ? 1 : -1; hero.style.setProperty('--dir', d); S[i].classList.remove('on'); S[i].classList.add('was'); var w = S[i]; setTimeout(function () { w.classList.remove('was'); }, 800); if (dots[i]) dots[i].classList.remove('on'); i = (n + S.length) % S.length; S[i].classList.add('on'); if (dots[i]) dots[i].classList.add('on'); }
+    var hold = false;
+    function auto() { clearInterval(tm); if (!RM && SL.auto !== false) tm = setInterval(function () { if (!hold) go(i + 1); }, SEC * 1000); }
+    hero.addEventListener('mouseenter', function () { hold = true; }); hero.addEventListener('mouseleave', function () { hold = false; });
+    var ap = hero.querySelector('.pm-arp'), an = hero.querySelector('.pm-arn');
+    if (ap) ap.onclick = function () { go(i - 1); auto(); }; if (an) an.onclick = function () { go(i + 1); auto(); };
     hero.addEventListener('touchstart', function (e) { x0 = e.touches[0].clientX; }, { passive: true });
     hero.addEventListener('touchend', function (e) { if (x0 == null) return; var dx = e.changedTouches[0].clientX - x0; x0 = null; if (Math.abs(dx) > 40) { go(i + (dx > 0 ? 1 : -1)); auto(); } }, { passive: true });
     [].forEach.call(dots, function (d, k) { d.onclick = function () { go(k); auto(); }; });
     document.addEventListener('visibilitychange', function () { if (document.hidden) clearInterval(tm); else auto(); });
     auto();
+  })();
+
+  /* one visit → the control page's numbers (not from the admin's own preview) */
+  (function () {
+    var q = new URLSearchParams(location.search); if (q.has('pv')) return;
+    var vid = ''; try { vid = localStorage.getItem('pm-vid') || ''; if (!vid) { vid = Math.random().toString(36).slice(2) + Date.now().toString(36); localStorage.setItem('pm-vid', vid); } } catch (e) {}
+    var tz = ''; try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch (e) {}
+    var b = JSON.stringify({ vid: vid, ref: document.referrer || '', src: q.get('src') || q.get('utm_source') || '', tz: tz, lang: navigator.language || '', w: innerWidth });
+    setTimeout(function () { try { fetch('/promo/hit', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: b, keepalive: true }); } catch (e) {} }, 400);
   })();
 
   /* count-up numbers when they come into view */
@@ -301,6 +326,7 @@
     var b = e.target.closest('[data-go]'); if (!b || b.closest('.pm-sheet') && b.dataset.go === 'order' && b.closest('.pm-sup')) return;
     var g = b.dataset.go;
     if (b.closest('.pm-nav')) [].forEach.call(document.querySelectorAll('.pm-nav button'), function (x) { x.classList.toggle('on', x === b); });
+    if (b.classList.contains('pm-ar')) return;
     if (g === 'top') window.scrollTo({ top: 0, behavior: RM ? 'auto' : 'smooth' });
     else if (g === 'svc') { var a = $('pmSvc'); if (a) window.scrollTo({ top: a.getBoundingClientRect().top + scrollY - 12, behavior: RM ? 'auto' : 'smooth' }); }
     else if (g === 'order') orderSheet(b.dataset.svc || '');
