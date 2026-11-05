@@ -1035,6 +1035,9 @@
         el.querySelector('[data-cx="pdf"]').onclick = function () { complaintsReport(this); };
         el.querySelector('[data-cx="reset"]').onclick = ticketReset;
         [].forEach.call(el.querySelectorAll('[data-ticket-del]'), function (b) { b.onclick = function () { ticketDelete(+b.dataset.ticketDel, b.dataset.n); }; });
+        el.insertAdjacentHTML('beforeend', '<details class="tk-arc" id="tkArc"' + (ui.arcOpen ? ' open' : '') + '><summary><b>📁 الأرشيف — اللي اتردّ عليها أو اتقفلت</b><small id="tkArcN"></small></summary><div id="tkArcL"><p class="tk-arc-e">جاري التحميل…</p></div></details>');
+        var ad = $('tkArc'); ad.ontoggle = function () { ui.arcOpen = ad.open; if (ad.open) ticketArchive(); };
+        if (ui.arcOpen) ticketArchive(); else api('GET', 'tickets-closed').then(function (j) { var n = $('tkArcN'); if (n) n.textContent = (j.list || []).length ? (j.list.length + ' محفوظة') : ''; }).catch(function () {});
       }
       [].forEach.call(el.querySelectorAll('[data-ticket-reply]'), function (btn) {
         btn.onclick = function () {
@@ -1562,7 +1565,7 @@
   }
   /* ═══════════ 5.31 · «خدمات صفحة المريض»: on/off, rename, reorder the four services + the center's own link tiles ═══════════ */
   var SVC_B = { booking: ['📅', 'حجز أشعة', 'اختار الفحص واليوم المناسب'], results: ['🩻', 'نتيجة الأشعة', 'استعلم عن نتيجتك بسهولة'], complaint: ['📝', 'الشكاوى والمقترحات', 'شكوى أو اقتراح — وتابع الرد بكود'], report: ['📄', 'طلب تقرير أشعة', 'ارفع صورة واطلب تقريرك'] };
-  var SVC_T = { url: ['🔗 لينك', 'https://…'], wa: ['💬 واتساب', 'رقم الواتساب'], tel: ['📞 اتصال', 'رقم التليفون'], map: ['📍 خريطة', 'عنوان المركز أو اسمه على الخريطة'] };
+  var SVC_T = { url: ['🔗 لينك', 'https://…'], wa: ['💬 واتساب', 'رقم الواتساب'], tel: ['📞 اتصال', 'رقم التليفون'], map: ['📍 خريطة', 'الصق لينك جوجل ماب أو اكتب العنوان'] };
   var SVC_I = ['🔗', '📍', '💬', '📞', '🧪', '🩺', '💳', '🕘', '🎁', '⭐', '🚑', '🏥'], SVC_C = { indigo: '#4F46E5', teal: '#0F766E', rose: '#E11D48', amber: '#D97706', sky: '#0369A1', green: '#15803D', violet: '#7E22CE', slate: '#334155' };
   function svcLoad() { api('GET', 'svc').then(function (x) { ui.svc = x.svc || []; ui.svcEd = null; svcUI(); }).catch(function (e) { toast(e.message); }); }
   function svcUI() {
@@ -1648,6 +1651,24 @@
         run(v).then(function () { close(); }).catch(function (e) { x.disabled = false; $('pwE').textContent = e.message || 'حصلت مشكلة'; i.value = ''; i.focus(); });
       });
     setTimeout(function () { var i = $('pwI'); if (i) { i.focus(); i.onkeydown = function (e) { if (e.key === 'Enter') o.querySelector('[data-x="go"]').click(); }; } }, 60);
+  }
+  /* 4.71 · the archive of answered / closed complaints: they stay saved until the center deletes them */
+  function ticketArchive() {
+    var box = $('tkArcL'); if (!box) return;
+    api('GET', 'tickets-closed').then(function (j) {
+      var L = j.list || [], n = $('tkArcN'); if (n) n.textContent = L.length ? L.length + ' محفوظة' : '';
+      box = $('tkArcL'); if (!box) return;
+      if (!L.length) { box.innerHTML = '<p class="tk-arc-e">لسه مفيش شكاوى اتقفلت.</p>'; return; }
+      box.innerHTML = L.map(function (t) {
+        var sg = t.type === 'suggestion';
+        return '<article class="tk-ai"><header><span class="tk-k ' + (sg ? 's' : 'c') + '">' + (sg ? '💡 مقترح' : '📝 شكوى') + '</span><b>' + esc(t.name) + '</b><a href="tel:' + esc(t.phone) + '" dir="ltr">' + esc(t.phone) + '</a>' + (t.code ? '<span class="tk-cd" dir="ltr">#' + esc(t.code) + '</span>' : '') + '<time>' + esc(when(t.at)) + '</time></header>' +
+          (t.subject ? '<h4>' + esc(t.subject) + '</h4>' : '') + '<p>' + esc(t.message) + '</p>' +
+          (t.reply ? '<div class="tk-rp"><b>↩ ردّ المركز' + (t.reply_at ? ' · ' + esc(when(t.reply_at)) : '') + '</b><p>' + esc(t.reply) + '</p></div>' : '<div class="tk-rp n">✓ اتقفلت بالتواصل مع المريض' + (t.closed_at ? ' · ' + esc(when(t.closed_at)) : '') + '</div>') +
+          '<footer><button type="button" class="btn sm g" data-arc-open="' + Number(t.id) + '">↺ رجّعها للجديدة</button><button type="button" class="btn sm g red-t" data-arc-del="' + Number(t.id) + '" data-n="' + esc(t.name) + '">' + ic('trash') + ' امسح</button></footer></article>';
+      }).join('');
+      [].forEach.call(box.querySelectorAll('[data-arc-del]'), function (b) { b.onclick = function () { ticketDelete(+b.dataset.arcDel, b.dataset.n); }; });
+      [].forEach.call(box.querySelectorAll('[data-arc-open]'), function (b) { b.onclick = function () { b.disabled = true; api('POST', 'tickets/' + b.dataset.arcOpen + '/reopen').then(function (x) { ui.tickets = x.tickets || []; serviceTickets(); toast('↺ رجعت للشكاوى الجديدة'); }).catch(function (e) { b.disabled = false; toast(e.message); }); }; });
+    }).catch(function (e) { if (box) box.innerHTML = '<p class="tk-arc-e">' + esc(e.message || 'مش قادر أحمّل الأرشيف') + '</p>'; });
   }
   function ticketDelete(id, name) {
     askPass('🗑 مسح الشكوى', 'هتتمسح شكوى «' + esc(name || 'مريض') + '» نهائي ومعاها الصور. اكتب كلمة سر المدير للتأكيد.', true, function (pw) {

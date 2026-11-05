@@ -141,6 +141,9 @@
   '</div>';
   /* 5.31 · the center decides the services grid: on/off, names, order, and its own link services */
   (function applySvc() {
+  /* 4.71 · a pasted Google-Maps link (maps.app.goo.gl, google.com/maps, an embed <iframe>) opens as is — only a plain address becomes a search */
+  function mapHref(v) { v = String(v || '').trim(); var m = /https?:\/\/[^\s"'<>]+/i.exec(v); if (m) return m[0]; if (/^(maps\.app\.goo\.gl|goo\.gl|(www\.)?google\.[a-z.]+\/maps)/i.test(v)) return 'https://' + v; return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(v); }
+
     var L = C.svc; if (!Array.isArray(L) || !L.length) return;
     var box = document.querySelector('.patient-chooser'); if (!box) return;
     var ID = { booking: 'tab-booking', results: 'tab-results', complaint: 'tab-complaint', report: 'tab-report' };
@@ -155,7 +158,7 @@
         box.appendChild(b); return;
       }
       if (!x.on) return;
-      var href = x.t === 'wa' ? 'https://wa.me/' + x.v.replace(/^\+/, '').replace(/^0/, '20') : x.t === 'tel' ? 'tel:' + x.v : x.t === 'map' ? 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(x.v) : x.v;
+      var href = x.t === 'wa' ? 'https://wa.me/' + x.v.replace(/^\+/, '').replace(/^0/, '20') : x.t === 'tel' ? 'tel:' + x.v : x.t === 'map' ? mapHref(x.v) : x.v;
       var a = document.createElement('button'); a.type = 'button'; a.className = 'pv2-service pvx';
       a.onclick = function () { if (x.t === 'tel') location.href = href; else window.open(href, '_blank', 'noopener'); };
       a.innerHTML = '<span class="pv2-service-icon pvx-' + esc(x.color) + '"><i>' + esc(x.icon) + '</i></span><b>' + esc(x.title) + '</b><small>' + esc(x.sub || '') + '</small><span class="pv2-service-go" aria-hidden="true">←</span>';
@@ -352,7 +355,7 @@
       e.preventDefault();
       var sg=type==='suggestion', name=$('cn').value.trim(),phone=requestPhone($('cp').value),subject=$('cs').value.trim(),
         message=$('cm').value.trim(), msg=$('cmsg'),btn=$('cgo');
-      if(name.length<3||!phone||(!sg&&subject.length<3)||message.length<8) {
+      if(name.length<2||!phone||(!sg&&!subject)||!message) {
         msg.textContent=sg?'اكتب الاسم ورقم موبايل صحيح ومقترحك (8 حروف على الأقل).':'اكتب الاسم ورقم موبايل صحيح وعنوان الشكوى والتفاصيل (8 حروف على الأقل).';
         msg.className='booking-msg err';return;
       }
@@ -451,7 +454,7 @@
       e.preventDefault();
       var name=$('rn').value.trim(),phone=requestPhone($('rp').value),message=$('rm').value.trim(),
         files=Array.prototype.slice.call(input.files||[]),msg=$('rmsg'),btn=$('rgo');
-      if(name.length<3||!phone||message.length<8) {
+      if(name.length<2||!phone||!message) {
         msg.textContent='كمّل الاسم والموبايل الصحيح وتفاصيل التقرير المطلوب.';msg.className='booking-msg err';return;
       }
       if(files.length<1||files.length>3||files.some(function(f){return ['image/jpeg','image/png','image/webp','image/heic','image/heif'].indexOf(f.type)<0||f.size>24*1048576||f.size===0;})){

@@ -138,6 +138,11 @@ try {
 } catch (e) { console.error('[cases] 5.30 migrate', e.message); }
 const TK_AB = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 /* 5.31 · the services grid on the center page: the four built-in ones on/off/renamed/reordered, plus the center's own (links) */
+try { if (!db.prepare('PRAGMA table_info(case_site)').all().some(c => c.name === 'pass_enc')) db.exec('ALTER TABLE case_site ADD COLUMN pass_enc TEXT'); } catch (e) { console.error('[cases] 5.34 migrate', e.message); }
+/* 4.71 · a reversible copy of the center password so the ERP admin can show it (passwords set before 4.71 stay hidden until reset) */
+const PASS_KEY = crypto.createHash('sha256').update('center-pass:' + SECRET).digest();
+function passEnc(p) { const iv = crypto.randomBytes(12), c = crypto.createCipheriv('aes-256-gcm', PASS_KEY, iv), d = Buffer.concat([c.update(String(p), 'utf8'), c.final()]); return [iv, c.getAuthTag(), d].map(x => x.toString('base64url')).join('.'); }
+function passDec(e) { try { const [iv, t, d] = String(e).split('.').map(x => Buffer.from(x, 'base64url')), c = crypto.createDecipheriv('aes-256-gcm', PASS_KEY, iv); c.setAuthTag(t); return Buffer.concat([c.update(d), c.final()]).toString('utf8'); } catch (er) { return null; } }
 try { if (!db.prepare('PRAGMA table_info(case_site)').all().some(c => c.name === 'svc_cfg')) db.exec('ALTER TABLE case_site ADD COLUMN svc_cfg TEXT'); } catch (e) { console.error('[cases] 5.31 migrate', e.message); }
 const SVC_BUILT = ['booking', 'results', 'complaint', 'report'], SVC_ACT = ['url', 'wa', 'tel', 'map'], SVC_COL = ['indigo', 'teal', 'rose', 'amber', 'sky', 'green', 'violet', 'slate'];
 function svcCfg(raw) {
@@ -514,17 +519,17 @@ function readJson(req, max) {
 function itemOut(r) { return { follow_at: r.follow_at || null, follow_done: !!r.follow_done, doctor_id: r.doctor_id || null, id: r.id, token: r.token, patient: r.patient, phone: r.phone, exam: r.exam, name: r.file_name, size: r.size, pages: r.pages, at: r.created_at, views: r.views, last_view: r.last_view, active: !!r.active, cached: !!r.cached && r.cache_until > Date.now(), cache_until: r.cache_until, wrapped: !!(r.wrap || r.wrap2), wrapped2: !!r.wrap2, kind: r.kind || 'pdf', local: !r.cached }; }
 
 function page(title, body, css, js, manifestUrl) {
-  return '<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover' + (css === 'v' ? ',maximum-scale=1,user-scalable=no' : '') + '"><meta name="robots" content="noindex,nofollow"><meta name="referrer" content="no-referrer"><meta name="theme-color" content="#0E9F9A">' +
+  return '<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1,user-scalable=no"><script>/* 4.71 · no pinch / double-tap zoom on phones */document.addEventListener("gesturestart",function(e){e.preventDefault();},{passive:false});</script><meta name="robots" content="noindex,nofollow"><meta name="referrer" content="no-referrer"><meta name="theme-color" content="#0E9F9A">' +
     '<title>' + esc(title) + '</title><link rel="icon" href="/icons/favicon-32.png">' +
     (manifestUrl ? '<link rel="manifest" href="'+esc(manifestUrl)+'"><link rel="apple-touch-icon" href="'+esc(manifestUrl.replace('/manifest','/icon'))+'"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default">' : '') +
-    '<link rel="stylesheet" href="/fonts/fonts.css"><link rel="stylesheet" href="/cases.css?v=541"></head><body class="' + css + '">' + body + js + '</body></html>';
+    '<link rel="stylesheet" href="/fonts/fonts.css"><link rel="stylesheet" href="/cases.css?v=542"></head><body class="' + css + '">' + body + js + '</body></html>';
 }
 function html(res, code, s) { zout(res, code, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store', 'X-Frame-Options': 'DENY', 'Referrer-Policy': 'no-referrer' }, s); }
 
 /* ════════ public routes ════════ */
 async function handle(req, res, pathname) {
   if (/^\/(s|r)\/|^\/v\/[A-Za-z0-9]{12}\/share/.test(pathname)) return plusPublic(req, res, pathname);
-  let m = /^\/k\/([A-Za-z0-9]{8})(\/(login|logout|list|qr|layout|live|case|relay|item|fixed|wa|ask|bookings|tickets|ticket-image|logo|views|theme|manifest|icon|push-key|push-subscribe|push-disable|push-test|dash|ads|slides-base|tickets-all|tickets-reset|ads-order|slides-reset|slide-ms|ratings|notifications|report|pop-cfg|follow|wait|doctors|digest|svc)(\/[A-Za-z0-9]{1,20})?(\/(stop|start|delete|wrap|done|toggle|up|down|uncache|doctor|reply))?)?\/?$/.exec(pathname);
+  let m = /^\/k\/([A-Za-z0-9]{8})(\/(login|logout|list|qr|layout|live|case|relay|item|fixed|wa|ask|bookings|tickets|ticket-image|logo|views|theme|manifest|icon|push-key|push-subscribe|push-disable|push-test|dash|ads|slides-base|tickets-all|tickets-closed|tickets-reset|ads-order|slides-reset|slide-ms|ratings|notifications|report|pop-cfg|follow|wait|doctors|digest|svc)(\/[A-Za-z0-9]{1,20})?(\/(stop|start|delete|wrap|done|toggle|up|down|uncache|doctor|reply|reopen))?)?\/?$/.exec(pathname);
   if (m) return centerRoute(req, res, m);
   m = /^\/h\/([A-Za-z0-9]{8})(\/(seen|rate|find|ask|book|complaint|track|report-request|manifest|icon|push-key|push-subscribe|push-disable|push-test))?\/?$/.exec(pathname);
   if (m) return findRoute(req, res, m[1], m[3] || '');
@@ -565,7 +570,7 @@ async function centerRoute(req, res, m) {
     if (req.method !== 'GET') return false;
     const CD = { code, center: site.center_name || '', logo: site.logo || '', theme: site.theme || 'a', layout: site.dashboard_layout === 'violet' ? 'violet' : 'teal', auth: me, cacheDays: CACHE_DAYS, maxMb: MAX_MB, pub: me ? pubOf(site) : '', fixedOn: !!site.fixed_on, wa: me ? (site.wa || '') : '', waDefault: me && !site.wa ? waFor(cid0(site), '') : '' };
     if (me) db.prepare('UPDATE case_site SET last_seen = ? WHERE customer_id = ?').run(nowTs(), site.customer_id);
-    html(res, 200, page('QR Patient — ' + (site.center_name || ''), '<div id="app"></div>', 'k', '<script>window.CD=' + json(CD) + '</script><script src="/vendor/qrcode.js"></script><script src="/cases-kit.js?v=541"></script><script src="/cases-dicom.js?v=541"></script><script src="/cases-pacs.js?v=541"></script><script src="/cases-ads.js?v=541"></script><script src="/vendor/gsap.min.js"></script><script src="/js/gxmotion.js?v=541"></script><script src="/cases-notices.js?v=541"></script><script src="/cases-center.js?v=541"></script><script src="/cases-push.js?v=541"></script>', '/k/'+code+'/manifest'));
+    html(res, 200, page('QR Patient — ' + (site.center_name || ''), '<div id="app"></div>', 'k', '<script>window.CD=' + json(CD) + '</script><script src="/vendor/qrcode.js"></script><script src="/cases-kit.js?v=542"></script><script src="/cases-dicom.js?v=542"></script><script src="/cases-pacs.js?v=542"></script><script src="/cases-ads.js?v=542"></script><script src="/vendor/gsap.min.js"></script><script src="/js/gxmotion.js?v=542"></script><script src="/cases-notices.js?v=542"></script><script src="/cases-center.js?v=542"></script><script src="/cases-push.js?v=542"></script>', '/k/'+code+'/manifest'));
     return true;
   }
   if (sub === 'manifest' && req.method === 'GET') { respondManifest(res,site,'k');return true; }
@@ -640,6 +645,18 @@ async function centerRoute(req, res, m) {
     send(res, 200, { ok: true, ms }); return true;
   }
   if (sub === 'slides-base' && req.method === 'POST') { let b = {}; try { b = await readJson(req, 200); } catch (e) {} db.prepare('UPDATE case_site SET slides_base = ? WHERE customer_id = ?').run(b.on ? 1 : 0, cid); send(res, 200, { ok: true, base: !!b.on }); return true; }
+  /* 4.71 · answered / closed complaints stay in an archive — the center keeps them or deletes them */
+  if (sub === 'tickets-closed' && req.method === 'GET') {
+    const L = db.prepare("SELECT id,kind,name,phone,subject,message,at,files_json,code,ckind,reply,reply_at,updated_at FROM case_service_request WHERE customer_id = ? AND kind = 'complaint' AND status <> 'new' ORDER BY COALESCE(updated_at, at) DESC LIMIT 300").all(cid)
+      .map(x => ({ id:x.id, name:x.name, phone:x.phone, subject:x.subject, message:x.message, at:x.at, code:x.code || '', type:x.ckind === 'suggestion' ? 'suggestion' : 'complaint', reply:x.reply || '', reply_at:x.reply_at || '', closed_at:x.updated_at || '',
+        files: (() => { try { return JSON.parse(x.files_json || '[]').map((f,i) => ({ index:i, name:f.name, mime:f.mime })); } catch (_) { return []; } })() }));
+    send(res, 200, { list: L }); return true;
+  }
+  if (sub === 'tickets' && req.method === 'POST' && arg && act === 'reopen') {
+    const id = Number(arg); const r = db.prepare("UPDATE case_service_request SET status = 'new', updated_at = ? WHERE id = ? AND customer_id = ? AND status <> 'new'").run(nowTs(), id, cid);
+    if (!r.changes) { send(res, 404, { message: 'الطلب مش موجود' }); return true; }
+    send(res, 200, { ok: true, tickets: serviceRequestsOf(cid) }); return true;
+  }
   /* 5.16 · complaints: password-protected delete / reset, and the full history for the analysis report */
   if (sub === 'tickets-all' && req.method === 'GET') {
     const L = db.prepare("SELECT id, name, phone, subject, message, at, status, updated_at FROM case_service_request WHERE customer_id = ? AND kind = 'complaint' ORDER BY id DESC LIMIT 5000").all(cid);
@@ -900,7 +917,7 @@ async function viewRoute(req, res, token, file) {
   if (!file) {
     if (!it) { if (limited('vx:' + ip, 40, 600e3)) { send(res, 429, { message: 'حاولت كتير' }); return true; } }
     const CD = it ? { token, kind: it.kind || 'pdf', center: it.center_name || '', logo: it.site_logo || '', theme: it.site_theme || 'a', patient: it.patient, exam: it.exam || '', at: it.created_at, pages: it.pages || 0, size: it.size, name: it.file_name || '', active: !!(it.active && it.site_on), ready: !!(it.cached && it.cache_until > Date.now()) || online(it.customer_id), wa: waFor(it.customer_id, it.site_wa), pub: it.site_pub || '', rateTags: RATE_TAGS, pop: popCfg(it.site_pop), follow: it.follow_done ? null : it.follow_at || null } : { missing: true };
-    html(res, it ? 200 : 404, page(it ? 'نتيجة الفحص — ' + (it.center_name || '') : 'الحالة مش موجودة', '<div id="app"></div>', 'v', '<script>window.CD=' + json(CD) + '</script><script src="/cases-kit.js?v=541"></script>' + (it && it.kind === 'dicom' ? '<script src="/cases-pacs.js?v=541"></script>' : '<script src="/vendor/pdfjs/pdf.min.js"></script>') + '<script src="/cases-skin.js?v=541"></script><script src="/cases-view.js?v=541"></script>'));
+    html(res, it ? 200 : 404, page(it ? 'نتيجة الفحص — ' + (it.center_name || '') : 'الحالة مش موجودة', '<div id="app"></div>', 'v', '<script>window.CD=' + json(CD) + '</script><script src="/cases-kit.js?v=542"></script>' + (it && it.kind === 'dicom' ? '<script src="/cases-pacs.js?v=542"></script>' : '<script src="/vendor/pdfjs/pdf.min.js"></script>') + '<script src="/cases-skin.js?v=542"></script><script src="/cases-view.js?v=542"></script>'));
     return true;
   }
   if (!it) { send(res, 404, { message: 'الحالة مش موجودة' }); return true; }
@@ -1004,7 +1021,7 @@ async function findRoute(req, res, pub, sub) {
     const name=clean(b.name,60), phone=bookingPhone(b.phone),
       subject=clean(b.subject,100), message=clean(b.message,1200);
     const ckind = kind === 'complaint' && b.type === 'suggestion' ? 'suggestion' : 'complaint';
-    if (name.length<3 || !phone || message.length<8 || (kind==='complaint' && ckind==='complaint' && subject.length<3)) {
+    if (name.length<2 || !phone || !message || (kind==='complaint' && ckind==='complaint' && !subject)) {
       send(res,400,{message:'اكمل الاسم ورقم الموبايل وعنوان الطلب والتفاصيل'}); return true;
     }
     if (limited('patient-service-phone:'+pub+':'+phashOf(phone),3,864e5)) {
@@ -1093,7 +1110,7 @@ async function findRoute(req, res, pub, sub) {
     if (req.method !== 'GET') return false;
     if (!site) { if (limited('hx:' + ip, 30, 600e3)) { send(res, 429, { message: 'حاولت كتير' }); return true; } }
     const CD = site ? { pub, center: site.center_name || '', logo: site.logo || '', theme: site.theme || 'a', on: !!site.fixed_on, wa: waFor(site.customer_id, site.wa), ads: adsOf(site.customer_id), base: site.slides_base !== 0, slideMs: site.slide_ms || 5200, seeded: true, pop: popCfg(site.pop_cfg), wait: waitOf(site), svc: svcCfg(site.svc_cfg) } : { missing: true };
-    html(res, site ? 200 : 404, page(site ? 'نتيجتك — ' + (site.center_name || '') : 'اللينك مش شغال', '<div id="app"></div>', 'v', '<script>window.CD=' + json(CD) + '</script><script src="/cases-kit.js?v=541"></script><script src="/cases-skin.js?v=541"></script><script src="/cases-ads.js?v=541"></script><script src="/cases-find.js?v=541"></script><script src="/cases-push.js?v=541"></script>',site?'/h/'+pub+'/manifest':null));
+    html(res, site ? 200 : 404, page(site ? 'نتيجتك — ' + (site.center_name || '') : 'اللينك مش شغال', '<div id="app"></div>', 'v', '<script>window.CD=' + json(CD) + '</script><script src="/cases-kit.js?v=542"></script><script src="/cases-skin.js?v=542"></script><script src="/cases-ads.js?v=542"></script><script src="/cases-find.js?v=542"></script><script src="/cases-push.js?v=542"></script>',site?'/h/'+pub+'/manifest':null));
     return true;
   }
   if (req.method !== 'POST') return false;
@@ -1135,14 +1152,16 @@ async function adminApi(req, res, pathname, me) {
   try {
     if (pathname === '/api/portal/cases/make') {
       const pass = newPass();
-      if (cur) db.prepare('UPDATE case_site SET pass = ?, ver = ver + 1, active = 1, center_name = ? WHERE customer_id = ?').run(hashPass(pass), clean(b.name, 120) || cur.center_name, cid);
+      if (cur) db.prepare('UPDATE case_site SET pass = ?, pass_enc = ?, ver = ver + 1, active = 1, center_name = ? WHERE customer_id = ?').run(hashPass(pass), passEnc(pass), clean(b.name, 120) || cur.center_name, cid);
       else { let code; do { code = rnd(8, true); } while (db.prepare('SELECT 1 FROM case_site WHERE code = ?').get(code)); db.prepare('INSERT INTO case_site (customer_id, center_name, code, pass, created_at, created_by, wa) VALUES (?,?,?,?,?,?,?)').run(cid, clean(b.name, 120), code, hashPass(pass), nowTs(), who, waOf(b.wa) ? clean(b.wa, 20) : null); }
+      db.prepare('UPDATE case_site SET pass_enc = ? WHERE customer_id = ?').run(passEnc(pass), cid);
       return send(res, 200, { ok: true, pass, site: siteOut(db.prepare('SELECT * FROM case_site WHERE customer_id = ?').get(cid)) });
     }
     if (!cur) return send(res, 404, { message: 'مفيش لينك حالات للمركز ده' });
     if (pathname === '/api/portal/cases/theme') { db.prepare('UPDATE case_site SET theme = ? WHERE customer_id = ?').run(['a','b','c','d','e','f','g','h','i'].includes(b.theme) ? b.theme : 'a', cid); return send(res, 200, { ok: true }); }
     if (pathname === '/api/portal/cases/wa') { const w = waOf(b.wa); if (b.wa && !w) return send(res, 400, { message: 'رقم الواتساب مش مظبوط' }); if (!b.ifEmpty || !cur.wa) db.prepare('UPDATE case_site SET wa = ? WHERE customer_id = ?').run(w ? clean(b.wa, 20) : null, cid); return send(res, 200, { ok: true, site: siteOut(db.prepare('SELECT * FROM case_site WHERE customer_id = ?').get(cid)) }); }
-    if (pathname === '/api/portal/cases/pass') { const pass = newPass(); db.prepare('UPDATE case_site SET pass = ?, ver = ver + 1 WHERE customer_id = ?').run(hashPass(pass), cid); db.prepare('DELETE FROM push_subs WHERE user_id = ?').run(pushCenterId(cid)); for (const r of (LIVE.get(cid) || [])) { try { r.end(); } catch (e) {} } return send(res, 200, { ok: true, pass }); }
+    if (pathname === '/api/portal/cases/showpass') { const p = cur.pass_enc ? passDec(cur.pass_enc) : null; return send(res, 200, { ok: true, pass: p }); }
+    if (pathname === '/api/portal/cases/pass') { const pass = newPass(); db.prepare('UPDATE case_site SET pass = ?, pass_enc = ?, ver = ver + 1 WHERE customer_id = ?').run(hashPass(pass), passEnc(pass), cid); db.prepare('DELETE FROM push_subs WHERE user_id = ?').run(pushCenterId(cid)); for (const r of (LIVE.get(cid) || [])) { try { r.end(); } catch (e) {} } return send(res, 200, { ok: true, pass }); }
     if (pathname === '/api/portal/cases/stop') { db.prepare('UPDATE case_site SET active = ? WHERE customer_id = ?').run(b.on ? 1 : 0, cid); if (!b.on) db.prepare('DELETE FROM push_subs WHERE user_id = ?').run(pushCenterId(cid)); if (!b.on) for (const r of (LIVE.get(cid) || [])) { try { r.end(); } catch (e) {} } return send(res, 200, { ok: true, site: siteOut(db.prepare('SELECT * FROM case_site WHERE customer_id = ?').get(cid)) }); }
     if (pathname === '/api/portal/cases/rotate') { let code; do { code = rnd(8, true); } while (db.prepare('SELECT 1 FROM case_site WHERE code = ?').get(code)); db.prepare('UPDATE case_site SET code = ?, ver = ver + 1 WHERE customer_id = ?').run(code, cid); db.prepare('DELETE FROM push_subs WHERE user_id = ?').run(pushCenterId(cid)); for (const r of (LIVE.get(cid) || [])) { try { r.end(); } catch (e) {} } return send(res, 200, { ok: true, site: siteOut(db.prepare('SELECT * FROM case_site WHERE customer_id = ?').get(cid)) }); }
   } catch (er) { return send(res, er.status || 400, { message: er.message || 'محصلش' }); }
@@ -1299,7 +1318,7 @@ async function plusPublic(req, res, pathname) {
     if (ok && it) db.prepare('UPDATE case_share SET views = views + 1 WHERE sid = ?').run(sh.sid);
     const CD = it ? { token: it.token, kind: it.kind || 'pdf', center: it.center_name || '', logo: it.site_logo || '', theme: it.site_theme || 'a', patient: it.patient, exam: it.exam || '', at: it.created_at, pages: it.pages || 0, size: it.size, active: !!(it.active && it.site_on), pub: it.site_pub || '', share: { i: sh.i, k: sh.k, expires: sh.expires, label: sh.label || '' }, doctor: true }
       : { missing: true, expired: !!sh };
-    html(res, it ? 200 : 404, page(it ? 'نتيجة مريض — ' + (it.center_name || '') : 'اللينك انتهى', '<div id="app"></div>', 'v', '<script>window.CD=' + json(CD) + '</script><script src="/cases-kit.js?v=541"></script>' + (it && it.kind === 'dicom' ? '<script src="/cases-pacs.js?v=541"></script>' : '<script src="/vendor/pdfjs/pdf.min.js"></script>') + '<script src="/cases-skin.js?v=541"></script><script src="/cases-view.js?v=541"></script>'));
+    html(res, it ? 200 : 404, page(it ? 'نتيجة مريض — ' + (it.center_name || '') : 'اللينك انتهى', '<div id="app"></div>', 'v', '<script>window.CD=' + json(CD) + '</script><script src="/cases-kit.js?v=542"></script>' + (it && it.kind === 'dicom' ? '<script src="/cases-pacs.js?v=542"></script>' : '<script src="/vendor/pdfjs/pdf.min.js"></script>') + '<script src="/cases-skin.js?v=542"></script><script src="/cases-view.js?v=542"></script>'));
     return true;
   }
   m = /^\/r\/([A-Za-z0-9]{10})(\/list)?\/?$/.exec(pathname);
@@ -1312,7 +1331,7 @@ async function plusPublic(req, res, pathname) {
       send(res, 200, { list: rows.map(r => ({ token: r.token, patient: r.patient, exam: r.exam || '', at: r.created_at, kind: r.kind || 'pdf', pages: r.pages || 0, opened: r.views > 0, active: !!r.active, w: r.wi ? { i: r.wi, k: r.wk } : null })) }); return true;
     }
     const CD = d && d.active && d.site_on ? { center: d.center_name || '', logo: d.logo || '', theme: d.theme || 'a', doctor: d.name, spec: d.spec || '', slug: d.slug } : { missing: true };
-    html(res, CD.missing ? 404 : 200, page(CD.missing ? 'اللينك مش شغال' : 'د. ' + d.name + ' — ' + (d.center_name || ''), '<div id="app"></div>', 'v', '<script>window.CD=' + json(CD) + '</script><script src="/cases-kit.js?v=541"></script><script src="/cases-skin.js?v=541"></script><script src="/cases-doc.js?v=541"></script>'));
+    html(res, CD.missing ? 404 : 200, page(CD.missing ? 'اللينك مش شغال' : 'د. ' + d.name + ' — ' + (d.center_name || ''), '<div id="app"></div>', 'v', '<script>window.CD=' + json(CD) + '</script><script src="/cases-kit.js?v=542"></script><script src="/cases-skin.js?v=542"></script><script src="/cases-doc.js?v=542"></script>'));
     return true;
   }
   return false;
