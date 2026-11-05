@@ -75,7 +75,7 @@
       '<button type="button" id="tab-results" class="pv2-service" role="tab" aria-selected="false" aria-controls="patient-results">' +
         '<span class="pv2-service-icon pvd-c2"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 4v8M12 12c-2 0-3 1-3 3v3c0 1.7-1.3 3-3 3s-3-1.3-3-3v-4c0-4 3-8 6-8M12 12c2 0 3 1 3 3v3c0 1.7 1.3 3 3 3s3-1.3 3-3v-4c0-4-3-8-6-8\"/></svg></span><b>نتيجة الأشعة</b><small>استعلم عن نتيجتك بسهولة</small><span class="pv2-service-go" aria-hidden="true">←</span></button>' +
       '<button type="button" id="tab-complaint" class="pv2-service" role="tab" aria-selected="false" aria-controls="patient-complaint">' +
-        '<span class="pv2-service-icon pvd-c3"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z\"/><path d=\"M8.5 12h.01M12 12h.01M15.5 12h.01\"/></svg></span><b>تقديم شكوى</b><small>قولنا إيه اللي ضايقك وهنساعدك</small><span class="pv2-service-go" aria-hidden="true">←</span></button>' +
+        '<span class="pv2-service-icon pvd-c3"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z\"/><path d=\"M8.5 12h.01M12 12h.01M15.5 12h.01\"/></svg></span><b>الشكاوى والمقترحات</b><small>شكوى أو اقتراح — وتابع الرد بكود</small><span class="pv2-service-go" aria-hidden="true">←</span></button>' +
       '<button type="button" id="tab-report" class="pv2-service" role="tab" aria-selected="false" aria-controls="patient-report">' +
         '<span class="pv2-service-icon pvd-c4"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z\"/><path d=\"M14 3v5h5M9 13h6M9 17h4\"/></svg></span><b>طلب تقرير أشعة</b><small>ارفع صورة واطلب تقريرك</small><span class="pv2-service-go" aria-hidden="true">←</span></button></div>' +
     '<p class="pv2-action-hint" id="patient-hint" aria-live="polite">اختار أي خدمة من الأربع خدمات للمتابعة</p>' +
@@ -104,17 +104,22 @@
       '<button class="btn w" type="submit" id="bgo">إرسال طلب الحجز ←</button></form></div>' +
     '</section>' +
     '<section id="patient-complaint" class="patient-panel pv2-extra-panel" role="tabpanel" aria-labelledby="tab-complaint" hidden>' +
-      '<div class="booking-card pv2-request-card"><div class="booking-heading"><span>📝</span><div><b>تقديم شكوى للمركز</b><small>احكي لنا اللي حصل وهنراجع طلبك</small></div></div>' +
-      '<div class="pv2-complaint-intro" role="status"><span>💬</span><p>اكتب شكوى حضرتك وهنحلها في أقرب وقت وهنتواصل معاك</p></div>' +
+      '<div class="booking-card pv2-request-card"><div class="booking-heading"><span>📝</span><div><b>الشكاوى والمقترحات</b><small>قولنا اللي ضايقك أو اقترح علينا حاجة تحسّن الخدمة</small></div></div>' +
+      '<div class="sg-sw" role="radiogroup" aria-label="نوع الرسالة"><button type="button" role="radio" aria-checked="true" class="on" data-ck="complaint">📝 شكوى</button><button type="button" role="radio" aria-checked="false" data-ck="suggestion">💡 مقترح</button></div>' +
+      '<div class="pv2-complaint-intro" role="status"><span>💬</span><p id="ckIntro">اكتب شكوى حضرتك وهتاخد كود تتابع بيه رد المركز</p></div>' +
       '<form id="complaint-form" novalidate>' +
         '<label class="l" for="cn">الاسم بالكامل *</label><input class="fld" id="cn" type="text" maxlength="60" autocomplete="name" placeholder="اسم حضرتك">' +
         '<label class="l" for="cp">رقم الموبايل *</label><input class="fld n" id="cp" type="tel" inputmode="tel" autocomplete="tel" maxlength="20" dir="ltr" placeholder="01xxxxxxxxx">' +
-        '<label class="l" for="cs">عنوان الشكوى *</label><input class="fld" id="cs" type="text" maxlength="100" placeholder="مثلاً: تأخير في استلام النتيجة">' +
-        '<label class="l" for="cm">اكتب تفاصيل الشكوى *</label><textarea class="fld" id="cm" maxlength="1200" rows="5" placeholder="احكي لنا تفاصيل المشكلة علشان نقدر نساعدك"></textarea>' +
+        '<label class="l" for="cs" id="csL">عنوان الشكوى *</label><input class="fld" id="cs" type="text" maxlength="100" placeholder="مثلاً: تأخير في استلام النتيجة">' +
+        '<label class="l" for="cm" id="cmL">اكتب تفاصيل الشكوى *</label><textarea class="fld" id="cm" maxlength="1200" rows="5" placeholder="احكي لنا تفاصيل المشكلة علشان نقدر نساعدك"></textarea>' +
         '<p class="booking-note">🔒 الشكوى وبيانات التواصل بتوصل لإدارة المركز فقط للمتابعة.</p>' +
         '<div class="booking-msg" id="cmsg" role="status" aria-live="polite"></div>' +
         '<button class="btn w" id="cgo" type="submit">إرسال الشكوى ←</button>' +
-      '</form></div></section>' +
+      '</form></div>' +
+      '<div class="booking-card tk-card" id="tkCard"><div class="booking-heading"><span>🔎</span><div><b>تابع شكوتك</b><small>اكتب الكود اللي خدته وشوف رد المركز</small></div></div>' +
+        '<form id="tk-form" class="tk-row" novalidate><input class="fld tk-in" id="tkC" maxlength="9" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="مثلاً K7P4QX" dir="ltr"><button class="btn" id="tkGo" type="submit">اعرض الرد</button></form>' +
+        '<div id="tkMine" class="tk-mine"></div><div id="tkRes" aria-live="polite"></div></div>' +
+    '</section>' +
     '<section id="patient-report" class="patient-panel pv2-extra-panel" role="tabpanel" aria-labelledby="tab-report" hidden>' +
       '<div class="booking-card pv2-request-card"><div class="booking-heading"><span>📤</span><div><b>طلب تقرير أشعة</b><small>ارفع صورة طلب الفحص أو الأشعة، والمركز هيتواصل معاك</small></div></div>' +
       '<form id="report-form" novalidate>' +
@@ -131,7 +136,7 @@
     '<div class="pv2-trust"><div><i>🔒</i><span>خصوصية بياناتك</span></div><div><i>⚡</i><span>خطوات سريعة</span></div><div><i>📱</i><span>كل حاجة من موبايلك</span></div></div>' +
     '<nav class="pvd-tab" aria-label="التنقل"><button type="button" data-pvd="home" class="on"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z\"/></svg><span>الرئيسية</span></button>' +
       '<button type="button" data-pvd="results"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 4v8M12 12c-2 0-3 1-3 3v3c0 1.7-1.3 3-3 3s-3-1.3-3-3v-4c0-4 3-8 6-8M12 12c2 0 3 1 3 3v3c0 1.7 1.3 3 3 3s3-1.3 3-3v-4c0-4-3-8-6-8\"/></svg><span>نتيجتي</span></button><button type="button" data-pvd="booking"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"5\" width=\"18\" height=\"16\" rx=\"3\"/><path d=\"M3 10h18M8 3v4M16 3v4\"/><path d=\"M8 14h3v3H8z\"/></svg><span>احجز</span></button>' +
-      '<button type="button" data-pvd="report"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z\"/><path d=\"M14 3v5h5M9 13h6M9 17h4\"/></svg><span>تقرير</span></button><button type="button" data-pvd="complaint"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z\"/><path d=\"M8.5 12h.01M12 12h.01M15.5 12h.01\"/></svg><span>شكوى</span></button></nav>' +
+      '<button type="button" data-pvd="report"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z\"/><path d=\"M14 3v5h5M9 13h6M9 17h4\"/></svg><span>تقرير</span></button><button type="button" data-pvd="complaint"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z\"/><path d=\"M8.5 12h.01M12 12h.01M15.5 12h.01\"/></svg><span>شكاوى</span></button></nav>' +
     '<p class="pv2-footer">نتمنالك دوام الصحة والعافية ♥</p><p class="pv2-analytics-note">يتم احتساب مرات فتح رابط الباركود فقط، بدون تحديد موقع المريض أو تسجيل مكانه.</p>' +
   '</div>';
   /* Gentle, low-cost hero copy carousel; no resizing or transform on service icons. */
@@ -159,7 +164,7 @@
     var modes = {
       booking: ['patient-book','tab-booking','📅 اختار اليوم والفحص، وهنبعت طلبك للمركز','#book'],
       results: ['patient-results','tab-results','🩻 اكتب رقم موبايلك علشان توصل لنتيجتك','#results'],
-      complaint: ['patient-complaint','tab-complaint','📝 اكتب شكواك والمركز هيتابع معاك','#complaint'],
+      complaint: ['patient-complaint','tab-complaint','📝 اكتب شكوى أو مقترح — وتابع الرد بالكود','#complaint'],
       report: ['patient-report','tab-report','📤 ارفع صور طلب التقرير وابعت بياناتك للمركز','#report']
     };
     var current = modes[which] || modes.results;
@@ -308,21 +313,56 @@
       '<button type="button" class="btn g w" id="new-request">رجوع للخدمات</button></div>';
     $('new-request').onclick=function(){ location.href=location.pathname; };
   }
+  /* 5.30 · «الشكاوى والمقترحات»: complaint or suggestion; each gets a short code to read the center's reply later */
   (function setupComplaint() {
-    var form=$('complaint-form');
+    var form=$('complaint-form'), type='complaint', KEY='ozx_tk:'+C.pub;
+    function mine(){ try { return JSON.parse(localStorage.getItem(KEY)||'[]'); } catch(e){ return []; } }
+    function paintMine(){ var L=mine(), el=$('tkMine'); if(!el) return; el.innerHTML=L.length?'<small>أكوادك على الموبايل ده:</small>'+L.slice(0,5).map(function(x){ return '<button type="button" data-tk="'+esc(x.c)+'">'+(x.t==='suggestion'?'💡 ':'📝 ')+esc(x.c)+'</button>'; }).join(''):'';
+      [].forEach.call(el.querySelectorAll('[data-tk]'),function(b){ b.onclick=function(){ $('tkC').value=b.dataset.tk; track(); }; }); }
+    function setType(t){ type=t; [].forEach.call(document.querySelectorAll('[data-ck]'),function(b){ var on=b.dataset.ck===t; b.classList.toggle('on',on); b.setAttribute('aria-checked',String(on)); });
+      var sg=t==='suggestion'; $('csL').textContent=sg?'عنوان المقترح (اختياري)':'عنوان الشكوى *'; $('cs').placeholder=sg?'مثلاً: إضافة مواعيد مسائية':'مثلاً: تأخير في استلام النتيجة';
+      $('cmL').textContent=sg?'اكتب مقترحك *':'اكتب تفاصيل الشكوى *'; $('cm').placeholder=sg?'إيه اللي ممكن نعمله أحسن؟':'احكي لنا تفاصيل المشكلة علشان نقدر نساعدك';
+      $('ckIntro').textContent=sg?'شاركنا فكرتك — كل مقترح بيوصل لإدارة المركز وهتاخد كود تتابع بيه الرد':'اكتب شكوى حضرتك وهتاخد كود تتابع بيه رد المركز';
+      $('cgo').textContent=sg?'إرسال المقترح ←':'إرسال الشكوى ←'; }
+    [].forEach.call(document.querySelectorAll('[data-ck]'),function(b){ b.onclick=function(){ setType(b.dataset.ck); }; });
     form.onsubmit=function (e) {
       e.preventDefault();
-      var name=$('cn').value.trim(),phone=requestPhone($('cp').value),subject=$('cs').value.trim(),
+      var sg=type==='suggestion', name=$('cn').value.trim(),phone=requestPhone($('cp').value),subject=$('cs').value.trim(),
         message=$('cm').value.trim(), msg=$('cmsg'),btn=$('cgo');
-      if(name.length<3||!phone||subject.length<3||message.length<8) {
-        msg.textContent='اكتب الاسم ورقم موبايل صحيح وعنوان الشكوى والتفاصيل (8 حروف على الأقل).';
+      if(name.length<3||!phone||(!sg&&subject.length<3)||message.length<8) {
+        msg.textContent=sg?'اكتب الاسم ورقم موبايل صحيح ومقترحك (8 حروف على الأقل).':'اكتب الاسم ورقم موبايل صحيح وعنوان الشكوى والتفاصيل (8 حروف على الأقل).';
         msg.className='booking-msg err';return;
       }
-      btn.disabled=true;btn.textContent='بنبعت الشكوى…';msg.textContent='';msg.className='booking-msg';
-      requestJson('complaint',{name:name,phone:phone,subject:subject,message:message})
-        .then(function(j){requestSuccess(form,j.id,'وصلتنا شكواك','هنراجع الشكوى ونتواصل معاك على رقم الموبايل المسجل.');})
-        .catch(function(err){msg.textContent=err.message;msg.className='booking-msg err';btn.disabled=false;btn.textContent='إرسال الشكوى ←';});
+      btn.disabled=true;btn.textContent='بنبعت…';msg.textContent='';msg.className='booking-msg';
+      requestJson('complaint',{name:name,phone:phone,subject:subject,message:message,type:type})
+        .then(function(j){
+          var L=mine(); if(j.code){ L.unshift({c:j.code,t:type}); try{ localStorage.setItem(KEY,JSON.stringify(L.slice(0,10))); }catch(er){} }
+          form.innerHTML='<div class="booking-success tk-ok" role="status"><span>'+(sg?'💡':'✅')+'</span><h2>'+(sg?'شكرًا على مقترحك':'وصلتنا شكواك')+'</h2>'+
+            (j.code?'<p>كود المتابعة بتاعك</p><div class="tk-code" dir="ltr">'+esc(j.code)+'</div><button type="button" class="btn g" id="tkCopy">انسخ الكود</button><p class="tk-hint">احتفظ بالكود — اكتبه في «تابع شكوتك» تحت وهتلاقي رد المركز أول ما يرد.</p>':'')+
+            '<button type="button" class="btn g w" id="new-request">رجوع للخدمات</button></div>';
+          $('new-request').onclick=function(){ location.href=location.pathname; };
+          var cpb=$('tkCopy'); if(cpb) cpb.onclick=function(){ (navigator.clipboard?navigator.clipboard.writeText(j.code):Promise.reject()).then(function(){ cpb.textContent='✓ اتنسخ'; }).catch(function(){}); };
+          paintMine();
+        })
+        .catch(function(err){msg.textContent=err.message;msg.className='booking-msg err';btn.disabled=false;btn.textContent=sg?'إرسال المقترح ←':'إرسال الشكوى ←';});
     };
+    function track(){
+      var c=$('tkC').value.toUpperCase().replace(/[^A-Z0-9]/g,''), out=$('tkRes'), b=$('tkGo');
+      if(c.length!==6){ out.innerHTML='<p class="booking-msg err">الكود 6 حروف وأرقام — اتأكد منه</p>'; return; }
+      b.disabled=true; out.innerHTML='';
+      fetch(location.pathname.replace(/\/$/,'')+'/track',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code:c})})
+        .then(function(r){ return r.json().catch(function(){return {};}).then(function(j){ if(!r.ok) throw new Error(j.message||'محصلش'); return j; }); })
+        .then(function(j){
+          var sg=j.type==='suggestion', st=j.reply?['r','💬 المركز رد عليك']:j.status==='done'?['d','✅ اتحلّت — المركز تواصل معاك']:['w','⏳ لسه بتتراجع'];
+          out.innerHTML='<div class="tk-res"><div class="tk-h"><span>'+(sg?'💡 مقترح':'📝 شكوى')+' · <b dir="ltr">'+esc(j.code)+'</b></span><em class="tk-st '+st[0]+'">'+st[1]+'</em></div>'+
+            (j.subject?'<b class="tk-s">'+esc(j.subject)+'</b>':'')+'<small>اتبعتت '+dmy(j.at)+'</small>'+
+            (j.reply?'<div class="tk-rp"><small>رد '+esc(C.center||'المركز')+' · '+dmy(j.reply_at)+'</small><p>'+esc(j.reply)+'</p></div>':'<p class="tk-w">'+(j.status==='done'?'المركز قفل الطلب بعد ما تواصل معاك.':'أول ما المركز يرد هتلاقي الرد هنا بنفس الكود.')+'</p>')+'</div>';
+        })
+        .catch(function(e){ out.innerHTML='<p class="booking-msg err">'+esc(e.message)+'</p>'; })
+        .then(function(){ b.disabled=false; });
+    }
+    $('tk-form').onsubmit=function(e){ e.preventDefault(); track(); };
+    paintMine();
   })();
   (function setupReportRequest() {
     var input=$('rfiles'),preview=$('rpreview'),form=$('report-form'),urls=[];

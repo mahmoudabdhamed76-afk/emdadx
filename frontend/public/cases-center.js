@@ -213,7 +213,7 @@
       ['dashboard', '⌂', 'لوحة التحكم'],
       ['bookings', '▣', 'طلبات حجز الأشعة'],
       ['results', '▤', 'طلبات النتائج'],
-      ['complaints', '📝', 'الشكاوى'],
+      ['complaints', '📝', 'الشكاوى والمقترحات'],
       ['reports', '📤', 'طلبات التقارير'],
       ['ratings', '⭐', 'تقييمات المرضى'],
       ['follow', '🔁', 'المتابعات'],
@@ -329,7 +329,7 @@
       ['dashboard', 'لوحة التحكم', 'ملخص زيارات الباركود وآخر فتح للنتائج'],
       ['bookings', 'طلبات حجز الأشعة', 'طلبات الحجز الواردة فقط، مع إجراء الاتصال والتأكيد'],
       ['results', 'طلبات نتائج الأشعة', 'المرضى اللي طلبوا المساعدة في العثور على نتائجهم'],
-      ['complaints', 'شكاوى المرضى', 'الشكاوى الجديدة وبيانات التواصل مع المرضى'],
+      ['complaints', 'الشكاوى والمقترحات', 'الشكاوى والمقترحات الجديدة — رد على أي واحدة والمريض يشوف الرد بالكود بتاعه'],
       ['reports', 'طلبات تقارير الأشعة', 'طلبات التقارير والصور المرفوعة من المرضى'],
       ['upload', 'رفع ملفات الأشعة', 'رفع PDF وDICOM وإدارة الملفات قبل حفظها'],
       ['cases', 'الحالات والنتائج', 'البحث عن الحالات المرفوعة وإدارتها'],
@@ -1018,10 +1018,10 @@
         }).join('');
         return '<article class="qx-r" data-ticket="' + Number(t.id) + '" style="--i:' + Math.min(i, 12) + '">' + qxAv(t.name) +
           '<div class="qx-who"><b>' + esc(t.name) + '</b><a class="n" href="tel:' + esc(t.phone) + '">' + esc(t.phone) + '</a></div>' +
-          '<div class="qx-what"><span class="qx-tag ' + (kind === 'complaint' ? 'r' : 'a') + '">' + esc(t.subject || (kind === 'complaint' ? 'شكوى' : 'طلب تقرير')) + '</span></div>' +
+          '<div class="qx-what">' + (kind === 'complaint' ? '<span class="tk-k ' + (t.type === 'suggestion' ? 's' : 'c') + '">' + (t.type === 'suggestion' ? '💡 مقترح' : '📝 شكوى') + '</span>' : '') + '<span class="qx-tag ' + (kind === 'complaint' ? (t.type === 'suggestion' ? 'a' : 'r') : 'a') + '">' + esc(t.subject || (kind === 'complaint' ? (t.type === 'suggestion' ? 'مقترح' : 'شكوى') : 'طلب تقرير')) + '</span>' + (t.code ? '<span class="tk-cd" dir="ltr" title="كود المتابعة اللي مع المريض">#' + esc(t.code) + '</span>' : '') + '</div>' +
           '<div class="qx-note" title="اضغط لعرض الكلام كله"><p>' + esc(t.message) + '</p>' + (imgs ? '<div class="qx-phs">' + imgs + '</div>' : '') + '</div>' +
           '<time class="qx-t">' + esc(when(t.at)) + '</time>' +
-          '<div class="qx-act"><a class="ic2" href="tel:' + esc(t.phone) + '" data-tip="اتصال">' + ic('phone') + '</a><button type="button" class="btn sm g" data-ticket-done="' + Number(t.id) + '">✓ تم التواصل</button>' +
+          '<div class="qx-act"><a class="ic2" href="tel:' + esc(t.phone) + '" data-tip="اتصال">' + ic('phone') + '</a>' + (kind === 'complaint' ? '<button type="button" class="btn sm" data-ticket-reply="' + Number(t.id) + '">↩ رد</button>' : '') + '<button type="button" class="btn sm g" data-ticket-done="' + Number(t.id) + '">✓ تم التواصل</button>' +
           (kind === 'complaint' ? '<button type="button" class="ic2 dl" data-ticket-del="' + Number(t.id) + '" data-n="' + esc(t.name) + '" data-tip="امسح (بكلمة سر)">' + ic('trash') + '</button>' : '') + '</div></article>';
       });
       el.innerHTML = qxShell(kind, ['المريض', kind === 'complaint' ? 'عنوان الشكوى' : 'الطلب', 'التفاصيل', 'وصلت', ''], R, emptyText, kind === 'complaint' ? 'شكوى' : 'طلب');
@@ -1033,6 +1033,17 @@
         el.querySelector('[data-cx="reset"]').onclick = ticketReset;
         [].forEach.call(el.querySelectorAll('[data-ticket-del]'), function (b) { b.onclick = function () { ticketDelete(+b.dataset.ticketDel, b.dataset.n); }; });
       }
+      [].forEach.call(el.querySelectorAll('[data-ticket-reply]'), function (btn) {
+        btn.onclick = function () {
+          var id = Number(btn.dataset.ticketReply), t = rows.filter(function (x) { return x.id === id; })[0] || {}, sg = t.type === 'suggestion';
+          var o = modal('<h3>↩ رد على ' + (sg ? 'المقترح' : 'الشكوى') + (t.code ? ' <span dir="ltr">#' + esc(t.code) + '</span>' : '') + '</h3><p>' + esc(t.name || '') + ' · ' + esc(t.subject || '') + '</p><p class="tk-q">' + esc(t.message || '') + '</p>' +
+            '<textarea class="fld" id="tkR" rows="4" maxlength="1000" placeholder="' + (sg ? 'شكرًا على اقتراحك — هنطبّقه من الأسبوع الجاي…' : 'نعتذر عن اللي حصل — اتواصلنا مع…') + '"></textarea><p style="font-size:12.5px;color:#64748B">المريض هيشوف الرد ده لما يكتب الكود في «تابع شكوتك»، والطلب هيتقفل.</p>' +
+            '<div class="bt"><button class="btn" data-x="ok">ابعت الرد</button><button class="btn g" data-x="cl">إلغاء</button></div>',
+            function (k, close) { if (k !== 'ok') return; var v = o.querySelector('#tkR').value.trim(); if (v.length < 2) return toast('اكتب الرد');
+              api('POST', 'tickets/' + id + '/reply', { reply: v }).then(function (j) { ui.tickets = j.tickets || []; serviceTickets(); close(); toast('💬 الرد اتبعت — المريض يقدر يشوفه بالكود'); }).catch(function (e) { toast(e.message); }); });
+          setTimeout(function () { var x = o.querySelector('#tkR'); if (x) x.focus(); }, 50);
+        };
+      });
       [].forEach.call(el.querySelectorAll('[data-ticket-done]'), function (btn) {
         btn.onclick = function () {
           var id = Number(btn.dataset.ticketDone); btn.disabled = true;
