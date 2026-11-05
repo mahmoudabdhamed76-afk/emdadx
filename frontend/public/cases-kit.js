@@ -102,21 +102,23 @@
     el.innerHTML = '<div class="rp-pop-c' + (o.logo ? ' has-lg' : '') + '"><button type="button" class="rp-pop-x" aria-label="قفل">✕</button>' + (o.logo ? '<span class="rp-pop-lg' + (o.emo ? ' emo' : '') + '">' + o.logo + '</span>' : '') +
       '<b>' + (o.title || 'إيه رأيك في خدمتنا؟') + '</b><small>' + (o.sub || 'دوس على النجوم') + '</small>' +
       '<div class="rp-pop-s" role="radiogroup">' + [1, 2, 3, 4, 5].map(function (k) { return '<button type="button" role="radio" aria-label="' + k + ' من 5" data-ps="' + k + '" style="--d:' + (k * 70) + 'ms">★</button>'; }).join('') + '</div>' +
-      (o.promo ? '<p class="rp-pop-pr">' + o.promo + '</p>' : '') + '</div>';
+      (o.promo ? '<p class="rp-pop-pr">' + o.promo + '</p>' : '') + '<p class="rt-er" role="alert" hidden></p></div>';
     (o.host || document.body).appendChild(el); requestAnimationFrame(function () { requestAnimationFrame(function () { el.classList.add('in'); }); });
     var gone = false, close = function (ms) { if (gone) return; gone = true; document.removeEventListener('keydown', kd); setTimeout(function () { el.classList.remove('in'); el.classList.add('out'); setTimeout(function () { el.remove(); if (o.onGone) o.onGone(); }, 340); }, ms || 0); };
     var kd = function (e) { if (e.key === 'Escape' && !o.host) close(); }; document.addEventListener('keydown', kd);
     el.addEventListener('click', function (e) { if ((e.target === el && !o.host) || e.target.closest('.rp-pop-x')) close(); });
-    var btns = [].slice.call(el.querySelectorAll('[data-ps]'));
+    var btns = [].slice.call(el.querySelectorAll('[data-ps]')), sending = false;
     btns.forEach(function (b) {
       b.onmouseenter = function () { btns.forEach(function (x) { x.classList.toggle('hv', +x.dataset.ps <= +b.dataset.ps); }); };
       b.onclick = function () {
+        if (sending || gone) return; sending = true; el.querySelector('[role="alert"]').hidden = true;
         var n = +b.dataset.ps; btns.forEach(function (x) { x.disabled = true; x.classList.toggle('on', +x.dataset.ps <= n); });
-        /* the center's own devices (and the preview) see it working but never add a rating */
-        (o.dry ? Promise.resolve({ ok: true }) : fetch(o.url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ stars: n, tags: [], note: '', vid: vid }) }))
-          .then(function (r) { if (!r.ok) throw new Error(); if (!o.dry) try { sessionStorage.setItem('ozx_rated_s', '1'); } catch (e) {} if (o.onDone) o.onDone(n);
+        /* Only explicit design previews are dry; patient pages always submit. */
+        (o.dry ? Promise.resolve() : fetch(o.url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ stars: n, tags: [], note: '', vid: vid }) })
+          .then(function (r) { return r.json().catch(function () { return null; }).then(function (j) { if (!r.ok || !j || j.ok !== true) throw new Error(j && j.message || 'التقييم موصلش — جرّب تاني'); }); }))
+          .then(function () { if (!o.dry) try { sessionStorage.setItem('ozx_rated_s', '1'); } catch (e) {} if (o.onDone) o.onDone(n);
             el.querySelector('.rp-pop-c').innerHTML = '<span class="rp-pop-ok">💚</span><b>شكرًا!</b><small>' + (o.thanks || (n >= 4 ? 'فرّحتنا — ألف سلامة عليك' : 'هنهتم بملاحظتك ونتحسّن')) + '</small>'; close(1400); })
-          .catch(function () { close(); });
+          .catch(function (e) { sending = false; btns.forEach(function (x) { x.disabled = false; }); var er = el.querySelector('[role="alert"]'); er.textContent = e.message || 'التقييم موصلش — جرّب تاني'; er.hidden = false; });
       };
     });
     return { close: close };

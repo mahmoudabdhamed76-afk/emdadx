@@ -224,14 +224,14 @@
   /* 5.25 · every visit, after the welcome screen: the stars pop-up, worded by the center (Ads → «نافذة التقييم») */
   (function centerRatePop() {
     var P = C.pop || {}; if (C.missing || P.onH === false || !window.OZK || !OZK.ratePop) return;
-    var K = 'ozx_hrate:' + C.pub, staff = false; try { staff = !!localStorage.getItem('qrd-staff'); } catch (e) {}
+    var K = 'ozx_hrate:' + C.pub;
     var tries = 0;
     /* the welcome screen mounts a moment after this runs — look only after it had the chance to appear, then wait until it's gone */
     setTimeout(function wait() {
       if (document.querySelector('.splw') || document.visibilityState !== 'visible') { if (++tries < 80) return setTimeout(wait, 250); return; }
       setTimeout(function () {
         if (document.querySelector('.rp-pop')) return;
-        OZK.ratePop(Object.assign(OZK.popOpts(P, C, 'h'), { url: '/h/' + C.pub + '/rate', dry: staff, onDone: function (n) { try { localStorage.setItem(K, JSON.stringify({ s: n, t: Date.now() })); } catch (e) {} } }));
+        OZK.ratePop(Object.assign(OZK.popOpts(P, C, 'h'), { url: '/h/' + C.pub + '/rate', onDone: function (n) { try { localStorage.setItem(K, JSON.stringify({ s: n, t: Date.now() })); } catch (e) {} } }));
       }, (P.delay || 2) * 1000);
     }, 500);
   })();

@@ -166,7 +166,7 @@
         var n = $('rtN').value.trim(), vid = ''; try { vid = localStorage.getItem('ozx_vid') || ''; } catch (e) {}
         sb.disabled = true; sb.textContent = 'بنبعت…';
         fetch(location.pathname.replace(/\/$/, '') + '/rate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ stars: st, tags: tags, note: n, vid: vid }) })
-          .then(function (r) { return r.json().catch(function () { return {}; }).then(function (j) { if (!r.ok) throw new Error(j.message || 'محصلش'); }); })
+          .then(function (r) { return r.json().catch(function () { return null; }).then(function (j) { if (!r.ok || !j || j.ok !== true) throw new Error(j && j.message || 'التقييم موصلش — جرّب تاني'); }); })
           .then(function () { try { localStorage.setItem(K, JSON.stringify({ s: st, t: tags, n: n })); } catch (e) {} paint(true); })
           .catch(function (e) { sb.disabled = false; sb.textContent = 'ابعت التقييم'; $('rtR').textContent = e.message; });
       };
@@ -175,10 +175,10 @@
     setTimeout(function () { host.classList.add('in'); }, 30);
     /* 5.22 · a few seconds after the result opens: a small stars-only pop-up in the middle of the screen — one tap and it's gone */
     /* 5.25 · every visit, after the result opens: the stars pop-up (worded by the center) */
-    var staff = false, P = C.pop || {}; try { staff = !!localStorage.getItem('qrd-staff'); } catch (e) {}
+    var P = C.pop || {};
     if (P.onV !== false) setTimeout(function () {
       if (document.fullscreenElement || document.querySelector('.pz.max') || document.querySelector('.rp-pop')) return;
-      OZK.ratePop(Object.assign(OZK.popOpts(P, C, 'v'), { url: location.pathname.replace(/\/$/, '') + '/rate', dry: staff, onDone: function (n) { if (staff) return; try { localStorage.setItem(K, JSON.stringify({ s: n, t: [], n: '' })); } catch (e) {} st = n; tags = []; paint(true); } }));
+      OZK.ratePop(Object.assign(OZK.popOpts(P, C, 'v'), { url: location.pathname.replace(/\/$/, '') + '/rate', onDone: function (n) { try { localStorage.setItem(K, JSON.stringify({ s: n, t: [], n: '' })); } catch (e) {} st = n; tags = []; paint(true); } }));
     }, (P.delay || 2) * 1000);
   }
   /* 5.00 · a DICOM case → the mini PACS right here */
