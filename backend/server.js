@@ -100,6 +100,8 @@ function notifyDataChanged(meta = {}) {
 }
 /* 4.29 · Smart Ads Manager (its own tables + /api/ads routes) */
 const ads = adsMod.create({ db, readBody: (...a) => readBody(...a), sendJSON: (...a) => sendJSON(...a), broadcast });
+/* 4.77 · «صفحة الدعاية» — the company's public promo page (/promo) + its admin API */
+const promo = require('./src/promo').create({ db, readBody: (...a) => readBody(...a), sendJSON: (...a) => sendJSON(...a), broadcast: (...a) => broadcast(...a), push: (ids, p) => webpush.send(ids, p), admins: adminIds, fs, path });
 setInterval(() => {
   const now = Date.now(), dead = [];
   for (const [id, client] of _clients) { try { client.res.write(`: ping ${now}\n\n`); } catch (_) { dead.push(id); } }
@@ -301,6 +303,7 @@ const server = http.createServer(async (req, res) => {
     }
     if (pathname === '/api/version' && req.method === 'GET') return sendJSON(res, 200, { version: _dataVersion });
     if (pathname.startsWith('/tiles/') && tiles.handle(req, res, pathname)) return;   // the map's tiles through our server
+    if ((pathname === '/promo' || pathname.startsWith('/promo/')) && await promo.handlePublic(req, res, pathname)) return;   // 4.77 · صفحة الدعاية
     if ((pathname.startsWith('/k/') || pathname.startsWith('/v/') || pathname.startsWith('/h/') || pathname.startsWith('/s/') || pathname.startsWith('/r/')) && await cases.handle(req, res, pathname)) return;   // حالات المرضى
     /* a center's own page (token link: /p/<long>, /c/<8>, or the shortest /<6 letters with a digit>) */
     if ((pathname.startsWith('/p/') || pathname.startsWith('/c/') || /^\/[A-Za-z0-9]{6}(\/[a-z.]+(\/[A-Za-z0-9_-]+)?)?\/?$/.test(pathname)) && portal.handle(req, res, pathname, () => store.data())) return;
@@ -357,6 +360,7 @@ const server = http.createServer(async (req, res) => {
       /* الموظفين / متابعة العملاء / حالات المرضى — the manager's side (admin only) */
       if (pathname === '/api/portal/cases' || pathname.startsWith('/api/portal/cases/')) { if (!admin) return adminOnly(); return await cases.adminApi(req, res, pathname, me); }
       if (pathname.startsWith('/api/portal/')) { if (!admin) return adminOnly(); return await portal.adminApi(req, res, pathname, me, { sendJSON, readBody }); }
+      if (pathname === '/api/promo' || pathname.startsWith('/api/promo/')) { if (!admin) return adminOnly(); return await promo.handleAdmin(req, res, pathname); }
       if (pathname === '/api/staff' || pathname.startsWith('/api/staff/')) { if (!admin) return adminOnly(); return await staff.handleAdmin(req, res, pathname, me, { sendJSON, readBody }); }
       /* push notifications on this device (any signed-in user) */
       if (pathname === '/api/push/key' && req.method === 'GET') return sendJSON(res, 200, { key: webpush.publicKey(), devices: webpush.countFor(me.id) });
