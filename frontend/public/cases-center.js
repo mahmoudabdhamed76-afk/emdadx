@@ -223,6 +223,7 @@
       ['activity', '◷', 'آخر مرات الفتح'],
       ['qr', '▦', 'باركود المركز'],
       ['design', '◉', 'شكل صفحة المريض'],
+      ['services', '🧩', 'خدمات صفحة المريض'],
       ['ads', '📣', 'الإعلانات'],
       ['settings', '⚙', 'الإعدادات']
     ];
@@ -247,7 +248,7 @@
   }
   /* iOS Safari sometimes leaves hidden/composited panels blank after hash-only SPA navigation.
      On Apple mobile devices open each section as an actual document navigation instead. */
-  var QRD_PAGES = /^(dashboard|bookings|results|complaints|reports|upload|cases|qr|design|ads|ratings|follow|doctors|activity|settings)$/;
+  var QRD_PAGES = /^(dashboard|bookings|results|complaints|reports|upload|cases|qr|design|ads|ratings|follow|doctors|services|activity|settings)$/;
   function isIOSBrowser() {
     var ua = String(navigator.userAgent || '');
     return /iP(?:hone|ad|od)/i.test(ua) ||
@@ -286,7 +287,7 @@
       window.location.assign(pageUrl(selected));
       return;
     }
-    ui.page = selected; if (selected === 'ratings') { ratingsUI(); ratingsLoad(); } if (selected === 'follow') followLoad(); if (selected === 'doctors') docsLoad(); if (selected === 'settings') digestUI();
+    ui.page = selected; if (selected === 'ratings') { ratingsUI(); ratingsLoad(); } if (selected === 'follow') followLoad(); if (selected === 'doctors') docsLoad(); if (selected === 'settings') digestUI(); if (selected === 'services') svcLoad();
     /* Explicit show/hide to prevent blank mobile Safari panels after tapping a section. */
     var panes = document.querySelectorAll('section.qrd-page[data-qrd-page]'), visible = null;
     [].forEach.call(panes, function (node) {
@@ -335,6 +336,7 @@
       ['cases', 'الحالات والنتائج', 'البحث عن الحالات المرفوعة وإدارتها'],
       ['qr', 'باركود المركز', 'رابط الباركود الثابت وطرق طباعته ومشاركته'],
       ['design', 'شكل صفحة المريض', 'اختيار التصميم اللي يظهر للمرضى على موبايلهم'],
+      ['services', 'خدمات صفحة المريض', 'شغّل أو وقّف الخدمات اللي بتظهر للمريض، غيّر أسمائها وترتيبها، وضيف خدماتك (لينك، واتساب، اتصال، خريطة)'],
       ['ads', 'الإعلانات', 'اكتب إعلان أو عرض يظهر للمرضى في السلايدر اللي فوق صفحتهم'],
       ['ratings', 'تقييمات المرضى', 'رأي المرضى بعد ما بيفتحوا نتيجتهم — النجوم والأسباب والملاحظات ونسبة الرضا كل شهر'],
       ['follow', 'مواعيد المتابعة', 'حدّد بعد قد إيه كل فحص محتاج متابعة، وكلّم المرضى اللي ميعادهم قرّب'],
@@ -380,6 +382,7 @@
     var fBox = document.createElement('div'); fBox.id = 'folBox'; bodies.follow.appendChild(fBox);
     var dBox = document.createElement('div'); dBox.id = 'docsBox'; bodies.doctors.appendChild(dBox);
     var gBox = document.createElement('div'); gBox.id = 'dgBox'; bodies.settings.appendChild(gBox);
+    var sBox = document.createElement('div'); sBox.id = 'svcBox'; bodies.services.appendChild(sBox);
     var lx = document.createElement('div'); lx.id = 'qrdX'; lx.className = 'lx'; bodies.dashboard.insertBefore(lx, bodies.dashboard.firstChild);
     move('activity', '#recentViews');
     move('settings', '#disk'); setTimeout(chartSettings, 0);
@@ -1556,6 +1559,42 @@
     var wt = d.querySelector('[data-w="wt"]'); if (wt) { var c = wt.querySelector('.w-ctl'); wt.innerHTML = waitBox(D.wait); if (c) wt.insertBefore(c, wt.firstChild); }
     var fo = d.querySelector('[data-w="fo"]'); if (fo) { var c2 = fo.querySelector('.w-ctl'); fo.innerHTML = '<span class="lx-fi" style="--c:#F59E0B">🔁</span><b>متابعات مستحقة<small>' + (D.follow ? 'كلّمهم يحجزوا' : 'مفيش حد النهارده') + '</small></b><em>' + n0(D.follow || 0) + '</em>'; if (c2) fo.insertBefore(c2, fo.firstChild); }
     wApply();
+  }
+  /* ═══════════ 5.31 · «خدمات صفحة المريض»: on/off, rename, reorder the four services + the center's own link tiles ═══════════ */
+  var SVC_B = { booking: ['📅', 'حجز أشعة', 'اختار الفحص واليوم المناسب'], results: ['🩻', 'نتيجة الأشعة', 'استعلم عن نتيجتك بسهولة'], complaint: ['📝', 'الشكاوى والمقترحات', 'شكوى أو اقتراح — وتابع الرد بكود'], report: ['📄', 'طلب تقرير أشعة', 'ارفع صورة واطلب تقريرك'] };
+  var SVC_T = { url: ['🔗 لينك', 'https://…'], wa: ['💬 واتساب', 'رقم الواتساب'], tel: ['📞 اتصال', 'رقم التليفون'], map: ['📍 خريطة', 'عنوان المركز أو اسمه على الخريطة'] };
+  var SVC_I = ['🔗', '📍', '💬', '📞', '🧪', '🩺', '💳', '🕘', '🎁', '⭐', '🚑', '🏥'], SVC_C = { indigo: '#4F46E5', teal: '#0F766E', rose: '#E11D48', amber: '#D97706', sky: '#0369A1', green: '#15803D', violet: '#7E22CE', slate: '#334155' };
+  function svcLoad() { api('GET', 'svc').then(function (x) { ui.svc = x.svc || []; ui.svcEd = null; svcUI(); }).catch(function (e) { toast(e.message); }); }
+  function svcUI() {
+    var el = $('svcBox'); if (!el) return;
+    var L = ui.svcEd || (ui.svcEd = JSON.parse(JSON.stringify(ui.svc || []))), nw = ui.svcNew || (ui.svcNew = { icon: '🔗', color: 'sky', t: 'url', title: '', sub: '', v: '' });
+    el.innerHTML = '<div class="lx-ads">' +
+      '<section class="lx-card"><div class="lx-ch"><div><h3>🧩 الخدمات اللي بتظهر للمريض</h3><small>شغّل أو وقّف أي خدمة، غيّر اسمها، رتّبها بالأسهم — وبعدين احفظ</small></div><div class="st-top"><a class="btn g" target="_blank" rel="noopener" href="' + fixedUrl() + '">👁 افتح صفحة المريض</a><button type="button" class="btn" id="svS">💾 احفظ</button></div></div>' +
+      '<div class="sv-l">' + L.map(function (x, i) {
+        var b = SVC_B[x.k], icn = b ? b[0] : x.icon, cls = b ? 'b-' + x.k : 'pvx-' + x.color;
+        return '<div class="sv-r' + (x.on ? '' : ' off') + '" data-si="' + i + '"><div class="sv-mv"><button type="button" data-sm="-1"' + (i ? '' : ' disabled') + '>▲</button><button type="button" data-sm="1"' + (i < L.length - 1 ? '' : ' disabled') + '>▼</button></div>' +
+          '<span class="sv-ic ' + cls + '">' + esc(icn) + '</span>' +
+          '<div><input class="fld" data-sf="title" maxlength="40" placeholder="' + esc(b ? b[1] : 'اسم الخدمة') + '" value="' + esc(x.title || '') + '"><small class="sv-tag">' + (b ? 'خدمة أساسية' : SVC_T[x.t][0] + ' · ' + esc(x.v)) + '</small></div>' +
+          '<input class="fld sv-sub" data-sf="sub" maxlength="60" placeholder="' + esc(b ? b[2] : 'سطر صغير تحت الاسم') + '" value="' + esc(x.sub || '') + '">' +
+          '<label class="ad-sw st-sw" title="' + (x.on ? 'وقّفها' : 'شغّلها') + '"><input type="checkbox" data-so' + (x.on ? ' checked' : '') + ' aria-label="ظاهرة للمريض"><i></i></label>' +
+          (b ? '<span></span>' : '<button type="button" class="lx-ib dl" data-sx aria-label="امسح">' + ic('trash') + '</button>') + '</div>';
+      }).join('') + '</div></section>' +
+      '<section class="lx-card"><div class="lx-ch"><div><h3>➕ ضيف خدمة جديدة</h3><small>زرار في صفحة المريض يفتح لينك، أو واتساب، أو يتصل، أو يوريه مكان المركز على الخريطة</small></div></div>' +
+      '<div class="sv-new"><input class="fld" id="svNt" maxlength="40" placeholder="اسم الخدمة — مثلاً: موقعنا على الخريطة" value="' + esc(nw.title) + '"><input class="fld" id="svNs" maxlength="60" placeholder="سطر صغير (اختياري)" value="' + esc(nw.sub) + '">' +
+        '<select class="fld" id="svNk">' + Object.keys(SVC_T).map(function (k) { return '<option value="' + k + '"' + (nw.t === k ? ' selected' : '') + '>' + SVC_T[k][0] + '</option>'; }).join('') + '</select><input class="fld" id="svNv" maxlength="300" placeholder="' + esc(SVC_T[nw.t][1]) + '" value="' + esc(nw.v) + '"' + (nw.t === 'tel' || nw.t === 'wa' ? ' inputmode="tel" dir="ltr"' : nw.t === 'url' ? ' dir="ltr"' : '') + '>' +
+        '<div class="full"><label class="l">الأيقونة</label><div class="sv-ch">' + SVC_I.map(function (e) { return '<button type="button" data-ni="' + e + '" class="' + (nw.icon === e ? 'on' : '') + '">' + e + '</button>'; }).join('') + '</div></div>' +
+        '<div class="full"><label class="l">اللون</label><div class="sv-ch col">' + Object.keys(SVC_C).map(function (c) { return '<button type="button" data-nc="' + c + '" class="' + (nw.color === c ? 'on' : '') + '" style="background:' + SVC_C[c] + '" aria-label="' + c + '"></button>'; }).join('') + '</div></div>' +
+        '<div class="full"><button type="button" class="btn" id="svA">+ ضيف للخدمات</button></div></div></section></div>';
+    var sync = function () { [].forEach.call(el.querySelectorAll('[data-si]'), function (r) { var x = L[+r.dataset.si]; x.title = r.querySelector('[data-sf="title"]').value; x.sub = r.querySelector('[data-sf="sub"]').value; x.on = r.querySelector('[data-so]').checked; }); nw.title = $('svNt').value; nw.sub = $('svNs').value; nw.v = $('svNv').value; };
+    [].forEach.call(el.querySelectorAll('[data-sm]'), function (b) { b.onclick = function () { sync(); var i = +b.closest('[data-si]').dataset.si, j = i + (+b.dataset.sm); L.splice(j, 0, L.splice(i, 1)[0]); svcUI(); }; });
+    [].forEach.call(el.querySelectorAll('[data-sx]'), function (b) { b.onclick = function () { sync(); L.splice(+b.closest('[data-si]').dataset.si, 1); svcUI(); }; });
+    [].forEach.call(el.querySelectorAll('[data-so]'), function (b) { b.onchange = function () { b.closest('.sv-r').classList.toggle('off', !b.checked); }; });
+    [].forEach.call(el.querySelectorAll('[data-ni]'), function (b) { b.onclick = function () { sync(); nw.icon = b.dataset.ni; svcUI(); }; });
+    [].forEach.call(el.querySelectorAll('[data-nc]'), function (b) { b.onclick = function () { sync(); nw.color = b.dataset.nc; svcUI(); }; });
+    $('svNk').onchange = function () { sync(); nw.t = this.value; svcUI(); };
+    $('svA').onclick = function () { sync(); if (!nw.title.trim()) { $('svNt').focus(); return toast('اكتب اسم الخدمة'); } if (!nw.v.trim()) { $('svNv').focus(); return toast(nw.t === 'url' ? 'اكتب اللينك' : nw.t === 'map' ? 'اكتب العنوان' : 'اكتب الرقم'); }
+      L.push({ k: 'custom', on: true, title: nw.title.trim(), sub: nw.sub.trim(), icon: nw.icon, color: nw.color, t: nw.t, v: nw.v.trim() }); ui.svcNew = null; svcUI(); toast('اتضافت — دوس «احفظ» عشان تظهر للمرضى'); };
+    $('svS').onclick = function () { sync(); var b = this; b.disabled = true; api('POST', 'svc', { svc: L }).then(function (x) { ui.svc = x.svc; ui.svcEd = null; svcUI(); toast('🧩 الخدمات اتحفظت — هتظهر كده للمرضى'); }).catch(function (e) { b.disabled = false; toast(e.message); }); };
   }
   function adsSave(x) { ui.ads = x.ads || ui.ads; adsUI(); dashSoon(); }
   function studioWire(el) {

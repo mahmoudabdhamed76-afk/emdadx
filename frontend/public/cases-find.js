@@ -78,7 +78,7 @@
         '<span class="pv2-service-icon pvd-c3"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z\"/><path d=\"M8.5 12h.01M12 12h.01M15.5 12h.01\"/></svg></span><b>الشكاوى والمقترحات</b><small>شكوى أو اقتراح — وتابع الرد بكود</small><span class="pv2-service-go" aria-hidden="true">←</span></button>' +
       '<button type="button" id="tab-report" class="pv2-service" role="tab" aria-selected="false" aria-controls="patient-report">' +
         '<span class="pv2-service-icon pvd-c4"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z\"/><path d=\"M14 3v5h5M9 13h6M9 17h4\"/></svg></span><b>طلب تقرير أشعة</b><small>ارفع صورة واطلب تقريرك</small><span class="pv2-service-go" aria-hidden="true">←</span></button></div>' +
-    '<p class="pv2-action-hint" id="patient-hint" aria-live="polite">اختار أي خدمة من الأربع خدمات للمتابعة</p>' +
+    '<p class="pv2-action-hint" id="patient-hint" aria-live="polite">اختار أي خدمة للمتابعة</p>' +
     '<section id="patient-results" class="patient-panel" role="tabpanel" aria-labelledby="tab-results" hidden>' +
       '<div class="srch results-card" id="sr"><div class="booking-heading"><span>🩻</span><div><b>استعلام نتيجة الأشعة</b><small>نتيجتك في مكان واحد، بمجرد إدخال رقم الموبايل</small></div></div>' + (C.on ?
         '<label class="l" for="ph">رقم الموبايل المسجل في المركز</label><input class="fld n" id="ph" type="tel" inputmode="tel" autocomplete="tel" maxlength="20" placeholder="01xxxxxxxxx" style="text-align:right" dir="ltr">' +
@@ -139,6 +139,29 @@
       '<button type="button" data-pvd="report"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z\"/><path d=\"M14 3v5h5M9 13h6M9 17h4\"/></svg><span>تقرير</span></button><button type="button" data-pvd="complaint"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z\"/><path d=\"M8.5 12h.01M12 12h.01M15.5 12h.01\"/></svg><span>شكاوى</span></button></nav>' +
     '<p class="pv2-footer">نتمنالك دوام الصحة والعافية ♥</p><p class="pv2-analytics-note">يتم احتساب مرات فتح رابط الباركود فقط، بدون تحديد موقع المريض أو تسجيل مكانه.</p>' +
   '</div>';
+  /* 5.31 · the center decides the services grid: on/off, names, order, and its own link services */
+  (function applySvc() {
+    var L = C.svc; if (!Array.isArray(L) || !L.length) return;
+    var box = document.querySelector('.patient-chooser'); if (!box) return;
+    var ID = { booking: 'tab-booking', results: 'tab-results', complaint: 'tab-complaint', report: 'tab-report' };
+    L.forEach(function (x) {
+      if (ID[x.k]) {
+        var b = $(ID[x.k]); if (!b) return;
+        if (x.title) b.querySelector('b').textContent = x.title;
+        if (x.sub) b.querySelector('small').textContent = x.sub;
+        b.hidden = !x.on; if (!x.on) b.style.setProperty('display', 'none', 'important');
+        var nb = document.querySelector('.pvd-tab [data-pvd="' + x.k + '"]'); if (nb && !x.on) nb.hidden = true;
+        if (x.k === 'results' && !x.on) { var sr = $('pvdSearch'); if (sr) sr.hidden = true; }
+        box.appendChild(b); return;
+      }
+      if (!x.on) return;
+      var href = x.t === 'wa' ? 'https://wa.me/' + x.v.replace(/^\+/, '').replace(/^0/, '20') : x.t === 'tel' ? 'tel:' + x.v : x.t === 'map' ? 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(x.v) : x.v;
+      var a = document.createElement('button'); a.type = 'button'; a.className = 'pv2-service pvx';
+      a.onclick = function () { if (x.t === 'tel') location.href = href; else window.open(href, '_blank', 'noopener'); };
+      a.innerHTML = '<span class="pv2-service-icon pvx-' + esc(x.color) + '"><i>' + esc(x.icon) + '</i></span><b>' + esc(x.title) + '</b><small>' + esc(x.sub || '') + '</small><span class="pv2-service-go" aria-hidden="true">←</span>';
+      box.appendChild(a);
+    });
+  })();
   /* Gentle, low-cost hero copy carousel; no resizing or transform on service icons. */
   (function heroCarousel() {
     var title=$('patient-title'),sub=document.querySelector('.pv3-radiology-copy>p');

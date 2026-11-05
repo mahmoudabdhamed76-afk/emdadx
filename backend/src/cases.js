@@ -137,6 +137,25 @@ try {
   db.exec('CREATE UNIQUE INDEX IF NOT EXISTS ux_case_sr_code ON case_service_request (customer_id, code)');
 } catch (e) { console.error('[cases] 5.30 migrate', e.message); }
 const TK_AB = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+/* 5.31 · the services grid on the center page: the four built-in ones on/off/renamed/reordered, plus the center's own (links) */
+try { if (!db.prepare('PRAGMA table_info(case_site)').all().some(c => c.name === 'svc_cfg')) db.exec('ALTER TABLE case_site ADD COLUMN svc_cfg TEXT'); } catch (e) { console.error('[cases] 5.31 migrate', e.message); }
+const SVC_BUILT = ['booking', 'results', 'complaint', 'report'], SVC_ACT = ['url', 'wa', 'tel', 'map'], SVC_COL = ['indigo', 'teal', 'rose', 'amber', 'sky', 'green', 'violet', 'slate'];
+function svcCfg(raw) {
+  let c = []; try { c = JSON.parse(raw || '[]'); } catch (e) {} if (!Array.isArray(c)) c = [];
+  const out = [], seenK = new Set();
+  c.slice(0, 20).forEach(x => {
+    if (!x || typeof x !== 'object') return;
+    if (SVC_BUILT.includes(x.k)) { if (seenK.has(x.k)) return; seenK.add(x.k); out.push({ k: x.k, on: x.on !== false, title: clean(x.title, 40), sub: clean(x.sub, 60) }); return; }
+    if (x.k !== 'custom') return; const t = SVC_ACT.includes(x.t) ? x.t : 'url'; let v = clean(x.v, 300);
+    if (t === 'url' && !/^https:\/\//i.test(v)) v = v ? 'https://' + v.replace(/^\w+:\/\//, '') : '';
+    if (t === 'tel' || t === 'wa') v = v.replace(/[^\d+]/g, '').slice(0, 16);
+    const title = clean(x.title, 40); if (!title || !v) return;
+    if (out.filter(y => y.k === 'custom').length >= 8) return;
+    out.push({ k: 'custom', on: x.on !== false, title, sub: clean(x.sub, 60), icon: clean(x.icon, 4) || '🔗', color: SVC_COL.includes(x.color) ? x.color : 'sky', t, v, id: clean(x.id, 12) || rnd(6) });
+  });
+  SVC_BUILT.forEach(k => { if (!seenK.has(k)) out.splice(SVC_BUILT.indexOf(k), 0, { k, on: true, title: '', sub: '' }); });
+  return out;
+}
 function ticketCode(cid) { let c; do { c = Array.from(crypto.randomBytes(6), x => TK_AB[x % TK_AB.length]).join(''); } while (db.prepare('SELECT 1 FROM case_service_request WHERE customer_id = ? AND code = ?').get(cid, c)); return c; }
 function serviceRequestsOf(cid) {
   return db.prepare("SELECT id,kind,name,phone,subject,message,at,files_json,code,ckind FROM case_service_request WHERE customer_id = ? AND status = 'new' ORDER BY id DESC LIMIT 100").all(cid)
@@ -498,14 +517,14 @@ function page(title, body, css, js, manifestUrl) {
   return '<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover' + (css === 'v' ? ',maximum-scale=1,user-scalable=no' : '') + '"><meta name="robots" content="noindex,nofollow"><meta name="referrer" content="no-referrer"><meta name="theme-color" content="#0E9F9A">' +
     '<title>' + esc(title) + '</title><link rel="icon" href="/icons/favicon-32.png">' +
     (manifestUrl ? '<link rel="manifest" href="'+esc(manifestUrl)+'"><link rel="apple-touch-icon" href="'+esc(manifestUrl.replace('/manifest','/icon'))+'"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default">' : '') +
-    '<link rel="stylesheet" href="/fonts/fonts.css"><link rel="stylesheet" href="/cases.css?v=538"></head><body class="' + css + '">' + body + js + '</body></html>';
+    '<link rel="stylesheet" href="/fonts/fonts.css"><link rel="stylesheet" href="/cases.css?v=541"></head><body class="' + css + '">' + body + js + '</body></html>';
 }
 function html(res, code, s) { zout(res, code, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store', 'X-Frame-Options': 'DENY', 'Referrer-Policy': 'no-referrer' }, s); }
 
 /* ════════ public routes ════════ */
 async function handle(req, res, pathname) {
   if (/^\/(s|r)\/|^\/v\/[A-Za-z0-9]{12}\/share/.test(pathname)) return plusPublic(req, res, pathname);
-  let m = /^\/k\/([A-Za-z0-9]{8})(\/(login|logout|list|qr|layout|live|case|relay|item|fixed|wa|ask|bookings|tickets|ticket-image|logo|views|theme|manifest|icon|push-key|push-subscribe|push-disable|push-test|dash|ads|slides-base|tickets-all|tickets-reset|ads-order|slides-reset|slide-ms|ratings|notifications|report|pop-cfg|follow|wait|doctors|digest)(\/[A-Za-z0-9]{1,20})?(\/(stop|start|delete|wrap|done|toggle|up|down|uncache|doctor|reply))?)?\/?$/.exec(pathname);
+  let m = /^\/k\/([A-Za-z0-9]{8})(\/(login|logout|list|qr|layout|live|case|relay|item|fixed|wa|ask|bookings|tickets|ticket-image|logo|views|theme|manifest|icon|push-key|push-subscribe|push-disable|push-test|dash|ads|slides-base|tickets-all|tickets-reset|ads-order|slides-reset|slide-ms|ratings|notifications|report|pop-cfg|follow|wait|doctors|digest|svc)(\/[A-Za-z0-9]{1,20})?(\/(stop|start|delete|wrap|done|toggle|up|down|uncache|doctor|reply))?)?\/?$/.exec(pathname);
   if (m) return centerRoute(req, res, m);
   m = /^\/h\/([A-Za-z0-9]{8})(\/(seen|rate|find|ask|book|complaint|track|report-request|manifest|icon|push-key|push-subscribe|push-disable|push-test))?\/?$/.exec(pathname);
   if (m) return findRoute(req, res, m[1], m[3] || '');
@@ -546,7 +565,7 @@ async function centerRoute(req, res, m) {
     if (req.method !== 'GET') return false;
     const CD = { code, center: site.center_name || '', logo: site.logo || '', theme: site.theme || 'a', layout: site.dashboard_layout === 'violet' ? 'violet' : 'teal', auth: me, cacheDays: CACHE_DAYS, maxMb: MAX_MB, pub: me ? pubOf(site) : '', fixedOn: !!site.fixed_on, wa: me ? (site.wa || '') : '', waDefault: me && !site.wa ? waFor(cid0(site), '') : '' };
     if (me) db.prepare('UPDATE case_site SET last_seen = ? WHERE customer_id = ?').run(nowTs(), site.customer_id);
-    html(res, 200, page('QR Patient — ' + (site.center_name || ''), '<div id="app"></div>', 'k', '<script>window.CD=' + json(CD) + '</script><script src="/vendor/qrcode.js"></script><script src="/cases-kit.js?v=538"></script><script src="/cases-dicom.js?v=538"></script><script src="/cases-pacs.js?v=538"></script><script src="/cases-ads.js?v=538"></script><script src="/vendor/gsap.min.js"></script><script src="/js/gxmotion.js?v=538"></script><script src="/cases-notices.js?v=538"></script><script src="/cases-center.js?v=538"></script><script src="/cases-push.js?v=538"></script>', '/k/'+code+'/manifest'));
+    html(res, 200, page('QR Patient — ' + (site.center_name || ''), '<div id="app"></div>', 'k', '<script>window.CD=' + json(CD) + '</script><script src="/vendor/qrcode.js"></script><script src="/cases-kit.js?v=541"></script><script src="/cases-dicom.js?v=541"></script><script src="/cases-pacs.js?v=541"></script><script src="/cases-ads.js?v=541"></script><script src="/vendor/gsap.min.js"></script><script src="/js/gxmotion.js?v=541"></script><script src="/cases-notices.js?v=541"></script><script src="/cases-center.js?v=541"></script><script src="/cases-push.js?v=541"></script>', '/k/'+code+'/manifest'));
     return true;
   }
   if (sub === 'manifest' && req.method === 'GET') { respondManifest(res,site,'k');return true; }
@@ -881,7 +900,7 @@ async function viewRoute(req, res, token, file) {
   if (!file) {
     if (!it) { if (limited('vx:' + ip, 40, 600e3)) { send(res, 429, { message: 'حاولت كتير' }); return true; } }
     const CD = it ? { token, kind: it.kind || 'pdf', center: it.center_name || '', logo: it.site_logo || '', theme: it.site_theme || 'a', patient: it.patient, exam: it.exam || '', at: it.created_at, pages: it.pages || 0, size: it.size, name: it.file_name || '', active: !!(it.active && it.site_on), ready: !!(it.cached && it.cache_until > Date.now()) || online(it.customer_id), wa: waFor(it.customer_id, it.site_wa), pub: it.site_pub || '', rateTags: RATE_TAGS, pop: popCfg(it.site_pop), follow: it.follow_done ? null : it.follow_at || null } : { missing: true };
-    html(res, it ? 200 : 404, page(it ? 'نتيجة الفحص — ' + (it.center_name || '') : 'الحالة مش موجودة', '<div id="app"></div>', 'v', '<script>window.CD=' + json(CD) + '</script><script src="/cases-kit.js?v=538"></script>' + (it && it.kind === 'dicom' ? '<script src="/cases-pacs.js?v=538"></script>' : '<script src="/vendor/pdfjs/pdf.min.js"></script>') + '<script src="/cases-skin.js?v=538"></script><script src="/cases-view.js?v=538"></script>'));
+    html(res, it ? 200 : 404, page(it ? 'نتيجة الفحص — ' + (it.center_name || '') : 'الحالة مش موجودة', '<div id="app"></div>', 'v', '<script>window.CD=' + json(CD) + '</script><script src="/cases-kit.js?v=541"></script>' + (it && it.kind === 'dicom' ? '<script src="/cases-pacs.js?v=541"></script>' : '<script src="/vendor/pdfjs/pdf.min.js"></script>') + '<script src="/cases-skin.js?v=541"></script><script src="/cases-view.js?v=541"></script>'));
     return true;
   }
   if (!it) { send(res, 404, { message: 'الحالة مش موجودة' }); return true; }
@@ -1073,8 +1092,8 @@ async function findRoute(req, res, pub, sub) {
   if (!find) {
     if (req.method !== 'GET') return false;
     if (!site) { if (limited('hx:' + ip, 30, 600e3)) { send(res, 429, { message: 'حاولت كتير' }); return true; } }
-    const CD = site ? { pub, center: site.center_name || '', logo: site.logo || '', theme: site.theme || 'a', on: !!site.fixed_on, wa: waFor(site.customer_id, site.wa), ads: adsOf(site.customer_id), base: site.slides_base !== 0, slideMs: site.slide_ms || 5200, seeded: true, pop: popCfg(site.pop_cfg), wait: waitOf(site) } : { missing: true };
-    html(res, site ? 200 : 404, page(site ? 'نتيجتك — ' + (site.center_name || '') : 'اللينك مش شغال', '<div id="app"></div>', 'v', '<script>window.CD=' + json(CD) + '</script><script src="/cases-kit.js?v=538"></script><script src="/cases-skin.js?v=538"></script><script src="/cases-ads.js?v=538"></script><script src="/cases-find.js?v=538"></script><script src="/cases-push.js?v=538"></script>',site?'/h/'+pub+'/manifest':null));
+    const CD = site ? { pub, center: site.center_name || '', logo: site.logo || '', theme: site.theme || 'a', on: !!site.fixed_on, wa: waFor(site.customer_id, site.wa), ads: adsOf(site.customer_id), base: site.slides_base !== 0, slideMs: site.slide_ms || 5200, seeded: true, pop: popCfg(site.pop_cfg), wait: waitOf(site), svc: svcCfg(site.svc_cfg) } : { missing: true };
+    html(res, site ? 200 : 404, page(site ? 'نتيجتك — ' + (site.center_name || '') : 'اللينك مش شغال', '<div id="app"></div>', 'v', '<script>window.CD=' + json(CD) + '</script><script src="/cases-kit.js?v=541"></script><script src="/cases-skin.js?v=541"></script><script src="/cases-ads.js?v=541"></script><script src="/cases-find.js?v=541"></script><script src="/cases-push.js?v=541"></script>',site?'/h/'+pub+'/manifest':null));
     return true;
   }
   if (req.method !== 'POST') return false;
@@ -1197,6 +1216,13 @@ setInterval(() => {
 
 /* center routes for 5.28 — called from centerRoute before the generic fall-through */
 async function plusCenter(req, res, sub, arg, act, cid, site) {
+  if (sub === 'svc' && req.method === 'GET') { send(res, 200, { svc: svcCfg(site.svc_cfg) }); return true; }
+  if (sub === 'svc' && req.method === 'POST') {
+    let b = {}; try { b = await readJson(req, 12000); } catch (e) {}
+    const v = svcCfg(JSON.stringify(b.svc || []));
+    if (!v.some(x => x.on)) { send(res, 400, { message: 'لازم خدمة واحدة على الأقل تفضل ظاهرة' }); return true; }
+    db.prepare('UPDATE case_site SET svc_cfg = ? WHERE customer_id = ?').run(JSON.stringify(v), cid); send(res, 200, { ok: true, svc: v }); return true;
+  }
   if (sub === 'follow' && req.method === 'GET') { send(res, 200, { rules: rulesOf(site.follow_rules), list: followList(cid) }); return true; }
   if (sub === 'follow' && req.method === 'POST' && !arg) {
     let b = {}; try { b = await readJson(req, 8000); } catch (e) {}
@@ -1273,7 +1299,7 @@ async function plusPublic(req, res, pathname) {
     if (ok && it) db.prepare('UPDATE case_share SET views = views + 1 WHERE sid = ?').run(sh.sid);
     const CD = it ? { token: it.token, kind: it.kind || 'pdf', center: it.center_name || '', logo: it.site_logo || '', theme: it.site_theme || 'a', patient: it.patient, exam: it.exam || '', at: it.created_at, pages: it.pages || 0, size: it.size, active: !!(it.active && it.site_on), pub: it.site_pub || '', share: { i: sh.i, k: sh.k, expires: sh.expires, label: sh.label || '' }, doctor: true }
       : { missing: true, expired: !!sh };
-    html(res, it ? 200 : 404, page(it ? 'نتيجة مريض — ' + (it.center_name || '') : 'اللينك انتهى', '<div id="app"></div>', 'v', '<script>window.CD=' + json(CD) + '</script><script src="/cases-kit.js?v=538"></script>' + (it && it.kind === 'dicom' ? '<script src="/cases-pacs.js?v=538"></script>' : '<script src="/vendor/pdfjs/pdf.min.js"></script>') + '<script src="/cases-skin.js?v=538"></script><script src="/cases-view.js?v=538"></script>'));
+    html(res, it ? 200 : 404, page(it ? 'نتيجة مريض — ' + (it.center_name || '') : 'اللينك انتهى', '<div id="app"></div>', 'v', '<script>window.CD=' + json(CD) + '</script><script src="/cases-kit.js?v=541"></script>' + (it && it.kind === 'dicom' ? '<script src="/cases-pacs.js?v=541"></script>' : '<script src="/vendor/pdfjs/pdf.min.js"></script>') + '<script src="/cases-skin.js?v=541"></script><script src="/cases-view.js?v=541"></script>'));
     return true;
   }
   m = /^\/r\/([A-Za-z0-9]{10})(\/list)?\/?$/.exec(pathname);
@@ -1286,7 +1312,7 @@ async function plusPublic(req, res, pathname) {
       send(res, 200, { list: rows.map(r => ({ token: r.token, patient: r.patient, exam: r.exam || '', at: r.created_at, kind: r.kind || 'pdf', pages: r.pages || 0, opened: r.views > 0, active: !!r.active, w: r.wi ? { i: r.wi, k: r.wk } : null })) }); return true;
     }
     const CD = d && d.active && d.site_on ? { center: d.center_name || '', logo: d.logo || '', theme: d.theme || 'a', doctor: d.name, spec: d.spec || '', slug: d.slug } : { missing: true };
-    html(res, CD.missing ? 404 : 200, page(CD.missing ? 'اللينك مش شغال' : 'د. ' + d.name + ' — ' + (d.center_name || ''), '<div id="app"></div>', 'v', '<script>window.CD=' + json(CD) + '</script><script src="/cases-kit.js?v=538"></script><script src="/cases-skin.js?v=538"></script><script src="/cases-doc.js?v=538"></script>'));
+    html(res, CD.missing ? 404 : 200, page(CD.missing ? 'اللينك مش شغال' : 'د. ' + d.name + ' — ' + (d.center_name || ''), '<div id="app"></div>', 'v', '<script>window.CD=' + json(CD) + '</script><script src="/cases-kit.js?v=541"></script><script src="/cases-skin.js?v=541"></script><script src="/cases-doc.js?v=541"></script>'));
     return true;
   }
   return false;
