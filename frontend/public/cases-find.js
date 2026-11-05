@@ -21,9 +21,9 @@
     /* 5.15 · the center's own ads come right after the welcome slide */
     var all = C.ads || [], L, i;
     all.forEach(function (a) { if (a.kind === 'ad' || !a.kind) a.ad = true; if (a.kind === 'slide') { a.pic = true; a.tag = ''; a.cta = ''; } });
-    if (all.some(function (a) { return a.kind === 'base'; })) L = all.filter(function (a) { return a.kind !== 'slide' || a.image; });   /* 5.20 · the center controls every slide and their order */
+    if (C.seeded || all.some(function (a) { return a.kind === 'base'; })) L = all.filter(function (a) { return a.kind !== 'slide' || a.image; });   /* 5.20 · the center controls every slide and their order */
     else L = [base[0]].concat(all.filter(function (a) { return a.kind !== 'slide'; }).slice(0, 6), all.filter(function (a) { return a.kind === 'slide' && a.image; }).slice(0, 10), C.base === false ? [] : base.slice(1));
-    if (!L.length) L = [base[0]];
+    if (!L.length) { if (C.seeded) return ''; L = [base[0]]; }   /* 4.72 · the center turned every slide off → no slider at all (the welcome slide is never forced back) */
     var h = '<div class="pvs" id="pvs" role="region" aria-roledescription="carousel" aria-label="عن المركز"><div class="pvs-tr" id="pvsTr">';
     for (i = 0; i < L.length; i++) h += Z.slide(L[i], !i, !i);
     h += '</div><div class="pvs-dots" role="tablist">';
@@ -269,8 +269,12 @@
   /* 5.28 · motion: tiles cascade in, a ripple where the finger lands, the header tightens on scroll, the tab bar bubble follows */
   (function motion() {
     var RM = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches; if (RM) return;
-    document.body.classList.add('pvm');
-    [].forEach.call(document.querySelectorAll('.pv2-service, .pv2-trust > div, .pvd-chips > *'), function (el, i) { el.style.setProperty('--mi', i); });
+    /* 4.72 · the tiles slide up when the patient actually sees them — after the welcome screen closes */
+    (function start(n) { if (document.querySelector('.splw') && n < 120) return setTimeout(function () { start(n + 1); }, 120);
+      [].forEach.call(document.querySelectorAll('.pv2-service, .pv2-trust > div, .pvd-chips > *'), function (el, i) { el.style.setProperty('--mi', i); });
+      document.body.classList.add('pvm');
+      /* the welcome screen can open after this — replay the entrance the moment it closes */
+      try { new MutationObserver(function (M) { M.forEach(function (m) { [].forEach.call(m.removedNodes, function (x) { if (x.classList && x.classList.contains('splw')) { document.body.classList.remove('pvm'); void document.body.offsetWidth; document.body.classList.add('pvm'); } }); }); }).observe(document.body, { childList: true }); } catch (e) {} })(0);
     document.addEventListener('pointerdown', function (e) {
       var t = e.target.closest && e.target.closest('.pv2-service, .btn, .pvd-tab button, .rc, .dk2-c, .pvd-me'); if (!t) return;
       var r = t.getBoundingClientRect(), d = Math.max(r.width, r.height) * 1.2, sp = document.createElement('span'); sp.className = 'pvm-rp';

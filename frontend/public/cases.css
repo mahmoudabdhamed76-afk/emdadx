@@ -1558,7 +1558,7 @@ html.patient-daylight body.v .pv2-page .patient-chooser{
   -webkit-backdrop-filter:none!important;transform:none!important;
   opacity:1!important;will-change:auto!important;
 }
-html.patient-daylight body.v .pv2-page .patient-chooser button.pv2-service,
+html.patient-daylight body.v:not(.pvm) .pv2-page .patient-chooser button.pv2-service,
 html.patient-daylight body.v .pv2-page .patient-chooser button.pv2-service:hover,
 html.patient-daylight body.v .pv2-page .patient-chooser button.pv2-service:focus,
 html.patient-daylight body.v .pv2-page .patient-chooser button.pv2-service:active,
@@ -2844,3 +2844,26 @@ body.k .qrd-notice-pop{animation:qrdNoticePop .7s ease-out}
 .tk-ai footer{display:flex;gap:8px;justify-content:flex-end;margin-top:10px;flex-wrap:wrap}
 /* 4.71 · no double-tap zoom on phones */
 html,body{touch-action:manipulation;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+/* 4.72 · the center logo fills its tile edge to edge — no white margins around it */
+.pv2-welcome-logo:has(img),html.patient-daylight .pv2-welcome-logo:has(img){overflow:hidden;padding:0;background:transparent}
+.pv2-welcome-logo img,html.patient-daylight .pv2-welcome-logo img,html.patient-daylight body .pv2-welcome-logo img{width:100%!important;height:100%!important;object-fit:cover;display:block;border-radius:inherit}
+.lg.img{padding:0!important;overflow:hidden}
+.lg.img img{object-fit:cover}
+.clogo img{object-fit:cover;padding:0}
+/* 4.72 · one calm entrance everywhere on the patient page: fade in while sliding up 30px, 500ms ease-out — no bounce, no scale, no layout shift */
+@keyframes slideUpIn{from{opacity:0;translate:0 30px}to{opacity:1;translate:0 0}}
+.rp-pop-c{transform:translateY(30px)!important;opacity:0;transition:transform .5s ease-out,opacity .5s ease-out!important}
+.rp-pop.in .rp-pop-c{transform:translateY(0)!important;opacity:1}
+.rp-pop.out .rp-pop-c{transform:translateY(30px)!important;opacity:0}
+.rp-pop.in .rp-pop-lg{animation:slideUpIn .5s ease-out both}
+.rp-pop.in .rp-pop-s button{animation:slideUpIn .5s ease-out both;animation-delay:calc(var(--d) + 120ms)}
+.rp-pop-s button{transition:color .12s}
+.rp-pop.in .rp-pop-pr{animation:slideUpIn .5s ease-out .3s both}
+.pvm .pv2-service{animation:slideUpIn .5s ease-out both;animation-delay:calc(var(--mi,0) * 70ms + 150ms);transition:box-shadow .2s,border-color .2s;will-change:auto}
+.pvm .pv2-service:active,.pvm .pv2-service:hover{transform:none!important}
+.pvm .pv2-trust>div,.pvm .pvd-chips>*{animation:slideUpIn .5s ease-out both;animation-delay:calc(var(--mi,0) * 60ms + 350ms)}
+@media (prefers-reduced-motion:reduce){.rp-pop-c,.rp-pop.in .rp-pop-lg,.rp-pop.in .rp-pop-s button,.rp-pop-pr,.pvm .pv2-service,.pvm .pv2-trust>div,.pvm .pvd-chips>*{animation:none!important;transition:none!important;transform:none!important;opacity:1!important}}
+html.patient-daylight body.v.pvm .pv2-page .patient-chooser button.pv2-service:not(:hover):not(:focus):not(:active):not(.on){animation:slideUpIn .5s ease-out both;animation-delay:calc(var(--mi,0) * 70ms + 150ms);transition:none}
+/* 4.72 · the logo fills every tile it sits in (header, rating pop-up) */
+.tlg:has(img),html.patient-daylight body.v .pv2-page .pv2-top .tlg:has(img),.rp-pop-lg:has(img){padding:0!important;background:transparent!important;overflow:hidden}
+.tlg img,html.patient-daylight body.v .pv2-page .pv2-top .tlg img,.rp-pop-lg img{width:100%!important;height:100%!important;object-fit:cover!important;border-radius:inherit;display:block}
