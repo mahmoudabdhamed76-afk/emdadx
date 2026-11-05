@@ -2895,3 +2895,13 @@ html.tx.patient-daylight body.v .pvd.pv2-page .patient-chooser .pv2-service-go{w
 @media(max-width:640px){.fab-g{grid-template-columns:1fr}}
 .fab-set .ad-sw i{background:#CBD5E1!important}.fab-set .ad-sw input:checked+i{background:#25D366!important}
 .fab-set .ad-sw input:checked+i::after{background:#fff!important}
+/* 4.75 · the WhatsApp button: a round glass bubble, on the left by default */
+.wa-fab,.wa-fab.lb{width:58px!important;height:58px!important;min-width:0!important;padding:0!important;justify-content:center;border-radius:50%!important;
+  background:rgba(255,255,255,.28)!important;color:#25D366!important;
+  -webkit-backdrop-filter:blur(14px) saturate(180%);backdrop-filter:blur(14px) saturate(180%);
+  border:1px solid rgba(255,255,255,.65);
+  box-shadow:0 10px 28px -10px rgba(15,23,42,.35),inset 0 1px 0 rgba(255,255,255,.8),inset 0 -6px 14px -8px rgba(37,211,102,.35)!important}
+.wa-fab.l{left:16px;right:auto}.wa-fab.r{right:16px;left:auto}
+.wa-fab svg{width:30px!important;height:30px!important;filter:drop-shadow(0 2px 4px rgba(37,211,102,.35))}
+.wa-fab b{display:none}
+html.ti .wa-fab{background:rgba(20,26,40,.35)!important;border-color:rgba(255,255,255,.18)}

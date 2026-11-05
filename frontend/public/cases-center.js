@@ -1525,19 +1525,19 @@
     var el = $('fabBox'); if (!el) return;
     api('GET', 'fab').then(function (g) {
       var f = g.fab || {};
-      el.innerHTML = '<section class="lx-card fab-set"><div class="lx-ch"><div><h3>💬 زرار واتساب عائم</h3><small>زرار أخضر ثابت في ركن صفحة المريض — يدوس عليه يفتح واتساب على رقم المركز ومعاه رسالتك جاهزة</small></div><label class="ad-sw"><input type="checkbox" id="fbOn"' + (f.on ? ' checked' : '') + '><i></i><span>شغّال</span></label></div>' +
+      el.innerHTML = '<section class="lx-card fab-set"><div class="lx-ch"><div><h3>💬 زرار واتساب عائم</h3><small>زرار دايري شفاف ثابت في ركن صفحة المريض — يدوس عليه يفتح واتساب على رقم المركز ومعاه رسالتك جاهزة</small></div><label class="ad-sw"><input type="checkbox" id="fbOn"' + (f.on ? ' checked' : '') + '><i></i><span>شغّال</span></label></div>' +
         '<div class="fab-g"><div><label class="l" for="fbN">رقم الواتساب</label><input class="fld" id="fbN" dir="ltr" maxlength="16" inputmode="tel" value="' + esc(f.wa || '') + '" placeholder="' + esc(g.wa || '01xxxxxxxxx') + '"><small>' + (g.wa ? 'فاضي = رقم المركز ' + esc(g.wa) : 'اكتب رقم الواتساب') + '</small></div>' +
-        '<div><label class="l" for="fbL">الكلام اللي جنب الأيقونة (اختياري)</label><input class="fld" id="fbL" maxlength="30" value="' + esc(f.label || '') + '" placeholder="كلّمنا واتساب"><small>فاضي = أيقونة بس</small></div>' +
+        
         '<div class="full"><label class="l" for="fbM">الرسالة اللي بتتكتب للمريض أوتوماتيك</label><textarea class="fld" id="fbM" rows="2" maxlength="300" placeholder="السلام عليكم، محتاج أستفسر عن…">' + esc(f.msg || '') + '</textarea></div>' +
-        '<div><label class="l">مكانه</label><div class="fab-sd"><button type="button" data-fbs="r" class="' + (f.side !== 'l' ? 'on' : '') + '">يمين</button><button type="button" data-fbs="l" class="' + (f.side === 'l' ? 'on' : '') + '">شمال</button></div></div>' +
+        '<div><label class="l">مكانه</label><div class="fab-sd"><button type="button" data-fbs="r" class="' + (f.side === 'r' ? 'on' : '') + '">يمين</button><button type="button" data-fbs="l" class="' + (f.side !== 'r' ? 'on' : '') + '">شمال</button></div></div>' +
         '<div><label class="l">يظهر في</label><label class="ad-sw"><input type="checkbox" id="fbH"' + (f.onH !== false ? ' checked' : '') + '><i></i><span>صفحة المركز (الباركود الثابت)</span></label><label class="ad-sw"><input type="checkbox" id="fbV"' + (f.onV !== false ? ' checked' : '') + '><i></i><span>صفحة نتيجة المريض</span></label></div></div>' +
         '<div class="bt" style="justify-content:flex-start"><button type="button" class="btn" id="fbS">حفظ</button><a class="btn g" id="fbT" target="_blank" rel="noopener">جرّب الزرار</a></div></section>';
-      var side = f.side === 'l' ? 'l' : 'r';
+      var side = f.side === 'r' ? 'r' : 'l';
       [].forEach.call(el.querySelectorAll('[data-fbs]'), function (b) { b.onclick = function () { side = b.dataset.fbs; [].forEach.call(el.querySelectorAll('[data-fbs]'), function (x) { x.classList.toggle('on', x === b); }); }; });
       var tst = function () { var n = ($('fbN').value.trim() || g.wa || '').replace(/[^\d]/g, '').replace(/^00/, '').replace(/^0(?=1\d{9}$)/, '20'), m = $('fbM').value.trim(); $('fbT').href = n ? 'https://wa.me/' + n + (m ? '?text=' + encodeURIComponent(m) : '') : '#'; };
       $('fbN').oninput = tst; $('fbM').oninput = tst; tst();
       $('fbS').onclick = function () {
-        var fab = { on: $('fbOn').checked, wa: $('fbN').value.trim(), label: $('fbL').value.trim(), msg: $('fbM').value.trim(), side: side, onH: $('fbH').checked, onV: $('fbV').checked };
+        var fab = { on: $('fbOn').checked, wa: $('fbN').value.trim(), msg: $('fbM').value.trim(), side: side, onH: $('fbH').checked, onV: $('fbV').checked };
         api('POST', 'fab', { fab: fab }).then(function () { toast(fab.on ? '💬 زرار الواتساب اتحفظ وظاهر للمرضى' : 'اتحفظ — الزرار مقفول'); }).catch(function (e) { toast(e.message); });
       };
       $('fbOn').onchange = function () { $('fbS').click(); };
