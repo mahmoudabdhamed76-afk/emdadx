@@ -493,11 +493,12 @@ async function handle(req, res, pathname) {
   m = /^\/v\/([A-Za-z0-9]{12})(\/(file|ask|seen|rate))?\/?$/.exec(pathname);
   if (m && m[3] === 'ask') return viewAsk(req, res, m[1]);
   if (m && m[3] === 'rate') {
-    if (req.method !== 'POST') return false;
+    if (req.method !== 'POST') { send(res, 405, { message: 'استخدم POST' }, { Allow: 'POST' }); return true; }
     const ip = ipOf(req); if (limited('rate:' + ip, 20, 3600e3)) { send(res, 429, { message: 'استنى شوية' }); return true; }
-    let b = {}; try { b = await readJson(req, 1500); } catch (e) {}
-    const it = db.prepare('SELECT customer_id, token FROM case_item WHERE token = ?').get(m[1]); if (!it) { send(res, 404, { message: 'الحالة مش موجودة' }); return true; }
-    const stars = Math.round(Number(b.stars)); if (!(stars >= 1 && stars <= 5)) { send(res, 400, { message: 'اختار عدد النجوم' }); return true; }
+    let b; try { b = await readJson(req, 1500); } catch (e) { send(res, 400, { message: 'التقييم غير صالح' }); return true; }
+    const it = db.prepare('SELECT i.customer_id, i.token, i.active, s.active AS site_on FROM case_item i LEFT JOIN case_site s ON s.customer_id = i.customer_id WHERE i.token = ?').get(m[1]); if (!it) { send(res, 404, { message: 'الحالة مش موجودة' }); return true; }
+    if (!it.active || !it.site_on) { send(res, 410, { message: 'الحالة دي اتوقفت من المركز' }); return true; }
+    const stars = b && b.stars; if (!Number.isInteger(stars) || stars < 1 || stars > 5) { send(res, 400, { message: 'اختار عدد النجوم' }); return true; }
     const tags = (Array.isArray(b.tags) ? b.tags : []).filter(t => RATE_TAGS.includes(t)).slice(0, 6);
     const vk = crypto.createHash('sha256').update(ip + '|' + String(req.headers['user-agent'] || '') + '|' + String(b.vid || '').slice(0, 40)).digest('base64url').slice(0, 22);
     db.prepare(`INSERT INTO case_rating (customer_id, token, vk, stars, tags, note, at, dev) VALUES (?,?,?,?,?,?,?,?)
@@ -526,7 +527,7 @@ async function centerRoute(req, res, m) {
     if (req.method !== 'GET') return false;
     const CD = { code, center: site.center_name || '', logo: site.logo || '', theme: site.theme || 'a', layout: site.dashboard_layout === 'violet' ? 'violet' : 'teal', auth: me, cacheDays: CACHE_DAYS, maxMb: MAX_MB, pub: me ? pubOf(site) : '', fixedOn: !!site.fixed_on, wa: me ? (site.wa || '') : '', waDefault: me && !site.wa ? waFor(cid0(site), '') : '' };
     if (me) db.prepare('UPDATE case_site SET last_seen = ? WHERE customer_id = ?').run(nowTs(), site.customer_id);
-    html(res, 200, page('QR Patient — ' + (site.center_name || ''), '<div id="app"></div>', 'k', '<script>window.CD=' + json(CD) + '</script><script src="/vendor/qrcode.js"></script><script src="/cases-kit.js?v=534"></script><script src="/cases-dicom.js?v=534"></script><script src="/cases-pacs.js?v=534"></script><script src="/cases-ads.js?v=534"></script><script src="/vendor/gsap.min.js"></script><script src="/js/gxmotion.js?v=534"></script><script src="/cases-center.js?v=534"></script><script src="/cases-push.js?v=534"></script>', '/k/'+code+'/manifest'));
+    html(res, 200, page('QR Patient — ' + (site.center_name || ''), '<div id="app"></div>', 'k', '<script>window.CD=' + json(CD) + '</script><script src="/vendor/qrcode.js"></script><script src="/cases-kit.js?v=535"></script><script src="/cases-dicom.js?v=534"></script><script src="/cases-pacs.js?v=534"></script><script src="/cases-ads.js?v=534"></script><script src="/vendor/gsap.min.js"></script><script src="/js/gxmotion.js?v=534"></script><script src="/cases-center.js?v=534"></script><script src="/cases-push.js?v=534"></script>', '/k/'+code+'/manifest'));
     return true;
   }
   if (sub === 'manifest' && req.method === 'GET') { respondManifest(res,site,'k');return true; }
@@ -852,7 +853,7 @@ async function viewRoute(req, res, token, file) {
   if (!file) {
     if (!it) { if (limited('vx:' + ip, 40, 600e3)) { send(res, 429, { message: 'حاولت كتير' }); return true; } }
     const CD = it ? { token, kind: it.kind || 'pdf', center: it.center_name || '', logo: it.site_logo || '', theme: it.site_theme || 'a', patient: it.patient, exam: it.exam || '', at: it.created_at, pages: it.pages || 0, size: it.size, name: it.file_name || '', active: !!(it.active && it.site_on), ready: !!(it.cached && it.cache_until > Date.now()) || online(it.customer_id), wa: waFor(it.customer_id, it.site_wa), pub: it.site_pub || '', rateTags: RATE_TAGS, pop: popCfg(it.site_pop), follow: it.follow_done ? null : it.follow_at || null } : { missing: true };
-    html(res, it ? 200 : 404, page(it ? 'نتيجة الفحص — ' + (it.center_name || '') : 'الحالة مش موجودة', '<div id="app"></div>', 'v', '<script>window.CD=' + json(CD) + '</script><script src="/cases-kit.js?v=534"></script>' + (it && it.kind === 'dicom' ? '<script src="/cases-pacs.js?v=534"></script>' : '<script src="/vendor/pdfjs/pdf.min.js"></script>') + '<script src="/cases-skin.js?v=534"></script><script src="/cases-view.js?v=534"></script>'));
+    html(res, it ? 200 : 404, page(it ? 'نتيجة الفحص — ' + (it.center_name || '') : 'الحالة مش موجودة', '<div id="app"></div>', 'v', '<script>window.CD=' + json(CD) + '</script><script src="/cases-kit.js?v=535"></script>' + (it && it.kind === 'dicom' ? '<script src="/cases-pacs.js?v=534"></script>' : '<script src="/vendor/pdfjs/pdf.min.js"></script>') + '<script src="/cases-skin.js?v=534"></script><script src="/cases-view.js?v=535"></script>'));
     return true;
   }
   if (!it) { send(res, 404, { message: 'الحالة مش موجودة' }); return true; }
@@ -888,10 +889,11 @@ async function findRoute(req, res, pub, sub) {
   }
   /* 5.23 · the center's page itself can be rated (before any result is opened) */
   if (sub === 'rate') {
-    if (req.method !== 'POST' || !site) return false;
+    if (req.method !== 'POST') { send(res, 405, { message: 'استخدم POST' }, { Allow: 'POST' }); return true; }
+    if (!site) { send(res, 404, { message: 'المركز غير متاح' }); return true; }
     if (limited('rate:' + ip, 20, 3600e3)) { send(res, 429, { message: 'استنى شوية' }); return true; }
-    let b = {}; try { b = await readJson(req, 600); } catch (e) {}
-    const stars = Math.round(Number(b.stars)); if (!(stars >= 1 && stars <= 5)) { send(res, 400, { message: 'اختار عدد النجوم' }); return true; }
+    let b; try { b = await readJson(req, 600); } catch (e) { send(res, 400, { message: 'التقييم غير صالح' }); return true; }
+    const stars = b && b.stars; if (!Number.isInteger(stars) || stars < 1 || stars > 5) { send(res, 400, { message: 'اختار عدد النجوم' }); return true; }
     const vk = crypto.createHash('sha256').update(ip + '|' + String(req.headers['user-agent'] || '') + '|' + String(b.vid || '').slice(0, 40)).digest('base64url').slice(0, 22);
     db.prepare(`INSERT INTO case_rating (customer_id, token, vk, stars, tags, note, at, dev) VALUES (?,?,?,?,'[]','',?,?)
       ON CONFLICT(token, vk) DO UPDATE SET stars = excluded.stars, at = excluded.at`).run(site.customer_id, 'h:' + pub, vk, stars, nowTs(), devOf(req.headers['user-agent']));
@@ -1032,7 +1034,7 @@ async function findRoute(req, res, pub, sub) {
     if (req.method !== 'GET') return false;
     if (!site) { if (limited('hx:' + ip, 30, 600e3)) { send(res, 429, { message: 'حاولت كتير' }); return true; } }
     const CD = site ? { pub, center: site.center_name || '', logo: site.logo || '', theme: site.theme || 'a', on: !!site.fixed_on, wa: waFor(site.customer_id, site.wa), ads: adsOf(site.customer_id), base: site.slides_base !== 0, slideMs: site.slide_ms || 5200, seeded: true, pop: popCfg(site.pop_cfg), wait: waitOf(site) } : { missing: true };
-    html(res, site ? 200 : 404, page(site ? 'نتيجتك — ' + (site.center_name || '') : 'اللينك مش شغال', '<div id="app"></div>', 'v', '<script>window.CD=' + json(CD) + '</script><script src="/cases-kit.js?v=534"></script><script src="/cases-skin.js?v=534"></script><script src="/cases-ads.js?v=534"></script><script src="/cases-find.js?v=534"></script><script src="/cases-push.js?v=534"></script>',site?'/h/'+pub+'/manifest':null));
+    html(res, site ? 200 : 404, page(site ? 'نتيجتك — ' + (site.center_name || '') : 'اللينك مش شغال', '<div id="app"></div>', 'v', '<script>window.CD=' + json(CD) + '</script><script src="/cases-kit.js?v=535"></script><script src="/cases-skin.js?v=534"></script><script src="/cases-ads.js?v=534"></script><script src="/cases-find.js?v=535"></script><script src="/cases-push.js?v=534"></script>',site?'/h/'+pub+'/manifest':null));
     return true;
   }
   if (req.method !== 'POST') return false;
@@ -1231,7 +1233,7 @@ async function plusPublic(req, res, pathname) {
     if (ok && it) db.prepare('UPDATE case_share SET views = views + 1 WHERE sid = ?').run(sh.sid);
     const CD = it ? { token: it.token, kind: it.kind || 'pdf', center: it.center_name || '', logo: it.site_logo || '', theme: it.site_theme || 'a', patient: it.patient, exam: it.exam || '', at: it.created_at, pages: it.pages || 0, size: it.size, active: !!(it.active && it.site_on), pub: it.site_pub || '', share: { i: sh.i, k: sh.k, expires: sh.expires, label: sh.label || '' }, doctor: true }
       : { missing: true, expired: !!sh };
-    html(res, it ? 200 : 404, page(it ? 'نتيجة مريض — ' + (it.center_name || '') : 'اللينك انتهى', '<div id="app"></div>', 'v', '<script>window.CD=' + json(CD) + '</script><script src="/cases-kit.js?v=534"></script>' + (it && it.kind === 'dicom' ? '<script src="/cases-pacs.js?v=534"></script>' : '<script src="/vendor/pdfjs/pdf.min.js"></script>') + '<script src="/cases-skin.js?v=534"></script><script src="/cases-view.js?v=534"></script>'));
+    html(res, it ? 200 : 404, page(it ? 'نتيجة مريض — ' + (it.center_name || '') : 'اللينك انتهى', '<div id="app"></div>', 'v', '<script>window.CD=' + json(CD) + '</script><script src="/cases-kit.js?v=535"></script>' + (it && it.kind === 'dicom' ? '<script src="/cases-pacs.js?v=534"></script>' : '<script src="/vendor/pdfjs/pdf.min.js"></script>') + '<script src="/cases-skin.js?v=534"></script><script src="/cases-view.js?v=535"></script>'));
     return true;
   }
   m = /^\/r\/([A-Za-z0-9]{10})(\/list)?\/?$/.exec(pathname);
@@ -1244,7 +1246,7 @@ async function plusPublic(req, res, pathname) {
       send(res, 200, { list: rows.map(r => ({ token: r.token, patient: r.patient, exam: r.exam || '', at: r.created_at, kind: r.kind || 'pdf', pages: r.pages || 0, opened: r.views > 0, active: !!r.active, w: r.wi ? { i: r.wi, k: r.wk } : null })) }); return true;
     }
     const CD = d && d.active && d.site_on ? { center: d.center_name || '', logo: d.logo || '', theme: d.theme || 'a', doctor: d.name, spec: d.spec || '', slug: d.slug } : { missing: true };
-    html(res, CD.missing ? 404 : 200, page(CD.missing ? 'اللينك مش شغال' : 'د. ' + d.name + ' — ' + (d.center_name || ''), '<div id="app"></div>', 'v', '<script>window.CD=' + json(CD) + '</script><script src="/cases-kit.js?v=534"></script><script src="/cases-skin.js?v=534"></script><script src="/cases-doc.js?v=534"></script>'));
+    html(res, CD.missing ? 404 : 200, page(CD.missing ? 'اللينك مش شغال' : 'د. ' + d.name + ' — ' + (d.center_name || ''), '<div id="app"></div>', 'v', '<script>window.CD=' + json(CD) + '</script><script src="/cases-kit.js?v=535"></script><script src="/cases-skin.js?v=534"></script><script src="/cases-doc.js?v=534"></script>'));
     return true;
   }
   return false;
